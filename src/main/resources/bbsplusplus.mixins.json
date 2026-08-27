@@ -22,8 +22,6 @@
         "UIListPoseParameterBrushMixin",
         "PoseBoneSkipMixin",
         "KeyframeSegmentPoseBoneSkipMixin",
-        "UIPoseEditorBoneTreeMixin",
-        "UIBoneListTreeSearchMixin",
         "UIBaseTextboxMixin",
         "UITextareaMixin",
         "UIKeyframeFactoryMixin",

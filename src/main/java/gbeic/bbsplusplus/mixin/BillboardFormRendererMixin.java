@@ -47,14 +47,39 @@ public abstract class BillboardFormRendererMixin extends FormRenderer<BillboardF
      * 修改行为：从裁剪区域重建 UV，并围绕正确中心应用缩放、偏移和旋转。
      */
     @Inject(
-        method = "renderModel",
+        method = "renderModel(Lnet/minecraft/client/render/VertexFormat;Ljava/util/function/Supplier;Lnet/minecraft/client/util/math/MatrixStack;IIIF)V",
         at = @At(
             value = "INVOKE",
             target = "Lmchorse/bbs_mod/forms/renderers/BillboardFormRenderer;renderQuad(Lnet/minecraft/client/render/VertexFormat;Lmchorse/bbs_mod/graphics/texture/Texture;Ljava/util/function/Supplier;Lnet/minecraft/client/util/math/MatrixStack;IIIF)V",
             shift = At.Shift.BEFORE
-        )
+        ),
+        require = 0
     )
-    private void bbspp$applyCompleteUvTransform(VertexFormat format, Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition, CallbackInfo ci)
+    private void bbspp$applyCompleteUvTransformLegacy(VertexFormat format, Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition, CallbackInfo ci)
+    {
+        this.bbspp$applyCompleteUvTransform();
+    }
+
+    /**
+     * 注入目标：新版 {@code BillboardFormRenderer#renderModel} 调用带透明延迟参数的 {@code renderQuad} 之前。
+     * 注入原因：未发布新版 BBS FS 为广告牌透明排序新增了 {@code defer} 参数，旧签名注入点不再存在。
+     * 修改行为：保持与旧签名一致的 UV 缩放修正，同时允许新旧 FS 版本各自匹配自己的方法描述符。
+     */
+    @Inject(
+        method = "renderModel(Lnet/minecraft/client/render/VertexFormat;Ljava/util/function/Supplier;Lnet/minecraft/client/util/math/MatrixStack;IIIFZ)V",
+        at = @At(
+            value = "INVOKE",
+            target = "Lmchorse/bbs_mod/forms/renderers/BillboardFormRenderer;renderQuad(Lnet/minecraft/client/render/VertexFormat;Lmchorse/bbs_mod/graphics/texture/Texture;Ljava/util/function/Supplier;Lnet/minecraft/client/util/math/MatrixStack;IIIFZ)V",
+            shift = At.Shift.BEFORE
+        ),
+        require = 0
+    )
+    private void bbspp$applyCompleteUvTransformNew(VertexFormat format, Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer, CallbackInfo ci)
+    {
+        this.bbspp$applyCompleteUvTransform();
+    }
+
+    private void bbspp$applyCompleteUvTransform()
     {
         Link link = this.form.texture.get();
         Texture texture = link == null ? null : BBSModClient.getTextures().getTexture(link);

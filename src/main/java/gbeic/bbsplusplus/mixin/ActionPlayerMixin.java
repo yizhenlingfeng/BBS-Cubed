@@ -50,17 +50,20 @@ public class ActionPlayerMixin
     }
 
     private static final ThreadLocal<Replay> bbspp$currentReplay = new ThreadLocal<>();
+    private static final ThreadLocal<Float> bbspp$currentTick = new ThreadLocal<>();
 
     @Inject(method = "apply", at = @At("HEAD"))
     private void bbspp$onApplyHead(net.minecraft.entity.LivingEntity actor, Replay replay, float tick, boolean ticking, CallbackInfo ci) {
         if (actor instanceof net.minecraft.server.network.ServerPlayerEntity && replay.fp.get()) {
             bbspp$currentReplay.set(replay);
+            bbspp$currentTick.set(tick);
         }
     }
 
     @Inject(method = "apply", at = @At("TAIL"))
     private void bbspp$onApplyTail(net.minecraft.entity.LivingEntity actor, Replay replay, float tick, boolean ticking, CallbackInfo ci) {
         bbspp$currentReplay.remove();
+        bbspp$currentTick.remove();
     }
 
     /**
@@ -78,7 +81,13 @@ public class ActionPlayerMixin
         if (replay != null && instance instanceof net.minecraft.server.network.ServerPlayerEntity)
         {
             mchorse.bbs_mod.utils.keyframes.KeyframeChannel<net.minecraft.item.ItemStack> channel = null;
-            if (slot == net.minecraft.entity.EquipmentSlot.MAINHAND) channel = replay.keyframes.mainHand;
+            if (slot == net.minecraft.entity.EquipmentSlot.MAINHAND) {
+                // 2.5.1 起主手由快捷栏通道列表 + 当前选中槽位共同决定
+                Float tick = bbspp$currentTick.get();
+                Integer idx = tick == null ? null : replay.keyframes.selectedSlot.interpolate(tick);
+                channel = (idx != null && idx >= 0 && idx < replay.keyframes.hotbar.size())
+                    ? replay.keyframes.hotbar.get(idx) : null;
+            }
             else if (slot == net.minecraft.entity.EquipmentSlot.OFFHAND) channel = replay.keyframes.offHand;
             else if (slot == net.minecraft.entity.EquipmentSlot.HEAD) channel = replay.keyframes.armorHead;
             else if (slot == net.minecraft.entity.EquipmentSlot.CHEST) channel = replay.keyframes.armorChest;

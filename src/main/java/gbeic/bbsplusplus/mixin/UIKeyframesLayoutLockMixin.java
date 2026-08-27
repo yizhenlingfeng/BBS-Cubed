@@ -37,7 +37,9 @@ public class UIKeyframesLayoutLockMixin
         {
             if (p instanceof UIFilmPanel)
             {
-                if (((UIFilmPanel) p).isLayoutLocked())
+                UIFilmPanel panel = (UIFilmPanel) p;
+
+                if (panel.dock != null && panel.dock.isLocked())
                 {
                     this.labelResizer.setVisible(false);
                 }

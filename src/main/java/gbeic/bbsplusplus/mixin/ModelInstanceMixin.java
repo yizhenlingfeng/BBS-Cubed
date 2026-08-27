@@ -116,17 +116,19 @@ public class ModelInstanceMixin
     }
 
     /**
-     * 注入目标：{@code ModelInstance#render} 的普通 CPU 缓冲绘制调用。
-     * 注入原因：CPU 路径已经变换了法线与 UV，BBS 模型 shader 不能再次应用残留矩阵或 UV uniform。
+     * 注入目标：{@code ModelInstance#drawImmediate} 的普通 CPU 缓冲绘制调用。
+     * 注入原因：新版 FS 把 {@code render} 内的 CPU 绘制抽到了 {@code drawImmediate}，
+     * CPU 路径已经变换了法线与 UV，BBS 模型 shader 不能再次应用残留矩阵或 UV uniform。
      * 修改行为：绘制前恢复单位法线矩阵与默认 UV uniform，再调用原始缓冲绘制。
      */
     @Redirect(
-        method = "render",
+        method = "drawImmediate",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/render/BufferRenderer;drawWithGlobalProgram(Lnet/minecraft/client/render/BufferBuilder$BuiltBuffer;)V",
             remap = true
-        )
+        ),
+        require = 0
     )
     private void bbspp$drawCpuUvWithOriginalLighting(BufferBuilder.BuiltBuffer buffer)
     {

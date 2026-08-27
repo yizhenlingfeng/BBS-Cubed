@@ -13,8 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /*
  * MinecraftClient Mixin
  *
- * 1. 在 MinecraftClient 的 tick 方法末尾添加一个注入，用于检查当前是否正在播放第一人称回放，并且回放是否已经结束。如果回放已经结束，则逐渐将 FOV 乘数恢复到 1.0，以实现平滑的 FOV 过渡效果。
- * 2. 通过这种方式，用户在使用 BBS++ 的新版本时，无需担心第一人称回放结束后 FOV 突然跳变的问题，即使在旧版本中创建了第一人称回放的录像文件，在新版本中也会自动实现平滑过渡。
+ * 拦截选区工具的右键/左键/长按挖掘，并维护输入法兼容层的窗口焦点状态。
  */
 
 @Mixin(MinecraftClient.class)
@@ -23,25 +22,6 @@ public class MinecraftClientMixin {
     @Inject(method = "tick", at = @At("TAIL"))
     public void onTick(CallbackInfo ci) {
         IMBlockerCompat.tickPendingRestore();
-
-        if (gbeic.bbsplusplus.BBSPlusPlusState.activeFilmId != null) {
-            // 通过底层记录安全检查该回放是否已经结束
-            boolean isStillPlaying = false;
-            if (mchorse.bbs_mod.BBSModClient.getFilms() != null) {
-                isStillPlaying = mchorse.bbs_mod.BBSModClient.getFilms().has(gbeic.bbsplusplus.BBSPlusPlusState.activeFilmId);
-            }
-
-            if (!isStillPlaying) {
-                gbeic.bbsplusplus.BBSPlusPlusState.targetFovMultiplier = 1.0F;
-                gbeic.bbsplusplus.BBSPlusPlusState.prevFovMultiplier = gbeic.bbsplusplus.BBSPlusPlusState.smoothedFovMultiplier;
-                gbeic.bbsplusplus.BBSPlusPlusState.smoothedFovMultiplier += (1.0F - gbeic.bbsplusplus.BBSPlusPlusState.smoothedFovMultiplier) * 0.5F;
-                
-                // 完全复原后彻底清除 ID 以节约性能
-                if (Math.abs(gbeic.bbsplusplus.BBSPlusPlusState.smoothedFovMultiplier - 1.0F) < 0.001F) {
-                    gbeic.bbsplusplus.BBSPlusPlusState.activeFilmId = null;
-                }
-            }
-        }
     }
 
     /**

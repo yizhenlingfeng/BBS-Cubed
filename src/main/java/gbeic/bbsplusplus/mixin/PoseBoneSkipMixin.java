@@ -218,8 +218,8 @@ public class PoseBoneSkipMixin implements IPoseBoneSkip
                 b.scale.x, b.scale.y, b.scale.z)
             && bbspp$vectorEquals(a.rotate.x, a.rotate.y, a.rotate.z,
                 b.rotate.x, b.rotate.y, b.rotate.z)
-            && bbspp$vectorEquals(a.rotate2.x, a.rotate2.y, a.rotate2.z,
-                b.rotate2.x, b.rotate2.y, b.rotate2.z)
+            && a.rotationMode == b.rotationMode
+            && a.quat.equals(b.quat)
             && bbspp$floatEquals(a.fix, b.fix)
             && a.color.equals(b.color)
             && bbspp$floatEquals(a.lighting, b.lighting);

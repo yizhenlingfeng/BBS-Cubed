@@ -2,6 +2,7 @@ package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.BBSAddonsSettings;
 import gbeic.bbsplusplus.util.GizmoModeController;
+import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformOp;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.utils.Gizmo;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,8 +23,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(UIPropTransform.class)
 public class UIPropTransformBlockbenchMixin
 {
-    @Inject(method = "enableMode(I)V", at = @At("HEAD"), cancellable = true, remap = false)
-    private void onEnableMode(int modeOrdinal, CallbackInfo ci)
+    @Inject(method = "enableMode(Lmchorse/bbs_mod/ui/framework/elements/input/drag/TransformOp;)V", at = @At("HEAD"), cancellable = true, remap = false)
+    private void onEnableMode(TransformOp op, CallbackInfo ci)
     {
         if (BBSAddonsSettings.gizmoBlockbenchMode == null
             || !BBSAddonsSettings.gizmoBlockbenchMode.get())
@@ -31,13 +32,12 @@ public class UIPropTransformBlockbenchMixin
             return;
         }
 
-        Gizmo.Mode requested = Gizmo.Mode.values()[modeOrdinal];
-
-        /* COMBINED 由 GizmoBlockbenchMixin 处理（toggleCombined），此处不干预 */
-        if (requested == Gizmo.Mode.COMBINED)
+        Gizmo.Mode requested = switch (op)
         {
-            return;
-        }
+            case TRANSLATE -> Gizmo.Mode.TRANSLATE;
+            case SCALE -> Gizmo.Mode.SCALE;
+            case ROTATE -> Gizmo.Mode.ROTATE;
+        };
 
         /* G/S/R：第 1 次切显示，第 2 次恢复或放行原版 */
         Gizmo.Mode current = Gizmo.INSTANCE.getMode();
