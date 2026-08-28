@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.client.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.client.debug.VideoDebug;
 import gbeic.bbsplusplus.forms.VideoBillboardForm;
 import mchorse.bbs_mod.BBSSettings;
@@ -49,6 +50,8 @@ public class VideoBillboardFormRenderer extends FormRenderer<VideoBillboardForm>
     private long lastScrubRenderNanos;
     /** 上一次记录的请求秒数，用于在日志里标出时间轴跳变（会触发 native seek）。 */
     private double lastDebugSeconds = Double.NaN;
+    /** 上一次已上报的渲染错误，渲染器每帧重试，不按消息去重会以每帧一条的速度刷爆日志。 */
+    private String lastReportedError;
 
     public VideoBillboardFormRenderer(VideoBillboardForm form)
     {
@@ -139,6 +142,7 @@ public class VideoBillboardFormRenderer extends FormRenderer<VideoBillboardForm>
             }
             catch (Exception e)
             {
+                this.reportError("视频伪装寻帧失败: " + describe(e), "[寻帧失败] " + this.currentPath + " (" + describe(e) + ")");
                 this.closeDecoder();
                 return;
             }
@@ -183,13 +187,26 @@ public class VideoBillboardFormRenderer extends FormRenderer<VideoBillboardForm>
 
         if (!VideoBackendBridge.isAvailable())
         {
+            this.reportError("视频伪装渲染跳过: 视频后端不可用（" + VideoBackendBridge.getUnavailableReason() + "）",
+                "[后端不可用] " + VideoBackendBridge.getUnavailableReason());
             return false;
         }
 
         try
         {
             this.decoder = VideoBackendBridge.openAssetVideo(path);
+            /* MediaPlayer-BBS 1.0.1 的 native 时间轴寻帧会崩溃（use-after-free），
+             * 按版本自动决策：>= 1.0.2 启用（恢复拖动逐帧精确定位），旧版禁用走连续解码。 */
+            if (VideoBackendBridge.shouldUseTimelineSeek())
+            {
+                VideoBackendBridge.enableTimelineSeek();
+            }
+            else
+            {
+                VideoBackendBridge.disableTimelineSeek();
+            }
             this.currentPath = path;
+            this.lastReportedError = null;
             this.applyMetadataSize();
 
             VideoDebug.log("[打开] " + path + " 宽=" + this.decoder.getWidth() + " 高=" + this.decoder.getHeight()
@@ -199,9 +216,31 @@ public class VideoBillboardFormRenderer extends FormRenderer<VideoBillboardForm>
         }
         catch (Exception e)
         {
+            this.reportError("视频伪装无法打开视频 " + path + ": " + describe(e)
+                + "（视频文件需位于 config/bbs/assets/video/）",
+                "[打开失败] " + path + " (" + describe(e) + ")");
             this.closeDecoder();
             return false;
         }
+    }
+
+    /**
+     * 上报一次渲染失败：主日志一条 warn，调试日志一条明细。
+     * 去重键为消息本身，同一错误只报一次；解码器成功重建后由调用方清空记录。
+     */
+    private void reportError(String message, String debug)
+    {
+        if (!message.equals(this.lastReportedError))
+        {
+            this.lastReportedError = message;
+            BBSPlusPlusMod.LOGGER.warn(message);
+            VideoDebug.log(debug);
+        }
+    }
+
+    private static String describe(Throwable e)
+    {
+        return e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
     }
 
     private void applyMetadataSize()

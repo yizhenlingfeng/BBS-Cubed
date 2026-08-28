@@ -3,6 +3,7 @@ package gbeic.bbsplusplus.client.ui.forms.editors.forms;
 import gbeic.bbsplusplus.client.renderer.VideoBackendBridge;
 import gbeic.bbsplusplus.client.ui.utils.UIVideoPicker;
 import gbeic.bbsplusplus.forms.VideoBillboardForm;
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
@@ -13,9 +14,12 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UICirculate;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
+import mchorse.bbs_mod.ui.framework.elements.utils.UILabel;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIConstants;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+
+import java.io.File;
 
 /**
  * 视频广告牌形态编辑器。
@@ -36,6 +40,7 @@ public class UIVideoBillboardForm extends UIForm<VideoBillboardForm>
     public static class Panel extends UIFormPanel<VideoBillboardForm>
     {
         public UIElement backendStatus;
+        public UILabel fileStatus;
         public UIButton pickVideo;
         public UIButton restart;
         public UIToggle paused;
@@ -56,6 +61,8 @@ public class UIVideoBillboardForm extends UIForm<VideoBillboardForm>
             super(editor);
 
             this.backendStatus = UI.label(this.getBackendStatusKey()).background();
+            this.fileStatus = UI.label(IKey.EMPTY).background();
+            this.fileStatus.setVisible(false);
             this.pickVideo = new UIButton(label("bbspp.ui.forms.editors.video_billboard.pick_video"), (b) -> this.openPicker());
             this.restart = new UIButton(label("bbspp.ui.forms.editors.video_billboard.restart"), (b) -> this.form.restart.set(true));
             this.paused = new UIToggle(label("bbspp.ui.forms.editors.video_billboard.paused"), false, (b) -> this.form.paused.set(b.getValue()));
@@ -77,6 +84,7 @@ public class UIVideoBillboardForm extends UIForm<VideoBillboardForm>
             this.shaded = new UIToggle(label("bbspp.ui.forms.editors.video_billboard.shaded"), false, (b) -> this.form.shaded.set(b.getValue()));
 
             this.options.add(this.backendStatus);
+            this.options.add(this.fileStatus);
             this.options.add(section("bbspp.ui.forms.editors.video_billboard.section.file"));
             this.options.add(this.pickVideo);
             this.options.add(section("bbspp.ui.forms.editors.video_billboard.section.playback"));
@@ -97,6 +105,7 @@ public class UIVideoBillboardForm extends UIForm<VideoBillboardForm>
             super.startEdit(form);
 
             this.pickVideo.label = this.getPickLabel(form.video.get());
+            this.updateFileStatus(form.video.get());
             this.paused.setValue(form.paused.get());
             this.loop.setValue(form.loop.get());
             this.loopStart.setValue(form.loopStart.get());
@@ -117,7 +126,28 @@ public class UIVideoBillboardForm extends UIForm<VideoBillboardForm>
             {
                 this.form.video.set(link);
                 this.pickVideo.label = this.getPickLabel(link);
+                this.updateFileStatus(link);
             });
+        }
+
+        /**
+         * 视频链接指向的文件不在 BBS 资产目录时显示警告。
+         * 渲染器打开视频失败是静默的（只在日志里留一条 warn），
+         * 面板上的这条提示是普通用户能看到的唯一线索。
+         */
+        private void updateFileStatus(Link link)
+        {
+            boolean missing = link != null
+                && link.path != null
+                && !link.path.isEmpty()
+                && !new File(BBSMod.getAssetsFolder(), link.path).exists();
+
+            this.fileStatus.setVisible(missing);
+
+            if (missing)
+            {
+                this.fileStatus.label = label("bbspp.ui.forms.editors.video_billboard.file_missing").format(link.path);
+            }
         }
 
         private IKey getPickLabel(Link link)

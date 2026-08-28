@@ -1,9 +1,12 @@
 package gbeic.bbsplusplus.client.renderer;
 
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.Version;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 /**
@@ -21,6 +24,10 @@ public final class VideoBackendBridge
     private static Method isAvailableMethod;
     private static Method getUnavailableReasonMethod;
     private static Method openAssetVideoMethod;
+    /** 时间轴寻帧启用所需的最低 MediaPlayer-BBS 版本：1.0.1 的 native 寻帧接口存在 use-after-free 崩溃。 */
+    private static final String TIMELINE_SEEK_MIN_VERSION = "1.0.2";
+    private static Boolean timelineSeekAllowed;
+    private static String timelineSeekVersion;
 
     private VideoBackendBridge()
     {
@@ -56,6 +63,90 @@ public final class VideoBackendBridge
         catch (Throwable e)
         {
             throw new RuntimeException("打开视频后端失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 按 MediaPlayer-BBS 的版本决定是否启用 native 时间轴寻帧（拖动播放头逐帧精确）。
+     * <p>
+     * 1.0.1 的 MediaPlayer.dll 在时间轴寻帧时会对已释放的互斥量加锁（msvcp140.dll 中
+     * 访问违规），直接崩掉整个 JVM；该崩溃已在修复构建中解决，约定修复构建从 1.0.2 起
+     * 编号。版本读取失败或低于 1.0.2 时按禁用处理（安全侧）。结果只解析一次。
+     * </p>
+     */
+    public static boolean shouldUseTimelineSeek()
+    {
+        if (timelineSeekAllowed == null)
+        {
+            timelineSeekAllowed = resolveTimelineSeekAllowed();
+
+            if (!timelineSeekAllowed)
+            {
+                BBSPlusPlusMod.LOGGER.info("MediaPlayer-BBS {} 的时间轴寻帧已禁用（1.0.1 的 native 寻帧会崩溃），"
+                    + "升级到 " + TIMELINE_SEEK_MIN_VERSION + "+ 后自动启用", timelineSeekVersion);
+            }
+        }
+
+        return timelineSeekAllowed;
+    }
+
+    private static boolean resolveTimelineSeekAllowed()
+    {
+        if (!FabricLoader.getInstance().isModLoaded("mediaplayer"))
+        {
+            timelineSeekVersion = "未安装";
+            return false;
+        }
+
+        try
+        {
+            Version version = FabricLoader.getInstance()
+                .getModContainer("mediaplayer")
+                .map(container -> container.getMetadata().getVersion())
+                .orElse(null);
+
+            timelineSeekVersion = version == null ? "未知" : version.getFriendlyString();
+
+            return version != null && version.compareTo(Version.parse(TIMELINE_SEEK_MIN_VERSION)) >= 0;
+        }
+        catch (Exception e)
+        {
+            timelineSeekVersion = "未知";
+            return false;
+        }
+    }
+
+    /**
+     * 启用 MediaPlayer-BBS 的 native 时间轴寻帧接口（{@code VideoDecoder.renderTimeNative}）。
+     * 该接口由 native 代码在解码器打开后把静态开关置为可用，这里在每次打开解码器后
+     * 显式改回 true，覆盖可能的旧状态。字段随版本变化时反射失败会被忽略。
+     */
+    public static void enableTimelineSeek()
+    {
+        setTimelineNativeAvailable(true);
+    }
+
+    /**
+     * 禁用 MediaPlayer-BBS 的 native 时间轴寻帧接口，让 {@code renderTime} 走连续解码路径。
+     * 用于 1.0.1 及更早版本（其 native 寻帧会在 msvcp140.dll 中触发访问违规崩溃）。
+     * 字段随版本变化时反射失败会被忽略，保持后端默认行为。
+     */
+    public static void disableTimelineSeek()
+    {
+        setTimelineNativeAvailable(false);
+    }
+
+    private static void setTimelineNativeAvailable(boolean value)
+    {
+        try
+        {
+            Class<?> decoderClass = Class.forName("net.hacker.mediaplayer.VideoDecoder");
+            Field field = decoderClass.getDeclaredField("timelineNativeAvailable");
+            field.setAccessible(true);
+            field.setBoolean(null, value);
+        }
+        catch (Exception ignored)
+        {
         }
     }
 

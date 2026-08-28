@@ -203,6 +203,8 @@
     "bbspp.ui.forms.editors.video_billboard.keep_aspect_ratio": "Keep Original Aspect Ratio",
     "bbspp.ui.forms.editors.video_billboard.billboard": "Always Face Camera",
     "bbspp.ui.forms.editors.video_billboard.shaded": "Affected by Environment Light",
+    "bbspp.ui.forms.editors.video_billboard.file_missing": "Warning: video file not found: %s",
+    "bbspp.ui.forms.editors.video_billboard.empty_folder_hint": "No videos found. Put .mp4/.mov/.mkv/.webm/.avi/.m4v files into %s then click refresh",
     "bbspp.undo_history.action.add": "Add",
     "bbspp.undo_history.action.remove": "Remove",
     "bbspp.undo_history.action.change": "Change",

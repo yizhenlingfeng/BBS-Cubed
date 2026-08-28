@@ -10,6 +10,8 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
+import mchorse.bbs_mod.ui.framework.elements.utils.UILabel;
+import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 
@@ -62,6 +64,12 @@ public final class UIVideoPicker
 
         treeList.setEffectKeys(videos);
 
+        /* video 目录为空或不存在时，用提示覆盖空的树列表，引导用户把视频放进正确的位置。 */
+        UILabel hint = UI.label(L10n.lang("bbspp.ui.forms.editors.video_billboard.empty_folder_hint")
+            .format(getVideoFolder().getAbsolutePath())).background();
+        hint.relative(panel.content).xy(6, 30).w(1F, -12).h(40);
+        hint.setVisible(videos.isEmpty());
+
         UITextbox search = new UITextbox(100, treeList::filter);
         search.relative(panel.content).set(6, 6, 0, 0).w(1F, -12).h(20);
 
@@ -71,6 +79,7 @@ public final class UIVideoPicker
             videos.clear();
             populateVideos(videos);
             treeList.setEffectKeys(videos);
+            hint.setVisible(videos.isEmpty());
             search.setText("");
             treeList.filter("");
         });
@@ -89,7 +98,7 @@ public final class UIVideoPicker
         treeList.filter("");
 
         panel.add(refresh, folder);
-        panel.content.add(search, treeList);
+        panel.content.add(search, treeList, hint);
 
         UIOverlay.addOverlay(context, panel, 0.5F, 0.7F);
     }
