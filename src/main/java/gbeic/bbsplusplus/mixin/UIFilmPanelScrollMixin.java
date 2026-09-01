@@ -21,7 +21,7 @@ public class UIFilmPanelScrollMixin {
         method = "subMouseScrolled",
         at = @At(value = "INVOKE", target = "Ljava/lang/Math;copySign(DD)D"),
         require = 0,
-        remap = false
+        remap = true
     )
     private double redirectCopySign(double magnitude, double sign) {
         if (BBSAddonsSettings.reverseTimelineScroll != null && BBSAddonsSettings.reverseTimelineScroll.get()) {

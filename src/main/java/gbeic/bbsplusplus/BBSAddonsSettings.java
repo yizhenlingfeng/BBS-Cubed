@@ -13,10 +13,6 @@ import mchorse.bbs_mod.settings.values.numeric.ValueInt;
  */
 public class BBSAddonsSettings
 {
-    /** BBS 增强功能标题 */
-    public static ValueBoolean titleBbsEnhancements;
-
-
     /** 开启后，关键帧轨道名称显示为中文 */
     public static ValueBoolean chineseKeyframeNames;
 
@@ -62,8 +58,6 @@ public class BBSAddonsSettings
 
 
     /* 物品喷射 */
-    public static ValueBoolean titleItemSpray;
-
     /** 开启后，物品喷射粒子在视野外时会跳过渲染 */
     public static ValueBoolean itemSprayFrustumCulling;
 
@@ -77,8 +71,6 @@ public class BBSAddonsSettings
     public static ValueInt itemSprayIRLiteShadowMaxItems;
 
     /* Gizmo 修改 */
-    public static ValueBoolean titleGizmoModifications;
-
     /**
      * 开启后启用 Blockbench 风格的 Gizmo 交互模式：
      * <ul>

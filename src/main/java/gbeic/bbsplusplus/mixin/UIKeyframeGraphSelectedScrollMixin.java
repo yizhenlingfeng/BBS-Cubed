@@ -23,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 @Mixin(UIKeyframeGraph.class)
 public abstract class UIKeyframeGraphSelectedScrollMixin
 {
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     private UIKeyframes keyframes;
 
     /**
@@ -36,7 +36,7 @@ public abstract class UIKeyframeGraphSelectedScrollMixin
         method = "mouseScrolled",
         at = @At("STORE"),
         ordinal = 0,
-        remap = false
+        remap = true
     )
     private float bbspp$reverseSelectedKeyframeAltWheel(float diff)
     {

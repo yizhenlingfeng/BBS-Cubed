@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@Mixin(value = UIReplaysEditor.class, remap = false)
+@Mixin(value = UIReplaysEditor.class, remap = true)
 public class UIReplaysEditorMixin
 {
     /**

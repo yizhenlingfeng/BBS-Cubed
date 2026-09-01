@@ -16,7 +16,7 @@ import java.util.List;
 @Mixin(UIValueMap.class)
 public class UIValueMapMixin
 {
-    @Inject(method = "create", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "create", at = @At("HEAD"), cancellable = true, remap = true)
     private static void onCreate(BaseValue value, UIElement element, CallbackInfoReturnable<List<UIElement>> cir)
     {
         if (value.getId().startsWith("title_"))

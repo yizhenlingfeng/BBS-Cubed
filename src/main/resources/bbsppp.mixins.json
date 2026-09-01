@@ -1,0 +1,21 @@
+{
+    "required": true,
+    "package": "gbeic.bbsppp.mixin",
+    "compatibilityLevel": "JAVA_17",
+    "client": [
+        "BBSModMixin",
+        "FormPropertiesTextureTweenMixin",
+        "KeyframeChannelTextureTweenMixin",
+        "KeyframeSegmentMixin",
+        "L10nMixin",
+        "TextureTweenKeyframeMixin",
+        "TextureManagerReloadMixin",
+        "UIKeyframeGraphTextureMixin",
+        "UILinkKeyframeFactoryMixin",
+        "UIFilmRecorderMixin",
+        "VideoRecorderMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

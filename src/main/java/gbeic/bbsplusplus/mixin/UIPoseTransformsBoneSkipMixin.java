@@ -21,7 +21,7 @@ import java.util.function.Consumer;
  * <p>通过重定向原版批量写入入口，把“清除跳过标记”和参数变更放进同一轮关键帧通知，
  * 避免产生两个撤销步骤；普通编辑、重置及录制期间写入均使用相同规则。</p>
  */
-@Mixin(value = UIPoseKeyframeFactory.UIPoseTransforms.class, remap = false)
+@Mixin(value = UIPoseKeyframeFactory.UIPoseTransforms.class, remap = true)
 public class UIPoseTransformsBoneSkipMixin
 {
     /**

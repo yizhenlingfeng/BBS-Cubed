@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 到 F10 对应的 Keybind，并将其回调置为 null。由于 KeybindManager.checkKeybinds
  * 只在 callback 不为 null 时触发按键，置空后 F10 将永远无法再开启黑板功能。
  */
-@Mixin(value = UIChalkboard.class, remap = false)
+@Mixin(value = UIChalkboard.class, remap = true)
 public class UIChalkboardMixin
 {
     @Inject(method = "<init>", at = @At("TAIL"))

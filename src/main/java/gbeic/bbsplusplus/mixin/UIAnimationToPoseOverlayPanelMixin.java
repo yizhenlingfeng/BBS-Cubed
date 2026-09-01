@@ -38,7 +38,7 @@ public class UIAnimationToPoseOverlayPanelMixin
             value = "INVOKE",
             target = "Lmchorse/bbs_mod/ui/utils/UI;scrollView(II[Lmchorse/bbs_mod/ui/framework/elements/UIElement;)Lmchorse/bbs_mod/ui/framework/elements/UIScrollView;"
         ),
-        remap = false
+        remap = true
     )
     private UIScrollView wrapListWithSearchList(int marginX, int marginY, UIElement[] elements)
     {

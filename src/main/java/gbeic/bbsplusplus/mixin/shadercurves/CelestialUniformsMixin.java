@@ -16,10 +16,10 @@ import org.spongepowered.asm.mixin.injection.Redirect;
  * 接上曲线后就能在影片里做出太阳轨道随时间变化的效果。
  * </p>
  */
-@Mixin(value = CelestialUniforms.class, remap = false)
+@Mixin(value = CelestialUniforms.class, remap = true)
 public class CelestialUniformsMixin
 {
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     @Final
     private float sunPathRotation;
 
@@ -31,7 +31,7 @@ public class CelestialUniformsMixin
     @Redirect(
         method = "getCelestialPositionInWorldSpace",
         at = @At(value = "FIELD", target = "Lnet/irisshaders/iris/uniforms/CelestialUniforms;sunPathRotation:F", opcode = org.objectweb.asm.Opcodes.GETFIELD),
-        remap = false
+        remap = true
     )
     private float bbspp$redirectSunPathRotationWorld(CelestialUniforms instance)
     {
@@ -46,7 +46,7 @@ public class CelestialUniformsMixin
     @Redirect(
         method = "getCelestialPosition",
         at = @At(value = "FIELD", target = "Lnet/irisshaders/iris/uniforms/CelestialUniforms;sunPathRotation:F", opcode = org.objectweb.asm.Opcodes.GETFIELD),
-        remap = false
+        remap = true
     )
     private float bbspp$redirectSunPathRotation(CelestialUniforms instance)
     {

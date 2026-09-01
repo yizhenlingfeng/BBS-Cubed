@@ -36,7 +36,7 @@ public class UIReplaysEditorUtilsMixin
         method = "pickForm(Lmchorse/bbs_mod/ui/framework/elements/input/keyframes/UIKeyframeEditor;Lmchorse/bbs_mod/ui/film/ICursor;Lmchorse/bbs_mod/forms/forms/Form;Ljava/lang/String;Z)V",
         at = @At("HEAD"),
         cancellable = true,
-        remap = false
+        remap = true
     )
     private static void bbspp$applyPoseParameterBrushFromViewport(UIKeyframeEditor keyframeEditor, ICursor cursor,
                                                                    Form form, String bone, boolean insert,
@@ -70,7 +70,7 @@ public class UIReplaysEditorUtilsMixin
     /**
      * 注入回放编辑器的形态拾取入口，让 Shift 点击骨骼时可以改选第一个未被禁用的父级骨骼。
      */
-    @Inject(method = "pickFormWithOffers", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "pickFormWithOffers", at = @At("HEAD"), cancellable = true, remap = true)
     private static void onPickFormWithOffers(UIContext context, Pair<Form, String> pair, UIReplaysEditorUtils.FormPicker picker, CallbackInfoReturnable<Boolean> cir)
     {
         boolean select = context.mouseButton == 0 || (context.mouseButton == 2 && Window.isCtrlPressed());

@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 两项注册在纹理之后，使时间轴中的纹理相关轨道保持相邻。
  * </p>
  */
-@Mixin(value = ExtrudedForm.class, remap = false)
+@Mixin(value = ExtrudedForm.class, remap = true)
 public class ExtrudedFormMixin implements ExtrudedFormUVTransform
 {
     @Shadow @Final public ValueColor color;

@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(value = ActionPlayer.class, remap = false)
+@Mixin(value = ActionPlayer.class, remap = true)
 public class ActionPlayerMixin
 {
     /**

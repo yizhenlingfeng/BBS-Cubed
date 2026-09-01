@@ -15,7 +15,7 @@ import java.util.Locale;
  * 则直接返回对应的中文翻译。
  * 不依赖 BBS L10n 系统，不存在时序问题。
  */
-@Mixin(value = StringKey.class, remap = false)
+@Mixin(value = StringKey.class, remap = true)
 public class StringKeyMixin
 {
     /**

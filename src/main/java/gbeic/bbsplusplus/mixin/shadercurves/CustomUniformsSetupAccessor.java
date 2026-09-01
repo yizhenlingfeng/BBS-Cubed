@@ -15,12 +15,12 @@ import java.util.Map;
  * 此访问器用于只初始化并上传 BBS 光影曲线生成的 {@code bbs_} uniform。
  * </p>
  */
-@Mixin(value = CustomUniforms.class, remap = false)
+@Mixin(value = CustomUniforms.class, remap = true)
 public interface CustomUniformsSetupAccessor
 {
     /**
      * 获取各渲染程序对应的 uniform 位置，只应读取并用于精确上传 BBS 曲线参数。
      */
-    @Accessor(value = "locationMap", remap = false)
+    @Accessor(value = "locationMap", remap = true)
     Map<Object, Object2IntMap<CachedUniform>> bbspp$getLocationMap();
 }

@@ -23,7 +23,7 @@ public abstract class UIReplaysEditorClickMixin
     @Inject(
         method = "setCategory",
         at = @At("TAIL"),
-        remap = false
+        remap = true
     )
     private void onSetCategory(CallbackInfo ci)
     {

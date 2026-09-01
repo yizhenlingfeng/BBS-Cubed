@@ -23,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 3. 为装备/手持物品关键帧保存附加变换数据，让同一条轨道同时编辑物品与姿态。
  */
 
-@Mixin(value = Keyframe.class, remap = false)
+@Mixin(value = Keyframe.class, remap = true)
 public class KeyframeMixin implements EquipmentKeyframeTransformHolder
 {
     @Unique

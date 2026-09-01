@@ -19,10 +19,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(UIFilmPanel.class)
 public class UIFilmPanelLoopIconMixin {
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     public UIIcon openCameraEditor;
 
-    @Inject(method = "<init>(Lmchorse/bbs_mod/ui/dashboard/UIDashboard;)V", at = @At("RETURN"), remap = false)
+    @Inject(method = "<init>(Lmchorse/bbs_mod/ui/dashboard/UIDashboard;)V", at = @At("RETURN"), remap = true)
     private void bbsplusplus$addLoopIcon(UIDashboard dashboard, CallbackInfo ci) {
         UIFilmPanel self = (UIFilmPanel) (Object) this;
 

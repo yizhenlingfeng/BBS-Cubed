@@ -26,7 +26,7 @@ public abstract class SettingsManagerMixin
      * 注入原因：异常巨大的颜色数组必须在 {@code DataToString.read(file)} 完整解析之前处理。
      * 修改行为：仅对 BBS 主设置文件执行最近颜色和收藏颜色瘦身，其它设置文件保持原样。
      */
-    @Inject(method = "load", at = @At("HEAD"), remap = false)
+    @Inject(method = "load", at = @At("HEAD"), remap = true)
     private void bbspp$sanitizeHugeColorLists(Settings settings, File file, CallbackInfoReturnable<Boolean> cir)
     {
         if (settings != null && "bbs".equals(settings.getId()))

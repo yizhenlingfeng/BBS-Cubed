@@ -41,7 +41,7 @@ public abstract class ValueColorsMixin
      * 注入原因：原逻辑会在已有列表后继续追加颜色，导致设置重载后颜色列表重复膨胀。
      * 修改行为：读取前清空旧值，按颜色值去重，并限制最近颜色和收藏颜色的最大数量。
      */
-    @Inject(method = "fromData", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "fromData", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbspp$readBoundedColors(BaseType data, CallbackInfo ci)
     {
         this.colors.clear();
@@ -72,7 +72,7 @@ public abstract class ValueColorsMixin
      * 注入原因：运行期添加颜色后也需要维持安全上限，避免异常旧配置继续占用界面空间。
      * 修改行为：追加后移除超出上限的旧颜色。
      */
-    @Inject(method = "addColor", at = @At("TAIL"), remap = false)
+    @Inject(method = "addColor", at = @At("TAIL"), remap = true)
     private void bbspp$trimAfterAdd(Color color, CallbackInfo ci)
     {
         int limit = this.bbspp$isRecentColors() ? BBSPLUSPLUS_MAX_RECENT_COLORS : BBSPLUSPLUS_MAX_FAVORITE_COLORS;

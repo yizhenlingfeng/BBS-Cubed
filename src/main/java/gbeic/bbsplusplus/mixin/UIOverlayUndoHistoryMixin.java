@@ -32,7 +32,7 @@ public class UIOverlayUndoHistoryMixin
         method = "addOverlay(Lmchorse/bbs_mod/ui/framework/UIContext;Lmchorse/bbs_mod/ui/framework/elements/overlay/UIOverlayPanel;IF)Lmchorse/bbs_mod/ui/framework/elements/overlay/UIOverlay;",
         at = @At("HEAD"),
         cancellable = true,
-        remap = false
+        remap = true
     )
     private static void bbspp$resizeUndoHistory(UIContext context, UIOverlayPanel panel, int w, float h, CallbackInfoReturnable<UIOverlay> cir)
     {

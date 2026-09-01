@@ -25,7 +25,7 @@ public abstract class UIPromptOverlayPanelEnterMixin
         method = "subKeyPressed",
         at = @At("HEAD"),
         cancellable = true,
-        remap = false
+        remap = true
     )
     private void onSubKeyPressed(UIContext context, CallbackInfoReturnable<Boolean> cir)
     {

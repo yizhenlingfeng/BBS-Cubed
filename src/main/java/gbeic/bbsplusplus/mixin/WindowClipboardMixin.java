@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 关键帧、形态、变换等复制内容留在游戏内部；普通字符串复制仍走系统剪贴板。
  * </p>
  */
-@Mixin(value = Window.class, remap = false)
+@Mixin(value = Window.class, remap = true)
 public class WindowClipboardMixin
 {
     /**

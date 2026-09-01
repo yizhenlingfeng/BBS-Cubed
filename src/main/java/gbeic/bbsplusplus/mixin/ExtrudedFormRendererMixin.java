@@ -35,7 +35,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
  * 从而兼容原生 shader 与 Iris，并避免修改同纹理实例共享的 GPU 缓冲。
  * </p>
  */
-@Mixin(value = ExtrudedFormRenderer.class, remap = false)
+@Mixin(value = ExtrudedFormRenderer.class, remap = true)
 public abstract class ExtrudedFormRendererMixin extends FormRenderer<ExtrudedForm>
 {
     private ExtrudedFormRendererMixin(ExtrudedForm form)

@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * </p>
  */
 @Pseudo
-@Mixin(targets = "org.qualet.irl.light.shadow.IRLiteBbsCasterSource", remap = false)
+@Mixin(targets = "org.qualet.irl.light.shadow.IRLiteBbsCasterSource", remap = true)
 public abstract class IRLiteBbsCasterSourceMixin
 {
     /**
@@ -31,7 +31,7 @@ public abstract class IRLiteBbsCasterSourceMixin
      * IRL 原本只收集实体、模型方块和回放；物品喷射由 BBS++ 的全局渲染钩子独立绘制，不属于这些来源。
      * 在原收集流程结束后追加物品喷射快照，可以让 IRL 阴影烘焙看到它们，同时不改变主世界渲染 pass。
      */
-    @Inject(method = "collect", at = @At("TAIL"), remap = false, require = 0)
+    @Inject(method = "collect", at = @At("TAIL"), remap = true, require = 0)
     private void bbspp$collectItemSprayCasters(ClientWorld world, Vec3d camPos, float tickDelta, @Coerce Object sink, CallbackInfo ci)
     {
         ItemSprayFormRenderer.collectIRLiteShadowCasters(world, camPos, tickDelta, sink);
@@ -43,7 +43,7 @@ public abstract class IRLiteBbsCasterSourceMixin
      * IRL 的原方法只认识自己的三种 caster 类型；BBS++ 追加的物品喷射 caster 必须在这里拦截并自行绘制，
      * 否则原方法会把它按实体/模型方块强转。非 BBS++ caster 会继续走 IRL 原逻辑。
      */
-    @Inject(method = "emitOccluder", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
+    @Inject(method = "emitOccluder", at = @At("HEAD"), cancellable = true, remap = true, require = 0)
     private void bbspp$emitItemSprayCaster(Object caster, int type, float tickDelta, @Coerce Object batch, CallbackInfo ci)
     {
         if (ItemSprayFormRenderer.renderIRLiteShadowCaster(caster, tickDelta, batch))

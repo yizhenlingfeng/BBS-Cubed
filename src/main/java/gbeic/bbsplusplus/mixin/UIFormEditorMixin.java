@@ -35,7 +35,7 @@ public abstract class UIFormEditorMixin
     /**
      * 注入表单编辑器打开表单列表的入口，在 BBS++ 新版伪装面板启用时替换为带侧边栏的编辑器专用列表。
      */
-    @Inject(method = "openFormList", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "openFormList", at = @At("HEAD"), cancellable = true, remap = true)
     private void openBBSPPFormList(Form current, java.util.function.Consumer<Form> callback, CallbackInfo ci)
     {
         if (BBSAddonsSettings.newMorphingPanel == null || !BBSAddonsSettings.newMorphingPanel.get())
@@ -65,7 +65,7 @@ public abstract class UIFormEditorMixin
     /**
      * 注入模型拾取入口，让 Shift 点击骨骼时可以改选第一个未被禁用的父级骨骼。
      */
-    @Inject(method = "pickFormFromRenderer", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "pickFormFromRenderer", at = @At("HEAD"), cancellable = true, remap = true)
     private void onPickFormFromRenderer(Pair<Form, String> pair, CallbackInfo ci)
     {
         if (Window.isShiftPressed() && !Window.isCtrlPressed() && BBSAddonsSettings.directParentPicking != null && BBSAddonsSettings.directParentPicking.get())

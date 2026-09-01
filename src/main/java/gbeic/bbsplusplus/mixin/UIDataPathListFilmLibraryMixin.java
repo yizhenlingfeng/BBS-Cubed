@@ -279,7 +279,7 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
      * 注入原因：新版影片库中右侧空白区域应取消影片选择，避免旧选中项误导后续操作。
      * 修改后的行为：影片库模式下，点击右侧列表空白处会清空选择；条目点击仍交给原版逻辑处理。
      */
-    @Inject(method = "subMouseClicked", at = @At("HEAD"), remap = false)
+    @Inject(method = "subMouseClicked", at = @At("HEAD"), remap = true)
     private void bbspp$deselectOnFilmLibraryEmptyClick(UIContext context, CallbackInfoReturnable<Boolean> cir)
     {
         if (this.bbspp$filmLibraryMode && this.area.isInside(context) && this.getIndexAtCursor(context) < 0)
@@ -362,7 +362,7 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
      * 注入原因：原版填充后会回到根目录并把文件夹混入右侧列表；影片库需要由左侧树承担文件夹导航。
      * 修改后的行为：影片库模式下刷新当前影片库视图，并隐藏右侧文件夹项。
      */
-    @Inject(method = "fill", at = @At("RETURN"), remap = false)
+    @Inject(method = "fill", at = @At("RETURN"), remap = true)
     private void bbspp$showFilmsAfterFill(Collection<String> hierarchy, CallbackInfo ci)
     {
         if (this.bbspp$filmLibraryMode)
@@ -377,7 +377,7 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
      * 注入原因：影片库需要保存名称排序偏好，而原版列表只提供固定自然升序。
      * 修改后的行为：影片库模式下按文件夹优先、返回上级优先、名称升降序重新排序。
      */
-    @Inject(method = "sortElements", at = @At("RETURN"), remap = false)
+    @Inject(method = "sortElements", at = @At("RETURN"), remap = true)
     private void bbspp$sortFilmLibrary(CallbackInfoReturnable<Boolean> cir)
     {
         if (!this.bbspp$filmLibraryMode)
@@ -404,7 +404,7 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
      * 注入原因：完整路径搜索结果只显示末端文件名会丢失目录语境。
      * 修改后的行为：影片库路径搜索时显示完整路径，普通浏览仍显示当前文件夹内名称。
      */
-    @Inject(method = "elementToString", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "elementToString", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbspp$showFullPathWhenSearching(UIContext context, int i, DataPath element, CallbackInfoReturnable<String> cir)
     {
         if (this.bbspp$filmLibraryMode && this.bbspp$showFullPaths)

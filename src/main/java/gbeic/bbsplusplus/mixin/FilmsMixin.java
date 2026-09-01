@@ -21,7 +21,7 @@ public class FilmsMixin
      * 注入原因：该方法会逐个通知当前播放的影片控制器准备渲染帧，是清理上一帧临时曲线数据的稳定入口。
      * 修改行为：先清空 BBS++ 保存的世界影片光影曲线状态，后续仍由各影片控制器重新采样当前帧。
      */
-    @Inject(method = "startRenderFrame", at = @At("HEAD"), remap = false)
+    @Inject(method = "startRenderFrame", at = @At("HEAD"), remap = true)
     private void bbspp$clearWorldFilmShaderCurves(float transition, CallbackInfo ci)
     {
         WorldFilmShaderCurveState.clear();

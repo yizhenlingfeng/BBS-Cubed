@@ -22,10 +22,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(UIKeyframes.class)
 public class UIKeyframesLayoutLockMixin
 {
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     private UIDraggable labelResizer;
 
-    @Inject(method = "resize", at = @At("RETURN"), remap = false)
+    @Inject(method = "resize", at = @At("RETURN"), remap = true)
     private void onResizeReturn(CallbackInfo ci)
     {
         if (this.labelResizer == null) return;

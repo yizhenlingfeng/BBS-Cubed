@@ -22,7 +22,7 @@ import java.util.List;
  * 让旧影片能打开，并阻止新的坏数据继续写盘。
  * </p>
  */
-@Mixin(value = Clips.class, remap = false)
+@Mixin(value = Clips.class, remap = true)
 public class ClipsMixin
 {
     @Shadow

@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 这条路径没有检查剪辑的启用状态，导致禁用剪辑在暂停时仍会改变镜头。
  * </p>
  */
-@Mixin(value = CameraClip.class, remap = false)
+@Mixin(value = CameraClip.class, remap = true)
 public abstract class CameraClipMixin
 {
     /**

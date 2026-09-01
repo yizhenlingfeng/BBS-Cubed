@@ -24,7 +24,7 @@ public abstract class UIFilmPreviewMixin {
 
     @Shadow @Final public UIElement icons;
 
-    @Inject(method = "<init>", at = @At("RETURN"), remap = false)
+    @Inject(method = "<init>", at = @At("RETURN"), remap = true)
     private void onInit(UIFilmPanel panel, CallbackInfo ci) {
         if (FabricLoader.getInstance().isModLoaded("iris")) {
             UIIcon irisButton = new UIIcon(Icons.SUN, null) {

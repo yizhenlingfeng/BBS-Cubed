@@ -19,13 +19,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(UIBaseTextbox.class)
 public class UIBaseTextboxMixin
 {
-    @Inject(method = "focus", at = @At("TAIL"), remap = false)
+    @Inject(method = "focus", at = @At("TAIL"), remap = true)
     private void onFocus(UIContext context, CallbackInfo ci)
     {
         IMBlockerCompat.setTextInputFocused(true);
     }
 
-    @Inject(method = "unfocus", at = @At("TAIL"), remap = false)
+    @Inject(method = "unfocus", at = @At("TAIL"), remap = true)
     private void onUnfocus(UIContext context, CallbackInfo ci)
     {
         IMBlockerCompat.setTextInputFocused(false);

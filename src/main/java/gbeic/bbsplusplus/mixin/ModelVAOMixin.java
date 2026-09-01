@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * 保留模型 VAO 最近一次上传的原始网格数据，供动态 UV 的 CPU 兼容路径读取。
  */
-@Mixin(value = ModelVAO.class, remap = false)
+@Mixin(value = ModelVAO.class, remap = true)
 public class ModelVAOMixin implements ModelVAODataAccess
 {
     @Unique private ModelVAOData bbspp$modelVaoData;

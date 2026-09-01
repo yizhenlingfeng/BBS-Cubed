@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 其它 {@code Vector4f} 轨道仍使用原版 UI。
  * </p>
  */
-@Mixin(value = UIKeyframeFactory.class, remap = false)
+@Mixin(value = UIKeyframeFactory.class, remap = true)
 public class UIKeyframeFactoryMixin
 {
     /**

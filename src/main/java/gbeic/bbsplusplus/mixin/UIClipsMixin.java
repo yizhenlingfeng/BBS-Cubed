@@ -38,7 +38,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 2. @Redirect 拦截 handleLeftClick 中的 getClipAt → 阻止点击选中被遮挡的剪辑
  * 3. @Inject 钳制 captureSelection 的区域 → 阻止框选选中被遮挡的剪辑
  */
-@Mixin(value = UIClips.class, remap = false)
+@Mixin(value = UIClips.class, remap = true)
 public class UIClipsMixin
 {
     /** 标尺的像素高度，与 TimelineRulerRenderer.RULER_BLOCK_HEIGHT (21) 保持一致 */

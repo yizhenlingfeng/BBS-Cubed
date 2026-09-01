@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 这里只在当前表单存在 UV 变换时接管私有 emit 方法，其余情况完全走原版逻辑。
  * </p>
  */
-@Mixin(targets = "mchorse.bbs_mod.cubic.render.CubicCubeRenderer", remap = false)
+@Mixin(targets = "mchorse.bbs_mod.cubic.render.CubicCubeRenderer", remap = true)
 public class CubicCubeRendererMixin
 {
     @Shadow protected float r;

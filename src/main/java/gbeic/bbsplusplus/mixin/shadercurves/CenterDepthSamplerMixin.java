@@ -15,10 +15,10 @@ import org.spongepowered.asm.mixin.Shadow;
  * 接上曲线后就能像真实摄影机一样手动控制焦点。
  * </p>
  */
-@Mixin(value = CenterDepthSampler.class, remap = false)
+@Mixin(value = CenterDepthSampler.class, remap = true)
 public class CenterDepthSamplerMixin
 {
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     @Final
     private int altTexture;
 

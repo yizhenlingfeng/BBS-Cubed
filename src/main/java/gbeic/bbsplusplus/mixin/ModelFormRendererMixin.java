@@ -31,7 +31,7 @@ import java.util.function.Supplier;
 /**
  * 把装备/手持物品关键帧里的附加变换应用到模型渲染。
  */
-@Mixin(value = ModelFormRenderer.class, remap = false)
+@Mixin(value = ModelFormRenderer.class, remap = true)
 public class ModelFormRendererMixin
 {
     /**

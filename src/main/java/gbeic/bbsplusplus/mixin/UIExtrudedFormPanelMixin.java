@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * 在挤出形态面板中加入表面 UV 偏移、缩放、统一缩放与旋转控件。
  */
-@Mixin(value = UIExtrudedFormPanel.class, remap = false)
+@Mixin(value = UIExtrudedFormPanel.class, remap = true)
 public abstract class UIExtrudedFormPanelMixin extends UIFormPanel<ExtrudedForm>
 {
     @Unique private UVTransformEditor bbspp$uvEditor;

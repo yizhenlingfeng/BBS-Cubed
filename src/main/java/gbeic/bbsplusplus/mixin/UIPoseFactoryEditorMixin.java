@@ -54,7 +54,7 @@ public abstract class UIPoseFactoryEditorMixin implements IPoseParameterBrush
      * 注入原因：原版骨骼列表只有搜索、镜像编辑和交替反转，没有可从当前骨骼取样的一次性操作入口。
      * 修改后的行为：在列表标题栏追加参数刷按钮，并注册仅在参数刷启用时生效的 Esc 取消操作。
      */
-    @Inject(method = "<init>", at = @At("TAIL"), remap = false)
+    @Inject(method = "<init>", at = @At("TAIL"), remap = true)
     private void bbspp$addParameterBrush(UIKeyframes editor, Keyframe<Pose> keyframe, CallbackInfo ci)
     {
         UIPoseKeyframeFactory.UIPoseFactoryEditor self = (UIPoseKeyframeFactory.UIPoseFactoryEditor) (Object) this;
@@ -306,7 +306,7 @@ public abstract class UIPoseFactoryEditorMixin implements IPoseParameterBrush
             value = "INVOKE",
             target = "Lmchorse/bbs_mod/ui/framework/elements/input/keyframes/factories/UIPoseKeyframeFactory$UIPoseFactoryEditor;apply(Lmchorse/bbs_mod/ui/framework/elements/input/keyframes/UIKeyframes;Lmchorse/bbs_mod/utils/keyframes/Keyframe;Ljava/lang/String;Ljava/util/function/Consumer;)V"
         ),
-        remap = false
+        remap = true
     )
     private void bbspp$unskipBoneBeforeAuxiliaryEdit(UIKeyframes editor, Keyframe<?> keyframe, String bone,
                                                       java.util.function.Consumer<PoseTransform> consumer)

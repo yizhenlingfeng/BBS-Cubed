@@ -25,7 +25,7 @@ public interface IUIKeyframeGraphMixin
         method = "setValue(Ljava/lang/Object;Z)V",
         at = @At("HEAD"),
         cancellable = true,
-        remap = false
+        remap = true
     )
     private void onSetValue(Object value, boolean unmergeable, CallbackInfo ci)
     {
@@ -42,7 +42,7 @@ public interface IUIKeyframeGraphMixin
         method = "addKeyframe(Lmchorse/bbs_mod/ui/framework/elements/input/keyframes/UIKeyframeSheet;FLjava/lang/Object;)Lmchorse/bbs_mod/utils/keyframes/Keyframe;",
         at = @At("HEAD"),
         cancellable = true,
-        remap = false
+        remap = true
     )
     private void bbspp$preventNegativeAddKeyframe(
         mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet sheet,
@@ -62,7 +62,7 @@ public interface IUIKeyframeGraphMixin
         at = @At("HEAD"),
         argsOnly = true,
         ordinal = 0,
-        remap = false
+        remap = true
     )
     private float bbspp$capNegativeTickDrag(float tick)
     {

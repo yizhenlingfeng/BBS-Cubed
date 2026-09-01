@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * 在回放关键帧应用后缓存六个装备槽位的附加变换。
  */
-@Mixin(value = ReplayKeyframes.class, remap = false)
+@Mixin(value = ReplayKeyframes.class, remap = true)
 public class ReplayKeyframesMixin
 {
     /**

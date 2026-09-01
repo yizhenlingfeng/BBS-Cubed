@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 让用户可以直接编辑 BBS++ 注入到 {@link ModelForm} 上的 UV 偏移与缩放属性。
  * </p>
  */
-@Mixin(value = UIModelFormPanel.class, remap = false)
+@Mixin(value = UIModelFormPanel.class, remap = true)
 public abstract class UIModelFormPanelMixin extends UIFormPanel<ModelForm>
 {
     @Unique private UISection bbspp$uvSection;

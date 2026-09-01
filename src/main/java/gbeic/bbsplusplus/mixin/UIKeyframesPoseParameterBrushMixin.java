@@ -35,7 +35,7 @@ public class UIKeyframesPoseParameterBrushMixin implements IPoseParameterBrushHo
      * 注入原因：参数刷只允许在复制源所属 Form 的主姿势与叠加姿势轨道中使用。
      * 修改后的行为：选中其它模型或非 Pose 轨道时清空快照；兼容 Pose 轨道间改选以及短暂的空选择不会打断格式刷。
      */
-    @Inject(method = "pickKeyframe", at = @At("HEAD"), remap = false)
+    @Inject(method = "pickKeyframe", at = @At("HEAD"), remap = true)
     private void bbspp$clearPoseParameterBrushOnIncompatibleKeyframe(Keyframe<?> keyframe, CallbackInfo ci)
     {
         UIKeyframes self = (UIKeyframes) (Object) this;
@@ -53,7 +53,7 @@ public class UIKeyframesPoseParameterBrushMixin implements IPoseParameterBrushHo
      * 注入原因：切换影片、回放对象或重新装载轨道时，旧快照不能跟随稳定的时间轴控件残留。
      * 修改后的行为：在轨道内容被替换前结束本次格式刷。
      */
-    @Inject(method = "removeAllSheets", at = @At("HEAD"), remap = false)
+    @Inject(method = "removeAllSheets", at = @At("HEAD"), remap = true)
     private void bbspp$clearPoseParameterBrushOnSheetReset(CallbackInfo ci)
     {
         this.bbspp$poseParameterBrushState.clear();

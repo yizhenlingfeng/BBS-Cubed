@@ -37,7 +37,7 @@ import java.util.function.Consumer;
  * 继续使用 {@link Replay#category} 和 {@link Film#replayCategoryNames}，
  * 只增强列表交互层。
  */
-@Mixin(value = UIReplayList.class, remap = false)
+@Mixin(value = UIReplayList.class, remap = true)
 public abstract class UIReplayListCategoryMixin
 {
     @Unique

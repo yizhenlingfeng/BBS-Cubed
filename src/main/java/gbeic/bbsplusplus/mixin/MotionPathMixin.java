@@ -42,7 +42,7 @@ public class MotionPathMixin
      * 注入原因：骨骼轨迹计算方法拿不到运动路径配置，需要在本次渲染调用期间暂存当前配置和时间。
      * 修改行为：只保存当前线程同步渲染所需的配置引用，不改变原渲染流程。
      */
-    @Inject(method = "render", at = @At("HEAD"), remap = false)
+    @Inject(method = "render", at = @At("HEAD"), remap = true)
     private static void bbsplusplus$captureMotionPathConfig(WorldRenderContext context, ValueMotionPath config, UIFilmController controller, Replay replay, Pair<String, Boolean> bone, float currentTick, CallbackInfo ci)
     {
         bbsplusplus$currentMotionPathConfig = config;
@@ -54,7 +54,7 @@ public class MotionPathMixin
      * 注入原因：暂存配置只属于本次运动路径渲染，渲染结束后清空可避免影响之后的异常调用路径。
      * 修改行为：清理本次调用上下文。
      */
-    @Inject(method = "render", at = @At("RETURN"), remap = false)
+    @Inject(method = "render", at = @At("RETURN"), remap = true)
     private static void bbsplusplus$clearMotionPathConfig(WorldRenderContext context, ValueMotionPath config, UIFilmController controller, Replay replay, Pair<String, Boolean> bone, float currentTick, CallbackInfo ci)
     {
         bbsplusplus$currentMotionPathConfig = null;
@@ -69,7 +69,7 @@ public class MotionPathMixin
     @Redirect(
         method = "boneTrajectory",
         at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/ui/film/controller/MotionPath;signature(Lmchorse/bbs_mod/film/replays/Replay;Ljava/lang/String;)Ljava/lang/String;"),
-        remap = false
+        remap = true
     )
     private static String bbsplusplus$signatureWithMotionPathWindow(Replay replay, String bonePath)
     {
@@ -87,7 +87,7 @@ public class MotionPathMixin
     @Redirect(
         method = "computeBoneTrajectory",
         at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/ui/film/controller/MotionPath;range(Lmchorse/bbs_mod/film/replays/Replay;)[F"),
-        remap = false
+        remap = true
     )
     private static float[] bbsplusplus$limitBoneTrajectoryRange(Replay replay)
     {

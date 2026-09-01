@@ -14,7 +14,7 @@ import java.util.Locale;
  * 拦截 LangKey.get()，对受支持外部插件注册的 BBS 设置项键
  * 返回中文翻译。LangKey 用于 BBS L10n 系统中的设置面板标签和注释。
  */
-@Mixin(value = LangKey.class, remap = false)
+@Mixin(value = LangKey.class, remap = true)
 public class LangKeyMixin
 {
     /**

@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * <p>选择通用段出口而不是替换 Pose 工厂，可以获得当前实际时间与完整所属轨道；仅当
  * 值类型为 Pose 且轨道确有跳过标记时才重算受影响骨骼，其余关键帧类型完全不变。</p>
  */
-@Mixin(value = KeyframeSegment.class, remap = false)
+@Mixin(value = KeyframeSegment.class, remap = true)
 public class KeyframeSegmentPoseBoneSkipMixin<T>
 {
     @Shadow

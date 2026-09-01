@@ -24,7 +24,7 @@ public class BBSRenderingMixin
      * 注入原因：世界播放第一人称影片时，原版通常返回 null，导致太阳旋转曲线不生效。
      * 修改行为：原版没有值时，从世界影片曲线状态读取太阳旋转并转换为 Minecraft 时间。
      */
-    @Inject(method = "getTimeOfDay", at = @At("RETURN"), cancellable = true, remap = false)
+    @Inject(method = "getTimeOfDay", at = @At("RETURN"), cancellable = true, remap = true)
     private static void bbspp$getWorldFilmTimeOfDay(CallbackInfoReturnable<Long> cir)
     {
         if (cir.getReturnValue() != null)
@@ -45,7 +45,7 @@ public class BBSRenderingMixin
      * 注入原因：世界播放路径缺少相机控制器上下文，原版亮度曲线读取不到数据。
      * 修改行为：原版没有值时，补用世界影片采样到的亮度曲线值。
      */
-    @Inject(method = "getBrightness", at = @At("RETURN"), cancellable = true, remap = false)
+    @Inject(method = "getBrightness", at = @At("RETURN"), cancellable = true, remap = true)
     private static void bbspp$getWorldFilmBrightness(CallbackInfoReturnable<Double> cir)
     {
         if (cir.getReturnValue() == null)
@@ -59,7 +59,7 @@ public class BBSRenderingMixin
      * 注入原因：世界播放路径缺少相机控制器上下文，原版天气曲线读取不到数据。
      * 修改行为：原版没有值时，补用世界影片采样到的天气曲线值。
      */
-    @Inject(method = "getWeather", at = @At("RETURN"), cancellable = true, remap = false)
+    @Inject(method = "getWeather", at = @At("RETURN"), cancellable = true, remap = true)
     private static void bbspp$getWorldFilmWeather(CallbackInfoReturnable<Double> cir)
     {
         if (cir.getReturnValue() == null)
@@ -73,7 +73,7 @@ public class BBSRenderingMixin
      * 注入原因：世界播放路径缺少相机控制器上下文，原版色度天空颜色曲线读取不到数据。
      * 修改行为：原版没有值时，补用世界影片采样到的颜色曲线值。
      */
-    @Inject(method = "getChromaSkyColorArgb", at = @At("RETURN"), cancellable = true, remap = false)
+    @Inject(method = "getChromaSkyColorArgb", at = @At("RETURN"), cancellable = true, remap = true)
     private static void bbspp$getWorldFilmChromaSkyColor(CallbackInfoReturnable<Integer> cir)
     {
         if (cir.getReturnValue() == null)

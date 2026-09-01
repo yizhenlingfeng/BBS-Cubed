@@ -27,22 +27,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(UIClips.class)
 public abstract class UIClipsDoubleClickMixin
 {
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     private IUIClipsDelegate delegate;
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     private Clips clips;
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     public Scale scale;
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     public abstract int fromLayerY(int mouseY);
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     public abstract void setSelected(Clip clip);
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     public abstract boolean hasEmbeddedView();
 
     /** 上一次点击的 X 坐标 */
@@ -60,7 +60,7 @@ public abstract class UIClipsDoubleClickMixin
     /**
      * 在 {@code setMouse} 被调用时记录点击位置和时间。
      */
-    @Inject(method = "setMouse", at = @At("TAIL"), remap = false)
+    @Inject(method = "setMouse", at = @At("TAIL"), remap = true)
     private void onSetMouse(int x, int y, CallbackInfo ci)
     {
         this.bbs_lastClickX = x;
@@ -75,7 +75,7 @@ public abstract class UIClipsDoubleClickMixin
         method = "handleLeftClick",
         at = @At("HEAD"),
         cancellable = true,
-        remap = false
+        remap = true
     )
     private void onHandleLeftClickHead(UIContext context, int mouseX, int mouseY, boolean ctrl, boolean shift, boolean alt, CallbackInfoReturnable<Boolean> cir)
     {

@@ -33,7 +33,7 @@ public abstract class UITextboxFilmLibrarySearchMixin implements IFilmLibrarySea
      * 注入原因：原版 Esc 只会失焦，无法在搜索框内快速清空过滤条件。
      * 修改后的行为：影片库搜索框聚焦且有内容时，Esc 先清空搜索并消费按键。
      */
-    @Inject(method = "subKeyPressed", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "subKeyPressed", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbspp$clearFilmLibrarySearchOnEscape(UIContext context, CallbackInfoReturnable<Boolean> cir)
     {
         UITextbox self = (UITextbox) (Object) this;

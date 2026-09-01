@@ -18,7 +18,7 @@ public class UIStringOverlayPanelMixin
     @Inject(
         method = "set(Ljava/lang/String;)Lmchorse/bbs_mod/ui/framework/elements/overlay/UIStringOverlayPanel;",
         at = @At("HEAD"),
-        remap = false
+        remap = true
     )
     private void onSet(String string, CallbackInfoReturnable<UIStringOverlayPanel> cir)
     {

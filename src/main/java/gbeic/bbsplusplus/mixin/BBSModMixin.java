@@ -25,7 +25,7 @@ public class BBSModMixin
 {
     private static final Logger LOGGER = LoggerFactory.getLogger("bbsplusplus");
 
-    @Inject(method = "onInitialize", at = @At("TAIL"), remap = false)
+    @Inject(method = "onInitialize", at = @At("TAIL"), remap = true)
     private void afterInit(CallbackInfo ci)
     {
         if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("aaa_particles"))

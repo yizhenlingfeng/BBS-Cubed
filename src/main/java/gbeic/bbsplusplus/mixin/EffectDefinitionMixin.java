@@ -9,13 +9,13 @@ package gbeic.bbsplusplus.mixin;
  */
 
 import org.spongepowered.asm.mixin.Mixin;
-@Mixin(value = mod.chloeprime.aaaparticles.api.client.EffectDefinition.class, remap = false)
+@Mixin(value = mod.chloeprime.aaaparticles.api.client.EffectDefinition.class, remap = true)
 public class EffectDefinitionMixin {
 
     @org.spongepowered.asm.mixin.Shadow
     private static java.util.List<mod.chloeprime.aaaparticles.api.client.effekseer.ParticleEmitter> EMITTERS_BUFFER;
 
-    @org.spongepowered.asm.mixin.injection.Inject(method = "draw", at = @org.spongepowered.asm.mixin.injection.At("TAIL"), remap = false)
+    @org.spongepowered.asm.mixin.injection.Inject(method = "draw", at = @org.spongepowered.asm.mixin.injection.At("TAIL"), remap = true)
     private static void bbspp_afterDraw(
             mod.chloeprime.aaaparticles.api.client.effekseer.ParticleEmitter.Type type,
             org.joml.Vector3f front,

@@ -26,7 +26,7 @@ public abstract class WaveReaderMixin
     @Redirect(
         method = "read",
         at = @At(value = "INVOKE", target = "Ljava/io/EOFException;printStackTrace()V"),
-        remap = false
+        remap = true
     )
     private void bbspp$ignoreExpectedEndOfWave(EOFException exception)
     {}

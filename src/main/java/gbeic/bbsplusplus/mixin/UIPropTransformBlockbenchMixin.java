@@ -23,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(UIPropTransform.class)
 public class UIPropTransformBlockbenchMixin
 {
-    @Inject(method = "enableMode(Lmchorse/bbs_mod/ui/framework/elements/input/drag/TransformOp;)V", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "enableMode(Lmchorse/bbs_mod/ui/framework/elements/input/drag/TransformOp;)V", at = @At("HEAD"), cancellable = true, remap = true)
     private void onEnableMode(TransformOp op, CallbackInfo ci)
     {
         if (BBSAddonsSettings.gizmoBlockbenchMode == null

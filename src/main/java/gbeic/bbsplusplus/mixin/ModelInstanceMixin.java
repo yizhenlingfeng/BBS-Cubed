@@ -41,7 +41,7 @@ import java.util.function.Function;
  * 既能可靠修改 UV，也不会让无光影渲染从 BBS 模型 shader 错切到实体 shader。
  * </p>
  */
-@Mixin(value = ModelInstance.class, remap = false)
+@Mixin(value = ModelInstance.class, remap = true)
 public class ModelInstanceMixin
 {
     @Shadow public IModel model;

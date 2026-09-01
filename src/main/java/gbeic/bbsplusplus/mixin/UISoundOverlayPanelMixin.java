@@ -26,10 +26,10 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UISoundOverlayPanel;
 @Mixin(UISoundOverlayPanel.class)
 public abstract class UISoundOverlayPanelMixin
 {
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     private String selectedSound;
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     private void refreshLikedList()
     {
         throw new AssertionError("Mixin not applied");
@@ -45,7 +45,7 @@ public abstract class UISoundOverlayPanelMixin
             value = "NEW",
             target = "Lmchorse/bbs_mod/ui/framework/elements/input/list/UILikeableStringList;"
         ),
-        remap = false
+        remap = true
     )
     private UILikeableStringList onCreateLikeableList(
         Consumer<java.util.List<String>> callback,
@@ -63,7 +63,7 @@ public abstract class UISoundOverlayPanelMixin
         method = "refreshSoundList",
         at = @At("HEAD"),
         cancellable = true,
-        remap = false
+        remap = true
     )
     private void onRefreshSoundList(CallbackInfo ci)
     {
@@ -88,7 +88,7 @@ public abstract class UISoundOverlayPanelMixin
     @Inject(
         method = "updateListSelections",
         at = @At("HEAD"),
-        remap = false
+        remap = true
     )
     private void onUpdateListSelections(CallbackInfo ci)
     {

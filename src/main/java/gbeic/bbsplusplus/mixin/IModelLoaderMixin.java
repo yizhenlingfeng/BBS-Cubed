@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-@Mixin(value = IModelLoader.class, remap = false)
+@Mixin(value = IModelLoader.class, remap = true)
 public interface IModelLoaderMixin
 {
     /**

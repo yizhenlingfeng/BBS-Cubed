@@ -34,14 +34,14 @@ import java.util.Set;
  * 执行前主动刷新并上传 BBS 生成的参数 uniform，避免大气 LUT 等初始化资源读到全零参数。
  * </p>
  */
-@Mixin(value = IrisRenderingPipeline.class, remap = false)
+@Mixin(value = IrisRenderingPipeline.class, remap = true)
 public class IrisRenderingPipelineMixin
 {
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     @Final
     private float sunPathRotation;
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     @Final
     private CustomUniforms customUniforms;
 
@@ -76,7 +76,7 @@ public class IrisRenderingPipelineMixin
             target = "Lnet/irisshaders/iris/gl/program/ComputeProgram;dispatch(FF)V"
         ),
         require = 0,
-        remap = false
+        remap = true
     )
     private void bbspp$pushSetupComputeUniforms(ComputeProgram program, float width, float height)
     {
@@ -103,7 +103,7 @@ public class IrisRenderingPipelineMixin
             target = "Lnet/irisshaders/iris/uniforms/custom/CustomUniforms;update()V",
             shift = At.Shift.AFTER
         ),
-        remap = false
+        remap = true
     )
     private void bbspp$refreshAtmosphereLutsWhenCurveChanges(CallbackInfo ci)
     {

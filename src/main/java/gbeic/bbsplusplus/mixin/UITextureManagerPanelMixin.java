@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 让其它位置弹出的纹理选择器继续沿用原版 ESC 关闭/退出逻辑。
  * </p>
  */
-@Mixin(value = UITextureManagerPanel.class, remap = false)
+@Mixin(value = UITextureManagerPanel.class, remap = true)
 public class UITextureManagerPanelMixin {
     @Shadow
     public UITexturePicker picker;

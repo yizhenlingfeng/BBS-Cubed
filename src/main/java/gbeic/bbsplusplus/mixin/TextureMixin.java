@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 这里在写入纹理状态时拆分 MAG 与 MIN：MAG 只使用最近邻或线性，MIN 才保留 mipmap 选项。
  * </p>
  */
-@Mixin(value = Texture.class, remap = false)
+@Mixin(value = Texture.class, remap = true)
 public abstract class TextureMixin
 {
     @Shadow

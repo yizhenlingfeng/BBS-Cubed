@@ -34,7 +34,7 @@ public abstract class UIFilmPanelGameModeMixin
     @Inject(
         method = "appear",
         at = @At("HEAD"),
-        remap = false
+        remap = true
     )
     private void onFilmPanelAppear(CallbackInfo ci)
     {
@@ -73,7 +73,7 @@ public abstract class UIFilmPanelGameModeMixin
     @Inject(
         method = "close",
         at = @At("HEAD"),
-        remap = false
+        remap = true
     )
     private void onFilmPanelClose(CallbackInfo ci)
     {

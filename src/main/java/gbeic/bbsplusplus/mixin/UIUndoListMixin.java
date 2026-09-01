@@ -25,7 +25,7 @@ public abstract class UIUndoListMixin<T>
      * 注入原因：默认显示原始 {@link mchorse.bbs_mod.utils.DataPath}，缺少可读操作描述。
      * 修改行为：使用 {@link UndoHistoryLabeler} 生成中文摘要。
      */
-    @Inject(method = "elementToString", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "elementToString", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbsplusplus$labelUndo(UIContext context, int i, IUndo<T> element, CallbackInfoReturnable<String> cir)
     {
         cir.setReturnValue(UndoHistoryLabeler.label(element));

@@ -24,7 +24,7 @@ import java.util.function.Consumer;
  * 视为"取消绑定"操作，清空快捷键并结束录入。
  * 如果已经有其他键被按住/录入后再按 ESC，则正常将 ESC 作为组合键的一部分。
  */
-@Mixin(value = UIKeybind.class, remap = false)
+@Mixin(value = UIKeybind.class, remap = true)
 public class UIKeybindMixin
 {
     @Shadow public KeyCombo combo;

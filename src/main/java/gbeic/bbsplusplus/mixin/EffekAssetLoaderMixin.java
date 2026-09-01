@@ -17,7 +17,7 @@ public class EffekAssetLoaderMixin
      * 否则 C++ 原生层的 EffekseerManager 会试图继续渲染已经被 close() 并释放掉内存的粒子句柄，
      * 从而导致 EXCEPTION_ACCESS_VIOLATION (0xc0000005) 的致命原生崩溃。
      */
-    @Inject(method = "unloadAll", at = @At("HEAD"), remap = false)
+    @Inject(method = "unloadAll", at = @At("HEAD"), remap = true)
     private void beforeUnloadAll(CallbackInfo ci)
     {
         EffectRegistry.clearAllPlaying();

@@ -52,7 +52,7 @@ public abstract class UICurveClipMixin
      * 注入原因：原实现只提供平铺列表，光影参数较多时不直观。
      * 修改行为：设置开启时打开按 Iris 注册菜单路径整理的 BBS++ 选择面板，并支持点击已选曲线来移除对应通道。
      */
-    @Inject(method = "offerCurveKeys", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "offerCurveKeys", at = @At("HEAD"), cancellable = true, remap = true)
     private static void bbspp$openShaderCurvePicker(UIContext context, List<String> existing, Consumer<String> callback, CallbackInfo ci)
     {
         if (BBSAddonsSettings.shaderCurvePicker == null || !BBSAddonsSettings.shaderCurvePicker.get())
@@ -76,7 +76,7 @@ public abstract class UICurveClipMixin
     @Redirect(
         method = "addKeyframeSheet",
         at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/l10n/keys/IKey;constant(Ljava/lang/String;)Lmchorse/bbs_mod/l10n/keys/IKey;"),
-        remap = false
+        remap = true
     )
     private IKey bbspp$localizeTrackTitle(String channelId)
     {

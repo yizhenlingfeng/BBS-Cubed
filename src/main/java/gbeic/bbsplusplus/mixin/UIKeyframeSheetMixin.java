@@ -36,7 +36,7 @@ public class UIKeyframeSheetMixin
             target = "Lmchorse/bbs_mod/l10n/keys/IKey;constant(Ljava/lang/String;)Lmchorse/bbs_mod/l10n/keys/IKey;"
         ),
         index = 0,
-        remap = false
+        remap = true
     )
     private static String localizeTrackName(String name)
     {
@@ -53,7 +53,7 @@ public class UIKeyframeSheetMixin
     @Inject(
         method = "<init>(Ljava/lang/String;Lmchorse/bbs_mod/l10n/keys/IKey;IZLmchorse/bbs_mod/utils/keyframes/KeyframeChannel;Lmchorse/bbs_mod/settings/values/base/BaseValueBasic;Z)V",
         at = @At("RETURN"),
-        remap = false
+        remap = true
     )
     private void bbspp$applyContextualTrackStyle(String id, IKey title, int color, boolean separator, KeyframeChannel<?> channel, BaseValueBasic<?> property, boolean isBoneTrack, CallbackInfo ci)
     {
@@ -65,7 +65,7 @@ public class UIKeyframeSheetMixin
      * 注入原因：调用方会在构造后再次按全局 key 设置图标，可能覆盖物品喷射专属图标。
      * 修改行为：当轨道属于 BBS++ 专属形态时，使用上下文图标并跳过全局图标。
      */
-    @Inject(method = "icon", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "icon", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbspp$useContextualIcon(Icon icon, CallbackInfoReturnable<UIKeyframeSheet> cir)
     {
         Icon contextual = KeyframeTrackStyle.getIconOverride((UIKeyframeSheet) (Object) this);

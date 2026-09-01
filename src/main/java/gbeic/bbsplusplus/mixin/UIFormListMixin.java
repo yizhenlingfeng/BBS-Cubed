@@ -13,7 +13,7 @@ public class UIFormListMixin
     /**
      * 注入表单列表搜索过滤之后，让 BBS++ 新版伪装列表能同步切换侧边栏和搜索结果视图。
      */
-    @Inject(method = "applySearchFilter", at = @At("TAIL"), remap = false)
+    @Inject(method = "applySearchFilter", at = @At("TAIL"), remap = true)
     private void afterSearchFilter(String raw, CallbackInfo ci)
     {
         if ((Object) this instanceof UIBBSPPFormList)

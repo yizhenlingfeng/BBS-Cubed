@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 注册时把它放在原生偏移之后、旋转之前，保持时间轴属性顺序连贯。
  * </p>
  */
-@Mixin(value = BillboardForm.class, remap = false)
+@Mixin(value = BillboardForm.class, remap = true)
 public class BillboardFormMixin implements BillboardFormUVScale
 {
     @Shadow @Final public ValueFloat rotation;

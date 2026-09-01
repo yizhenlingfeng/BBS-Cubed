@@ -43,7 +43,7 @@ public abstract class UIFilmControllerGameModeMixin
     @Inject(
         method = "toggleControl",
         at = @At("HEAD"),
-        remap = false
+        remap = true
     )
     private void onToggleControlHead(CallbackInfo ci)
     {
@@ -53,7 +53,7 @@ public abstract class UIFilmControllerGameModeMixin
     @Inject(
         method = "toggleControl",
         at = @At("TAIL"),
-        remap = false
+        remap = true
     )
     private void onToggleControlTail(CallbackInfo ci)
     {
@@ -105,7 +105,7 @@ public abstract class UIFilmControllerGameModeMixin
     @Redirect(
         method = "renderHUD",
         at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/settings/values/numeric/ValueBoolean;get()Ljava/lang/Object;"),
-        remap = false
+        remap = true
     )
     private Object bbsplusplus$hideOriginalLoopHudIcon(ValueBoolean editorLoop)
     {

@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 并由 BBS 的表单属性关键帧系统自动创建单条向量关键帧轨道。
  * </p>
  */
-@Mixin(value = ModelForm.class, remap = false)
+@Mixin(value = ModelForm.class, remap = true)
 public class ModelFormMixin implements ModelFormUVTransform
 {
     @Unique

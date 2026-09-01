@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 原生偏移和旋转控件保持不变，新增缩放行紧随纹理变换区域显示。
  * </p>
  */
-@Mixin(value = UIBillboardFormPanel.class, remap = false)
+@Mixin(value = UIBillboardFormPanel.class, remap = true)
 public abstract class UIBillboardFormPanelMixin extends UIFormPanel<BillboardForm>
 {
     @Unique private UVScaleEditor bbspp$uvScaleEditor;

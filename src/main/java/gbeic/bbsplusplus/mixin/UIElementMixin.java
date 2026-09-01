@@ -32,7 +32,7 @@ public class UIElementMixin
     @Redirect(
         method = "render",
         at = @At(value = "INVOKE", target = "Ljava/util/List;iterator()Ljava/util/Iterator;"),
-        remap = false
+        remap = true
     )
     private Iterator<IUIElement> bbspp$renderChildrenSnapshot(List<IUIElement> children)
     {
@@ -44,7 +44,7 @@ public class UIElementMixin
      * 注入原因：影片库开关可能在影片选择器已经显示时被修改，只靠打开界面时检查无法做到即时开关。
      * 修改后的行为：仅对实现了 {@link IFilmLibraryLayoutToggle} 的元素同步布局状态，其它 UI 不受影响。
      */
-    @Inject(method = "render", at = @At("HEAD"), remap = false)
+    @Inject(method = "render", at = @At("HEAD"), remap = true)
     private void bbspp$syncFilmLibraryLayoutOnRender(UIContext context, CallbackInfo ci)
     {
         if ((Object) this instanceof IFilmLibraryLayoutToggle toggle)
@@ -58,7 +58,7 @@ public class UIElementMixin
      * 注入原因：新版伪装界面使用自己的分类管理入口，原版分类右键菜单中的管理项会造成重复。
      * 修改后的行为：仅当全新伪装界面开启时，移除表单分类的新增、重命名和删除分类菜单项。
      */
-    @Inject(method = "createContextMenu", at = @At("RETURN"), cancellable = true, remap = false)
+    @Inject(method = "createContextMenu", at = @At("RETURN"), cancellable = true, remap = true)
     private void onContextMenu(UIContext context, CallbackInfoReturnable<UIContextMenu> cir)
     {
         UIContextMenu menu = cir.getReturnValue();

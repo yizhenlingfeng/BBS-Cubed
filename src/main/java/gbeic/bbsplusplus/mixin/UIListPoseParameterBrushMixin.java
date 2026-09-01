@@ -46,7 +46,7 @@ public abstract class UIListPoseParameterBrushMixin<T>
      * 注入原因：右侧状态菱形必须拥有独立点击区，不能触发普通骨骼选择或参数刷粘贴。
      * 修改后的行为：左键点击状态槽时按当前多选切换骨骼是否跳过本 Pose 帧，并立即消费事件。
      */
-    @Inject(method = "subMouseClicked", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "subMouseClicked", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbspp$togglePoseBoneFromStateDiamond(UIContext context, CallbackInfoReturnable<Boolean> cir)
     {
         if (!((Object) this instanceof UIPoseBoneStringList self) || context.mouseButton != 0)
@@ -81,7 +81,7 @@ public abstract class UIListPoseParameterBrushMixin<T>
      * 注入原因：原版每次只移动 10 像素，不足骨骼列表的一行；固定倍速又会让精细定位变得生硬。
      * 修改后的行为：仅为 Pose 关键帧骨骼列表按连续滚轮事件间隔，从原版 10 像素提升到一行或两行，停顿后恢复原版速度。
      */
-    @Inject(method = "subMouseScrolled", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "subMouseScrolled", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbspp$acceleratePoseBoneWheel(UIContext context, CallbackInfoReturnable<Boolean> cir)
     {
         if (!((Object) this instanceof UIPoseBoneStringList self) || context.mouseWheel == 0D)
@@ -135,7 +135,7 @@ public abstract class UIListPoseParameterBrushMixin<T>
      * 注入原因：骨骼列表的回调只拿到选择结果，无法可靠知道 Shift/Ctrl 操作下这次真正点中的目标骨骼。
      * 修改后的行为：先把实际点击行交给参数刷；点中复制源时保持原选择，其它目标粘贴后继续执行原版选择切换。
      */
-    @Inject(method = "applySelectionOnClick", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "applySelectionOnClick", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbspp$applyPoseParameterBrushFromList(int index, CallbackInfo ci)
     {
         if (!((Object) this instanceof UIPoseBoneStringList) || index < 0 || index >= this.list.size())
@@ -162,7 +162,7 @@ public abstract class UIListPoseParameterBrushMixin<T>
      * 注入原因：原版姿势骨骼列表只显示名称，无法判断当前 Pose 关键帧究竟修改了哪些骨骼。
      * 修改后的行为：非默认骨骼显示橙色菱形，跳过骨骼显示灰色斜线菱形；状态槽悬停可直接切换，参数刷图标仍固定在其左侧。
      */
-    @Inject(method = "renderListElement", at = @At("TAIL"), remap = false)
+    @Inject(method = "renderListElement", at = @At("TAIL"), remap = true)
     private void bbspp$renderPoseBoneState(UIContext context, T element, int index, int x, int y,
                                            boolean hover, boolean selected, CallbackInfo ci)
     {

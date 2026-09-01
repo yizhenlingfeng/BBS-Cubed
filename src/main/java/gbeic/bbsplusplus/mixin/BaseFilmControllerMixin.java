@@ -24,16 +24,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(BaseFilmController.class)
 public abstract class BaseFilmControllerMixin {
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     public Film film;
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     public IntObjectMap<IEntity> entities;
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     public abstract int getTick();
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     protected abstract float getTransition(IEntity entity, float transition);
 
     /**
@@ -45,7 +45,7 @@ public abstract class BaseFilmControllerMixin {
     @Inject(
         method = "renderEntity(Lnet/fabricmc/fabric/api/client/rendering/v1/WorldRenderContext;Lmchorse/bbs_mod/film/replays/Replay;Lmchorse/bbs_mod/forms/entities/IEntity;)V",
         at = @At("HEAD"),
-        remap = false
+        remap = true
     )
     private void bbspp$beginVideoTimelineRender(WorldRenderContext context, Replay replay, IEntity entity, CallbackInfo ci)
     {
@@ -64,7 +64,7 @@ public abstract class BaseFilmControllerMixin {
     @Inject(
         method = "renderEntity(Lnet/fabricmc/fabric/api/client/rendering/v1/WorldRenderContext;Lmchorse/bbs_mod/film/replays/Replay;Lmchorse/bbs_mod/forms/entities/IEntity;)V",
         at = @At("RETURN"),
-        remap = false
+        remap = true
     )
     private void bbspp$endVideoTimelineRender(WorldRenderContext context, Replay replay, IEntity entity, CallbackInfo ci)
     {
@@ -76,7 +76,7 @@ public abstract class BaseFilmControllerMixin {
      * 注入原因：右 Ctrl 世界播放影片时，光影曲线不会经过相机控制器上下文，导致 BBSRendering 读不到曲线数据。
      * 修改行为：在世界影片控制器每帧完成演员属性准备后，额外采样当前影片相机剪辑里的光影曲线。
      */
-    @Inject(method = "startRenderFrame", at = @At("TAIL"), remap = false)
+    @Inject(method = "startRenderFrame", at = @At("TAIL"), remap = true)
     private void bbspp$sampleWorldFilmShaderCurves(float transition, CallbackInfo ci)
     {
         if ((Object) this instanceof WorldFilmController controller)

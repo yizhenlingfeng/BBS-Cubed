@@ -42,16 +42,16 @@ import java.util.regex.Pattern;
  * 既保证按完整单词匹配，又把复杂度从「变量数 × 行数」降到一次线性扫描。
  * </p>
  */
-@Mixin(value = ShaderCurves.class, remap = false)
+@Mixin(value = ShaderCurves.class, remap = true)
 public class ShaderCurvesMixin
 {
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     private static Set<String> prohibitedVariables;
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     private static Set<String> prohibitedConstIdentifiers;
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     public static Map<String, ShaderCurves.ShaderVariable> variableMap;
 
     /** 避免同一段 shader 源码在一次运行中重复刷屏 */
@@ -132,7 +132,7 @@ public class ShaderCurvesMixin
      * 既浪费性能又可能破坏内容。
      * 修改行为：跳过开头注释后如果不是以 {@code #version} 起始，说明不是 GLSL 源码，原样返回不做任何处理。
      */
-    @Inject(method = "processSource", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "processSource", at = @At("HEAD"), cancellable = true, remap = true)
     private static void bbspp$skipNonGlslSource(String source, CallbackInfoReturnable<String> cir)
     {
         if (!bbspp$startsWithVersion(source))
@@ -146,7 +146,7 @@ public class ShaderCurvesMixin
      * 注入原因：切换或重载光影包时，需要重新记录新光影包的源码与全局变量表。
      * 修改行为：只清理排查日志的去重状态，不修改光影曲线处理结果。
      */
-    @Inject(method = "reset", at = @At("TAIL"), remap = false)
+    @Inject(method = "reset", at = @At("TAIL"), remap = true)
     private static void bbspp$resetDebugState(CallbackInfo ci)
     {
         BBSPP$LOGGED_SOURCE_HASHES.clear();
@@ -159,7 +159,7 @@ public class ShaderCurvesMixin
      * 已经被 BBS 注册为可运行时改写的曲线变量。
      * 修改行为：仅输出日志，不修改源码处理结果。
      */
-    @Inject(method = "processSource", at = @At("RETURN"), remap = false)
+    @Inject(method = "processSource", at = @At("RETURN"), remap = true)
     private static void bbspp$logShaderCurveVariableMap(String source, CallbackInfoReturnable<String> cir)
     {
         if (!ShaderCurveDebug.isShaderCurvePatches() || variableMap == null)

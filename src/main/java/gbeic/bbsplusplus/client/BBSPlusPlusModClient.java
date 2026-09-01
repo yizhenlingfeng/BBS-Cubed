@@ -3,6 +3,8 @@ package gbeic.bbsplusplus.client;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import gbeic.bbsplusplus.BBSPlusPlusMod;
+import gbeic.bbsplusplus.BBSPlusPlusSettings;
+import mchorse.bbs_mod.ui.utils.icons.Icons;
 import gbeic.bbsplusplus.forms.AAAParticleForm;
 import gbeic.bbsplusplus.forms.StructureForm;
 import gbeic.bbsplusplus.client.renderer.AAAParticleFormRenderer;
@@ -44,6 +46,14 @@ public class BBSPlusPlusModClient implements ClientModInitializer
     @Override
     public void onInitializeClient()
     {
+        // 在客户端启动完成后创建独立的 BBS++ 设置模块，
+        // 确保 BBS 主设置模块已先注册，BBS++ 显示在 BBS 下方
+        ClientLifecycleEvents.CLIENT_STARTED.register(client ->
+        {
+            BBSMod.setupConfig(Icons.DUPE, "bbspp", BBSMod.getSettingsPath("bbspp.json"),
+                BBSPlusPlusSettings::register);
+        });
+
         // 注册到 BBS 事件总线，接收 @Subscribe 事件
         BBSMod.events.register(this);
 

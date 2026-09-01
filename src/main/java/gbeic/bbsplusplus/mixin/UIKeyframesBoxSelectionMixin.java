@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = UIKeyframes.class, remap = false)
+@Mixin(value = UIKeyframes.class, remap = true)
 public class UIKeyframesBoxSelectionMixin
 {
     @Inject(method = "getGrabbingArea", at = @At("RETURN"), cancellable = true)

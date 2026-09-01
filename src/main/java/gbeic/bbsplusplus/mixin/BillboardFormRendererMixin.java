@@ -30,7 +30,7 @@ import java.util.function.Supplier;
  * 同时修正原版用纹理宽度计算 Y 旋转中心的问题。
  * </p>
  */
-@Mixin(value = BillboardFormRenderer.class, remap = false)
+@Mixin(value = BillboardFormRenderer.class, remap = true)
 public abstract class BillboardFormRendererMixin extends FormRenderer<BillboardForm>
 {
     @Shadow @Final private static Quad uvQuad;

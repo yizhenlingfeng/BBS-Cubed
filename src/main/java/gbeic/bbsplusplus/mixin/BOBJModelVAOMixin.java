@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * BBS++ 的 UV 变换；结束后恢复默认值，避免同一 shader 的后续绘制继承上一个模型的参数。
  * </p>
  */
-@Mixin(value = BOBJModelVAO.class, remap = false)
+@Mixin(value = BOBJModelVAO.class, remap = true)
 public class BOBJModelVAOMixin
 {
     /**

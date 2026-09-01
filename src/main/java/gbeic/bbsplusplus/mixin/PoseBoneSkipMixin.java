@@ -24,7 +24,7 @@ import java.util.Set;
  * <p>参数仍保留在原版 transforms 中，附加集合只决定插值时该帧是否参与。Mixin 同步
  * 补齐序列化、复制、镜像、相等性和空值判断，使撤销、粘贴及工程保存行为保持一致。</p>
  */
-@Mixin(value = Pose.class, remap = false)
+@Mixin(value = Pose.class, remap = true)
 public class PoseBoneSkipMixin implements IPoseBoneSkip
 {
     @Unique

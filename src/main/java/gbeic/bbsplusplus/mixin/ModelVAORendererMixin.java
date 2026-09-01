@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * {@code UVTransform} uniform，并在这里把当前表单参数传进去。
  * </p>
  */
-@Mixin(value = ModelVAORenderer.class, remap = false)
+@Mixin(value = ModelVAORenderer.class, remap = true)
 public class ModelVAORendererMixin
 {
     /**

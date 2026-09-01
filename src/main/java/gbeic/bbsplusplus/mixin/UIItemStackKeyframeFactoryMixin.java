@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * 给装备/手持物品关键帧的属性栏追加坐标、缩放和旋转编辑器。
  */
-@Mixin(value = UIItemStackKeyframeFactory.class, remap = false)
+@Mixin(value = UIItemStackKeyframeFactory.class, remap = true)
 public class UIItemStackKeyframeFactoryMixin
 {
     /**

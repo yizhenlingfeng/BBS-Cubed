@@ -14,7 +14,7 @@ import mchorse.bbs_mod.ui.utils.Area;
 /**
  * 修复回放编辑器界面（UIFilmKeyframes）中时间指针偏左未居中的问题。
  */
-@Mixin(value = UIFilmKeyframes.class, remap = false)
+@Mixin(value = UIFilmKeyframes.class, remap = true)
 public class UIFilmKeyframesMixin
 {
     /**

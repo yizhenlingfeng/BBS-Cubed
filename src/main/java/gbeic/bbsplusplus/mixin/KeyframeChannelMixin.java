@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 2. 通过这种方式，用户在使用 BBS++ 的新版本时，无需手动修改旧录像文件中的通道工厂设置，即可享受 AAA 粒子效果带来的增强功能。
  */
 
-@Mixin(value = KeyframeChannel.class, remap = false)
+@Mixin(value = KeyframeChannel.class, remap = true)
 public class KeyframeChannelMixin
 {
     @Shadow

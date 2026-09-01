@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = RenderContext.class, remap = false)
+@Mixin(value = RenderContext.class, remap = true)
 public class RenderContextMixin {
     
     /**

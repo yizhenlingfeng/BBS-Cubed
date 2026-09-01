@@ -24,7 +24,7 @@ public abstract class SoundManagerMixin
      * 注入原因：音频轨道可能存在空链接，原逻辑会继续加载并触发空指针异常。
      * 修改行为：空链接直接视为没有可播放音频。
      */
-    @Inject(method = "get", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "get", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbspp$skipNullSoundBuffer(Link link, boolean includeWaveform, CallbackInfoReturnable<SoundBuffer> cir)
     {
         if (link == null)
@@ -38,7 +38,7 @@ public abstract class SoundManagerMixin
      * 注入原因：回放启动会通过唯一音频播放器加载音频，空链接无需继续创建播放器。
      * 修改行为：空链接直接返回空播放器。
      */
-    @Inject(method = "playUnique", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "playUnique", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbspp$skipNullUniqueSound(Link link, CallbackInfoReturnable<SoundPlayer> cir)
     {
         if (link == null)

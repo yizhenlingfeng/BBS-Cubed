@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.ModifyConstant;
  * 不影响其它关键帧形状。
  * </p>
  */
-@Mixin(value = DiamondKeyframeShapeRenderer.class, remap = false)
+@Mixin(value = DiamondKeyframeShapeRenderer.class, remap = true)
 public class DiamondKeyframeShapeRendererMixin
 {
     /**

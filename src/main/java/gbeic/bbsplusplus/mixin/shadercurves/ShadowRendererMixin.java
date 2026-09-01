@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
  * 太阳动了但地面阴影不动，画面会明显穿帮。
  * </p>
  */
-@Mixin(value = ShadowRenderer.class, remap = false)
+@Mixin(value = ShadowRenderer.class, remap = true)
 public class ShadowRendererMixin
 {
     /**
@@ -22,7 +22,7 @@ public class ShadowRendererMixin
      * 注入原因：阴影相机的朝向由这个参数决定，必须和天体位置用同一个角度。
      * 修改行为：光影曲线总开关打开时把传入值替换为曲线当前值。
      */
-    @ModifyVariable(method = "createShadowModelView", at = @At("HEAD"), ordinal = 0, argsOnly = true, remap = false)
+    @ModifyVariable(method = "createShadowModelView", at = @At("HEAD"), ordinal = 0, argsOnly = true, remap = true)
     private static float bbspp$modifySunPathRotation(float original)
     {
         if (!BBSSettings.shaderCurvesEnabled.get())

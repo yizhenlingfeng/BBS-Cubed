@@ -18,7 +18,7 @@ public class UIFormPaletteMixin
     /**
      * 注入新版 FS 的表单调色板构造器，在原版列表与编辑器创建完成后按设置切换为 BBS++ 的新版伪装列表。
      */
-    @Inject(method = "<init>(Ljava/util/function/Consumer;)V", at = @At("TAIL"), remap = false)
+    @Inject(method = "<init>(Ljava/util/function/Consumer;)V", at = @At("TAIL"), remap = true)
     private void onInitTail(Consumer<Form> callback, CallbackInfo ci)
     {
         this.bbspp$checkLayout();
@@ -27,7 +27,7 @@ public class UIFormPaletteMixin
     /**
      * 注入渲染入口，让运行时切换“新版伪装面板”设置后可以立即重建列表布局。
      */
-    @Inject(method = "render", at = @At("HEAD"), remap = false)
+    @Inject(method = "render", at = @At("HEAD"), remap = true)
     private void onRender(mchorse.bbs_mod.ui.framework.UIContext context, CallbackInfo ci)
     {
         this.bbspp$checkLayout();

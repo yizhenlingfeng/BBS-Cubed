@@ -22,16 +22,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(RunnerCameraController.class)
 public abstract class RunnerCameraControllerMixin extends CameraWorkCameraController
 {
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     private Position manual;
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     public int ticks;
 
     @Inject(
         method = "setup",
         at = @At("TAIL"),
-        remap = false
+        remap = true
     )
     private void onSetupTail(Camera camera, float transition, CallbackInfo ci)
     {

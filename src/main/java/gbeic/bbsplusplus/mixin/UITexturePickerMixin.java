@@ -22,7 +22,7 @@ import java.util.function.Consumer;
  * 并在顶部工具栏中注入一个用于切换排版模式的按钮。
  * </p>
  */
-@Mixin(value = UITexturePicker.class, remap = false)
+@Mixin(value = UITexturePicker.class, remap = true)
 public abstract class UITexturePickerMixin extends UIElement {
 
     @Shadow public UIElement right;
@@ -103,7 +103,7 @@ public abstract class UITexturePickerMixin extends UIElement {
         oldPicker.removeFromParent();
     }
 
-    @Inject(method = "cantBeClosed", at = @At("TAIL"), remap = false)
+    @Inject(method = "cantBeClosed", at = @At("TAIL"), remap = true)
     private void onCantBeClosed(org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker> cir) {
         UIElement icons = (UIElement) this.right.getChildren().get(0);
         icons.w(icons.getChildren().size() * 20); // 重新调整宽度，消除因关闭按钮被移除导致的空隙

@@ -19,7 +19,7 @@ public abstract class IrisUtilsMixin
      * 注入原因：部分光影包的设置菜单存在循环链接，原版递归收集路径时没有访问链保护，会卡住并持续刷调用栈。
      * 修改行为：改用 BBS++ 的安全收集器，遇到循环或过深菜单时停止下钻，保持原版返回格式。
      */
-    @Inject(method = "getShadersLanguageMap", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "getShadersLanguageMap", at = @At("HEAD"), cancellable = true, remap = true)
     private static void bbspp$getShadersLanguageMapSafely(String language, CallbackInfoReturnable<Map<String, String>> cir)
     {
         cir.setReturnValue(SafeShaderLanguageMap.collect(language));

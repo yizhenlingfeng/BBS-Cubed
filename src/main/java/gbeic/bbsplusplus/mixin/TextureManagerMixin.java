@@ -59,7 +59,7 @@ public abstract class TextureManagerMixin
      * 每帧累积几十次系统调用。因此这里按 {@link #bbspp$PBR_RETRY_INTERVAL_MS} 间隔限制探测频率。
      * </p>
      */
-    @Inject(method = "getTexture(Lmchorse/bbs_mod/resources/Link;IZ)Lmchorse/bbs_mod/graphics/texture/Texture;", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "getTexture(Lmchorse/bbs_mod/resources/Link;IZ)Lmchorse/bbs_mod/graphics/texture/Texture;", at = @At("HEAD"), cancellable = true, remap = true)
     private void onGetTexture(Link link, int filter, boolean silent, CallbackInfoReturnable<Texture> cir)
     {
         if (link == null)
@@ -97,7 +97,7 @@ public abstract class TextureManagerMixin
      * 一些旧工程或异常资源会传入空 Link；原版会继续访问字段并崩溃，这里直接返回 null，
      * 交给上层使用错误纹理兜底。
      */
-    @Inject(method = "getPixels", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "getPixels", at = @At("HEAD"), cancellable = true, remap = true)
     private void onGetPixels(Link link, CallbackInfoReturnable<Pixels> cir)
     {
         if (link == null)
@@ -112,7 +112,7 @@ public abstract class TextureManagerMixin
     @org.spongepowered.asm.mixin.injection.Redirect(
         method = "getTexture(Lmchorse/bbs_mod/resources/Link;IZ)Lmchorse/bbs_mod/graphics/texture/Texture;",
         at = @At(value = "INVOKE", target = "Ljava/io/PrintStream;println(Ljava/lang/String;)V"),
-        remap = false
+        remap = true
     )
     private void suppressTextureLoadLog(java.io.PrintStream instance, String x)
     {

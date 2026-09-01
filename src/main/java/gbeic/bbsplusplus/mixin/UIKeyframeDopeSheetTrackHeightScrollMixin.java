@@ -32,10 +32,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(UIKeyframeDopeSheet.class)
 public abstract class UIKeyframeDopeSheetTrackHeightScrollMixin
 {
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     private UIKeyframes keyframes;
 
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     public abstract Keyframe<?> getSelected();
 
     /**
@@ -43,7 +43,7 @@ public abstract class UIKeyframeDopeSheetTrackHeightScrollMixin
      * 注入原因：轨道高度调整与选中关键帧移动共用 Alt+滚轮入口，只能在执行前按上下文区分。
      * 修改行为：处于受支持编辑器且没有选中关键帧时，根据 BBS++ 模式禁用或改为左右滚动时间线。
      */
-    @Inject(method = "mouseScrolled", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "mouseScrolled", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbspp$disableAltScrollTrackHeight(UIContext context, CallbackInfo ci)
     {
         if (!Window.isAltPressed()
@@ -77,7 +77,7 @@ public abstract class UIKeyframeDopeSheetTrackHeightScrollMixin
         method = "mouseScrolled",
         at = @At("STORE"),
         ordinal = 0,
-        remap = false
+        remap = true
     )
     private float bbspp$reverseSelectedKeyframeAltWheel(float diff)
     {

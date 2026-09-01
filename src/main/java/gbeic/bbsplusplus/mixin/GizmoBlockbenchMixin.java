@@ -24,10 +24,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Gizmo.class)
 public class GizmoBlockbenchMixin
 {
-    @Shadow(remap = false)
+    @Shadow(remap = true)
     private Gizmo.Mode mode;
 
-    @Inject(method = "<init>", at = @At("RETURN"), remap = false)
+    @Inject(method = "<init>", at = @At("RETURN"), remap = true)
     private void onInit(CallbackInfo ci)
     {
         if (BBSAddonsSettings.gizmoBlockbenchMode != null
@@ -42,7 +42,7 @@ public class GizmoBlockbenchMixin
     /**
      * 截获 {@code toggleCombined()}（T 键实际调用的方法），改为循环。
      */
-    @Inject(method = "toggleCombined", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "toggleCombined", at = @At("HEAD"), cancellable = true, remap = true)
     private void onToggleCombined(CallbackInfoReturnable<Boolean> cir)
     {
         if (BBSAddonsSettings.gizmoBlockbenchMode == null
@@ -88,7 +88,7 @@ public class GizmoBlockbenchMixin
      *       调用路径，需要真正设回 COMBINED 模式。</li>
      * </ul>
      */
-    @Inject(method = "setMode", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "setMode", at = @At("HEAD"), cancellable = true, remap = true)
     private void onSetMode(Gizmo.Mode target, CallbackInfoReturnable<Boolean> cir)
     {
         if (BBSAddonsSettings.gizmoBlockbenchMode == null

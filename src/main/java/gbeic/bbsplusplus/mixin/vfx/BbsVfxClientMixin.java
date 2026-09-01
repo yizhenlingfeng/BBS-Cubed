@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 修正 BBSVFX 核心着色器回调重复执行，并接管新版破坏魔杖的选区边框显示条件。
  * 着色器回调通过包装 Fabric 事件监听器实现单轮去重，魔杖边框则只在玩家手持时显示。
  */
-@Mixin(value = BbsVfxClient.class, remap = false)
+@Mixin(value = BbsVfxClient.class, remap = true)
 public class BbsVfxClientMixin
 {
     /**

@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * {@link UIFilmKeyframes} 继承父类的鼠标释放实现，因此在父类统一识别影片轨道实例，
  * 只清理由轨道空白区域播放头拖动建立的冻结状态，不影响普通关键帧编辑器。
  */
-@Mixin(value = UIKeyframes.class, remap = false)
+@Mixin(value = UIKeyframes.class, remap = true)
 public class UIKeyframesVideoScrubbingMixin
 {
     /**

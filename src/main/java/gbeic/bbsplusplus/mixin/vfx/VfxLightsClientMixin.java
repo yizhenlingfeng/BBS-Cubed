@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
  * 修正 VFXLIGHTS 核心着色器回调在单次资源重载中被重复执行的问题。
  * 复用统一的重载代次守卫，避免附属灯的多个着色器程序被成批重复创建。
  */
-@Mixin(value = VfxLightsClient.class, remap = false)
+@Mixin(value = VfxLightsClient.class, remap = true)
 public class VfxLightsClientMixin
 {
     /**

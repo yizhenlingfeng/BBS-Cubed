@@ -11,7 +11,7 @@ import mchorse.bbs_mod.ui.utils.Area;
 /**
  * 修复动画状态编辑器界面（UIAnimationStateKeyframes）中时间指针偏左未居中的问题。
  */
-@Mixin(value = UIAnimationStateKeyframes.class, remap = false)
+@Mixin(value = UIAnimationStateKeyframes.class, remap = true)
 public class UIAnimationStateKeyframesMixin
 {
     @Redirect(method = "renderOverlay", at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/ui/film/UIClips;renderCursor(Lmchorse/bbs_mod/ui/framework/UIContext;Ljava/lang/String;Lmchorse/bbs_mod/ui/utils/Area;I)V"))

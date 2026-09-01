@@ -29,7 +29,7 @@ public class L10nMixin
      * 注入原因：BBS++ 的 UI 文本放在 BBS 自建 L10n 系统目录中，需要额外注册语言文件来源。
      * 修改后的行为：按当前语言代码加载对应 JSON，缺失时安静回落到 BBS 已加载的默认英文。
      */
-    @Inject(method = "<init>()V", at = @At("RETURN"), remap = false)
+    @Inject(method = "<init>()V", at = @At("RETURN"), remap = true)
     private void afterInit(CallbackInfo ci)
     {
         L10n self = (L10n) (Object) this;

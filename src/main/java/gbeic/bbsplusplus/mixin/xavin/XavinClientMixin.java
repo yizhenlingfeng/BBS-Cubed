@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 保留 {@code DestructionSelection} 里的选区数据，避免影响“从魔杖选区捕获破坏盒”。
  * </p>
  */
-@Mixin(targets = "org.xavin.xavin.client.XavinClient", remap = false)
+@Mixin(targets = "org.xavin.xavin.client.XavinClient", remap = true)
 public class XavinClientMixin
 {
     /**

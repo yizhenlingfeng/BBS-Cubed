@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 而在 bbs 中，鼠标右键的内部 ID 恰好也是 -1！
  * 这导致所有未设置的快捷键都会在玩家按下鼠标右键时被全部触发。
  */
-@Mixin(value = Keybind.class, remap = false)
+@Mixin(value = Keybind.class, remap = true)
 public class KeybindMixin
 {
     @Shadow public KeyCombo combo;

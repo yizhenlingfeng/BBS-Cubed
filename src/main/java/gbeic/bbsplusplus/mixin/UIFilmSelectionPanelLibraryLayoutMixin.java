@@ -112,7 +112,7 @@ public abstract class UIFilmSelectionPanelLibraryLayoutMixin implements IFilmLib
      * 注入原因：原版影片选择界面是固定尺寸 CRUD 卡片，屏幕利用率和选中反馈都不足。
      * 修改后的行为：仅当实际实例为 {@link UIFilmSelectionPanel} 时，改成左侧导航加主列表的影片库布局。
      */
-    @Inject(method = "<init>", at = @At("RETURN"), remap = false)
+    @Inject(method = "<init>", at = @At("RETURN"), remap = true)
     private void bbspp$setupFilmLibraryLayout(UIDataDashboardPanel<?> panel, CallbackInfo ci)
     {
         this.bbspp$syncFilmLibraryLayout();
@@ -123,7 +123,7 @@ public abstract class UIFilmSelectionPanelLibraryLayoutMixin implements IFilmLib
      * 注入原因：影片选择界面实例可能早于用户打开设置开关就已创建，只在构造期判断会导致开关不能即时生效。
      * 修改后的行为：每次显示影片选择界面前补查一次开关，开启后立即套用新版影片库布局。
      */
-    @Inject(method = "setVisible", at = @At("HEAD"), remap = false)
+    @Inject(method = "setVisible", at = @At("HEAD"), remap = true)
     private void bbspp$setupFilmLibraryLayoutWhenShown(boolean visible, CallbackInfo ci)
     {
         if (visible)
@@ -484,7 +484,7 @@ public abstract class UIFilmSelectionPanelLibraryLayoutMixin implements IFilmLib
      * 注入原因：新版影片库创建后应回到创建位置并选中新影片，避免用户在搜索/全部影片视图中丢失反馈。
      * 修改后的行为：记录即将创建的影片 ID，待仓库刷新后由影片库列表自动选中。
      */
-    @Inject(method = "addNewData(Ljava/lang/String;Lmchorse/bbs_mod/data/types/MapType;)V", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "addNewData(Ljava/lang/String;Lmchorse/bbs_mod/data/types/MapType;)V", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbspp$selectCreatedFilmAfterRefresh(String name, MapType mapType, CallbackInfo ci)
     {
         if (!(((Object) this instanceof UIFilmSelectionPanel)
@@ -515,7 +515,7 @@ public abstract class UIFilmSelectionPanelLibraryLayoutMixin implements IFilmLib
      * 注入原因：新版“全部影片”视图的列表路径是根目录，直接复用原版重命名会把子文件夹中的影片移到根目录。
      * 修改后的行为：仅在全部影片视图重命名子文件夹影片时拦截，保留原父目录，只替换文件名。
      */
-    @Inject(method = "renameData(Ljava/lang/String;Ljava/lang/String;)V", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "renameData(Ljava/lang/String;Ljava/lang/String;)V", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbspp$renameFilmInsideOriginalFolder(String from, String to, CallbackInfo ci)
     {
         if (!(((Object) this instanceof UIFilmSelectionPanel)
@@ -569,7 +569,7 @@ public abstract class UIFilmSelectionPanelLibraryLayoutMixin implements IFilmLib
      * 注入原因：在“全部影片”中复制子文件夹影片时，原版目标路径会从根目录计算，导致副本跑到根目录。
      * 修改后的行为：仅新版影片库的全部影片视图中拦截子文件夹影片复制，保留原父目录。
      */
-    @Inject(method = "dupeSelected(Ljava/lang/String;Ljava/lang/String;)V", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "dupeSelected(Ljava/lang/String;Ljava/lang/String;)V", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbspp$dupeFilmInsideOriginalFolder(String from, String to, CallbackInfo ci)
     {
         if (!(((Object) this instanceof UIFilmSelectionPanel)
