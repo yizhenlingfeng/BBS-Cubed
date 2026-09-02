@@ -255,5 +255,6 @@
     "bbspp.config.tooltip": "BBS++ extension settings",
     "bbspp.config.bbs_enhancements.tooltip": "UI and interaction enhancements, including texture tween and subtitle export",
     "bbspp.config.item_spray.tooltip": "Item spray particle rendering and performance settings",
-    "bbspp.config.gizmo_modifications.tooltip": "Blockbench-style Gizmo interaction modifications"
+    "bbspp.config.gizmo_modifications.tooltip": "Blockbench-style Gizmo interaction modifications",
+    "bbspp.ui.preset.auto_save": "Auto-save preset (changes are saved to the selected preset in real time)"
 }

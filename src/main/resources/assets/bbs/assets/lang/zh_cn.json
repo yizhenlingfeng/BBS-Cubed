@@ -867,5 +867,6 @@
     "bbspp.config.tooltip": "BBS++ 扩展功能设置",
     "bbspp.config.bbs_enhancements.tooltip": "界面与交互增强，含纹理补间与字幕导出",
     "bbspp.config.item_spray.tooltip": "物品喷射粒子渲染与性能设置",
-    "bbspp.config.gizmo_modifications.tooltip": "Blockbench 风格 Gizmo 交互修改"
+    "bbspp.config.gizmo_modifications.tooltip": "Blockbench 风格 Gizmo 交互修改",
+    "bbspp.ui.preset.auto_save": "自动保存预设（启用后修改将实时保存到当前选中的预设）"
 }

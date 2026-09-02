@@ -108,7 +108,12 @@
         "UIKeyframeGraphSelectedScrollMixin",
         "UIKeyframesLayoutLockMixin",
         "UIKeyframesVideoScrubbingMixin",
-        "UIChalkboardMixin"
+        "UIChalkboardMixin",
+        "UIDataContextMenuMixin",
+        "UIModelIKFormPanelMixin",
+        "UIModelPhysicsFormPanelMixin",
+        "UIModelConstraintsFormPanelMixin",
+        "UIPoseEditorMixin"
     ],
     "injectors": {
         "defaultRequire": 1
