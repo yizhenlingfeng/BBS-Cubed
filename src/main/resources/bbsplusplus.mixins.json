@@ -110,6 +110,7 @@
         "UIKeyframesVideoScrubbingMixin",
         "UIChalkboardMixin",
         "UIDataContextMenuMixin",
+        "DataManagerAccessor",
         "UIModelIKFormPanelMixin",
         "UIModelPhysicsFormPanelMixin",
         "UIModelConstraintsFormPanelMixin",

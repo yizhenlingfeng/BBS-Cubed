@@ -2,6 +2,7 @@ package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.client.ui.presets.AutoSavePresetState;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.ui.forms.editors.panels.UIModelIKFormPanel;
 import mchorse.bbs_mod.utils.pose.ModelIKManager;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,8 +14,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * IK 链面板自动保存注入。
  * <p>
- * 在 commitChanges()、updateLabels()、updateMarkers() 等修改后触发的方法上注入，
- * 确保无论字段回调走哪条路径，都能触发自动保存。
+ * 只注入 commitChanges()：所有控件回调（滑块、开关、骨骼选择）最终都汇入该方法；
+ * updateLabels/updateMarkers 是纯 UI 刷新（且 commitChanges 内部已调用 updateMarkers），
+ * 注入它们只会造成重复快照构建，故移除。
+ * 数据快照通过 supplier 延迟到防抖触发后才构建，拖动期间不产生序列化开销。
  * </p>
  */
 @Mixin(value = UIModelIKFormPanel.class, remap = true)
@@ -31,16 +34,10 @@ public abstract class UIModelIKFormPanelMixin
         bbspp$tryAutoSave();
     }
 
-    @Inject(method = "updateLabels", at = @At("TAIL"))
-    private void bbspp$autoSaveOnUpdateLabels(CallbackInfo ci)
+    @Inject(method = "startEdit(Lmchorse/bbs_mod/forms/forms/ModelForm;)V", at = @At("HEAD"))
+    private void bbspp$resetAutoSaveOnStartEdit(ModelForm form, CallbackInfo ci)
     {
-        bbspp$tryAutoSave();
-    }
-
-    @Inject(method = "updateMarkers", at = @At("TAIL"))
-    private void bbspp$autoSaveOnUpdateMarkers(CallbackInfo ci)
-    {
-        bbspp$tryAutoSave();
+        AutoSavePresetState.clear("ik");
     }
 
     private void bbspp$tryAutoSave()
@@ -55,11 +52,7 @@ public abstract class UIModelIKFormPanelMixin
             return;
         }
 
-        MapType data = this.toPresetData();
-        if (data != null)
-        {
-            AutoSavePresetState.scheduleSave("ik", ModelIKManager.INSTANCE,
-                    this.presetGroup, preset, data);
-        }
+        AutoSavePresetState.scheduleSave("ik", ModelIKManager.INSTANCE,
+                this.presetGroup, preset, this::toPresetData);
     }
 }

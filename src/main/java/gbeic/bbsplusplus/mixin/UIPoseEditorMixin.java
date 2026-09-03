@@ -1,7 +1,6 @@
 package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.client.ui.presets.AutoSavePresetState;
-import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.ui.utils.pose.UIPoseEditor;
 import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.PoseManager;
@@ -15,8 +14,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * 姿势编辑器自动保存注入。
  * <p>
- * 关键：变换编辑器的 fix/color/lighting 修改直接调用 setFix/setColor/setLighting，
- * 不经过 applyToBone，必须在这些方法上也注入。
+ * 修改入口：applyToBone（位置/旋转/缩放）、setFix/setColor/setLighting（变换编辑器单骨骼修改）、
+ * flipPose（翻转）。三个 applyXToSelection 批量方法内部对每个选中骨骼循环调用 setFix/setColor/setLighting，
+ * 已被单骨骼注入覆盖，不再重复注入，避免按选中骨骼数量放大触发次数。
+ * 数据快照通过 supplier 延迟到防抖触发后才构建，拖动期间不产生序列化开销。
+ * </p>
+ * <p>
  * 预设组名存在 group 字段中，不是 getGroup() 方法（后者返回当前骨骼组名）。
  * </p>
  */
@@ -33,7 +36,7 @@ public abstract class UIPoseEditorMixin
         bbspp$tryAutoSave();
     }
 
-    // 单个骨骼的 fix/color/lighting 修改（变换编辑器回调直接调用这些）
+    // 单个骨骼的 fix/color/lighting 修改（变换编辑器回调直接调用这些，批量方法内部也循环调用它们）
     @Inject(method = "setFix", at = @At("TAIL"))
     private void bbspp$autoSaveOnSetFix(PoseTransform pt, float value, CallbackInfo ci)
     {
@@ -52,30 +55,18 @@ public abstract class UIPoseEditorMixin
         bbspp$tryAutoSave();
     }
 
-    // 批量修改（应用到选中的所有骨骼）
-    @Inject(method = "applyFixToSelection", at = @At("TAIL"))
-    private void bbspp$autoSaveOnApplyFix(float value, CallbackInfo ci)
-    {
-        bbspp$tryAutoSave();
-    }
-
-    @Inject(method = "applyColorToSelection", at = @At("TAIL"))
-    private void bbspp$autoSaveOnApplyColor(int color, CallbackInfo ci)
-    {
-        bbspp$tryAutoSave();
-    }
-
-    @Inject(method = "applyLightingToSelection", at = @At("TAIL"))
-    private void bbspp$autoSaveOnApplyLighting(boolean lighting, CallbackInfo ci)
-    {
-        bbspp$tryAutoSave();
-    }
-
     // 翻转姿势
     @Inject(method = "flipPose", at = @At("TAIL"))
     private void bbspp$autoSaveOnFlip(CallbackInfo ci)
     {
         bbspp$tryAutoSave();
+    }
+
+    // 切换/加载姿势时重置自动保存状态（防止挂起任务写入新姿势、避免脏检查基准错位）
+    @Inject(method = "setPose", at = @At("HEAD"))
+    private void bbspp$resetAutoSaveOnSetPose(Pose pose, String group, CallbackInfo ci)
+    {
+        AutoSavePresetState.clear("pose");
     }
 
     private void bbspp$tryAutoSave()
@@ -90,10 +81,7 @@ public abstract class UIPoseEditorMixin
             return;
         }
 
-        MapType data = this.pose.toData();
-        if (data != null)
-        {
-            AutoSavePresetState.scheduleSave("pose", PoseManager.INSTANCE, this.group, preset, data);
-        }
+        AutoSavePresetState.scheduleSave("pose", PoseManager.INSTANCE,
+                this.group, preset, () -> this.pose == null ? null : this.pose.toData());
     }
 }

@@ -2,6 +2,7 @@ package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.client.ui.presets.AutoSavePresetState;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.ui.forms.editors.panels.UIModelPhysicsFormPanel;
 import mchorse.bbs_mod.utils.pose.ModelPhysicsManager;
 import org.spongepowered.asm.mixin.Mixin;
@@ -12,6 +13,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * 物理骨骼面板自动保存注入。
+ * <p>
+ * 只注入 save(boolean)：commitChanges() 内部首行即调用 save(false)，
+ * 而 trackpad/字段回调最终都汇入 commitChanges，因此 save 一处即可覆盖所有修改路径，
+ * 也避免了原先 commitChanges 与 save 双重注入导致的重复快照构建。
+ * 数据快照通过 supplier 延迟到防抖触发后才构建，拖动期间不产生序列化开销。
+ * </p>
  */
 @Mixin(value = UIModelPhysicsFormPanel.class, remap = true)
 public abstract class UIModelPhysicsFormPanelMixin
@@ -21,28 +28,16 @@ public abstract class UIModelPhysicsFormPanelMixin
 
     @Shadow public abstract MapType toPresetData();
 
-    @Inject(method = "commitChanges", at = @At("TAIL"))
-    private void bbspp$autoSaveOnCommit(CallbackInfo ci)
-    {
-        bbspp$tryAutoSave();
-    }
-
     @Inject(method = "save", at = @At("TAIL"))
     private void bbspp$autoSaveOnSave(boolean manually, CallbackInfo ci)
     {
         bbspp$tryAutoSave();
     }
 
-    @Inject(method = "updateFields", at = @At("TAIL"))
-    private void bbspp$autoSaveOnUpdateFields(CallbackInfo ci)
+    @Inject(method = "startEdit(Lmchorse/bbs_mod/forms/forms/ModelForm;)V", at = @At("HEAD"))
+    private void bbspp$resetAutoSaveOnStartEdit(ModelForm form, CallbackInfo ci)
     {
-        bbspp$tryAutoSave();
-    }
-
-    @Inject(method = "updateWindFields", at = @At("TAIL"))
-    private void bbspp$autoSaveOnUpdateWindFields(CallbackInfo ci)
-    {
-        bbspp$tryAutoSave();
+        AutoSavePresetState.clear("physics");
     }
 
     private void bbspp$tryAutoSave()
@@ -57,11 +52,7 @@ public abstract class UIModelPhysicsFormPanelMixin
             return;
         }
 
-        MapType data = this.toPresetData();
-        if (data != null)
-        {
-            AutoSavePresetState.scheduleSave("physics", ModelPhysicsManager.INSTANCE,
-                    this.presetGroup, preset, data);
-        }
+        AutoSavePresetState.scheduleSave("physics", ModelPhysicsManager.INSTANCE,
+                this.presetGroup, preset, this::toPresetData);
     }
 }
