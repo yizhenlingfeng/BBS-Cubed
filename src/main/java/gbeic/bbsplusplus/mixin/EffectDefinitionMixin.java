@@ -29,7 +29,7 @@ public class EffectDefinitionMixin {
             org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
         
         if (type == mod.chloeprime.aaaparticles.api.client.effekseer.ParticleEmitter.Type.WORLD) {
-            mod.chloeprime.aaaparticles.api.client.effekseer.EffekseerManager xrayManager = gbeic.bbsplusplus.utils.XRayManager.get();
+            mod.chloeprime.aaaparticles.api.client.effekseer.EffekseerManager xrayManager = gbeic.bbsplusplus.util.XRayManager.get();
             if (xrayManager != null) {
                 // 同步所有必需的渲染状态
                 xrayManager.setViewport(w, h);

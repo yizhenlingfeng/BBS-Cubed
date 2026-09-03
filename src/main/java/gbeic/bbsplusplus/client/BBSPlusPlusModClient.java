@@ -200,7 +200,7 @@ public class BBSPlusPlusModClient implements ClientModInitializer
         // 注册游戏退出时的资源清理
         ClientLifecycleEvents.CLIENT_STOPPING.register(client ->
         {
-            gbeic.bbsplusplus.utils.XRayManager.shutdown();
+            gbeic.bbsplusplus.util.XRayManager.shutdown();
         });
 
         // 在客户端启动完成后注册表单组件

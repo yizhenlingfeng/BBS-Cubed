@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.client.render.ModelUVTransformRuntime;
+import gbeic.bbsplusplus.client.renderer.ModelUVTransformRuntime;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.MathUtils;

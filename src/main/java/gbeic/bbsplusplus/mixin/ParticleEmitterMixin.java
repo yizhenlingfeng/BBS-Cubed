@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.Unique;
  */
 
 @Mixin(value = ParticleEmitter.class, remap = true)
-public class ParticleEmitterMixin implements gbeic.bbsplusplus.utils.IIgnoreDepth {
+public class ParticleEmitterMixin implements gbeic.bbsplusplus.util.IIgnoreDepth {
     @Unique
     private boolean bbspp_ignoreDepth = false;
 

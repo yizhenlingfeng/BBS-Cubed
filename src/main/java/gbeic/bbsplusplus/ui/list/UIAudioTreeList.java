@@ -9,7 +9,7 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
 
 import gbeic.bbsplusplus.mixin.UILikeableStringListAccessor;
-import gbeic.bbsplusplus.utils.AlphanumComparator;
+import gbeic.bbsplusplus.util.AlphanumComparator;
 
 import java.util.ArrayList;
 import java.util.Collection;

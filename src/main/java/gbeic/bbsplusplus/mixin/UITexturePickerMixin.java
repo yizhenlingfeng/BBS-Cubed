@@ -119,7 +119,7 @@ public abstract class UITexturePickerMixin extends UIElement {
 
     private static void clearTextureThumbnailsSafely() {
         try {
-            Class<?> manager = Class.forName("gbeic.bbsplusplus.utils.TextureThumbnailManager");
+            Class<?> manager = Class.forName("gbeic.bbsplusplus.util.TextureThumbnailManager");
 
             manager.getMethod("clear").invoke(null);
         } catch (ClassNotFoundException ignored) {

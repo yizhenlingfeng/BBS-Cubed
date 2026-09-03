@@ -2,7 +2,7 @@ package gbeic.bbsplusplus.client.renderer;
 
 import mchorse.bbs_mod.BBSMod;
 import gbeic.bbsplusplus.BBSPlusPlusMod;
-import gbeic.bbsplusplus.utils.EnvLogger;
+import gbeic.bbsplusplus.util.EnvLogger;
 import mod.chloeprime.aaaparticles.api.client.EffectDefinition;
 import mod.chloeprime.aaaparticles.api.client.EffectHolder;
 import mod.chloeprime.aaaparticles.api.client.EffectMetadata;

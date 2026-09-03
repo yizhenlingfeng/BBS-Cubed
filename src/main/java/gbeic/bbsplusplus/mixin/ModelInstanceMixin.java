@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import gbeic.bbsplusplus.client.render.ModelUVTransformRuntime;
+import gbeic.bbsplusplus.client.renderer.ModelUVTransformRuntime;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.cubic.IModel;

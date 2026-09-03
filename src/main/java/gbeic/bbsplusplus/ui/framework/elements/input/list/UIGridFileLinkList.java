@@ -153,7 +153,7 @@ public class UIGridFileLinkList extends UIFileLinkList {
      */
     @Override
     public void renderList(UIContext context) {
-        gbeic.bbsplusplus.utils.TextureThumbnailManager.update();
+        gbeic.bbsplusplus.util.TextureThumbnailManager.update();
         if (!isGridMode()) {
             this.scroll.scrollItemSize = 20;
             super.renderList(context);
@@ -228,7 +228,7 @@ public class UIGridFileLinkList extends UIFileLinkList {
                 mchorse.bbs_mod.ui.utils.icons.Icon folderIcon = element.title.equals("..") ? Icons.ARROW_LEFT : Icons.FOLDER;
                 context.batcher.icon(folderIcon, Colors.WHITE, x + 2, y + 2);
             } else {
-                Texture texture = gbeic.bbsplusplus.utils.TextureThumbnailManager.getThumbnail(element.link);
+                Texture texture = gbeic.bbsplusplus.util.TextureThumbnailManager.getThumbnail(element.link);
                 if (texture != null) {
                     float ratio = (float) texture.width / texture.height;
                     int drawW = 16;
@@ -256,7 +256,7 @@ public class UIGridFileLinkList extends UIFileLinkList {
                 mchorse.bbs_mod.ui.utils.icons.Icon folderIcon = element.title.equals("..") ? Icons.ARROW_LEFT : Icons.FOLDER;
                 drawScaledIcon(context, folderIcon, Colors.WHITE, x + (s - iconS) / 2, y + padY, iconS);
             } else {
-                Texture texture = gbeic.bbsplusplus.utils.TextureThumbnailManager.getThumbnail(element.link);
+                Texture texture = gbeic.bbsplusplus.util.TextureThumbnailManager.getThumbnail(element.link);
                 if (texture != null) {
                     // 保持缩略图宽高比例
                     float ratio = (float) texture.width / texture.height;

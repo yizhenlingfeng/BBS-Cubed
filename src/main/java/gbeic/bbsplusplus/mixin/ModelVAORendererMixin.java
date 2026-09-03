@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.client.render.ModelUVTransformRuntime;
+import gbeic.bbsplusplus.client.renderer.ModelUVTransformRuntime;
 import mchorse.bbs_mod.cubic.render.vao.ModelVAORenderer;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.util.math.MatrixStack;

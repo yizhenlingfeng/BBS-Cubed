@@ -59,21 +59,21 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${loader_version}"
 
     // Fabric API（提供 ClientTickEvents、ClientLifecycleEvents 等）
-    modImplementation "net.fabricmc.fabric-api:fabric-api:0.91.0+1.20.1"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
 
     // 引用本地 BBS FS 2.5.1（run/mods 中的实际运行版本），编译期解析 Mixin 目标类
     modCompileOnly files("run/mods/bbs-2.5.1-1.20.1-FS-zh_CN.jar")
 
     // Iris 光影（仅编译期）：光影曲线相关 Mixin 需要引用 Iris 的类，运行时没装 Iris 也不会加载这些注入
-    modCompileOnly "maven.modrinth:iris:1.7.0+1.20.1"
+    modCompileOnly "maven.modrinth:iris:${iris_version}"
 
     // AAA Particles 依赖
-    modImplementation "maven.modrinth:aaa-particles:fabric-1.20.1-2.2.0"
-    modImplementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:8.0.0"
+    modImplementation "maven.modrinth:aaa-particles:${aaa_particles_version}"
+    modImplementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forgeconfigapiport_version}"
 
     // aaa_particles 以 jar-in-jar 内置 architectury（9.2.14），但 loom dev 环境不解包嵌套 jar，
     // 需显式声明才能在 runClient 中加载；版本与内置一致，且不会打进最终产物
-    modImplementation "dev.architectury:architectury-fabric:9.2.14"
+    modImplementation "dev.architectury:architectury-fabric:${architectury_version}"
 
     // BBS VFX 与 VFX Lights（仅编译期）：轨道关键帧汉化需要引用其 Form 类做上下文判断，
     // 运行时由用户自行安装这两个插件

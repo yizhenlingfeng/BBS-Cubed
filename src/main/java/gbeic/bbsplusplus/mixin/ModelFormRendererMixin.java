@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.client.render.ModelUVTransformRuntime;
+import gbeic.bbsplusplus.client.renderer.ModelUVTransformRuntime;
 import gbeic.bbsplusplus.keyframes.EquipmentTransformRuntime;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.model.ArmorSlot;

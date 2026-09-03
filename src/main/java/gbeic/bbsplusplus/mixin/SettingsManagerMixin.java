@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.utils.SettingsFileSanitizer;
+import gbeic.bbsplusplus.util.SettingsFileSanitizer;
 import mchorse.bbs_mod.settings.Settings;
 import mchorse.bbs_mod.settings.SettingsManager;
 import org.spongepowered.asm.mixin.Mixin;

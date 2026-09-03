@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus;
 
-import gbeic.bbsppp.BBSPPPSettings;
+import gbeic.bbsplusplus.BBSPPPSettings;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;

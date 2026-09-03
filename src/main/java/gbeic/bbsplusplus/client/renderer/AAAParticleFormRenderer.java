@@ -613,7 +613,7 @@ public class AAAParticleFormRenderer extends FormRenderer<AAAParticleForm> imple
 
         // 更新 X-Ray 专属管理器迁移（仅在真实世界渲染时生效，UI 预览模式保持原生，避免坐标漂移）
         boolean shouldXRay = this.form.ignoreDepth.get() && targetType == mod.chloeprime.aaaparticles.api.client.effekseer.ParticleEmitter.Type.WORLD;
-        gbeic.bbsplusplus.utils.XRayManager.migrate(this.emitter, shouldXRay, definition, targetType);
+        gbeic.bbsplusplus.util.XRayManager.migrate(this.emitter, shouldXRay, definition, targetType);
 
         // 应用动态输入参数 0-3
         this.emitter.setDynamicInput(0, this.form.dynamicInput0.get());

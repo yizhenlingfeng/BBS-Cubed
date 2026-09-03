@@ -114,7 +114,17 @@
         "UIModelIKFormPanelMixin",
         "UIModelPhysicsFormPanelMixin",
         "UIModelConstraintsFormPanelMixin",
-        "UIPoseEditorMixin"
+        "UIPoseEditorMixin",
+        "FormPropertiesTextureTweenMixin",
+        "KeyframeChannelTextureTweenMixin",
+        "KeyframeSegmentMixin",
+        "L10nTextureTweenMixin",
+        "TextureTweenKeyframeMixin",
+        "TextureManagerReloadMixin",
+        "UIKeyframeGraphTextureMixin",
+        "UILinkKeyframeFactoryMixin",
+        "UIFilmRecorderMixin",
+        "VideoRecorderMixin"
     ],
     "injectors": {
         "defaultRequire": 1

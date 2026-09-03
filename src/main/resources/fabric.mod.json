@@ -14,8 +14,7 @@
             "gbeic.bbsplusplus.BBSPlusPlusMod"
         ],
         "client": [
-            "gbeic.bbsplusplus.client.BBSPlusPlusModClient",
-            "gbeic.bbsppp.BBSPPPModClient"
+            "gbeic.bbsplusplus.client.BBSPlusPlusModClient"
         ]
     },
     "mixins": [
@@ -23,8 +22,7 @@
         "bbsplusplus-irlite.mixins.json",
         "bbsplusplus-xavin.mixins.json",
         "bbsplusplus-shadercurves.mixins.json",
-        "bbsplusplus-vfx.mixins.json",
-        "bbsppp.mixins.json"
+        "bbsplusplus-vfx.mixins.json"
     ],
     "depends": {
         "fabricloader": "${loader_version_range}",
