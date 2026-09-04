@@ -1,0 +1,24 @@
+{
+    "required": true,
+    "package": "gbeic.bbsplusplus.mixin",
+    "compatibilityLevel": "JAVA_17",
+    "mixins": [
+        "ActionConfigMixin",
+        "ActionPlaybackMixin",
+        "ActionsConfigKeyframeFactoryMixin",
+        "BBSSettingsCMLMixin",
+        
+        "FormPropertiesPBRMixin",
+        "KeyframeSegmentCMLMixin",
+        "MiscFormTextureGradeMixin",
+        "ModelFormCMLMixin",
+        "ModelGroupMixin",
+        "ModelMixin",
+        "PoseTransformMixin",
+        "TrailFormColorMixin",
+        "TransformMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

@@ -2,6 +2,7 @@ package gbeic.bbsplusplus.client.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import gbeic.bbsplusplus.forms.StructureForm;
+import gbeic.bbsplusplus.util.NbtCompat;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
@@ -23,7 +24,6 @@ import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.registry.Registries;
 import net.minecraft.state.property.Property;
@@ -214,14 +214,14 @@ public class StructureFormRenderer extends FormRenderer<StructureForm>
 
             if (nbtFile != null && nbtFile.exists())
             {
-                this.parseStructure(NbtIo.readCompressed(nbtFile));
+                this.parseStructure(NbtCompat.readCompressed(nbtFile));
 
                 return;
             }
 
             try (InputStream stream = BBSMod.getProvider().getAsset(link))
             {
-                this.parseStructure(NbtIo.readCompressed(stream));
+                this.parseStructure(NbtCompat.readCompressed(stream));
             }
         }
         catch (Exception ignored)

@@ -1,0 +1,196 @@
+package gbeic.bbsplusplus.mixin;
+
+import gbeic.bbsplusplus.api.MolangSharedProvider;
+import gbeic.bbsplusplus.api.PBRModelFormAccess;
+import gbeic.bbsplusplus.api.TextureGradeProvider;
+import gbeic.bbsplusplus.api.ActionsOverlayProvider;
+import gbeic.bbsplusplus.settings.CMLSettings;
+import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.cubic.animation.ActionConfig;
+import mchorse.bbs_mod.cubic.animation.ActionsConfig;
+import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.forms.values.ValueActionsConfig;
+import mchorse.bbs_mod.settings.values.core.ValueColor;
+import mchorse.bbs_mod.settings.values.numeric.ValueBoolean;
+import mchorse.bbs_mod.settings.values.numeric.ValueFloat;
+import mchorse.bbs_mod.utils.colors.Color;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 给 ModelForm 追加"variable 动作模型互通"开关(molangShared,默认 false):
+ * 构造 TAIL 注册进 value 树,随 form 自动序列化/复制;旧数据没有该键时保持
+ * 默认 false(隔离),未装本插件的 BBS 读到多余键会忽略,双向兼容。
+ * 消费点在 {@code AnimatorMixin}(client)。
+ */
+@Mixin(value = ModelForm.class, remap = false)
+public abstract class ModelFormCMLMixin implements MolangSharedProvider, TextureGradeProvider, PBRModelFormAccess, ActionsOverlayProvider
+{
+    @Unique
+    private static final String[] bbspp_ACTION_SLOTS = {
+        "idle", "running", "sprinting", "crouching", "crouching_idle", "dying", "falling",
+        "swipe", "jump", "jump_alt", "hurt", "land", "shoot", "consume", "base_pre", "base_post"
+    };
+
+    @Unique
+    private ValueActionsConfig bbspp_cml$actionsOverlay;
+
+    @Unique
+    private List<ValueActionsConfig> bbspp_cml$additionalActionsOverlays;
+
+    @Unique
+    private ValueBoolean bbspp_cml$molangShared;
+
+    @Unique
+    private ValueColor bbspp_cml$textureTint;
+
+    @Unique
+    private ValueFloat bbspp_cml$textureWhiten;
+
+    @Unique
+    private final Map<String, Map<String, Integer>> bbspp_snow$pbrOverrides = new HashMap<>();
+
+    @Unique
+    private final Map<String, Map<String, Integer>> bbspp_snow$bonePbrOverrides = new HashMap<>();
+
+    @Unique
+    private ValueFloat bbspp_snow$pbrSmoothness;
+
+    @Unique
+    private ValueFloat bbspp_snow$pbrMetal;
+
+    @Unique
+    private ValueFloat bbspp_snow$pbrPorosity;
+
+    @Unique
+    private ValueFloat bbspp_snow$pbrEmissive;
+
+    @Unique
+    private ValueFloat bbspp_snow$pbrNormal;
+
+    @Inject(
+        method = "<init>()V",
+        at = @At(
+            value = "INVOKE",
+            target = "Lmchorse/bbs_mod/forms/forms/ModelForm;add(Lmchorse/bbs_mod/settings/values/base/BaseValue;)V",
+            ordinal = 6,
+            shift = At.Shift.AFTER
+        ),
+        remap = false
+    )
+    private void bbspp_cml$registerActionsOverlays(CallbackInfo ci)
+    {
+        this.bbspp_cml$additionalActionsOverlays = new ArrayList<>();
+
+        if (!CMLSettings.isSnowActionsEnabled())
+        {
+            return;
+        }
+
+        ModelForm form = (ModelForm) (Object) this;
+
+        this.bbspp_cml$actionsOverlay = new ValueActionsConfig(
+            "actions_overlay",
+            this.bbspp_cml$createEmptyActionsOverlay()
+        );
+        form.add(this.bbspp_cml$actionsOverlay);
+
+        for (int i = 0; i < BBSSettings.recordingPoseTransformOverlays.get(); i++)
+        {
+            ValueActionsConfig overlay = new ValueActionsConfig(
+                "actions_overlay" + i,
+                this.bbspp_cml$createEmptyActionsOverlay()
+            );
+
+            this.bbspp_cml$additionalActionsOverlays.add(overlay);
+            form.add(overlay);
+        }
+    }
+
+    @Unique
+    private ActionsConfig bbspp_cml$createEmptyActionsOverlay()
+    {
+        ActionsConfig configs = new ActionsConfig();
+
+        for (String key : bbspp_ACTION_SLOTS)
+        {
+            configs.actions.put(key, new ActionConfig(""));
+        }
+
+        return configs;
+    }
+
+    @Inject(method = "<init>()V", at = @At("TAIL"), remap = false)
+    private void bbspp_cml$registerMolangShared(CallbackInfo ci)
+    {
+        this.bbspp_cml$molangShared = new ValueBoolean("molangShared", false);
+        ((ModelForm) (Object) this).add(this.bbspp_cml$molangShared);
+
+        /* Transparent white is a neutral tint; the alpha channel is the effect strength. */
+        this.bbspp_cml$textureTint = new ValueColor("texture_tint", new Color(1F, 1F, 1F, 0F));
+        this.bbspp_cml$textureWhiten = new ValueFloat("texture_whiten", 0F, 0F, 1F);
+        ((ModelForm) (Object) this).add(this.bbspp_cml$textureTint);
+        ((ModelForm) (Object) this).add(this.bbspp_cml$textureWhiten);
+
+        this.bbspp_snow$pbrSmoothness = new ValueFloat("pbr_s_r", 0F, 0F, 255F);
+        this.bbspp_snow$pbrMetal = new ValueFloat("pbr_s_g", 0F, 0F, 255F);
+        this.bbspp_snow$pbrPorosity = new ValueFloat("pbr_s_b", 0F, 0F, 255F);
+        this.bbspp_snow$pbrEmissive = new ValueFloat("pbr_s_a", 0F, 0F, 254F);
+        this.bbspp_snow$pbrNormal = new ValueFloat("pbr_n", 0F, 0F, 255F);
+        ((ModelForm) (Object) this).add(this.bbspp_snow$pbrSmoothness);
+        ((ModelForm) (Object) this).add(this.bbspp_snow$pbrMetal);
+        ((ModelForm) (Object) this).add(this.bbspp_snow$pbrPorosity);
+        ((ModelForm) (Object) this).add(this.bbspp_snow$pbrEmissive);
+        ((ModelForm) (Object) this).add(this.bbspp_snow$pbrNormal);
+    }
+
+    @Override
+    public ValueBoolean bbspp_cml$getMolangShared()
+    {
+        return this.bbspp_cml$molangShared;
+    }
+
+    @Override
+    public ValueColor bbspp_cml$getTextureTint()
+    {
+        return this.bbspp_cml$textureTint;
+    }
+
+    @Override
+    public ValueFloat bbspp_cml$getTextureWhiten()
+    {
+        return this.bbspp_cml$textureWhiten;
+    }
+
+    @Override
+    public ValueActionsConfig bbspp_cml$getActionsOverlay()
+    {
+        return this.bbspp_cml$actionsOverlay;
+    }
+
+    @Override
+    public List<ValueActionsConfig> bbspp_cml$getAdditionalActionsOverlays()
+    {
+        return this.bbspp_cml$additionalActionsOverlays;
+    }
+
+    @Override
+    public Map<String, Map<String, Integer>> bbspp_snow$getPbrOverrides()
+    {
+        return this.bbspp_snow$pbrOverrides;
+    }
+
+    @Override
+    public Map<String, Map<String, Integer>> bbspp_snow$getBonePbrOverrides()
+    {
+        return this.bbspp_snow$bonePbrOverrides;
+    }
+}

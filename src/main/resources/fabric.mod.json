@@ -3,18 +3,26 @@
     "id": "${mod_id}",
     "version": "${version}",
     "name": "${mod_name}",
-    "description": "BBS Cubed 扩展功能插件 – 一阵泠风、Gbeic、snowstar 合作版本，为 BBS 模组增添更多实用功能",
+    "description": "BBS Cubed 扩展功能插件 – 一阵泠风、Gbeic、snowstar 合作版本，为 BBS 模组增添更多实用功能（已合并 FSloveCML）",
     "authors": ["一阵泠风", "Gbeic", "snowstar"],
-    "contributors": ["WeiJinZhiBao (Shader Curves Fix, Structure Form)"],
+    "contributors": ["WeiJinZhiBao (Shader Curves Fix, Structure Form)", "Twiap工作室, Sweatent (FSloveCML)"],
     "license": "${mod_license}",
     "icon": "icon.png",
     "environment": "client",
     "entrypoints": {
         "main": [
-            "gbeic.bbsplusplus.BBSPlusPlusMod"
+            "gbeic.bbsplusplus.BBSPlusPlusMod",
+            "gbeic.bbsplusplus.BBSFSloveCML"
         ],
         "client": [
-            "gbeic.bbsplusplus.client.BBSPlusPlusModClient"
+            "gbeic.bbsplusplus.client.BBSPlusPlusModClient",
+            "gbeic.bbsplusplus.BBSFSloveCMLClient"
+        ],
+        "bbs-addon": [
+            "gbeic.bbsplusplus.BBSFSloveCMLAddon"
+        ],
+        "bbs-client-addon": [
+            "gbeic.bbsplusplus.BBSFSloveCMLClientAddon"
         ]
     },
     "mixins": [
@@ -22,7 +30,10 @@
         "bbsplusplus-irlite.mixins.json",
         "bbsplusplus-xavin.mixins.json",
         "bbsplusplus-shadercurves.mixins.json",
-        "bbsplusplus-vfx.mixins.json"
+        "bbsplusplus-vfx.mixins.json",
+        "bbspp-fslovecml.mixins.json",
+        "bbspp-fslovecml.client.mixins.json",
+        "bbspp-fslovecml.client.api.mixins.json"
     ],
     "depends": {
         "fabricloader": "${loader_version_range}",
@@ -35,6 +46,8 @@
             "<2.2.0",
             ">2.2.1"
         ],
-        "bbstools": "*"
+        "bbstools": "*",
+        "bbspp": "*",
+        "bbs_fslovecml": "*"
     }
 }

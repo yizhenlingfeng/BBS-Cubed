@@ -1,0 +1,93 @@
+package gbeic.bbsplusplus.mixin;
+
+import gbeic.bbsplusplus.api.BoneTextureHolder;
+import gbeic.bbsplusplus.api.GroupTextureHolder;
+import gbeic.bbsplusplus.api.GroupTextureGradeHolder;
+import gbeic.bbsplusplus.api.PivotHolder;
+import gbeic.bbsplusplus.api.TextureGradeHolder;
+import mchorse.bbs_mod.cubic.data.model.Model;
+import mchorse.bbs_mod.cubic.data.model.ModelGroup;
+import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.utils.pose.Pose;
+import mchorse.bbs_mod.utils.pose.PoseTransform;
+import org.joml.Vector3f;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.Map;
+
+/**
+ * 在 {@link Model#applyPose(Pose)} 末尾补两件 CML 的事：
+ * <ul>
+ *   <li>骨骼纹理 —— {@code PoseTransform} 上的纹理（{@link BoneTextureHolder}）
+ *       传播到对应 {@link ModelGroup} 的渲染期覆盖字段（{@link GroupTextureHolder}）；</li>
+ *   <li>中心点 —— pose 的 pivot 加进 {@code group.current}（对齐 CML 的
+ *       {@code group.current.translate.add(pivot); group.current.pivot.add(pivot);}，
+ *       渲染时经 Transform.setupMatrix 的 ±pivot 平移生效）。</li>
+ * </ul>
+ * FS 版该方法没有这些逻辑，以 TAIL 二次遍历补齐（骨骼数量级为几十，开销可忽略）。
+ */
+@Mixin(value = Model.class, remap = false)
+public abstract class ModelMixin
+{
+    @Shadow
+    public abstract ModelGroup getGroup(String id);
+
+    @Inject(method = "applyPose(Lmchorse/bbs_mod/utils/pose/Pose;)V", at = @At("TAIL"), remap = false)
+    private void bbspp_cml$applyBoneExtras(Pose pose, CallbackInfo ci)
+    {
+        if (pose.isEmpty())
+        {
+            return;
+        }
+
+        for (Map.Entry<String, PoseTransform> entry : pose.transforms.entrySet())
+        {
+            PoseTransform transform = entry.getValue();
+            Link texture = ((BoneTextureHolder) transform).bbspp_cml$getTexture();
+            TextureGradeHolder textureGrade = (TextureGradeHolder) transform;
+            Vector3f pivot = ((PivotHolder) transform).bbspp_cml$getPivot();
+            boolean pivoted = pivot.x != 0F || pivot.y != 0F || pivot.z != 0F;
+            boolean graded = textureGrade.bbspp_cml$getTextureTint().a > 0F
+                || textureGrade.bbspp_cml$getTextureWhiten() > 0F;
+
+            if (texture == null && !pivoted && !graded)
+            {
+                continue;
+            }
+
+            ModelGroup group = this.getGroup(entry.getKey());
+
+            if (group == null)
+            {
+                continue;
+            }
+
+            if (texture != null)
+            {
+                ((GroupTextureHolder) group).bbspp_cml$setTextureOverride(texture);
+            }
+
+            if (graded)
+            {
+                GroupTextureGradeHolder groupGrade = (GroupTextureGradeHolder) group;
+
+                groupGrade.bbspp_cml$setTextureTint(textureGrade.bbspp_cml$getTextureTint());
+                groupGrade.bbspp_cml$setTextureWhiten(textureGrade.bbspp_cml$getTextureWhiten());
+            }
+
+            if (pivoted)
+            {
+                /* 只累计进 group.current 的 pivot 字段（渲染期由 ICubicRendererMixin
+                 * 在 moveTo/moveBackFromGroupPivot 消费，零旋转缩放时无位移）。
+                 * 注意不能照抄 CML 的 translate.add(pivot) —— 那是与 CML 版
+                 * translateGroup 公式(用 current.pivot 参与位移)配套的抵消项，
+                 * FS 版公式用常量 initial.translate，照抄会变成纯平移。 */
+                ((PivotHolder) group.current).bbspp_cml$getPivot().add(pivot);
+            }
+        }
+    }
+}

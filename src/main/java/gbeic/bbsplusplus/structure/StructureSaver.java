@@ -1,9 +1,9 @@
 package gbeic.bbsplusplus.structure;
 
+import gbeic.bbsplusplus.util.NbtCompat;
 import mchorse.bbs_mod.BBSMod;
 import net.minecraft.block.Blocks;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtIo;
 import net.minecraft.structure.StructureTemplate;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -88,7 +88,7 @@ public final class StructureSaver
         {
             NbtCompound nbt = template.writeNbt(new NbtCompound());
 
-            NbtIo.writeCompressed(nbt, file);
+            NbtCompat.writeCompressed(nbt, file);
 
             return new SaveResult(true, "bbsplusplus.structure_stick.saved", safeName);
         }

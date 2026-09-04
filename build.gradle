@@ -2,11 +2,64 @@ plugins {
     id 'fabric-loom' version "${loom_version}"
 }
 
+// ---- 目标版本切换 ----
+// 默认构建 1.20.1；使用 ./gradlew build -Pmc_version=1.20.4 构建 1.20.4 版本
+def targetMc = providers.gradleProperty("mc_version").orElse("1.20.1").get()
+
+// gradle.properties 中的属性名含小数点，必须用 providers.gradleProperty 读取
+def gprop = { name -> providers.gradleProperty(name).get() }
+
+def versions = [
+        "1.20.1": [
+                minecraft_version : "1.20.1",
+                yarn_mappings    : "1.20.1+build.10",
+                fabric_api       : gprop("fabric_api_version_1.20.1"),
+                iris             : gprop("iris_version_1.20.1"),
+                aaa_particles    : gprop("aaa_particles_version_1.20.1"),
+                forgeconfigapiport: gprop("forgeconfigapiport_version_1.20.1"),
+                architectury     : gprop("architectury_version_1.20.1"),
+                bbs_jar          : gprop("bbs_jar_1.20.1"),
+                // 1.20.1 下 aaa_particles 以 modImplementation 提供（runClient 需要）
+                aaa_as_compile_only: false
+        ],
+        "1.20.4": [
+                minecraft_version : "1.20.4",
+                yarn_mappings    : "1.20.4+build.3",
+                fabric_api       : gprop("fabric_api_version_1.20.4"),
+                iris             : gprop("iris_version_1.20.4"),
+                aaa_particles    : gprop("aaa_particles_version_1.20.4"),
+                forgeconfigapiport: gprop("forgeconfigapiport_version_1.20.4"),
+                architectury     : gprop("architectury_version_1.20.4"),
+                bbs_jar          : gprop("bbs_jar_1.20.4"),
+                // aaa_particles 无 1.20.4 版本，1.20.4 构建仅作编译期依赖
+                aaa_as_compile_only: true
+        ]
+]
+
+def mcVer = versions[targetMc]
+if (mcVer == null) {
+    throw new GradleException("不支持的 mc_version: ${targetMc}，支持：${versions.keySet().join(', ')}")
+}
+
+def minecraftVersion = mcVer.minecraft_version
+def minecraftVersionRange = "${minecraft_version_range}"
+def javaVersionRange = "${java_version_range}"
+def loaderVersionRange = "${loader_version_range}"
+
+// 版本专属源码目录（如 src/versions/1.20.4/java）：存放无法跨版本共享的少量实现（NbtCompat）
+sourceSets {
+    main {
+        java {
+            srcDir "src/versions/${targetMc}/java"
+        }
+    }
+}
+
 base {
     archivesName = archives_base_name
 }
 
-version = mod_version
+version = "${mod_version}+${minecraftVersion}"
 group = mod_group_id
 
 processResources {
@@ -15,9 +68,9 @@ processResources {
         mod_id: mod_id,
         mod_name: mod_name,
         mod_license: mod_license,
-        minecraft_version_range: minecraft_version_range,
-        loader_version_range: loader_version_range,
-        java_version_range: java_version_range
+        minecraft_version_range: minecraftVersionRange,
+        loader_version_range: loaderVersionRange,
+        java_version_range: javaVersionRange
     )
 
     filesMatching("fabric.mod.json") {
@@ -26,9 +79,9 @@ processResources {
             mod_id: mod_id,
             mod_name: mod_name,
             mod_license: mod_license,
-            minecraft_version_range: minecraft_version_range,
-            loader_version_range: loader_version_range,
-            java_version_range: java_version_range
+            minecraft_version_range: minecraftVersionRange,
+            loader_version_range: loaderVersionRange,
+            java_version_range: javaVersionRange
         )
     }
 }
@@ -54,26 +107,31 @@ repositories {
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:${minecraft_version}"
-    mappings "net.fabricmc:yarn:${yarn_mappings}:v2"
+    minecraft "com.mojang:minecraft:${minecraftVersion}"
+    mappings "net.fabricmc:yarn:${mcVer.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${loader_version}"
 
     // Fabric API（提供 ClientTickEvents、ClientLifecycleEvents 等）
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${mcVer.fabric_api}"
 
-    // 引用本地 BBS FS 2.5.1（run/mods 中的实际运行版本），编译期解析 Mixin 目标类
-    modCompileOnly files("run/mods/bbs-2.5.1-1.20.1-FS-zh_CN.jar")
+    // 引用本地 BBS FS（run/mods 中的实际运行版本），编译期解析 Mixin 目标类
+    modCompileOnly files(mcVer.bbs_jar)
 
     // Iris 光影（仅编译期）：光影曲线相关 Mixin 需要引用 Iris 的类，运行时没装 Iris 也不会加载这些注入
-    modCompileOnly "maven.modrinth:iris:${iris_version}"
+    modCompileOnly "maven.modrinth:iris:${mcVer.iris}"
 
-    // AAA Particles 依赖
-    modImplementation "maven.modrinth:aaa-particles:${aaa_particles_version}"
-    modImplementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forgeconfigapiport_version}"
+    // AAA Particles 依赖（1.20.4 无对应版本：仅编译期，运行时功能自动禁用）
+    if (mcVer.aaa_as_compile_only) {
+        modCompileOnly "maven.modrinth:aaa-particles:${mcVer.aaa_particles}"
+    } else {
+        modImplementation "maven.modrinth:aaa-particles:${mcVer.aaa_particles}"
+    }
 
-    // aaa_particles 以 jar-in-jar 内置 architectury（9.2.14），但 loom dev 环境不解包嵌套 jar，
+    modImplementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${mcVer.forgeconfigapiport}"
+
+    // aaa_particles 以 jar-in-jar 内置 architectury，但 loom dev 环境不解包嵌套 jar，
     // 需显式声明才能在 runClient 中加载；版本与内置一致，且不会打进最终产物
-    modImplementation "dev.architectury:architectury-fabric:${architectury_version}"
+    modImplementation "dev.architectury:architectury-fabric:${mcVer.architectury}"
 
     // BBS VFX 与 VFX Lights（仅编译期）：轨道关键帧汉化需要引用其 Form 类做上下文判断，
     // 运行时由用户自行安装这两个插件
@@ -82,14 +140,22 @@ dependencies {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    it.options.release = java_version as int
     it.options.encoding = 'UTF-8'
+    /* ParticlePlusClient 有意使用 sun.misc.Unsafe 注入枚举常量。
+     * --release 17 下无法压制内部专用 API 警告，且 add-exports 与 --release 互斥，
+     * 故改用等价的 -source/-target 17 + -XDignore.symbol.file（与 FSloveCML 原构建一致）。
+     * 目标字节码为 Java 17，可在 Java 17~21 上运行。 */
+    it.sourceCompatibility = "17"
+    it.targetCompatibility = "17"
+    it.options.compilerArgs += ["-XDignore.symbol.file", "-Xlint:-options"]
 }
 
 loom {
     runs {
         client {
             vmArg "-Dsodium.checks.issue2561=false"
+            // 按游戏版本隔离运行目录，避免 1.20.1 / 1.20.4 的 mods、saves、config 互相冲突
+            runDir = "run/${minecraftVersion}"
         }
     }
 }
@@ -148,8 +214,26 @@ if (!privateDevRuntimeBuildTasks.isEmpty()) {
     tasks.register("runClientWithPrivateBuild", GradleBuild) {
         group = "fabric"
         description = "强制重建 private mod 开发运行包，并在新的 Gradle 构建中启动客户端。"
-        dependsOn project.tasks.named("buildPrivateDevRuntime")
+        dependsOn tasks.named("buildPrivateDevRuntime")
         dir = rootDir
         tasks = ["runClient"]
     }
 }
+
+// ---- 多版本构建 / 运行客户端便捷任务 ----
+// 通过 GradleBuild 嵌套构建传 mc_version，避免 PowerShell 下 -P 参数被截断，
+// 同时让构建与运行客户端各自按版本使用独立的 run 目录（run/1.20.1、run/1.20.4）。
+def registerVersionTask = { name, version, taskList, description ->
+    tasks.register(name, GradleBuild) {
+        group = "bbsplusplus"
+        description = description
+        dir = rootDir
+        tasks = taskList
+        startParameter.projectProperties = [mc_version: version]
+    }
+}
+
+registerVersionTask("build1201", "1.20.1", ["build"], "以 Minecraft 1.20.1 为目标构建（默认）。")
+registerVersionTask("build1204", "1.20.4", ["build"], "以 Minecraft 1.20.4 为目标构建。")
+registerVersionTask("runClient1201", "1.20.1", ["runClient"], "以 Minecraft 1.20.1 启动开发客户端（运行目录 run/1.20.1）。")
+registerVersionTask("runClient1204", "1.20.4", ["runClient"], "以 Minecraft 1.20.4 启动开发客户端（运行目录 run/1.20.4）。")

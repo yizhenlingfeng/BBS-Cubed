@@ -3,6 +3,7 @@ package gbeic.bbsplusplus.client.ui.utils;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.dashboard.panels.tabs.UIDataTabs;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
@@ -25,7 +26,8 @@ public class UILoopIconUtils {
         });
 
         loopIcon.wh(buttonSize, buttonSize).tooltip(L10n.lang("bbs.ui.film.looping_enabled"), Direction.BOTTOM);
-        loopIcon.relative(openCameraEditor).x(-buttonSize).y(0);
+        /* 可见性按钮(FSloveCML)也插在 openCameraEditor 左侧,需多偏移一个按钮宽度避免重叠 */
+        loopIcon.relative(openCameraEditor).x(-(buttonSize + UIDataTabs.TABS_HEIGHT_PX + 2)).y(0);
 
         panel.tabBar.add(loopIcon);
     }

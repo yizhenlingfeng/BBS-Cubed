@@ -1,0 +1,16 @@
+{
+    "required": true,
+    "package": "gbeic.bbsplusplus.mixin.client.accessor",
+    "compatibilityLevel": "JAVA_17",
+    "client": [
+        "FilmsAccessor",
+        "UIClipsInvoker",
+        "UIClipsPanelAccess",
+        "UIDockLayoutAccess",
+        "UIFilmPanelLayoutAccess"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    },
+    "refmap": "bbsplusplus-refmap.json"
+}

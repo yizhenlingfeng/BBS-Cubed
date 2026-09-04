@@ -88,7 +88,17 @@ public class StructureStickSaveNameScreen extends Screen
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta)
     {
-        this.renderBackground(context);
+        // 兼容 1.20.1/1.20.4：Screen.renderBackground 的签名在 1.20.2 由 (DrawContext) 变为 (DrawContext,int,int,float)，
+        // 无法用单次调用兼容两个版本。本界面仅在游戏内打开（client.world != null），
+        // 此处复刻两版本一致的 renderBackground/renderInGameBackground 暗化渐变，行为与原版完全一致。
+        if (this.client.world != null)
+        {
+            context.fillGradient(0, 0, this.width, this.height, -1072689136, -804253680);
+        }
+        else
+        {
+            this.renderBackgroundTexture(context);
+        }
 
         int centerX = this.width / 2;
         int centerY = this.height / 2;

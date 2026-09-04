@@ -1,0 +1,93 @@
+#version 150
+
+#moj_import <fog.glsl>
+
+uniform sampler2D Sampler0;
+uniform vec4 ColorModulator;
+uniform vec4 TextureTint;
+uniform float TextureWhiten;
+uniform float FogStart;
+uniform float FogEnd;
+uniform vec4 FogColor;
+
+in float vertexDistance;
+in vec4 vertexColor;
+in vec4 lightMapColor;
+in vec4 overlayColor;
+in vec2 texCoord0;
+
+out vec4 fragColor;
+
+vec3 rgb2hsl(vec3 c)
+{
+    float maxC = max(c.r, max(c.g, c.b));
+    float minC = min(c.r, min(c.g, c.b));
+    float delta = maxC - minC;
+    float lightness = (maxC + minC) * 0.5;
+    float denominator = 1.0 - abs(2.0 * lightness - 1.0);
+    float saturation = delta < 0.00001 || denominator < 0.00001 ? 0.0 : delta / denominator;
+    float hue = 0.0;
+
+    if (delta > 0.00001)
+    {
+        if (maxC == c.r)
+        {
+            hue = mod((c.g - c.b) / delta, 6.0) / 6.0;
+        }
+        else if (maxC == c.g)
+        {
+            hue = ((c.b - c.r) / delta + 2.0) / 6.0;
+        }
+        else
+        {
+            hue = ((c.r - c.g) / delta + 4.0) / 6.0;
+        }
+    }
+
+    return vec3(fract(hue), saturation, lightness);
+}
+
+vec3 hsl2rgb(vec3 hsl)
+{
+    float h = fract(hsl.x);
+    float s = clamp(hsl.y, 0.0, 1.0);
+    float l = clamp(hsl.z, 0.0, 1.0);
+    float chroma = (1.0 - abs(2.0 * l - 1.0)) * s;
+    float x = chroma * (1.0 - abs(mod(h * 6.0, 2.0) - 1.0));
+    float m = l - chroma * 0.5;
+    vec3 rgb;
+
+    if (h < 1.0 / 6.0) rgb = vec3(chroma, x, 0.0);
+    else if (h < 2.0 / 6.0) rgb = vec3(x, chroma, 0.0);
+    else if (h < 3.0 / 6.0) rgb = vec3(0.0, chroma, x);
+    else if (h < 4.0 / 6.0) rgb = vec3(0.0, x, chroma);
+    else if (h < 5.0 / 6.0) rgb = vec3(x, 0.0, chroma);
+    else rgb = vec3(chroma, 0.0, x);
+
+    return rgb + vec3(m);
+}
+
+void main()
+{
+    vec4 color = texture(Sampler0, texCoord0);
+
+    if (color.a < 0.1)
+    {
+        discard;
+    }
+
+    /* Replace hue/saturation while preserving every source pixel's lightness. */
+    vec3 sourceHsl = rgb2hsl(clamp(color.rgb, 0.0, 1.0));
+    vec3 tintHsl = rgb2hsl(clamp(TextureTint.rgb, 0.0, 1.0));
+    vec3 recolored = hsl2rgb(vec3(tintHsl.x, tintHsl.y, sourceHsl.z));
+    color.rgb = mix(color.rgb, recolored, clamp(TextureTint.a, 0.0, 1.0));
+
+    color *= vertexColor * ColorModulator;
+
+    /* White is a material blend, so the original form color remains compatible. */
+    color.rgb = mix(color.rgb, vec3(1.0), clamp(TextureWhiten, 0.0, 1.0));
+    color.rgb = mix(overlayColor.rgb, color.rgb, overlayColor.a);
+    color *= lightMapColor;
+
+    fragColor = linear_fog(color, vertexDistance, FogStart, FogEnd, FogColor);
+}
