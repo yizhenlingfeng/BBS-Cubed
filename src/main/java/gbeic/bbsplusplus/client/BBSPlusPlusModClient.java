@@ -301,15 +301,32 @@ public class BBSPlusPlusModClient implements ClientModInitializer
     }
 
     /**
-     * 给「额外」分类里的结构表单预填一个已有的结构文件。
+     * 给「额外」分类里的结构表单预填一个原版橡树结构。
      * <p>
      * 否则分类里显示的是一个空表单，预览框里什么都看不到。
+     * 优先使用内置的 structures/oak_tree.nbt，找不到时回退到目录中第一个结构文件。
      * </p>
      */
     private static StructureForm createPreviewStructureForm()
     {
         StructureForm form = new StructureForm();
 
+        // 优先使用内置的原版橡树结构
+        try
+        {
+            for (mchorse.bbs_mod.resources.Link link : mchorse.bbs_mod.BBSMod.getProvider().getLinksFromPath(mchorse.bbs_mod.resources.Link.assets("structures")))
+            {
+                if ("structures/oak_tree.nbt".equals(link.path))
+                {
+                    form.structureFile.set(link.path);
+                    return form;
+                }
+            }
+        }
+        catch (Exception ignored)
+        {}
+
+        // 回退：取目录中第一个 .nbt 文件
         try
         {
             for (mchorse.bbs_mod.resources.Link link : mchorse.bbs_mod.BBSMod.getProvider().getLinksFromPath(mchorse.bbs_mod.resources.Link.assets("structures")))
