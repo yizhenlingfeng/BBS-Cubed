@@ -1,7 +1,6 @@
 package gbeic.bbsplusplus.mixin.client;
 
 import gbeic.bbsplusplus.api.PickTextureButtonHolder;
-import gbeic.bbsplusplus.api.PoseTextureGradeEditorHolder;
 import mchorse.bbs_mod.ui.framework.elements.IUIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory;
@@ -9,16 +8,14 @@ import mchorse.bbs_mod.ui.utils.UI;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * 把"骨骼纹理"按钮带进 pose 关键帧属性面板（对齐 CML 的 UIPoseKeyframeFactory 布局）。
  *
  * <p>控件本体由 {@code UIPoseEditorMixin} 创建。FS 版 {@code resize()} 会先
  * {@code poseEditor.removeAll()}，并分别重建宽、窄布局。宽布局的右侧骨骼列表
- * 很高，因此材质控件必须放进左侧参数列；若追加到整行之后，材质控件前面就会
+ * 很高，因此按钮必须放进左侧参数列；若追加到整行之后，按钮前面就会
  * 留出与骨骼列表等高的空白。窄布局仍按顺序追加。</p>
  */
 @Mixin(value = UIPoseKeyframeFactory.class, remap = false)
@@ -26,22 +23,6 @@ public abstract class UIPoseKeyframeFactoryMixin
 {
     @Shadow
     private UIPoseKeyframeFactory.UIPoseFactoryEditor poseEditor;
-
-    @Inject(
-        method = "resize()V",
-        at = @At(
-            value = "INVOKE",
-            target = "Lmchorse/bbs_mod/ui/framework/elements/input/keyframes/factories/UIKeyframeFactory;resize()V",
-            shift = At.Shift.BEFORE,
-            remap = false
-        ),
-        require = 1,
-        remap = false
-    )
-    private void bbspp_cml$refreshTextureGradeBeforeLayout(CallbackInfo ci)
-    {
-        ((PoseTextureGradeEditorHolder) this.poseEditor).bbspp_cml$refreshTextureGradeControls();
-    }
 
     @Redirect(
         method = "resize()V",
@@ -56,11 +37,10 @@ public abstract class UIPoseKeyframeFactoryMixin
     )
     private UIElement bbspp_cml$addWideLayout(UIElement[] layout)
     {
-        UIElement[] merged = new UIElement[layout.length + 2];
+        UIElement[] merged = new UIElement[layout.length + 1];
 
         System.arraycopy(layout, 0, merged, 0, layout.length);
-        merged[layout.length] = (UIElement) ((PoseTextureGradeEditorHolder) this.poseEditor).bbspp_cml$getTextureGradeSection();
-        merged[layout.length + 1] = ((PickTextureButtonHolder) this.poseEditor).bbspp_cml$getPickTextureButton();
+        merged[layout.length] = ((PickTextureButtonHolder) this.poseEditor).bbspp_cml$getPickTextureButton();
 
         return UI.column(merged);
     }
@@ -80,11 +60,10 @@ public abstract class UIPoseKeyframeFactoryMixin
         IUIElement[] layout
     )
     {
-        IUIElement[] merged = new IUIElement[layout.length + 2];
+        IUIElement[] merged = new IUIElement[layout.length + 1];
 
         System.arraycopy(layout, 0, merged, 0, layout.length);
-        merged[layout.length] = ((PoseTextureGradeEditorHolder) editor).bbspp_cml$getTextureGradeSection();
-        merged[layout.length + 1] = ((PickTextureButtonHolder) editor).bbspp_cml$getPickTextureButton();
+        merged[layout.length] = ((PickTextureButtonHolder) editor).bbspp_cml$getPickTextureButton();
         editor.add(merged);
     }
 }

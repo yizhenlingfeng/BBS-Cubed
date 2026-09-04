@@ -96,7 +96,7 @@
 
 - **流体模拟**：新增流体伪装，支持流体物理模拟渲染
 - **粒子Plus**：增强粒子系统——粒子变形(Morph)、碰撞外观与染色、收藏夹浏览器、附加渲染纹理、Additive 材质
-- **PBR 纹理分级**：逐骨骼/逐组 PBR 参数覆盖（光滑度、金属度、孔隙率、自发光、法线强度），支持纹理染色(tint)与美白(whiten)
+- **PBR 纹理分级**：逐骨骼/逐组 PBR 参数覆盖（光滑度、金属度、孔隙率、自发光、法线强度）
 - **骨骼纹理**：逐骨骼分配独立纹理
 - **Premiere 导出**：将影片导出为 Premiere Pro XML 工程文件，同时生成 SRT 字幕文件
 - **三种剪辑类型**：快捷栏剪辑、电影剪辑、重播剪辑，丰富时间线内容
@@ -157,6 +157,20 @@
 
 ### MOD更新日志
 
+#### 3.1.1：
+
+* 功能移除：
+  * 移除姿势编辑器中的**纹理调色（texture_tint）**和**纹理美白（texture_whiten）**功能，删除相关 API 接口 `PoseTextureGradeEditorHolder`，精简 `UIPoseEditorMixin` 与 `UIPoseKeyframeFactoryMixin` 中约 200 行相关代码
+* Bug 修复：
+  * 修复 OrbitViewGizmo 在原版轨道模式下被误隐藏的 bug——根因是 3.1 新增的 `@Shadow controller` HEAD NPE 守卫存在误判风险（controller 实际不会为 null），导致 `isActive()` 被强制返回 false。修复：移除该守卫，改用 `@Accessor` 安全读取目标类字段
+* 功能增强：
+  * 跟随轨道模式（模式 6）新增 **perspective 右键菜单**支持——在跟随轨道模式下显示与原版轨道相同的右键选项（传送中心到录制点、附加轨道、切换正交），此前仅原版轨道模式（模式 2）有此菜单
+* 项目维护：
+  * 清理无用嵌套资源目录 `assets/bbs/assets/`（870 个未引用翻译键 + 未引用纹理，含损坏 JSON）
+  * 清理临时调试文件（684MB .hprof 内存转储、issue 截图、`_memcheck/`、`mchorse/` 反编译 class）与构建产物（`build/`、`.gradle/`、`run/`），共释放约 2GB
+  * 更新 `.gitignore`，添加 `*.hprof`、`issue_screenshot*.png`、`_memcheck/`、`mchorse/` 规则防止回归
+  * 构建验证：`gradlew compileJava` BUILD SUCCESSFUL
+
 #### 3.1：
 
 * 合并 `bbs_FSloveCML`（bbs_snow）插件全部内容，卸载 bbs_FSloveCML！
@@ -176,10 +190,10 @@
 * 功能改善：
   * 跟随轨道（模式 6）现在支持原版轨道的 XYZ 轴方向选择（轨道视图小部件 OrbitViewGizmo 在跟随模式下也会激活）
 * Bug 修复：
-  * 修复姿势页面纹理调色（texture_tint）和纹理白化（texture_whiten）不生效的问题——根因是合并时遗漏了 5 个纹理分级着色器文件（model/block/unshaded/text/trail_texture_grade），已从原项目补齐
-  * 修复纹理调色/白化在姿势编辑页面可见、退出后不显示的问题——根因是动画器直接设置 `group.current`（Transform）绕过 `Model.applyPose()`，导致 PoseTransform 上的调色数据在复制到 current 时丢失。修复：给 Transform 基类添加渲染期调色/白化字段（实现 TextureGradeHolder），`copy()` 时从源 PoseTransform 复制，渲染时从 `group.current` 回读
+  * ~~修复姿势页面纹理调色（texture_tint）和纹理白化（texture_whiten）不生效的问题~~（3.1.1 已移除该功能）
+  * ~~修复纹理调色/白化在姿势编辑页面可见、退出后不显示的问题~~（3.1.1 已移除该功能）
   * 修复影片编辑器右上角循环图标与可见性图标重叠的问题——循环图标偏移量增加一个可见性按钮宽度
-  * 修复 OrbitViewGizmo.isActive() 空指针崩溃（controller 为 null 时 NPE）——添加 HEAD null 守卫提前返回 false
+  * ~~修复 OrbitViewGizmo.isActive() 空指针崩溃（controller 为 null 时 NPE）——添加 HEAD null 守卫提前返回 false~~（3.1.1 发现该守卫存在误判 bug 导致原版轨道 Gizmo 被隐藏，已改用 @Accessor 安全读取并移除守卫）
 * 设置面板增强：
   * 为「增强界面」「CML扩展」「导出增强」三个分类添加鼠标悬浮介绍（tooltip）
   * 原「CML增强」分类更名为「CML扩展」
