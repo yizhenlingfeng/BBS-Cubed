@@ -162,7 +162,7 @@ public final class ModelTextureGradeShader
         GlUniform tintUniform = program.getUniform("TextureTint");
         GlUniform whitenUniform = program.getUniform("TextureWhiten");
 
-        if (debugCounter <= 5)
+        if (debugCounter < 5)
         {
             BBSFSloveCML.LOGGER.info("[FSloveCML-DBG] apply: program=" + program.getClass().getSimpleName()
                 + " tintUniform=" + (tintUniform != null)
