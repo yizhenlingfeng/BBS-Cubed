@@ -52,6 +52,9 @@ public class BBSAddonsSettings
     /** 开启后，BBS 结构化复制数据会保存在 BBS++ 私有剪贴板中，不再污染系统剪贴板 */
     public static ValueBoolean privateBbsClipboard;
 
+    /** 开启后，自动为没有 config.json 的模型生成关闭面剔除的配置文件 */
+    public static ValueBoolean autoDisableFaceCulling;
+
     /** 影片编辑器关键帧视图中 Alt+滚轮的行为模式 */
     public static ValueInt filmAltWheelTimelineMode;
 

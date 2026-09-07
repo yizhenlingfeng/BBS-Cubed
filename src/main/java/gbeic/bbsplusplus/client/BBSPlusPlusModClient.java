@@ -27,6 +27,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import gbeic.bbsplusplus.network.BBSPlusPlusNetwork;
 import gbeic.bbsplusplus.util.FilmAutoGameModeRestoreState;
+import gbeic.bbsplusplus.util.ModelCullingConfigManager;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.util.math.BlockPos;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
@@ -52,6 +53,9 @@ public class BBSPlusPlusModClient implements ClientModInitializer
         {
             BBSMod.setupConfig(Icons.DUPE, "bbspp", BBSMod.getSettingsPath("bbspp.json"),
                 BBSPlusPlusSettings::register);
+
+            // 设置模块注册完成后，如果自动关闭面剔除已开启，立即执行一次
+            ModelCullingConfigManager.onClientStarted();
         });
 
         // 注册到 BBS 事件总线，接收 @Subscribe 事件
@@ -59,6 +63,9 @@ public class BBSPlusPlusModClient implements ClientModInitializer
 
 // 自动旁观模式异常退出兜底：启动后检测残留状态，关闭前尽量恢复。
         ClientTickEvents.END_CLIENT_TICK.register(FilmAutoGameModeRestoreState::tick);
+
+        // 自动关闭面剔除：每帧检测开关状态变化，打开时自动生成模型配置
+        ClientTickEvents.END_CLIENT_TICK.register(client -> ModelCullingConfigManager.tick());
         ClientLifecycleEvents.CLIENT_STOPPING.register(FilmAutoGameModeRestoreState::tryRestoreBeforeShutdown);
 
         // 监听音频输出设备切换（例如外放切耳机），自动刷新 BBS 音频缓存，避免音频 clip 静音。

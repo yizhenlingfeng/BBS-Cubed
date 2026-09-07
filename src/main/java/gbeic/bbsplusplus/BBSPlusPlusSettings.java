@@ -44,6 +44,7 @@ public class BBSPlusPlusSettings
         BBSAddonsSettings.worldFilmShaderCurves = builder.getBoolean("world_film_shader_curves", false);
         BBSAddonsSettings.allowClipTrackExpansion = builder.getBoolean("allow_clip_track_expansion", false);
         BBSAddonsSettings.privateBbsClipboard = builder.getBoolean("private_bbs_clipboard", false);
+        BBSAddonsSettings.autoDisableFaceCulling = builder.getBoolean("auto_disable_face_culling", false);
         BBSAddonsSettings.filmAltWheelTimelineMode = builder.getInt("film_alt_wheel_timeline_mode", 0, 0, 2).modes(
             lang("bbspp.config.bbs_enhancements.film_alt_wheel_timeline_mode.default"),
             lang("bbspp.config.bbs_enhancements.film_alt_wheel_timeline_mode.disabled"),
