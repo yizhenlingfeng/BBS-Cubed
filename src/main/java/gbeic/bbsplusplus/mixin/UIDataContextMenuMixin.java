@@ -7,6 +7,8 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UISearchList;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageOverlayPanel;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.presets.UIDataContextMenu;
 import mchorse.bbs_mod.utils.presets.DataManager;
@@ -24,8 +26,8 @@ import java.util.function.Supplier;
  * 在预设右键菜单（UIDataContextMenu）中添加"自动保存"开关。
  * <p>
  * 该菜单被 IK 链、物理骨骼、骨骼限制和姿势四个页面共用。
- * 启用自动保存后，用户在列表中选中的预设会成为自动保存目标，
- * 后续面板修改会经防抖后自动写入该预设。
+ * 启用自动保存前必须选中一个预设：未选中时点击按钮会弹出提示，不开启；
+ * 已选中时锁定该预设为自动保存目标，后续面板修改会经防抖后自动写入该预设。
  * </p>
  * <p>
  * 关键：fillPoses() 只在构造函数中调用一次，render() 有 scrolledToCurrent 缓存，
@@ -33,9 +35,8 @@ import java.util.function.Supplier;
  * </p>
  */
 @Mixin(value = UIDataContextMenu.class, remap = true)
-public abstract class UIDataContextMenuMixin
+public abstract class UIDataContextMenuMixin extends UIElement
 {
-    @Shadow private DataManager manager;
     @Shadow public UISearchList entries;
     @Shadow public UIElement row;
 
@@ -61,13 +62,24 @@ public abstract class UIDataContextMenuMixin
                 return;
             }
             boolean newState = !AutoSavePresetState.isEnabled(this.bbspp$type);
-            AutoSavePresetState.setEnabled(this.bbspp$type, newState);
-            btn.active(newState);
 
             if (newState)
             {
-                bbspp$captureSelectedPreset();
+                /* 开启前必须选中一个预设：未选中则弹窗提示，不开启 */
+                String selected = bbspp$getSelectedPresetName();
+                if (selected == null || selected.isEmpty())
+                {
+                    UIOverlay.addOverlay(this.getContext(), new UIMessageOverlayPanel(
+                            L10n.lang("bbspp.ui.preset.auto_save"),
+                            L10n.lang("bbspp.ui.preset.auto_save_no_selection")));
+                    return;
+                }
+                /* 锁定当前选中的预设为自动保存目标 */
+                AutoSavePresetState.setSelectedPreset(this.bbspp$type, selected);
             }
+
+            AutoSavePresetState.setEnabled(this.bbspp$type, newState);
+            btn.active(newState);
         });
         // 关闭时暗淡（半透明白），开启时高亮（纯白）
         this.bbspp$autoSaveIcon.iconColor(0x60FFFFFF);
@@ -120,14 +132,25 @@ public abstract class UIDataContextMenuMixin
     }
 
     @Unique
-    private void bbspp$captureSelectedPreset()
+    private String bbspp$getSelectedPresetName()
     {
         if (this.entries == null || this.entries.list == null)
         {
-            return;
+            return null;
         }
         Object current = this.entries.list.getCurrentFirst();
         if (current instanceof String name && !name.isEmpty())
+        {
+            return name;
+        }
+        return null;
+    }
+
+    @Unique
+    private void bbspp$captureSelectedPreset()
+    {
+        String name = bbspp$getSelectedPresetName();
+        if (name != null)
         {
             AutoSavePresetState.setSelectedPreset(this.bbspp$type, name);
         }

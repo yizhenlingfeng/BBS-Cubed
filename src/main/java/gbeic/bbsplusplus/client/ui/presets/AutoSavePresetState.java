@@ -36,9 +36,10 @@ import java.util.function.Supplier;
  * </p>
  * <p>
  * 状态仅在运行时内存中维护，不持久化到配置文件。
- * 开关状态（enabled）独立于 clear()：切换编辑目标/面板刷新时只重置目标预设与脏检查基准，
- * 不会关闭自动保存，避免 startEdit/setPose 等内部刷新导致按钮意外熄灭。
- * 开关只能由用户手动点击按钮切换。
+ * 开关状态（enabled）与目标预设（selectedPresets）独立于 clear()：切换编辑目标/面板刷新时
+ * 只取消挂起任务与脏检查基准，不会关闭自动保存或丢失目标预设，
+ * 避免 startEdit/setPose 等内部刷新导致按钮熄灭或选中预设丢失。
+ * 开关与目标预设只能由用户手动操作切换。
  * </p>
  */
 public class AutoSavePresetState
@@ -227,15 +228,14 @@ public class AutoSavePresetState
     /**
      * 清理指定类型的运行时状态（面板切换编辑目标/刷新时调用）。
      * <p>
-     * 仅取消挂起的保存任务、清除目标预设与脏检查基准；<b>不</b>关闭自动保存开关。
-     * 开关状态只能由用户手动点击按钮切换，避免 startEdit/setPose 等内部刷新
-     * （如点击肢体、数据回载）导致按钮意外熄灭。
+     * 仅取消挂起的保存任务、清除脏检查基准；<b>不</b>关闭自动保存开关，也<b>不</b>清除目标预设。
+     * 开关与目标预设只能由用户手动操作切换，避免 startEdit/setPose 等内部刷新
+     * （如点击肢体、自动保存后数据回载）导致按钮熄灭或目标预设丢失。
      * </p>
      */
     public static void clear(String type)
     {
         cancelPending(type);
-        selectedPresets.remove(type);
         lastSaved.remove(type);
     }
 
