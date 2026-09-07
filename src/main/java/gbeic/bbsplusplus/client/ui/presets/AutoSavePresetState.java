@@ -36,7 +36,9 @@ import java.util.function.Supplier;
  * </p>
  * <p>
  * 状态仅在运行时内存中维护，不持久化到配置文件。
- * 每次打开编辑器默认关闭，避免误覆盖预设。
+ * 开关状态（enabled）独立于 clear()：切换编辑目标/面板刷新时只重置目标预设与脏检查基准，
+ * 不会关闭自动保存，避免 startEdit/setPose 等内部刷新导致按钮意外熄灭。
+ * 开关只能由用户手动点击按钮切换。
  * </p>
  */
 public class AutoSavePresetState
@@ -223,12 +225,16 @@ public class AutoSavePresetState
     }
 
     /**
-     * 清理指定类型的所有状态（面板切换编辑目标/关闭时调用）。
+     * 清理指定类型的运行时状态（面板切换编辑目标/刷新时调用）。
+     * <p>
+     * 仅取消挂起的保存任务、清除目标预设与脏检查基准；<b>不</b>关闭自动保存开关。
+     * 开关状态只能由用户手动点击按钮切换，避免 startEdit/setPose 等内部刷新
+     * （如点击肢体、数据回载）导致按钮意外熄灭。
+     * </p>
      */
     public static void clear(String type)
     {
         cancelPending(type);
-        enabled.remove(type);
         selectedPresets.remove(type);
         lastSaved.remove(type);
     }
