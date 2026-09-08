@@ -148,4 +148,10 @@ public class BBSAddonsSettings
     /** 新版伪装界面默认打开分类：home 或分类可见性 ID */
     public static ValueString morphingDefaultCategory;
 
+    /** 伪装界面排版模式：0=列表，1=网格 */
+    public static ValueInt morphingLayoutMode;
+
+    /** 伪装界面图标缩放百分比：20~200，默认100 */
+    public static ValueInt morphingIconScale;
+
 }

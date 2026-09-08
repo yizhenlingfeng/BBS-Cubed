@@ -1025,5 +1025,13 @@
     "bbspp.config.tooltip": "BBS Cubed 扩展功能设置",
     "bbspp.config.bbs_enhancements.tooltip": "界面与交互增强，含纹理补间与字幕导出",
     "bbspp.ui.preset.auto_save": "自动保存预设（启用后修改将实时保存到当前选中的预设）",
-    "bbspp.ui.preset.auto_save_no_selection": "请先选择一个预设"
+    "bbspp.ui.preset.auto_save_no_selection": "请先选择一个预设",
+    "bbspp.ui.morph.layout_toggle": "切换排版",
+    "bbspp.ui.morph.layout_list": "列表模式",
+    "bbspp.ui.morph.layout_grid": "网格模式",
+    "bbspp.ui.morph.builtin_cannot_move": "内置模型无法移动",
+    "bbspp.ui.morph.target_builtin": "目标分类为内置分类，无法移入",
+    "bbspp.ui.morph.move_success": "模型已移动",
+    "bbspp.ui.morph.target_exists": "目标位置已存在同名模型",
+    "bbspp.ui.morph.move_failed": "模型移动失败"
 }

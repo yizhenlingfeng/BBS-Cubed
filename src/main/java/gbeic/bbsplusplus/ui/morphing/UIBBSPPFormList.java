@@ -1,30 +1,45 @@
 package gbeic.bbsplusplus.ui.morphing;
 
+import mchorse.bbs_mod.BBSMod;
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.forms.FormCategories;
+import mchorse.bbs_mod.forms.categories.FormCategory;
+import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.graphics.window.Window;
+import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.ui.forms.IUIFormList;
 import mchorse.bbs_mod.ui.forms.UIFormList;
 import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
-import mchorse.bbs_mod.ui.framework.elements.UIElement;
-import mchorse.bbs_mod.forms.categories.FormCategory;
-import gbeic.bbsplusplus.mixin.UIFormListAccessor;
 import mchorse.bbs_mod.ui.framework.UIContext;
-import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.ui.framework.elements.IUIElement;
+import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
+import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.l10n.L10n;
+import gbeic.bbsplusplus.BBSAddonsSettings;
+import gbeic.bbsplusplus.mixin.UIFormListAccessor;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 改进伪装表单列表, 具有侧边导航栏和首页。
+ * 改进伪装表单列表, 具有侧边导航栏、首页、排版切换、图标缩放、拖拽移动和模型预览。
  */
-
 public class UIBBSPPFormList extends UIFormList
 {
     public UIBBSPPCategorySidebar sidebar;
     public UIBBSPPCategoryHome home;
     public UIElement contentArea;
-    public mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon openModelsBtn;
+    public UIIcon openModelsBtn;
+    public UIIcon layoutToggleBtn;
+
+    /** 自定义分类列表（支持列表/网格模式） */
+    private final List<UIBBSPPFormCategory> bbsppCategories = new ArrayList<>();
 
     public UIBBSPPFormList(IUIFormList palette)
     {
@@ -36,31 +51,35 @@ public class UIBBSPPFormList extends UIFormList
         this.bar.resetFlex();
         this.bar.relative(this).x(0).y(0).w(1F).h(24).row(4).height(24);
         this.search.h(18);
-        
-        this.openModelsBtn = new mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon(
-            mchorse.bbs_mod.ui.utils.icons.Icons.FOLDER,
-            (b) -> mchorse.bbs_mod.ui.utils.UIUtils.openFolder(mchorse.bbs_mod.BBSMod.getAssetsPath("models"))
+
+        this.openModelsBtn = new UIIcon(
+            Icons.FOLDER,
+            (b) -> mchorse.bbs_mod.ui.utils.UIUtils.openFolder(BBSMod.getAssetsPath("models"))
         );
-        this.openModelsBtn.tooltip(mchorse.bbs_mod.l10n.L10n.lang("studio.ui.utility.open_models_folder"));
-        
+        this.openModelsBtn.tooltip(L10n.lang("studio.ui.utility.open_models_folder"));
         this.openModelsBtn.w(20);
-        
-        // 我们把新按钮和原有的按钮重新排列
+
+        // 排版切换按钮
+        this.layoutToggleBtn = new UIIcon(this.getCurrentLayoutIcon(), null);
+        this.layoutToggleBtn.callback = (b) -> this.showLayoutMenu();
+        this.layoutToggleBtn.tooltip(L10n.lang("bbspp.ui.morph.layout_toggle"));
+        this.layoutToggleBtn.w(20);
+
+        // 重新排列顶部栏按钮
         this.bar.removeAll();
         if (this.categoryFilter != null)
         {
             this.bar.add(this.categoryFilter);
         }
-        this.bar.add(this.search, this.edit, this.openModelsBtn, this.close);
-        
-        
+        this.bar.add(this.search, this.edit, this.layoutToggleBtn, this.openModelsBtn, this.close);
+
         // 2. 设置侧边栏
         this.sidebar = new UIBBSPPCategorySidebar(this::onSidebarSelect);
         this.sidebar.relative(this).x(0).y(24).w(120).h(1F, -24);
 
         // 3. 设置内容区域（右侧）
         this.contentArea = new UIElement();
-        
+
         // 4. 设置首页
         this.home = new UIBBSPPCategoryHome(this::onHomeCategorySelect);
         this.home.full(this.contentArea);
@@ -72,6 +91,71 @@ public class UIBBSPPFormList extends UIFormList
         this.add(this.bar, this.sidebar, this.contentArea);
     }
 
+    /**
+     * 获取当前排版模式对应的图标。
+     */
+    private mchorse.bbs_mod.ui.utils.icons.Icon getCurrentLayoutIcon()
+    {
+        return isListMode() ? Icons.LIST : Icons.LAYOUT;
+    }
+
+    private boolean isListMode()
+    {
+        return BBSAddonsSettings.morphingLayoutMode != null
+            && BBSAddonsSettings.morphingLayoutMode.get() == 0;
+    }
+
+    private int getIconScale()
+    {
+        return BBSAddonsSettings.morphingIconScale != null
+            ? BBSAddonsSettings.morphingIconScale.get() : 100;
+    }
+
+    /**
+     * 显示排版切换的右键菜单。
+     */
+    private void showLayoutMenu()
+    {
+        this.layoutToggleBtn.getContext().replaceContextMenu((menu) ->
+        {
+            menu.action(Icons.LIST, L10n.lang("bbspp.ui.morph.layout_list"), () ->
+            {
+                this.setLayoutMode(0);
+            });
+            menu.action(Icons.LAYOUT, L10n.lang("bbspp.ui.morph.layout_grid"), () ->
+            {
+                this.setLayoutMode(1);
+            });
+        });
+    }
+
+    private void setLayoutMode(int mode)
+    {
+        if (BBSAddonsSettings.morphingLayoutMode != null)
+        {
+            BBSAddonsSettings.morphingLayoutMode.set(mode);
+        }
+
+        this.layoutToggleBtn.both(this.getCurrentLayoutIcon());
+        this.updateCategoryLayout();
+        this.forms.resize();
+    }
+
+    /**
+     * 更新所有自定义分类的排版模式和缩放。
+     */
+    private void updateCategoryLayout()
+    {
+        boolean listMode = this.isListMode();
+        int scale = this.getIconScale();
+
+        for (UIBBSPPFormCategory cat : this.bbsppCategories)
+        {
+            cat.listMode = listMode;
+            cat.iconScale = scale;
+        }
+    }
+
     @Override
     public void resize()
     {
@@ -81,14 +165,14 @@ public class UIBBSPPFormList extends UIFormList
             this.sidebar.w(sw);
             this.contentArea.relative(this).x(sw).y(24).w(1F, -sw).h(1F, -24);
         }
-        
+
         super.resize();
     }
 
     private void onSidebarSelect(UIBBSPPCategorySidebar.CategoryItem item)
     {
-        this.search.setText(""); // 清除搜索
-        
+        this.search.setText("");
+
         if (item == null || item.isHome)
         {
             this.home.setVisible(true);
@@ -98,24 +182,23 @@ public class UIBBSPPFormList extends UIFormList
         {
             this.home.setVisible(false);
             this.forms.setVisible(true);
-            
-            this.forms.removeAll(); // 清除全部
-            
+
+            this.forms.removeAll();
+
             // 仅重新添加选中的类别
-            List<UIFormCategory> allCats = ((UIFormListAccessor) this).getCategories();
-            for (UIFormCategory cat : allCats)
+            for (UIBBSPPFormCategory cat : this.bbsppCategories)
             {
                 boolean isSelectedCat = cat.category.visible.getId().equals(item.id);
                 if (isSelectedCat)
                 {
                     this.forms.add(cat);
-                    cat.category.visible.set(true); // 展开它
+                    cat.category.visible.set(true);
                     cat.setVisible(true);
                 }
             }
             this.forms.resize();
         }
-        
+
         this.resize();
     }
 
@@ -128,62 +211,115 @@ public class UIBBSPPFormList extends UIFormList
     public void setupForms(FormCategories formsCategories)
     {
         super.setupForms(formsCategories);
-        
-        if (this.sidebar == null) return; // 从 super() 调用，此时我们的字段尚未初始化
+
+        if (this.sidebar == null) return;
 
         List<UIFormCategory> allCats = ((UIFormListAccessor) this).getCategories();
+
+        // 用自定义分类替换原有分类
+        this.bbsppCategories.clear();
+        this.forms.removeAll();
+
+        boolean listMode = this.isListMode();
+        int scale = this.getIconScale();
+
+        for (UIFormCategory oldCat : allCats)
+        {
+            String catId = oldCat.category.visible.getId();
+
+            /* 过滤模型本身的文件夹：
+             * 保留父级分类（ID 中 "/" 数量 <= 1，如 "模型/模板"），
+             * 过滤模型自身文件夹（ID 中 "/" 数量 >= 2，如 "模型/模板/AlexQ3.0"）。 */
+            if (catId != null)
+            {
+                int slashCount = 0;
+                for (int i = 0; i < catId.length(); i++)
+                {
+                    if (catId.charAt(i) == '/') slashCount++;
+                }
+                if (slashCount >= 2)
+                {
+                    continue;
+                }
+            }
+
+            UIBBSPPFormCategory newCat = new UIBBSPPFormCategory(oldCat.category, this);
+            newCat.listMode = listMode;
+            newCat.iconScale = scale;
+            newCat.selected = oldCat.selected;
+            this.bbsppCategories.add(newCat);
+        }
 
         String currentSelectionId = MorphingDefaultCategory.get();
 
         // 填充侧边栏
         this.sidebar.clear();
         this.sidebar.addItem(null, MorphingDefaultCategory.HOME, L10n.lang("bbs.ui.bbspp.morph.home").get(), true);
-        
-        for (UIFormCategory category : allCats)
+
+        for (UIBBSPPFormCategory category : this.bbsppCategories)
         {
             this.sidebar.addItem(category, category.category.visible.getId(), category.category.getProcessedTitle(), false);
         }
 
         // 填充首页
-        this.home.setup(allCats);
+        this.home.setup(this.toUIFormCategoryList());
 
         this.sidebar.select(currentSelectionId);
-        
-        // 如果之前选中的类别暂时匹配不上，仅本次回退到首页，
-        // 不覆盖持久化的默认分类设置，避免用户设置被悄悄抹掉。
+
         if (this.sidebar.selected == null)
         {
             this.sidebar.select(MorphingDefaultCategory.HOME);
         }
-        
-        // 重新计算布局尺寸以避免新生成的 UI 元素宽高为 0
+
         this.resize();
     }
 
-    @Override
-    public void setSelected(Form form)
+    private List<UIFormCategory> toUIFormCategoryList()
     {
-        super.setSelected(form);
-
-        this.applyDefaultCategory();
+        List<UIFormCategory> list = new ArrayList<>();
+        list.addAll(this.bbsppCategories);
+        return list;
     }
 
-    private void applyDefaultCategory()
+    /**
+     * 点击模型时实际调用的方法（而非 setSelected）。
+     */
+    @Override
+    public void selectCategory(UIFormCategory category, Form form, boolean toggle)
     {
-        if (this.sidebar == null)
+        super.selectCategory(category, form, toggle);
+    }
+
+    @Override
+    public void deselect()
+    {
+        super.deselect();
+    }
+
+    /**
+     * 全页面 Ctrl+滚轮缩放图标大小。
+     * 在子元素处理滚轮事件之前拦截，确保只要在伪装页面内就能缩放。
+     */
+    @Override
+    protected IUIElement childrenMouseScrolled(UIContext context)
+    {
+        if (Window.isCtrlPressed() && this.forms.isVisible())
         {
-            return;
+            int currentScale = this.getIconScale();
+            int delta = context.mouseWheel > 0 ? 10 : -10;
+            int newScale = Math.max(20, Math.min(200, currentScale + delta));
+
+            if (BBSAddonsSettings.morphingIconScale != null)
+            {
+                BBSAddonsSettings.morphingIconScale.set(newScale);
+            }
+
+            this.updateCategoryLayout();
+            this.forms.resize();
+            return this;
         }
 
-        String id = MorphingDefaultCategory.get();
-
-        this.sidebar.select(id);
-
-        // 分类暂时匹配不上时仅本次回退到首页，不覆盖持久化的默认分类设置。
-        if (this.sidebar.selected == null)
-        {
-            this.sidebar.select(MorphingDefaultCategory.HOME);
-        }
+        return super.childrenMouseScrolled(context);
     }
 
     private String previousSelectionId = "home";
@@ -191,28 +327,24 @@ public class UIBBSPPFormList extends UIFormList
     public void afterSearch(String raw)
     {
         if (this.sidebar == null) return;
-        
+
         String s = raw == null ? "" : raw.trim();
         if (s.isEmpty())
         {
-            // 恢复之前的选中状态
             this.sidebar.select(this.previousSelectionId);
         }
         else
         {
-            // 记住搜索前的选中状态，但仅当我们还没有在搜索时
             if (this.sidebar.selected != null)
             {
                 this.previousSelectionId = this.sidebar.selected.id;
             }
-            
-            // 搜索时，自动切换到列表视图
+
             this.home.setVisible(false);
             this.forms.setVisible(true);
-            
+
             this.forms.removeAll();
-            List<UIFormCategory> allCats = ((UIFormListAccessor) this).getCategories();
-            for (UIFormCategory cat : allCats)
+            for (UIBBSPPFormCategory cat : this.bbsppCategories)
             {
                 this.forms.add(cat);
                 cat.setVisible(!cat.getForms().isEmpty());
@@ -221,10 +353,161 @@ public class UIBBSPPFormList extends UIFormList
                     cat.category.visible.set(true);
                 }
             }
-            
+
             this.sidebar.clearSelection();
             this.forms.resize();
             this.resize();
+        }
+    }
+
+    /**
+     * 鼠标释放时处理拖拽移动。
+     */
+    @Override
+    public boolean subMouseReleased(UIContext context)
+    {
+        if (UIBBSPPFormCategory.draggingForm != null)
+        {
+            Form dragged = UIBBSPPFormCategory.draggingForm;
+            UIBBSPPFormCategory.draggingForm = null;
+
+            // 检查是否释放在侧边栏的分类上
+            if (this.sidebar != null && this.sidebar.area.isInside(context))
+            {
+                UIBBSPPCategorySidebar.CategoryItem target = this.sidebar.getItemAt(context.mouseX, context.mouseY);
+                if (target != null && !target.isHome && target.uiCategory instanceof UIBBSPPFormCategory targetCat)
+                {
+                    this.tryMoveFormToCategory(dragged, targetCat);
+                }
+            }
+            return true;
+        }
+
+        return super.subMouseReleased(context);
+    }
+
+    /**
+     * 尝试将模型移动到目标分类。
+     */
+    private void tryMoveFormToCategory(Form form, UIBBSPPFormCategory targetCategory)
+    {
+        // 找到源分类
+        UIBBSPPFormCategory sourceCategory = null;
+        for (UIBBSPPFormCategory cat : this.bbsppCategories)
+        {
+            if (cat.getForms().contains(form))
+            {
+                sourceCategory = cat;
+                break;
+            }
+        }
+
+        if (sourceCategory == null || sourceCategory == targetCategory)
+        {
+            return;
+        }
+
+        // 内置模型不可移动
+        if (!sourceCategory.isUserCategory())
+        {
+            this.getContext().notifyError(L10n.lang("bbspp.ui.morph.builtin_cannot_move"));
+            return;
+        }
+
+        // 目标分类必须是用户分类
+        if (!targetCategory.isUserCategory())
+        {
+            this.getContext().notifyError(L10n.lang("bbspp.ui.morph.target_builtin"));
+            return;
+        }
+
+        // 执行文件移动
+        if (this.moveModelFile(form, sourceCategory, targetCategory))
+        {
+            // 更新分类数据
+            sourceCategory.category.removeForm(form);
+            targetCategory.category.addForm(form);
+
+            // 保存用户分类
+            FormCategories formCategories = BBSModClient.getFormCategories();
+            if (formCategories != null)
+            {
+                formCategories.getUserForms().writeUserCategories();
+            }
+
+            // 刷新界面
+            this.setupForms(formCategories);
+            this.getContext().notifySuccess(L10n.lang("bbspp.ui.morph.move_success"));
+        }
+    }
+
+    /**
+     * 移动模型文件夹到目标分类对应的本地位置。
+     */
+    private boolean moveModelFile(Form form, UIBBSPPFormCategory source, UIBBSPPFormCategory target)
+    {
+        if (!(form instanceof ModelForm modelForm))
+        {
+            return false;
+        }
+
+        String modelId = modelForm.model.get();
+        if (modelId == null || modelId.isEmpty())
+        {
+            return false;
+        }
+
+        try
+        {
+            // 获取模型根目录
+            File modelsRoot = BBSMod.getAssetsPath("models");
+            File sourceFolder = new File(modelsRoot, modelId);
+
+            if (!sourceFolder.exists() || !sourceFolder.isDirectory())
+            {
+                return false;
+            }
+
+            // 从分类 ID 中提取实际文件夹名（去掉 "模型/" 或 "models/" 前缀）
+            String targetCategoryId = target.category.visible.getId();
+            String targetFolderName = targetCategoryId;
+            if (targetFolderName.startsWith("模型/"))
+            {
+                targetFolderName = targetFolderName.substring("模型/".length());
+            }
+            else if (targetFolderName.startsWith("models/"))
+            {
+                targetFolderName = targetFolderName.substring("models/".length());
+            }
+
+            File targetRoot = new File(modelsRoot, targetFolderName);
+            if (!targetRoot.exists())
+            {
+                targetRoot.mkdirs();
+            }
+
+            File targetFolder = new File(targetRoot, sourceFolder.getName());
+
+            if (targetFolder.exists())
+            {
+                this.getContext().notifyError(L10n.lang("bbspp.ui.morph.target_exists"));
+                return false;
+            }
+
+            // 执行移动（剪切）
+            Files.move(sourceFolder.toPath(), targetFolder.toPath(), StandardCopyOption.ATOMIC_MOVE);
+
+            // 更新模型表单中的路径引用
+            String newModelPath = targetFolderName + "/" + sourceFolder.getName();
+            modelForm.model.set(newModelPath);
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            this.getContext().notifyError(L10n.lang("bbspp.ui.morph.move_failed"));
+            return false;
         }
     }
 
@@ -232,6 +515,23 @@ public class UIBBSPPFormList extends UIFormList
     public void render(UIContext context)
     {
         super.render(context);
+
+        /* 拖拽模型时显示跟随鼠标的模型ID */
+        if (UIBBSPPFormCategory.draggingForm != null)
+        {
+            Form dragged = UIBBSPPFormCategory.draggingForm;
+            String label = dragged.getDisplayName();
+            int textW = context.batcher.getFont().getWidth(label);
+            int bx = context.mouseX + 12;
+            int by = context.mouseY + 12;
+
+            /* 背景框 */
+            context.batcher.box(bx - 4, by - 2, bx + textW + 4, by + context.batcher.getFont().getHeight() + 2, Colors.A75);
+            context.batcher.outline(bx - 4, by - 2, bx + textW + 4, by + context.batcher.getFont().getHeight() + 2, Colors.WHITE, 1);
+
+            /* 文字 */
+            context.batcher.textShadow(label, bx, by, Colors.WHITE);
+        }
 
         /* 在侧边栏底部渲染表单的显示名称和ID */
         Form selected = this.getSelected();
@@ -242,25 +542,20 @@ public class UIBBSPPFormList extends UIFormList
             String id = selected.getFormId();
             FontRenderer font = context.batcher.getFont();
 
-            int maxTextW = this.sidebar.area.w - 20; // 留出4px给拖动条
-            
-            // 限制文本宽度
+            int maxTextW = this.sidebar.area.w - 20;
+
             String drawName = font.limitToWidth(displayName, maxTextW);
             String drawId = font.limitToWidth(id, maxTextW);
 
-            int w = this.sidebar.area.w - 4; // 减去4px的拖动条宽度
+            int w = this.sidebar.area.w - 4;
             int x = this.sidebar.area.x;
             int h = 32;
             int y = this.sidebar.area.ey() - h;
 
-            // 深色半透明背景
             context.batcher.box(x, y, x + w, y + h, Colors.A75);
-            
-            // 绘制文本
             context.batcher.textShadow(drawName, x + 8, y + 6);
             context.batcher.textShadow(drawId, x + 8, y + 18, Colors.LIGHTEST_GRAY);
 
-            // 悬浮提示
             if (context.mouseX >= x && context.mouseX <= x + w && context.mouseY >= y && context.mouseY <= y + h)
             {
                 if (font.getWidth(displayName) > maxTextW || font.getWidth(id) > maxTextW)

@@ -104,6 +104,32 @@ public class UIBBSPPCategorySidebar extends UIElement
         this.selected = null;
     }
 
+    /**
+     * 根据屏幕坐标获取对应的分类项，用于拖拽释放检测。
+     */
+    public CategoryItem getItemAt(int mouseX, int mouseY)
+    {
+        if (mouseX < this.area.x || mouseX > this.area.ex()
+            || mouseY < this.area.y || mouseY > this.area.ey())
+        {
+            return null;
+        }
+
+        // 考虑滚动偏移
+        int scrollY = (int) this.scroll.scroll.getScroll();
+        int relativeY = mouseY - this.scroll.area.y + scrollY;
+
+        for (CategoryItem item : this.items)
+        {
+            if (relativeY >= item.area.y && relativeY < item.area.ey())
+            {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
     public void addItem(UIFormCategory category, String id, String label, boolean isHome)
     {
         CategoryItem item = new CategoryItem(category, id, label, isHome);

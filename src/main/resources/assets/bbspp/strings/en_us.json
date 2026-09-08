@@ -420,5 +420,13 @@
     "bbspp.config.tooltip": "BBS Cubed extension settings",
     "bbspp.config.bbs_enhancements.tooltip": "UI and interaction enhancements, including texture tween and subtitle export",
     "bbspp.ui.preset.auto_save": "Auto-save preset (changes are saved to the selected preset in real time)",
-    "bbspp.ui.preset.auto_save_no_selection": "Please select a preset first"
+    "bbspp.ui.preset.auto_save_no_selection": "Please select a preset first",
+    "bbspp.ui.morph.layout_toggle": "Toggle Layout",
+    "bbspp.ui.morph.layout_list": "List Mode",
+    "bbspp.ui.morph.layout_grid": "Grid Mode",
+    "bbspp.ui.morph.builtin_cannot_move": "Built-in models cannot be moved",
+    "bbspp.ui.morph.target_builtin": "Target category is built-in, cannot move into",
+    "bbspp.ui.morph.move_success": "Model moved",
+    "bbspp.ui.morph.target_exists": "A model with the same name already exists at the target",
+    "bbspp.ui.morph.move_failed": "Failed to move model"
 }

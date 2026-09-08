@@ -64,6 +64,8 @@ public class BBSPlusPlusSettings
         BBSAddonsSettings.filmLibrarySortMode = (ValueInt) builder.getInt("film_library_sort_mode", 0, 0, 1).invisible();
         BBSAddonsSettings.filmLibraryDefaultLocation = (ValueString) builder.getString("film_library_default_location", "all").invisible();
         BBSAddonsSettings.morphingDefaultCategory = (ValueString) builder.getString("morphing_default_category", "home").invisible();
+        BBSAddonsSettings.morphingLayoutMode = (ValueInt) builder.getInt("morphing_layout_mode", 0, 0, 1).invisible();
+        BBSAddonsSettings.morphingIconScale = (ValueInt) builder.getInt("morphing_icon_scale", 100, 20, 200).invisible();
 
         /* CML 隐藏设置项 */
         CMLSettings.bonePriorityExpandedLimb = builder.getBoolean("bone_priority_expanded_limb", false);
