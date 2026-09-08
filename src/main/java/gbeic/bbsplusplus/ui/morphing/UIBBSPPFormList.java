@@ -225,24 +225,6 @@ public class UIBBSPPFormList extends UIFormList
 
         for (UIFormCategory oldCat : allCats)
         {
-            String catId = oldCat.category.visible.getId();
-
-            /* 过滤模型本身的文件夹：
-             * 保留父级分类（ID 中 "/" 数量 <= 1，如 "模型/模板"），
-             * 过滤模型自身文件夹（ID 中 "/" 数量 >= 2，如 "模型/模板/AlexQ3.0"）。 */
-            if (catId != null)
-            {
-                int slashCount = 0;
-                for (int i = 0; i < catId.length(); i++)
-                {
-                    if (catId.charAt(i) == '/') slashCount++;
-                }
-                if (slashCount >= 2)
-                {
-                    continue;
-                }
-            }
-
             UIBBSPPFormCategory newCat = new UIBBSPPFormCategory(oldCat.category, this);
             newCat.listMode = listMode;
             newCat.iconScale = scale;
