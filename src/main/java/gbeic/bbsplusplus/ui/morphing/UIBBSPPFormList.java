@@ -250,6 +250,11 @@ public class UIBBSPPFormList extends UIFormList
             this.bbsppCategories.add(newCat);
         }
 
+        /* 用新分类替换父类 categories 列表，确保 getSelected() 能找到选中的分类 */
+        List<UIFormCategory> parentCats = ((UIFormListAccessor) this).getCategories();
+        parentCats.clear();
+        parentCats.addAll(this.bbsppCategories);
+
         String currentSelectionId = MorphingDefaultCategory.get();
 
         // 填充侧边栏

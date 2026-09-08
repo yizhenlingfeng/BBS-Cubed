@@ -186,9 +186,10 @@ public class UIBBSPPFormCategory extends UIFormCategory
             }
             else if (context.mouseButton == 1)
             {
-                /* 右键：先选中模型，再让父类处理上下文菜单 */
+                /* 右键：选中模型，但返回 false 不消费事件，让框架显示右键菜单。
+                 * 不调用 super.subMouseClicked() 避免使用原版网格尺寸重新计算导致取消选中。 */
                 this.select(form, true);
-                return super.subMouseClicked(context);
+                return false;
             }
         }
 
