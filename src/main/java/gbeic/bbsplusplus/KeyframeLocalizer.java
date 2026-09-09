@@ -946,6 +946,12 @@ public class KeyframeLocalizer
             return null;
         }
 
+        /* 游戏语言为非中文时，即使开启中文轨道名称开关也返回英文 */
+        if (!isChineseLanguage())
+        {
+            return null;
+        }
+
         if (BBSAddonsSettings.chineseKeyframeNames != null
             && BBSAddonsSettings.chineseKeyframeNames.get())
         {
