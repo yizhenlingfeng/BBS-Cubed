@@ -69,5 +69,6 @@
   "bbspp.ui.morph.target_builtin": "目标分类为内置分类，无法移入",
   "bbspp.ui.morph.move_success": "模型已移动",
   "bbspp.ui.morph.target_exists": "目标位置已存在同名模型",
-  "bbspp.ui.morph.move_failed": "模型移动失败"
+  "bbspp.ui.morph.move_failed": "模型移动失败",
+  "bbspp.ui.film.follow_orbit": "跟随轨道"
 }

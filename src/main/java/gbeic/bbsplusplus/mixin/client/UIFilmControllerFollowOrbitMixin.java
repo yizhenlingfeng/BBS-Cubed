@@ -4,6 +4,7 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.graphics.window.Window;
+import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.controller.OrbitFilmCameraController;
@@ -106,7 +107,7 @@ public abstract class UIFilmControllerFollowOrbitMixin
             menu.action(this.getOrbitModeIcon(0), UIKeys.FILM_REPLAY_ORBIT_CAMERA, this.pov == 0, () -> this.setPov(0));
             menu.action(this.getOrbitModeIcon(1), UIKeys.FILM_REPLAY_ORBIT_FREE, this.pov == 1, () -> this.setPov(1));
             menu.action(this.getOrbitModeIcon(2), UIKeys.FILM_REPLAY_ORBIT_ORBIT, this.pov == 2, () -> this.setPov(2));
-            menu.action(Icons.ORBIT, IKey.raw("跟随轨道"), this.pov == BBS_FOLLOW_ORBIT_MODE, () -> this.setPov(BBS_FOLLOW_ORBIT_MODE));
+            menu.action(Icons.ORBIT, L10n.lang("bbspp.ui.film.follow_orbit"), this.pov == BBS_FOLLOW_ORBIT_MODE, () -> this.setPov(BBS_FOLLOW_ORBIT_MODE));
             menu.action(this.getOrbitModeIcon(3), UIKeys.FILM_REPLAY_ORBIT_FIRST_PERSON, this.pov == 3, () -> this.setPov(3));
             menu.action(this.getOrbitModeIcon(4), UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_BACK, this.pov == 4, () -> this.setPov(4));
             menu.action(this.getOrbitModeIcon(5), UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_FRONT, this.pov == 5, () -> this.setPov(5));
