@@ -4,6 +4,7 @@ import gbeic.bbsplusplus.api.KeyframeTrackExtensionRegistry;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import net.minecraft.client.MinecraftClient;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -783,9 +784,37 @@ public class KeyframeLocalizer
      * 支持数字后缀：{@code "pose_overlay1"} → {@code "姿势叠加 1"}。
      * </p>
      */
+
+    /**
+     * 检查当前游戏语言是否为中文。
+     * 非中文语言（如 en_us）下，即使开启中文轨道名称开关也应显示英文。
+     */
+    private static boolean isChineseLanguage()
+    {
+        try
+        {
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (client != null && client.getLanguageManager() != null)
+            {
+                String lang = client.getLanguageManager().getLanguage();
+                return lang != null && (lang.startsWith("zh") || lang.contains("zh_"));
+            }
+        }
+        catch (Exception ignored)
+        {
+        }
+        return true; /* 无法获取语言时默认按中文处理，保持原有行为 */
+    }
+
     public static String localize(String key)
     {
         if (key == null || key.isEmpty())
+        {
+            return null;
+        }
+
+        /* 游戏语言为非中文时，即使开启了中文轨道名称开关也返回英文 */
+        if (!isChineseLanguage())
         {
             return null;
         }
