@@ -791,6 +791,20 @@ public class KeyframeLocalizer
      */
     private static boolean isChineseLanguage()
     {
+        /* 优先使用 BBS 自己的语言设置 */
+        try
+        {
+            String lang = BBSModClient.getLanguageKey();
+            if (lang != null && !lang.isEmpty())
+            {
+                return lang.startsWith("zh") || lang.contains("zh_");
+            }
+        }
+        catch (Throwable ignored)
+        {
+        }
+
+        /* 回退到 Minecraft 的语言设置 */
         try
         {
             MinecraftClient client = MinecraftClient.getInstance();
@@ -800,7 +814,7 @@ public class KeyframeLocalizer
                 return lang != null && (lang.startsWith("zh") || lang.contains("zh_"));
             }
         }
-        catch (Exception ignored)
+        catch (Throwable ignored)
         {
         }
         return true; /* 无法获取语言时默认按中文处理，保持原有行为 */
