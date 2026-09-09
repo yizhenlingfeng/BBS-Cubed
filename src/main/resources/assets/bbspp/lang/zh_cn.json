@@ -59,5 +59,15 @@
   "bbspp.config.export_enhancements.export_audio_subtitle-comment": "视频导出时自动生成带有音频文件名的 SRT 字幕文件",
   "bbspp.config.ui_enhancements.tooltip": "全新伪装界面布局、全新影片库界面、新光影曲线选择界面",
   "bbspp.config.cml_enhancements.tooltip": "回放疾跑粒子、骨骼纹理选择、流体精确模型交互等 CML 扩展功能",
-  "bbspp.config.export_enhancements.tooltip": "Premiere Pro XML 工程导出、独立音频片段、SRT 字幕导出"
+  "bbspp.config.export_enhancements.tooltip": "Premiere Pro XML 工程导出、独立音频片段、SRT 字幕导出",
+  "bbspp.ui.morph.layout_toggle": "切换排版",
+  "bbspp.ui.morph.layout_list": "列表模式",
+  "bbspp.ui.morph.layout_grid": "网格模式",
+  "bbspp.ui.morph.preview_title": "模型预览",
+  "bbspp.ui.morph.preview_no_model": "非模型形态",
+  "bbspp.ui.morph.builtin_cannot_move": "内置模型无法移动",
+  "bbspp.ui.morph.target_builtin": "目标分类为内置分类，无法移入",
+  "bbspp.ui.morph.move_success": "模型已移动",
+  "bbspp.ui.morph.target_exists": "目标位置已存在同名模型",
+  "bbspp.ui.morph.move_failed": "模型移动失败"
 }

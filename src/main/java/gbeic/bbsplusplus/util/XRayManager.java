@@ -3,6 +3,7 @@ package gbeic.bbsplusplus.util;
 import mod.chloeprime.aaaparticles.api.client.effekseer.EffekseerManager;
 import mod.chloeprime.aaaparticles.api.client.effekseer.ParticleEmitter;
 import mod.chloeprime.aaaparticles.client.internal.CollisionCallbackSupport;
+import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 
@@ -13,6 +14,17 @@ import java.lang.reflect.Field;
 public class XRayManager {
 
     private static EffekseerManager XRAY_MANAGER = null;
+
+    /* Unsafe 实例及字段偏移量缓存：AAA Particles 2.2.3 起 ParticleEmitter.manager / handle
+     * 字段变为 private final，普通 Field.set() 在 Java 17 下无法可靠修改，
+     * 必须通过 Unsafe 直接写内存才能保证 X-Ray 管理器迁移生效。 */
+    private static final Unsafe UNSAFE = getUnsafe();
+    private static final long MANAGER_FIELD_OFFSET = fieldOffset(ParticleEmitter.class, "manager");
+    private static final long HANDLE_FIELD_OFFSET = fieldOffset(ParticleEmitter.class, "handle");
+    private static final long THE_ONE_MANAGERS_OFFSET = staticFieldOffset(
+            mod.chloeprime.aaaparticles.api.client.EffectDefinition.class, "THE_ONE_MANAGERS");
+    private static final Object THE_ONE_MANAGERS_BASE = staticFieldBase(
+            mod.chloeprime.aaaparticles.api.client.EffectDefinition.class, "THE_ONE_MANAGERS");
 
     public static EffekseerManager get() {
         if (XRAY_MANAGER == null) {
@@ -48,39 +60,101 @@ public class XRayManager {
 
     public static void migrate(ParticleEmitter emitter, boolean shouldBeXRay, mod.chloeprime.aaaparticles.api.client.EffectDefinition effectDef, ParticleEmitter.Type targetType) {
         try {
-            Field managerField = ParticleEmitter.class.getDeclaredField("manager");
-            managerField.setAccessible(true);
-            Field handleField = ParticleEmitter.class.getDeclaredField("handle");
-            handleField.setAccessible(true);
+            if (UNSAFE == null || MANAGER_FIELD_OFFSET < 0 || HANDLE_FIELD_OFFSET < 0) {
+                System.err.println("[XRayManager] Unsafe 或字段偏移量未就绪，跳过管理器迁移");
+                return;
+            }
 
-            EffekseerManager currentManager = (EffekseerManager) managerField.get(emitter);
+            EffekseerManager currentManager = (EffekseerManager) UNSAFE.getObject(emitter, MANAGER_FIELD_OFFSET);
             EffekseerManager targetManager;
 
             if (shouldBeXRay) {
                 targetManager = get();
             } else {
-                Field theOneManagersField = mod.chloeprime.aaaparticles.api.client.EffectDefinition.class.getDeclaredField("THE_ONE_MANAGERS");
-                theOneManagersField.setAccessible(true);
-                java.util.function.Supplier<?> supplier = (java.util.function.Supplier<?>) theOneManagersField.get(null);
-                @SuppressWarnings("unchecked")
-                java.util.EnumMap<ParticleEmitter.Type, EffekseerManager> map = (java.util.EnumMap<ParticleEmitter.Type, EffekseerManager>) supplier.get();
-                targetManager = map.get(targetType);
+                targetManager = getGlobalManager(targetType);
             }
 
             if (currentManager == targetManager) {
                 return;
             }
 
-            int oldHandle = (int) handleField.get(emitter);
+            int oldHandle = UNSAFE.getInt(emitter, HANDLE_FIELD_OFFSET);
             currentManager.getImpl().Stop(oldHandle);
 
             int newHandle = targetManager.getImpl().Play(effectDef.getEffect().getImpl());
 
-            managerField.set(emitter, targetManager);
-            handleField.set(emitter, newHandle);
+            // 通过 Unsafe 直接写内存，绕过 final 字段的反射限制
+            UNSAFE.putObject(emitter, MANAGER_FIELD_OFFSET, targetManager);
+            UNSAFE.putInt(emitter, HANDLE_FIELD_OFFSET, newHandle);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /* ===== Unsafe 辅助方法 ===== */
+
+    private static Unsafe getUnsafe() {
+        try {
+            Field field = Unsafe.class.getDeclaredField("theUnsafe");
+            field.setAccessible(true);
+            return (Unsafe) field.get(null);
+        } catch (Exception e) {
+            System.err.println("[XRayManager] 获取 Unsafe 实例失败: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private static long fieldOffset(Class<?> clazz, String fieldName) {
+        try {
+            Field field = clazz.getDeclaredField(fieldName);
+            return UNSAFE.objectFieldOffset(field);
+        } catch (Exception e) {
+            System.err.println("[XRayManager] 获取字段偏移量失败 " + clazz.getSimpleName() + "." + fieldName + ": " + e.getMessage());
+            return -1L;
+        }
+    }
+
+    private static long staticFieldOffset(Class<?> clazz, String fieldName) {
+        try {
+            Field field = clazz.getDeclaredField(fieldName);
+            return UNSAFE.staticFieldOffset(field);
+        } catch (Exception e) {
+            System.err.println("[XRayManager] 获取静态字段偏移量失败 " + clazz.getSimpleName() + "." + fieldName + ": " + e.getMessage());
+            return -1L;
+        }
+    }
+
+    private static Object staticFieldBase(Class<?> clazz, String fieldName) {
+        try {
+            Field field = clazz.getDeclaredField(fieldName);
+            return UNSAFE.staticFieldBase(field);
+        } catch (Exception e) {
+            System.err.println("[XRayManager] 获取静态字段基址失败 " + clazz.getSimpleName() + "." + fieldName + ": " + e.getMessage());
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static EffekseerManager getGlobalManager(ParticleEmitter.Type type) {
+        if (THE_ONE_MANAGERS_BASE == null || THE_ONE_MANAGERS_OFFSET < 0) {
+            // 回退到反射方式
+            try {
+                Field theOneManagersField = mod.chloeprime.aaaparticles.api.client.EffectDefinition.class.getDeclaredField("THE_ONE_MANAGERS");
+                theOneManagersField.setAccessible(true);
+                java.util.function.Supplier<?> supplier = (java.util.function.Supplier<?>) theOneManagersField.get(null);
+                java.util.EnumMap<ParticleEmitter.Type, EffekseerManager> map =
+                        (java.util.EnumMap<ParticleEmitter.Type, EffekseerManager>) supplier.get();
+                return map.get(type);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        java.util.function.Supplier<?> supplier = (java.util.function.Supplier<?>) UNSAFE.getObject(THE_ONE_MANAGERS_BASE, THE_ONE_MANAGERS_OFFSET);
+        java.util.EnumMap<ParticleEmitter.Type, EffekseerManager> map =
+                (java.util.EnumMap<ParticleEmitter.Type, EffekseerManager>) supplier.get();
+        return map.get(type);
     }
 }

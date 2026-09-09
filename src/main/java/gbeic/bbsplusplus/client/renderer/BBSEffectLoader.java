@@ -12,6 +12,8 @@ import mod.chloeprime.aaaparticles.client.loader.EffekAssetLoader;
 import mod.chloeprime.aaaparticles.client.render.RenderUtil;
 import net.minecraft.util.Identifier;
 
+import com.google.common.collect.BiMap;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -119,8 +121,16 @@ public class BBSEffectLoader
 
                 if (holder != null)
                 {
-                    EffectDefinition existing = holder.lazyGet()
-                            .orElseGet(() -> holder.load().join().orElse(null));
+                    EffectDefinition existing = null;
+                    try
+                    {
+                        existing = holder.lazyGet()
+                                .orElseGet(() -> holder.load().join().orElse(null));
+                    }
+                    catch (Exception e)
+                    {
+                        EnvLogger.warn(BBSPlusPlusMod.LOGGER, "从已注册的 EffectHolder 获取特效失败，将从文件重新加载: {}", "Failed to get effect from registered EffectHolder, will reload from file: {}", id, e);
+                    }
 
                     if (existing != null)
                     {
@@ -197,17 +207,27 @@ public class BBSEffectLoader
                 loadedEffectsField.setAccessible(true);
             }
 
+            // AAA Particles 2.2.3 起 loadedEffects 字段类型从 Map 改为 BiMap（Guava）
             @SuppressWarnings("unchecked")
-            Map<Object, EffectHolder> loadedEffects = (Map<Object, EffectHolder>) loadedEffectsField.get(loader);
+            BiMap<Object, EffectHolder> loadedEffects = (BiMap<Object, EffectHolder>) loadedEffectsField.get(loader);
 
             // 将定义包装到 holder 中，使注册管线可用
             EffectHolder holder = new EffectHolder(EffectMetadata.DEFAULT, () -> definition);
-            holder.load().join();
-            loadedEffects.put(id, holder);
+            try
+            {
+                holder.load().join();
+            }
+            catch (Exception e)
+            {
+                EnvLogger.warn(BBSPlusPlusMod.LOGGER, "EffectHolder.load() 完成时出现异常（不影响注入）: {}", "EffectHolder.load() completed with exception (does not affect injection): {}", e.getMessage());
+            }
+            // 使用 forcePut 而非 put：BiMap.put 在值已存在于另一键下时会抛出 IllegalArgumentException，
+            // forcePut 会先移除冲突的旧条目，保证注入始终成功
+            loadedEffects.forcePut(id, holder);
 
             EnvLogger.info(BBSPlusPlusMod.LOGGER, "已注入 BBS 特效到 AAA Particles：{}", "Injected BBS effect to AAA Particles: {}", id);
         }
-        catch (ReflectiveOperationException | ClassCastException e)
+        catch (Exception e)
         {
             EnvLogger.error(BBSPlusPlusMod.LOGGER, "注入特效到 AAA Particles 失败：{}", "Failed to inject effect to AAA Particles: {}", id, e);
         }
@@ -439,7 +459,7 @@ public class BBSEffectLoader
                 if (loader != null && loadedEffectsField != null)
                 {
                     @SuppressWarnings("unchecked")
-                    Map<Object, EffectHolder> loadedEffects = (Map<Object, EffectHolder>) loadedEffectsField.get(loader);
+                    BiMap<Object, EffectHolder> loadedEffects = (BiMap<Object, EffectHolder>) loadedEffectsField.get(loader);
 
                     List<Identifier> ids = new ArrayList<>();
                     for (Object k : loadedEffects.keySet())
@@ -516,7 +536,7 @@ public class BBSEffectLoader
                 try
                 {
                     @SuppressWarnings("unchecked")
-                    Map<Object, EffectHolder> loadedEffects = (Map<Object, EffectHolder>) loadedEffectsField.get(loader);
+                    BiMap<Object, EffectHolder> loadedEffects = (BiMap<Object, EffectHolder>) loadedEffectsField.get(loader);
                     EffectHolder removed = loadedEffects.remove(id);
 
                     if (removed != null)

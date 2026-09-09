@@ -59,5 +59,15 @@
   "bbspp.config.export_enhancements.export_audio_subtitle-comment": "Automatically generate SRT subtitle files with audio filenames during video export.",
   "bbspp.config.ui_enhancements.tooltip": "New morphing panel layout, new film library UI, new shader curve picker UI",
   "bbspp.config.cml_enhancements.tooltip": "Replay sprint particles, bone texture picker, fluid precise model interaction, and other CML extensions",
-  "bbspp.config.export_enhancements.tooltip": "Premiere Pro XML export, individual audio clips, SRT subtitle export"
+  "bbspp.config.export_enhancements.tooltip": "Premiere Pro XML export, individual audio clips, SRT subtitle export",
+  "bbspp.ui.morph.layout_toggle": "Toggle Layout",
+  "bbspp.ui.morph.layout_list": "List Mode",
+  "bbspp.ui.morph.layout_grid": "Grid Mode",
+  "bbspp.ui.morph.preview_title": "Model Preview",
+  "bbspp.ui.morph.preview_no_model": "Non-model form",
+  "bbspp.ui.morph.builtin_cannot_move": "Built-in models cannot be moved",
+  "bbspp.ui.morph.target_builtin": "Target category is built-in, cannot move into",
+  "bbspp.ui.morph.move_success": "Model moved",
+  "bbspp.ui.morph.target_exists": "A model with the same name already exists at the target",
+  "bbspp.ui.morph.move_failed": "Failed to move model"
 }

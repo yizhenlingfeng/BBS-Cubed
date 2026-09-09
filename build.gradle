@@ -55,6 +55,10 @@ sourceSets {
     }
 }
 
+// 按版本隔离构建输出目录，防止 1.20.1 / 1.20.4 编译产物交叉污染
+// （此前共享 build/ 目录会导致旧版本 NbtCompat.class 残留，被错误打进另一版本的 jar）
+layout.buildDirectory = layout.projectDirectory.dir("build/${targetMc}")
+
 base {
     archivesName = archives_base_name
 }
