@@ -167,6 +167,20 @@
 
 ### Mod Changelog
 
+#### 3.2.1
+
+- Translation sync and fixes:
+  - Added 605 missing English keyframe track translations to `bbspp/strings/en_us.json` (VFX effects, item spray, video disguise, lighting, etc.)
+  - Fixed hardcoded Chinese "跟随轨道" in camera track mode menu; changed to `bbspp.ui.film.follow_orbit` translation key
+  - Created `assets/xavin/lang/en_us.json` with English translation for the Destruction Wand
+- Bug fixes:
+  - Fixed keyframe track names still showing in Chinese when game language is English, even with the "Chinese Keyframe Track Names" toggle enabled
+  - Root cause: keyframe tracks have two creation paths; the second path (`KeyframeTrackStyle.apply()`) uses `localizeWithMap()`, which did not check the current game language
+  - Fix: added `isChineseLanguage()` check to both `localize()` and `localizeWithMap()`; non-Chinese languages force English track names
+  - Language detection prioritizes `BBSModClient.getLanguageKey()` (BBS's own language setting), falling back to Minecraft `LanguageManager`
+- Code cleanup:
+  - Removed unused `IKey` import from `UIFilmControllerFollowOrbitMixin`
+
 #### 3.2
 
 - Disguise interface layout improvements:

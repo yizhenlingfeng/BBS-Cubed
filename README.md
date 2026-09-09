@@ -168,6 +168,20 @@
 
 ### MOD更新日志
 
+#### 3.2.1：
+
+* 翻译同步与修复：
+  * 补全 `bbspp/strings/en_us.json` 中 605 个缺失的关键帧轨道英文翻译（VFX特效、物品喷射、视频伪装、光影等轨道）
+  * 修复摄像机轨道模式菜单中"跟随轨道"硬编码中文的问题，改为 `bbspp.ui.film.follow_orbit` 翻译key
+  * 新建 `assets/xavin/lang/en_us.json`，补全破坏魔杖的英文翻译
+* 功能修复：
+  * 修复游戏语言为英文时，即使开启"中文关键帧轨道名称"开关，关键帧轨道仍显示中文的问题
+  * 根因：关键帧轨道有两条创建路径，第二条路径（`KeyframeTrackStyle.apply()`）走 `localizeWithMap()`，未检查当前游戏语言
+  * 修复：在 `localize()` 和 `localizeWithMap()` 中均添加 `isChineseLanguage()` 检查，非中文语言下强制返回英文轨道名
+  * 语言检测优先使用 `BBSModClient.getLanguageKey()`（BBS 自身语言设置），回退到 Minecraft `LanguageManager`
+* 代码清理：
+  * 删除 `UIFilmControllerFollowOrbitMixin` 中未使用的 `IKey` 导入
+
 #### 3.2：
 
 * 伪装界面布局改进：

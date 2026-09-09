@@ -5,7 +5,6 @@ import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.L10n;
-import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.controller.OrbitFilmCameraController;
 import mchorse.bbs_mod.ui.film.controller.UIFilmController;
