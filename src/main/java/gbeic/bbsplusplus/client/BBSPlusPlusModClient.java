@@ -149,25 +149,6 @@ public class BBSPlusPlusModClient implements ClientModInitializer
         // 注册全局清理观察器 —— 当表单渲染器不再活跃时停止特效
         ClientTickEvents.END_CLIENT_TICK.register(client ->
         {
-            if (BBSEffectLoader.beginReload())
-            {
-                try
-                {
-                    List<AAAParticleFormRenderer> renderers = new ArrayList<>(AAAParticleFormRenderer.activeRenderers);
-
-                    for (AAAParticleFormRenderer renderer : renderers)
-                    {
-                        renderer.cleanup();
-                    }
-
-                    BBSEffectLoader.markCacheDirty();
-                }
-                finally
-                {
-                    BBSEffectLoader.endReload();
-                }
-            }
-
             if (!AAAParticleFormRenderer.activeRenderers.isEmpty())
             {
                 List<AAAParticleFormRenderer> renderers = new ArrayList<>(AAAParticleFormRenderer.activeRenderers);

@@ -1,19 +1,16 @@
 package gbeic.bbsplusplus.mixin;
 
 /**
- * 混入 EffectDefinition 类，捕获粒子系统的当前位置并在渲染时根据该位置动态设置渲染层级，以实现穿透方块（X-Ray）功能。
+ * 混入 EffectDefinition 类，在世界粒子绘制完成后追加 X-Ray 穿透粒子的渲染。
  * <p>
- * 由于 BBS 的粒子系统设计没有直接支持穿透方块的选项，我们通过在 EffectDefinition 的 draw 方法中捕获当前粒子系统的位置，
- * 并在调用 EffekseerManager.draw() 前设置一个线程局部变量，供 ParticleEmitterMixin 在重定向 draw 调用时使用，从而动态修改渲染层级。
+ * 通过独立的 EffekseerManager（XRayManager）渲染标记为 ignoreDepth 的粒子，
+ * 使用 glDepthRange(0,0) + 深度缓冲备份/恢复实现穿透方块且不污染深度缓冲。
  * </p>
  */
 
 import org.spongepowered.asm.mixin.Mixin;
 @Mixin(value = mod.chloeprime.aaaparticles.api.client.EffectDefinition.class, remap = true)
 public class EffectDefinitionMixin {
-
-    @org.spongepowered.asm.mixin.Shadow
-    private static java.util.List<mod.chloeprime.aaaparticles.api.client.effekseer.ParticleEmitter> EMITTERS_BUFFER;
 
     @org.spongepowered.asm.mixin.injection.Inject(method = "draw", at = @org.spongepowered.asm.mixin.injection.At("TAIL"), remap = true)
     private static void bbspp_afterDraw(

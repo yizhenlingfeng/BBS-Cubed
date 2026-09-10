@@ -388,11 +388,6 @@ public class AAAParticleFormRenderer extends FormRenderer<AAAParticleForm> imple
             && System.currentTimeMillis() - lastGlobalPreviewRenderTime <= 100;
     }
 
-    public ParticleEmitter getEmitter()
-    {
-        return this.emitter;
-    }
-
     /**
      * 从表单的特效链接中获取 Identifier
      */
@@ -449,11 +444,6 @@ public class AAAParticleFormRenderer extends FormRenderer<AAAParticleForm> imple
     private void ensureEmitter()
     {
         if (BBSRendering.isIrisShadowPass())
-        {
-            return;
-        }
-
-        if (!BBSEffectLoader.canLoadExternalEffects())
         {
             return;
         }

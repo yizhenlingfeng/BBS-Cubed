@@ -18,9 +18,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,14 +25,13 @@ import java.util.Set;
  * BBS 特效加载器。
  * <p>
  * 从 BBS 外部资源文件夹（config/bbs/assets/）加载 Effekseer 特效文件，
- * 并通过反射注入到 AAA Particles 的 EffekAssetLoader 中，
- * 使特效能够被 AAA Particles 的渲染管线自动处理。
+ * 并通过反射注入到 AAA Particles 的 EffekAssetLoader 中。
  * </p>
  */
 public class BBSEffectLoader
 {
     /* 跟踪已加载的 BBS 特效 ID，用于重载时清理 */
-    private static final Set<Identifier> bbsLoadedEffects = new HashSet<>();
+    private static final Set<Identifier> bbsLoadedEffects = new java.util.HashSet<>();
 
     /* EffectDefinition 缓存池，防止同一特效重复加载 */
     private static final Map<Identifier, EffectDefinition> definitionCache = new java.util.HashMap<>();
@@ -50,52 +46,12 @@ public class BBSEffectLoader
     private static final Map<Identifier, Long> failedEffects = new java.util.HashMap<>();
     private static final long FAILED_RETRY_INTERVAL_MS = 2000L;
 
-    private static volatile boolean reloadRequested;
-    private static volatile boolean reloading;
-
-    public static void requestReload()
-    {
-        reloadRequested = true;
-    }
-
-    public static boolean beginReload()
-    {
-        if (!reloadRequested)
-        {
-            return false;
-        }
-
-        reloadRequested = false;
-        reloading = true;
-        return true;
-    }
-
-    public static void endReload()
-    {
-        reloading = false;
-    }
-
-    public static boolean isReloading()
-    {
-        return reloading;
-    }
-
-    public static boolean canLoadExternalEffects()
-    {
-        return !reloading;
-    }
-
     /**
      * 获取或加载一个来自 BBS 外部资源的特效。
      * 特效会被注入到 AAA Particles 的 EffekAssetLoader 中。
      */
     public static EffectDefinition getOrLoad(Identifier id)
     {
-        if (!canLoadExternalEffects())
-        {
-            return null;
-        }
-
         synchronized (LOAD_LOCK)
         {
             Long failedAt = failedEffects.get(id);
@@ -183,7 +139,7 @@ public class BBSEffectLoader
             }
 
             return definition;
-        } // synchronized(LOAD_LOCK)
+        }
     }
 
     /**
@@ -349,98 +305,6 @@ public class BBSEffectLoader
     }
 
     /**
-     * 预加载所有外部特效
-     */
-    public static int preloadExternalEffects()
-    {
-        if (!canLoadExternalEffects())
-        {
-            return 0;
-        }
-
-        File assetsFolder = BBSMod.getAssetsFolder();
-        File effeksFolder = new File(assetsFolder, "effeks");
-
-        if (!effeksFolder.exists() || !effeksFolder.isDirectory())
-        {
-            return 0;
-        }
-
-        List<File> files = new ArrayList<>();
-        collectEfks(files, effeksFolder, new HashSet<>());
-
-        int loaded = 0;
-
-        for (File file : files)
-        {
-            String relative = effeksFolder.toPath().relativize(file.toPath()).toString().replace("\\", "/");
-
-            if (!relative.endsWith(".efkefc"))
-            {
-                continue;
-            }
-
-            relative = relative.substring(0, relative.length() - 7);
-
-            Identifier id;
-            try
-            {
-                id = new Identifier("bbs", relative);
-            }
-            catch (Exception e)
-            {
-                continue;
-            }
-
-            if (bbsLoadedEffects.contains(id))
-            {
-                continue;
-            }
-
-            EffectDefinition definition = getOrLoad(id);
-
-            if (definition != null)
-            {
-                loaded++;
-            }
-        }
-
-        return loaded;
-    }
-
-    private static void collectEfks(List<File> list, File folder, Set<String> visited)
-    {
-        try
-        {
-            String path = folder.getCanonicalPath();
-            if (!visited.add(path)) return;
-        }
-        catch (Exception e)
-        {
-            return;
-        }
-
-        File[] files = folder.listFiles();
-
-        if (files == null)
-        {
-            return;
-        }
-
-        for (File file : files)
-        {
-            if (file.isDirectory())
-            {
-                collectEfks(list, file, visited);
-            }
-            else if (file.getName().endsWith(".efkefc"))
-            {
-                list.add(file);
-            }
-        }
-    }
-
-    /**
      * 标记缓存为脏，下次选择特效时重新从磁盘加载。
      * 不调用 holder.close() 避免触发 native DLL 释放正在渲染的资源。
      */
@@ -461,7 +325,7 @@ public class BBSEffectLoader
                     @SuppressWarnings("unchecked")
                     BiMap<Object, EffectHolder> loadedEffects = (BiMap<Object, EffectHolder>) loadedEffectsField.get(loader);
 
-                    List<Identifier> ids = new ArrayList<>();
+                    java.util.List<Identifier> ids = new java.util.ArrayList<>();
                     for (Object k : loadedEffects.keySet())
                     {
                         if (k instanceof Identifier id)
@@ -554,22 +418,6 @@ public class BBSEffectLoader
             definitionCache.remove(id);
             bbsLoadedEffects.remove(id);
         }
-    }
-
-    /**
-     * 检查特效是否已加载
-     */
-    public static boolean isLoaded(Identifier id)
-    {
-        return bbsLoadedEffects.contains(id);
-    }
-
-    /**
-     * 检查是否有任何 BBS 特效已加载
-     */
-    public static boolean hasLoadedEffects()
-    {
-        return !bbsLoadedEffects.isEmpty();
     }
 
     @FunctionalInterface

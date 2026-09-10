@@ -168,6 +168,16 @@
 
 ### MOD更新日志
 
+#### 3.2.2：
+
+* AAA 粒子模块代码清理：
+  * 删除 `BBSEffectLoader` 中整套从未被触发的 reload 机制（`requestReload`/`beginReload`/`endReload`/`isReloading`/`canLoadExternalEffects` 及配套字段），以及无调用方的 `preloadExternalEffects`/`isLoaded`/`hasLoadedEffects` 方法
+  * 删除 `AAAParticleFormRenderer` 中无调用方的 `getEmitter()` 方法
+  * 删除 `BBSPlusPlusModClient` 中因 `beginReload` 永不返回 true 而永远不执行的 reload 代码块
+  * 删除旧版 X-Ray 接口残留：`mixin/ParticleEmitterMixin.java`、`util/IIgnoreDepth.java` 及 mixin 配置中的对应注册（当前 X-Ray 由 `XRayManager.migrate()` 实现，该接口已无外部调用）
+  * 删除 `EffectDefinitionMixin` 中声明后从未使用的 `EMITTERS_BUFFER` shadow 字段，并更新已失效的类注释
+  * 构建验证：`gradlew compileJava` BUILD SUCCESSFUL
+
 #### 3.2.1：
 
 * 翻译同步与修复：
