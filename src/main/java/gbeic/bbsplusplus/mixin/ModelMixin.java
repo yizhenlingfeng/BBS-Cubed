@@ -1,6 +1,8 @@
 package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.api.BoneTextureHolder;
+import gbeic.bbsplusplus.api.GlintHolder;
+import gbeic.bbsplusplus.api.GroupGlintHolder;
 import gbeic.bbsplusplus.api.GroupTextureHolder;
 import gbeic.bbsplusplus.api.GroupTextureGradeHolder;
 import gbeic.bbsplusplus.api.PivotHolder;
@@ -20,10 +22,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Map;
 
 /**
- * 在 {@link Model#applyPose(Pose)} 末尾补两件 CML 的事：
+ * 在 {@link Model#applyPose(Pose)} 末尾补几件 CML 的事：
  * <ul>
  *   <li>骨骼纹理 —— {@code PoseTransform} 上的纹理（{@link BoneTextureHolder}）
  *       传播到对应 {@link ModelGroup} 的渲染期覆盖字段（{@link GroupTextureHolder}）；</li>
+ *   <li>附魔光效 —— {@code PoseTransform} 上的光效开关（{@link GlintHolder}）
+ *       传播到 {@link ModelGroup}（{@link GroupGlintHolder}）；</li>
  *   <li>中心点 —— pose 的 pivot 加进 {@code group.current}（对齐 CML 的
  *       {@code group.current.translate.add(pivot); group.current.pivot.add(pivot);}，
  *       渲染时经 Transform.setupMatrix 的 ±pivot 平移生效）。</li>
@@ -50,11 +54,13 @@ public abstract class ModelMixin
             Link texture = ((BoneTextureHolder) transform).bbspp_cml$getTexture();
             TextureGradeHolder textureGrade = (TextureGradeHolder) transform;
             Vector3f pivot = ((PivotHolder) transform).bbspp_cml$getPivot();
+            boolean glint = ((GlintHolder) transform).bbspp_cml$getGlint();
             boolean pivoted = pivot.x != 0F || pivot.y != 0F || pivot.z != 0F;
             boolean graded = textureGrade.bbspp_cml$getTextureTint().a > 0F
                 || textureGrade.bbspp_cml$getTextureWhiten() > 0F;
 
-            if (texture == null && !pivoted && !graded)
+            /* glint 必须计入这个提前跳过判断，否则"只开光效"的骨骼会被整段忽略。 */
+            if (texture == null && !pivoted && !graded && !glint)
             {
                 continue;
             }
@@ -77,6 +83,16 @@ public abstract class ModelMixin
 
                 groupGrade.bbspp_cml$setTextureTint(textureGrade.bbspp_cml$getTextureTint());
                 groupGrade.bbspp_cml$setTextureWhiten(textureGrade.bbspp_cml$getTextureWhiten());
+            }
+
+            /* 只置 true 不置 false：false 由每帧的 ModelGroup.reset() 负责，
+             * 这样共享 Model 实例不会被别的 form 的旧状态污染。 */
+            if (glint)
+            {
+                GroupGlintHolder groupGlint = (GroupGlintHolder) group;
+
+                groupGlint.bbspp_cml$setGlint(true);
+                groupGlint.bbspp_cml$setGlintColor(((GlintHolder) transform).bbspp_cml$getGlintColor());
             }
 
             if (pivoted)

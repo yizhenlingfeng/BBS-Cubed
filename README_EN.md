@@ -69,6 +69,15 @@
 - Added `skip current frame bone key value` — hovering over the right edge of a bone name reveals a diamond; click to toggle. When skipped, the bone keeps its parameters for the current frame, but animation calculation ignores this key value and interpolates directly between the valid pose frames before and after; a gray slanted diamond indicates a skipped frame.
 - Ported the `tree bone` feature from FS2.5 with optimized display; optional, off by default.
 
+### Enchant Glint
+
+- The pose editor page gains an `Enchant Glint` toggle that adds a vanilla-style enchant glint to the currently selected bone, looping seamlessly forever.
+- Below the toggle sits a `glint color` picker for customizing the glint color; the default white matches the vanilla look, and the alpha slider doubles as a quick way to dim the effect.
+- **Right-click** the toggle or the picker and choose `Apply to children` to spread the state to every child bone of the selection (including children that were never edited).
+- Known limitation: **the glint currently does not render while an Iris shader pack is active** (it works with shaders disabled and in the editor preview).
+  This is caused by an inherent compatibility limitation in how Iris handles mod-provided core shaders — see Iris' documentation at
+  `docs/development/compatibility/core-shaders.md`. A compatible path may be provided in a future version.
+
 ### Structure Disguise
 
 > Merged from the `tools` plugin by `卫巾纸薄`.

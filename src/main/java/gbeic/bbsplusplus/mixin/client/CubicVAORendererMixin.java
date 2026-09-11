@@ -1,5 +1,7 @@
 package gbeic.bbsplusplus.mixin.client;
 
+import gbeic.bbsplusplus.api.GlintHolder;
+import gbeic.bbsplusplus.api.GroupGlintHolder;
 import gbeic.bbsplusplus.api.GroupTextureHolder;
 import gbeic.bbsplusplus.api.GroupTextureGradeHolder;
 import gbeic.bbsplusplus.api.TextureGradeHolder;
@@ -60,7 +62,24 @@ public class CubicVAORendererMixin
             whiten = renderGrade.bbspp_cml$getTextureWhiten();
         }
 
+        /* 附魔光效：与调色/白化同样的"group 级优先，回退到 group.current"取法。 */
+        boolean glint = group != null && ((GroupGlintHolder) group).bbspp_cml$getGlint();
+        Color glintColor = group != null ? ((GroupGlintHolder) group).bbspp_cml$getGlintColor() : null;
+
+        if (!glint && group != null && group.current instanceof GlintHolder renderGlint)
+        {
+            glint = renderGlint.bbspp_cml$getGlint();
+            glintColor = renderGlint.bbspp_cml$getGlintColor();
+        }
+
         ModelTextureGradeShader.applyGroup(this.program, tint, whiten);
+
+        /* 附魔光效：必须逐组写入（含关闭时的 0）—— 否则同一模型里前一个开了光效的骨骼
+         * 会把状态泄漏给后一个。仅限 VAO 渲染；CPU 路径靠 select() 的整模型 fallback。 */
+        if (ModelTextureGradeShader.isGlintPerGroup())
+        {
+            ModelTextureGradeShader.applyGlint(this.program, glint, glintColor);
+        }
     }
 
     @Inject(method = "renderGroup", at = @At("RETURN"), require = 1, remap = false)

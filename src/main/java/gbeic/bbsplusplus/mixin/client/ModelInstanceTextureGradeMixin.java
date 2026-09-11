@@ -1,8 +1,10 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import gbeic.bbsplusplus.api.TextureGradeProvider;
+import gbeic.bbsplusplus.api.GlintHolder;
+import gbeic.bbsplusplus.api.GroupGlintHolder;
 import gbeic.bbsplusplus.api.GroupTextureGradeHolder;
 import gbeic.bbsplusplus.api.TextureGradeHolder;
+import gbeic.bbsplusplus.api.TextureGradeProvider;
 import gbeic.bbsplusplus.client.screen.ModelTextureGradeShader;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.cubic.ModelInstance;
@@ -19,7 +21,14 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 import java.util.function.Supplier;
 
-/** Selects the texture-grade shader without depending on ModelFormRenderer's version-specific signature. */
+/**
+ * 包住 {@code ModelInstance.render} 的 shader 供给器，决定这一次模型渲染用不用自定义变体
+ * （避开 ModelFormRenderer 的版本相关签名）。
+ *
+ * <p>触发条件有三类：form 级调色/白化、pose 级（逐骨骼）调色/白化、pose 级附魔光效。
+ * 前两类原本就有；附魔光效必须并进同一个判断 —— 否则"只开光效"时不会换 shader，
+ * 表现为点了按钮完全没反应。</p>
+ */
 @Mixin(value = ModelInstance.class, remap = false)
 public abstract class ModelInstanceTextureGradeMixin
 {
@@ -73,8 +82,10 @@ public abstract class ModelInstanceTextureGradeMixin
         }
 
         boolean poseGrade = false;
+        boolean poseGlint = false;
         Color fallbackPoseTint = null;
         float fallbackPoseWhiten = 0F;
+        Color fallbackPoseGlintColor = null;
 
         for (ModelGroup group : model.model.getAllGroups())
         {
@@ -101,9 +112,24 @@ public abstract class ModelInstanceTextureGradeMixin
                     fallbackPoseWhiten = groupWhiten;
                 }
             }
+
+            /* 附魔光效：只要有<b>任意</b>骨骼开了光效，整个模型就必须换到自定义 shader
+             * —— 否则"只开光效、不设调色/白化"时压根不会切换，表现为点了按钮没反应。
+             * 顺带记下第一个开光效组的颜色，供 CPU 路径的整模型 fallback 使用。 */
+            if (!poseGlint && ((GroupGlintHolder) group).bbspp_cml$getGlint())
+            {
+                poseGlint = true;
+                fallbackPoseGlintColor = ((GroupGlintHolder) group).bbspp_cml$getGlintColor().copy();
+            }
+            else if (!poseGlint && group.current instanceof GlintHolder renderGlint
+                && renderGlint.bbspp_cml$getGlint())
+            {
+                poseGlint = true;
+                fallbackPoseGlintColor = renderGlint.bbspp_cml$getGlintColor().copy();
+            }
         }
 
-        if (!poseGrade && tintValue.a <= 0.0001F && whitenValue <= 0.0001F)
+        if (!poseGrade && !poseGlint && tintValue.a <= 0.0001F && whitenValue <= 0.0001F)
         {
             return original;
         }
@@ -125,6 +151,20 @@ public abstract class ModelInstanceTextureGradeMixin
             }
         }
 
-        return ModelTextureGradeShader.select(original, tintValue, whitenValue);
+        ShaderProgram selected = ModelTextureGradeShader.select(original, tintValue, whitenValue);
+
+        /* 告诉渲染层这个模型走哪条路：VAO 才能逐组写 uniform；
+         * CPU 路径必须跳过逐组写入，否则会把上面的整模型 fallback 覆盖成 0。 */
+        ModelTextureGradeShader.setGlintPerGroup(supportsPerGroupGrade);
+
+        if (selected != original)
+        {
+            /* 基准强度与颜色：VAO 模型下每组的 CubicVAORendererMixin 会立即覆盖它们；
+             * 动态 Geo 模型整块绘制、无法逐组改 uniform，这里用"整模型 fallback"
+             * （与上方 tint/whiten 的策略一致），否则开了光效会什么都不发生。 */
+            ModelTextureGradeShader.applyGlint(selected, !supportsPerGroupGrade && poseGlint, fallbackPoseGlintColor);
+        }
+
+        return selected;
     }
 }

@@ -11,7 +11,7 @@ import mchorse.bbs_mod.settings.values.numeric.ValueFloat;
  * 统一注册到 BBS Cubed 独立设置模块中，分属不同分类：</p>
  * <ul>
  *   <li>BBS 增强 — pivotTransform / poseKeyframeCollapse / snowActions / lockedLayoutPreventsResizing（前四项核心开关）</li>
- *   <li>CML 增强 — replaySprintParticles / pickLimbTexture / fluidRealisticModelInteraction</li>
+ *   <li>CML 增强 — replaySprintParticles / pickLimbTexture / enchantGlint / fluidRealisticModelInteraction</li>
  *   <li>导出增强 — premiereExport* 系列</li>
  *   <li>隐藏设置 — bonePriority* / followOrbitMode / animationState* / keyframeEditorTimelineRatio</li>
  * </ul>
@@ -24,6 +24,7 @@ public class CMLSettings {
 
     /* 外观设置 */
     public static ValueBoolean pickLimbTexture;            // 骨骼纹理按钮
+    public static ValueBoolean enchantGlint;               // 附魔光效按钮
 
     /* 流体模拟 */
     public static ValueBoolean fluidRealisticModelInteraction; // 流体精确模型交互

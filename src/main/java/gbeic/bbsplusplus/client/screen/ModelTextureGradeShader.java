@@ -7,10 +7,12 @@ import net.minecraft.client.gl.GlUniform;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.texture.AbstractTexture;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceFactory;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
+import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -40,6 +42,42 @@ public final class ModelTextureGradeShader
     private static float baseWhiten;
     private static int debugCounter;
 
+    /* ---------- 附魔光效 ---------- */
+
+    /**
+     * 原版物品附魔光效纹理。1.20.1 / 1.20.4 的真实路径是 {@code enchanted_glint_item.png}
+     * （从 ItemRenderer.ITEM_ENCHANTMENT_GLINT 的字节码确认，勿用旧名 enchanted_item_glint.png）。
+     */
+    private static final Identifier GLINT_TEXTURE = new Identifier("textures/misc/enchanted_glint_item.png");
+
+    private static final String GLINT_SAMPLER = "GlintSampler";
+    private static final String GLINT_STRENGTH = "GlintStrength";
+    private static final String GLINT_PHASE = "GlintPhase";
+    private static final String GLINT_COLOR = "GlintColor";
+
+    /** 开启时的光效强度。第一版不做 UI 参数，改这里即可整体调亮/调暗。 */
+    private static final float GLINT_ON = 1.0F;
+
+    /** 光效默认颜色（白色 = 原版观感）。 */
+    private static final Color DEFAULT_GLINT_COLOR = new Color(1F, 1F, 1F, 1F);
+
+    /** 光效扫过一轮的周期（毫秒）。改这里即可调快/调慢。 */
+    private static final long GLINT_PERIOD_MS = 3000L;
+
+    /** 光效纹理所在的纹理单元（GlintSampler → GL_TEXTURE0 + 3）。 */
+    private static final int GLINT_TEXTURE_UNIT = 3;
+
+    /** 光效纹理是否已成功注册到 shader 上。 */
+    private static boolean glintAvailable;
+
+    /**
+     * 当前模型是否支持逐组写 uniform（VAO 渲染）。
+     * CPU 路径（动态 Geo / 非 VAO）所有骨骼的顶点进同一个缓冲区、一次绘制，
+     * 逐组写入毫无意义 —— 最后一次写入生效，会把 select() 里设的"整模型 fallback"覆盖掉。
+     * 此时必须跳过逐组写入，让 fallback 的 1 保持住。
+     */
+    private static boolean glintPerGroup;
+
     private ModelTextureGradeShader()
     {}
 
@@ -52,6 +90,7 @@ public final class ModelTextureGradeShader
             shader.close();
         }
         SHADERS.clear();
+        glintAvailable = false;
 
         ResourceManager manager = MinecraftClient.getInstance().getResourceManager();
 
@@ -76,6 +115,7 @@ public final class ModelTextureGradeShader
                     throw new IOException("texture-grade shader is missing required uniforms");
                 }
 
+                registerGlintSampler(loaded);
                 SHADERS.put(variant.format, loaded);
             }
             catch (IOException | RuntimeException e)
@@ -200,6 +240,122 @@ public final class ModelTextureGradeShader
         else
         {
             apply(program, BASE_TINT, 0F);
+        }
+    }
+
+    /* ---------- 附魔光效 ---------- */
+
+    /**
+     * 写入一个 model group 的附魔光效开关。
+     *
+     * <p>这是<b>逐组</b>调用，所以每次都必须写（包括关闭时写 0）—— 否则同一个模型里
+     * 前一个开了光效的骨骼会把状态泄漏给后一个没开的骨骼。</p>
+     */
+    public static void applyGlint(ShaderProgram program, boolean enabled, Color color)
+    {
+        if (program == null)
+        {
+            return;
+        }
+
+        GlUniform strength = program.getUniform(GLINT_STRENGTH);
+
+        if (strength == null)
+        {
+            return;
+        }
+
+        strength.set(glintAvailable && enabled ? GLINT_ON : 0F);
+
+        GlUniform phase = program.getUniform(GLINT_PHASE);
+
+        if (phase != null)
+        {
+            phase.set(glintPhase());
+        }
+
+        GlUniform tint = program.getUniform(GLINT_COLOR);
+
+        if (tint != null)
+        {
+            /* null / 未就绪时回退到白色，保证默认观感与原版一致。 */
+            Color use = color == null ? DEFAULT_GLINT_COLOR : color;
+
+            tint.set(use.r, use.g, use.b, use.a);
+        }
+    }
+
+    /** 光效滚动相位，取值 [0,1)。整数格位移 + sin/cos 连续滚动 → 无限循环无接缝。 */
+    public static float glintPhase()
+    {
+        return (float) (System.currentTimeMillis() % GLINT_PERIOD_MS) / (float) GLINT_PERIOD_MS;
+    }
+
+    public static boolean isGlintPerGroup()
+    {
+        return glintPerGroup;
+    }
+
+    public static void setGlintPerGroup(boolean value)
+    {
+        glintPerGroup = value;
+    }
+
+    /**
+     * 把原版附魔光效纹理注册到 shader 的第 4 个 sampler 上。
+     *
+     * <p>{@code ShaderProgram.bind()} 会遍历 JSON 里声明的 sampler 名：若该名字在
+     * samplers 映射里有<b>非 null</b> 值，就把纹理绑到 GL_TEXTURE0+i 并把 sampler uniform
+     * 设为 i；为 null 则直接跳过。JSON 只提供名字（{@code readSampler} 会 put(name, null)），
+     * 真实纹理必须由这里 {@code addSampler} 提供 —— 这也正是原版给自己核心 shader
+     * 挂纹理的机制。所以额外 sampler 绝不能只改 JSON。</p>
+     */
+    private static void registerGlintSampler(ShaderProgram program)
+    {
+        if (program.getUniform(GLINT_STRENGTH) == null)
+        {
+            /* 该变体没有声明光效 uniform（非 model_texture_grade），无需挂载。 */
+            return;
+        }
+
+        AbstractTexture texture = resolveGlintTexture();
+
+        if (texture == null)
+        {
+            return;
+        }
+
+        program.addSampler(GLINT_SAMPLER, texture);
+        glintAvailable = true;
+    }
+
+    private static AbstractTexture resolveGlintTexture()
+    {
+        try
+        {
+            AbstractTexture texture = MinecraftClient.getInstance().getTextureManager().getTexture(GLINT_TEXTURE);
+
+            /* 纹理还没真正加载完时 glId 是 -1：addSampler 也会挂上，但 bind() 会因
+             * glId == -1 跳过绑定，等效于没挂 —— 所以这里视为"还没好"，下次重试。 */
+            if (texture == null || texture.getGlId() == -1)
+            {
+                return null;
+            }
+
+            /* 光效 UV 会大幅超出 [0,1]：线性过滤避免硬像素块，
+             * REPEAT 环绕让超出部分的采样平铺回贴图内。 */
+            texture.setFilter(true, false);
+            texture.bindTexture();
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+
+            return texture;
+        }
+        catch (Throwable t)
+        {
+            BBSFSloveCML.LOGGER.error("[FSloveCML] 附魔光效纹理加载失败，光效将被禁用", t);
+
+            return null;
         }
     }
 
