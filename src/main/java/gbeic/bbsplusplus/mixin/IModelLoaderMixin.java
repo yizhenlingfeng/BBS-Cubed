@@ -36,7 +36,9 @@ public interface IModelLoaderMixin
                 return;
             }
 
-            cir.setReturnValue(bbspp$findDiffuseTexture(link, links));
+            Link resolved = bbspp$findDiffuseTexture(link, links);
+
+            cir.setReturnValue(resolved == null ? bbspp$missingTextureLink() : resolved);
         }
     }
 
@@ -71,6 +73,12 @@ public interface IModelLoaderMixin
         cir.setReturnValue(candidates.isEmpty() ? null : candidates.get(0));
     }
 
+    /**
+     * 在可用贴图中挑选最合适的漫反射贴图。
+     *
+     * @return 选中的贴图；若一张可用贴图都没有则返回 {@code null}，
+     *         由 {@code bbspp$getLinkWithSuffix} 换成兜底贴图
+     */
     private static Link bbspp$findDiffuseTexture(Link requested, Collection<Link> links)
     {
         List<Link> candidates = new ArrayList<>();
@@ -83,9 +91,15 @@ public interface IModelLoaderMixin
             }
         }
 
+        /* 目录里一张可用漫反射贴图都没有（典型场景：刚新建的模板模型，
+         * 只有 model.geo.json / config.json / animations）。
+         *
+         * 此处必须返回 null 而不能沿用 requested：原版 getLink 在找不到时会把硬编码的
+         * model.png 原样返回，而该文件并不存在，随后 TextureManager.bindTexture →
+         * getPixels 会抛 FileNotFoundException 并中断渲染。 */
         if (candidates.isEmpty())
         {
-            return requested;
+            return null;
         }
 
         String requestedParent = bbspp$parentPath(requested.path);
@@ -243,5 +257,19 @@ public interface IModelLoaderMixin
         }
 
         return count;
+    }
+
+    /**
+     * 模型没有任何贴图文件时的兜底贴图：{@code color:FFFFFFFF}（不透明白色）。
+     *
+     * <p>BBS 的 {@code TextureManager.getPixels} 对 {@link Link#COLOR} 源有专门分支，
+     * 会直接合成一张 1×1 纯色贴图，不需要真实资源文件。这样无贴图的模型会以「白模」
+     * 形式正常渲染，而不是绑定一个不存在的路径抛 FileNotFoundException。</p>
+     *
+     * <p>注意不能返回 {@code null}：{@code bindTexture(null)} 会在 BBS 内部空指针。</p>
+     */
+    private static Link bbspp$missingTextureLink()
+    {
+        return new Link(Link.COLOR, "FFFFFFFF");
     }
 }
