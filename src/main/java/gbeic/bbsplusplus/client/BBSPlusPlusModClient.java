@@ -188,7 +188,13 @@ public class BBSPlusPlusModClient implements ClientModInitializer
         // 注册游戏退出时的资源清理
         ClientLifecycleEvents.CLIENT_STOPPING.register(client ->
         {
-            gbeic.bbsplusplus.util.XRayManager.shutdown();
+            /* XRayManager 的静态字段直接引用 aaa_particles 的 ParticleEmitter /
+             * EffectDefinition 类。未安装 aaa_particles 时加载 XRayManager 会抛
+             * NoClassDefFoundError（退出时报错），故必须先检查前置是否存在。 */
+            if (FabricLoader.getInstance().isModLoaded("aaa_particles"))
+            {
+                gbeic.bbsplusplus.util.XRayManager.shutdown();
+            }
         });
 
         // 在客户端启动完成后注册表单组件

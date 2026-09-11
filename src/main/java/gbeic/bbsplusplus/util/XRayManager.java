@@ -26,6 +26,21 @@ public class XRayManager {
     private static final Object THE_ONE_MANAGERS_BASE = staticFieldBase(
             mod.chloeprime.aaaparticles.api.client.EffectDefinition.class, "THE_ONE_MANAGERS");
 
+    /**
+     * X-Ray 管理器是否已被创建。
+     *
+     * <p>{@link #get()} 只会在某个粒子被 {@link #migrate} 标记为穿透渲染
+     * （{@code shouldBeXRay=true}）时被调用，因此本方法返回 {@code true}
+     * 等价于「本次会话确实启用过穿透粒子」。</p>
+     *
+     * <p>供 {@code EffectDefinitionMixin} 做前置判断：没有穿透粒子时，
+     * 不必为它付出改动全局 GL 深度状态与当前 Framebuffer 深度缓冲的代价。</p>
+     */
+    public static boolean isActive()
+    {
+        return XRAY_MANAGER != null;
+    }
+
     public static EffekseerManager get() {
         if (XRAY_MANAGER == null) {
             com.mojang.blaze3d.systems.RenderSystem.assertOnRenderThread();
