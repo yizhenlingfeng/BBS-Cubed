@@ -142,6 +142,9 @@ public class BBSPlusPlusModClient implements ClientModInitializer
                 e.printStackTrace();
             }
         });
+
+        // 性能优化：P0 Dashboard 预热 + P1 VAO 分帧烘焙 tick 驱动
+        gbeic.bbsplusplus.performance.PerformanceOptimizationManager.register();
     }
 
     private void registerAAAParticles()

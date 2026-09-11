@@ -1037,5 +1037,9 @@
     "bbspp.undo_history.root.camera": "Camera timeline",
     "bbspp.undo_history.root.keyframes": "Replay keyframes",
     "bbspp.undo_history.root.properties": "Property keyframes",
-    "bbspp.undo_history.root.replays": "Replay list"
+    "bbspp.undo_history.root.replays": "Replay list",
+    "bbspp.config.performance.title": "Performance",
+    "bbspp.config.performance.tooltip": "Model block render distance and other performance tweaks",
+    "bbspp.config.performance.model_block_render_distance": "Model Block Render Distance",
+    "bbspp.config.performance.model_block_render_distance-comment": "BBS hardcodes 512 blocks. Lowering this reduces render and picking overhead for distant model blocks. Set to 0 to use BBS default."
 }

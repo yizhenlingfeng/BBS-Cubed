@@ -129,9 +129,12 @@ public class BBSAddonsSettings
     }
 
     /* 隐藏设置项 */
-    
+
     /** 纹理管理器的排版模式：0=列表，1=小网格，2=中网格，3=大网格 */
     public static ValueInt textureManagerLayout;
+
+    /** 模型方块的渲染距离（米）。0 表示使用原版 BBS 的 512。建议 128~256。 */
+    public static ValueInt modelBlockRenderDistance;
 
     /** AAA 粒子特效选择窗口保存的宽度，0 表示使用默认比例 */
     public static ValueInt aaaEffectPickerWidth;

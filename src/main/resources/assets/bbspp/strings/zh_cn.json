@@ -1037,5 +1037,9 @@
     "bbspp.undo_history.root.camera": "相机时间线",
     "bbspp.undo_history.root.keyframes": "回放关键帧",
     "bbspp.undo_history.root.properties": "属性关键帧",
-    "bbspp.undo_history.root.replays": "回放列表"
+    "bbspp.undo_history.root.replays": "回放列表",
+    "bbspp.config.performance.title": "性能优化",
+    "bbspp.config.performance.tooltip": "模型方块渲染距离等性能调优",
+    "bbspp.config.performance.model_block_render_distance": "模型方块渲染距离",
+    "bbspp.config.performance.model_block_render_distance-comment": "原版固定为 512 格。调低此值可减少远处模型方块的渲染与拾取开销。设为 0 则使用原版默认值。"
 }

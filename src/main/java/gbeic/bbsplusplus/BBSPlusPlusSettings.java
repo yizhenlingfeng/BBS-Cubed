@@ -120,6 +120,11 @@ public class BBSPlusPlusSettings
         CMLSettings.premiereExportAudioOnly = builder.getBoolean("premiere_export_audio_only", false);
         CMLSettings.premiereExportNtscFlag = builder.getBoolean("premiere_export_ntsc_flag", true);
         CMLSettings.premiereExportSrt = builder.getBoolean("premiere_export_srt", false);
+
+        /* ===== 分类七：性能优化 ===== */
+        builder.category("performance", Icons.DUPE);
+
+        BBSAddonsSettings.modelBlockRenderDistance = builder.getInt("model_block_render_distance", 256, 0, 1024);
     }
 
     private static IKey lang(String key)
