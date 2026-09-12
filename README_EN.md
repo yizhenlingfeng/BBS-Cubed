@@ -148,6 +148,7 @@
 | Sun/moon declination & focus curve keyframes | Merged from the tools plugin.                                                                                            |
 | ItemStack track improvements  | Added transform functionality.                                                                                                    |
 | Auto-save presets             | Model block presets gain an "auto-save" toggle: after enabling it via the preset right-click menu on the IK chain, physics bones, bone constraints, and pose pages, parameter changes are automatically written to the currently selected preset with 500ms debounce — no manual save needed. |
+| Configurable custom hotkeys   | Custom hotkeys such as Shift+W (select keyframes at current time) are now integrated into the BBS UI keybind settings under the "Keyframe Editor" category, allowing users to freely remap them. |
 
 ### Vanilla Fixes
 
@@ -181,6 +182,7 @@
 - **AAA particles**: fixed depth-state pollution causing editor preview black screen; added fallback rendering for textureless models; cleaned up dead code
 - **Performance**: optimized model block opening lag — idle Dashboard warm-up, frame-split VAO baking, UI palette caching, Gizmo skip-redraw when idle, configurable render distance, global toggle no longer reloads the world
 - **Build**: supports dual-target builds for 1.20.1 / 1.20.4; updated Fabric API and dependency paths
+- **Configurable hotkeys**: Shift+W (select keyframes at current time) is now integrated into UI keybind settings under the "Keyframe Editor" category, allowing users to remap it
 
 #### 3.2.1
 - Added 605 missing English keyframe track translations; fixed tracks still showing Chinese under English game language
