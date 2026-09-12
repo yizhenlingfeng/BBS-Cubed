@@ -1,4 +1,4 @@
-# BBS Cubed
+﻿# BBS Cubed
 
 > An enhancement plugin for [BBSFS](https://github.com/Wemppy4/bbs-fs)
 
@@ -176,394 +176,65 @@
 
 ### Mod Changelog
 
-#### 3.2.1
+#### 3.2.2
+- **Enchant Glint**: pose editor gains a vanilla-style enchant glint per bone, with custom color/alpha and apply-to-children via right-click (currently hidden under Iris shaders)
+- **AAA particles**: fixed depth-state pollution causing editor preview black screen; added fallback rendering for textureless models; cleaned up dead code
+- **Performance**: optimized model block opening lag — idle Dashboard warm-up, frame-split VAO baking, UI palette caching, Gizmo skip-redraw when idle, configurable render distance, global toggle no longer reloads the world
+- **Build**: supports dual-target builds for 1.20.1 / 1.20.4; updated Fabric API and dependency paths
 
-- Translation sync and fixes:
-  - Added 605 missing English keyframe track translations to `bbspp/strings/en_us.json` (VFX effects, item spray, video disguise, lighting, etc.)
-  - Fixed hardcoded Chinese "跟随轨道" in camera track mode menu; changed to `bbspp.ui.film.follow_orbit` translation key
-  - Created `assets/xavin/lang/en_us.json` with English translation for the Destruction Wand
-- Bug fixes:
-  - Fixed keyframe track names still showing in Chinese when game language is English, even with the "Chinese Keyframe Track Names" toggle enabled
-  - Root cause: keyframe tracks have two creation paths; the second path (`KeyframeTrackStyle.apply()`) uses `localizeWithMap()`, which did not check the current game language
-  - Fix: added `isChineseLanguage()` check to both `localize()` and `localizeWithMap()`; non-Chinese languages force English track names
-  - Language detection prioritizes `BBSModClient.getLanguageKey()` (BBS's own language setting), falling back to Minecraft `LanguageManager`
-- Code cleanup:
-  - Removed unused `IKey` import from `UIFilmControllerFollowOrbitMixin`
+#### 3.2.1
+- Added 605 missing English keyframe track translations; fixed tracks still showing Chinese under English game language
+- Fixed hardcoded Chinese in follow-orbit menu; language detection now prioritizes BBS's own setting
 
 #### 3.2
-
-- Disguise interface layout improvements:
-  - Added a layout toggle button at the top right of the page, supporting switching between list mode and grid mode.
-  - Hold Ctrl + scroll wheel to zoom the icon size in both list and grid modes across the entire page.
-  - List mode supports side-by-side arrangement, with a minimum of 1 and a maximum of 10 models per row.
-  - In grid mode, hovering over a model shows its name and model ID.
-  - Dragging a model to a different category folder on the left cuts and moves the model file to the target folder.
-- Bug fixes:
-  - Fixed some crash issues.
-  - Fixed Blockbench-exported Bedrock animations where step keyframes were played as linear interpolation.
+- Disguise interface: list/grid mode toggle, Ctrl+scroll to zoom icons, drag models to category folders to move files
+- Fixed Blockbench Bedrock animation step keyframes being played as linear interpolation
 
 #### 3.1.1
-
-- Feature removal:
-  - Removed **texture_tint** and **texture_whiten** from the pose editor; deleted the related API interface `PoseTextureGradeEditorHolder`; trimmed ~200 lines of related code in `UIPoseEditorMixin` and `UIPoseKeyframeFactoryMixin`.
-- Bug fixes:
-  - Fixed OrbitViewGizmo being incorrectly hidden in vanilla track mode — the root cause was a false-positive risk in the `@Shadow controller` HEAD NPE guard added in 3.1 (controller is actually never null), which forced `isActive()` to return false. Fix: removed the guard and used `@Accessor` to safely read the target class field.
-- Feature enhancements:
-  - Follow track mode (mode 6) now supports a **perspective right-click menu** — it shows the same right-click options as vanilla tracks (teleport center to recording point, attach track, toggle orthographic). Previously only vanilla track mode (mode 2) had this menu.
-- Project maintenance:
-  - Cleaned up the unused nested resource directory `assets/bbs/assets/` (870 unreferenced translation keys + unreferenced textures, including broken JSON).
-  - Cleaned up temporary debug files (684MB .hprof heap dump, issue screenshots, `_memcheck/`, `mchorse/` decompiled classes) and build outputs (`build/`, `.gradle/`, `run/`), freeing ~2GB in total.
-  - Updated `.gitignore` with `*.hprof`, `issue_screenshot*.png`, `_memcheck/`, `mchorse/` rules to prevent regression.
-  - Build verification: `gradlew compileJava` BUILD SUCCESSFUL.
+- Removed texture tint/whiten from pose editor
+- Fixed OrbitViewGizmo incorrectly hidden in vanilla track mode
+- Follow track mode gains right-click menu support; hotfix removed Mixin UTF-8 BOM that crashed startup
 
 #### 3.1
-
-- Merged all contents of the `bbs_FSloveCML` (bbs_snow) plugin — uninstall bbs_FSloveCML!
-  - Mod ID unified as `bbsplusplus`, resource namespace unified as `bbspp`, package name unified as `gbeic.bbsplusplus`.
-  - Added fluid simulation disguise, Particle Plus (morph/collision tinting/favorites), PBR texture tiering (per-bone/per-group PBR overrides), bone textures.
-  - Added Premiere Pro XML project export + SRT subtitle export.
-  - Added hotbar/movie/replay three clip types, action overlay layers, Additive animation, Molang variable sharing.
-  - Added animation state editor, dockable mini windows, playback time control (speed/reverse/propagation range), clip visibility.
-  - Added keyframe editor enhancements (split view/embedded inspector/action timeline/PBR keyframes).
-- Refactored the settings panel (6 categories):
-  - `BBS Enhancements`: the original snow settings' first 4 toggles (Chinese track names/auto-spectate/no negative keyframes/Shift select parent) + the original BBS++ options.
-  - `Enhanced UI` (new subcategory): new disguise interface layout, new movie library interface, new shader curve selection interface.
-  - `Item Spray`, `Gizmo Rework`: unchanged.
-  - `CML Extensions` (independent left menu, divider characters removed): follow track, bone texture tinting, and other CML-specific options.
-  - `Export Enhancements` (renamed from premiere-export, independent left menu, divider characters removed): Premiere XML export + audio subtitle export settings.
-  - The BBSCubed settings module displays entirely below the vanilla BBS settings.
-- Feature improvements:
-  - Follow track (mode 6) now supports vanilla track XYZ axis direction selection (the track view widget OrbitViewGizmo also activates in follow mode).
-- Bug fixes:
-  - ~~Fixed texture_tint and texture_whiten not taking effect on the pose page~~ (removed in 3.1.1).
-  - ~~Fixed texture tint/whiten visible on the pose edit page but not showing after exiting~~ (removed in 3.1.1).
-  - Fixed the overlap between the loop icon and the visibility icon at the top right of the movie editor — the loop icon offset was increased by one visibility button width.
-  - ~~Fixed OrbitViewGizmo.isActive() null pointer crash (NPE when controller is null) — added a HEAD null guard to return false early~~ (3.1.1 found this guard had a false-positive bug that hid the vanilla track Gizmo; switched to a safe @Accessor read and removed the guard).
-- Settings panel enhancements:
-  - Added hover tooltips for the "Enhanced UI", "CML Extensions", and "Export Enhancements" categories.
-  - The "CML Enhancements" category was renamed to "CML Extensions".
-- Compile parameter adjustment: because Particle Plus uses `sun.misc.Unsafe` to inject enums, the compile method changed from `--release 17` to the equivalent `-source/-target 17 + -XDignore.symbol.file`.
+- Merged all bbs_snow (CML) features: fluid simulation, Particle Plus, PBR texture tiering, bone textures, Premiere export, three clip types, action overlay, Additive animation, mini windows, and more
+- Refactored settings into an independent module: BBS Enhancements, Enhanced UI, Item Spray, Gizmo Rework, CML Extensions, Export Enhancements
+- Follow track supports XYZ axis direction selection
 
 #### 3.0
-
-- Display name changed from BBS++ to BBS Cubed; version bumped to 3.0.
-- This version is a collaboration between 一阵泠风, Gbeic, and snowstar.
+- Renamed from BBS++ to BBS Cubed; collaboration release
 
 #### 2.7.2
-
-- Optimized preset auto-save performance:
-  - Data snapshots are now built only after the debounce triggers; dragging sliders no longer performs full serialization every frame, eliminating lag and GC pressure while dragging.
-  - Preset file writing (serialization + fsync to disk) moved to a background thread, no longer blocking the game's main thread; releasing the slider no longer drops frames.
-  - Added content comparison before writing to disk; skips writing when the preset data hasn't changed, avoiding useless disk writes.
-  - Streamlined the auto-save trigger points across the four pages, eliminating duplicate triggers; state auto-resets when switching poses/models to prevent hung tasks from writing incorrectly.
+- Optimized preset auto-save: debounced serialization, background disk writes, content comparison to skip unnecessary writes
 
 #### 2.7.1
-
-- Added model block preset auto-save:
-  - Added an "auto-save" toggle to the preset right-click menu on the IK chain, physics bones, bone constraints, and pose pages.
-  - When enabled and a preset is selected, parameter changes are auto-written to the currently selected preset with 500ms debounce — no manual save needed.
-  - The button dims when off and highlights when on; the target preset stays selected during auto-save.
-  - State is maintained in runtime memory only, not persisted; it defaults to off each time the editor opens.
+- Added model block preset auto-save: enable via preset right-click menu on IK chain / physics bones / constraints / pose pages; 500ms debounce auto-writes
 
 #### 2.7
-
-- Merged all contents of the `BBSPPP` mod — uninstall BBSPPP!
-  - Added texture tweening: color, pixel dissolve, and dissipate modes, smoothly transitioning between texture keyframes.
-  - Added a 3D spread origin picker: pick the origin position of the dissipate effect directly on the model.
-  - Added audio subtitle export: video export automatically generates SRT subtitle files with audio file names.
-  - Compatible with old BBSPPP texture tween keyframe data; auto-migrates.
-- Refactored the settings interface:
-  - BBS++ settings promoted to an independent settings module, displayed below the BBS main settings in the settings list.
-  - Internally divided into three categories: `BBS Enhancements`, `Item Spray`, `Gizmo Rework`; the left category bar supports hover descriptions.
-  - BBSPPP options merged into the `BBS Enhancements` category, removing all divider characters (`==============` fake titles).
-- Fixed the translation key prefix for settings items, ensuring all settings names and descriptions display correctly.
+- Merged all BBSPPP features: texture tweening (color / pixel dissolve / dissipate), 3D spread origin picker, audio subtitle export
+- Refactored settings into an independent module
 
 #### 2.6.3
-
-- Added `Video Disguise`, depending on the prerequisite mod `MediaPlayer-BBS`; operations still to be improved. Only supports **Windows x64** platforms!
-- Completed irl 1.1.5 localization.
-- Removed the vfx localization because the mod itself already ships a localized version.
-- Completed keyframe track localization for vfx and vfxlight.
-- Fixed vfx shader errors.
-- Fixed the issue where ++'s improved destruction wand stopped working in new vfx versions.
-- Fixed the conflict between vfx and item spray.
-
-#### 2.6.2
-
-- Improved `pose` frames: added skip-current-frame for bones.
-- Optimized `pose` frame bone list scrolling.
-- Standardized `/bbsplusplus` commands.
-- Improved the VFX plugin's `Destruction Wand` operation experience; hides the preview box when not held.
-- Fixed the issue where keyframe color bars for the same parameter broke apart.
-- Optimized the save logic of the new UI's `open by default` feature.
-- Refactored the item spray disguise.
-- Blocked the BBS F10 blackboard feature.
-- Added an audio output device switch listener so BBS no longer goes silent after switching devices.
-- Added a video preset feature to the BBS Settings > Video Recording interface.
-
-#### 2.6.1
-
-- Improved `pose` frames: added multi-select paste.
-- Corrected keyframe track translations.
-- Fixed the color array inflation issue again.
-
-#### 2.6.0
-
-- Improved `pose` frames:
-  - Added a `bone parameter brush` to copy bone parameters to another bone.
-  - Added a `modified bone indicator`; modified bones show an orange diamond indicator.
-  - Ported FS2.5's `tree bone` feature into the plugin with optimized display; optional, off by default.
-
-#### 2.5.9
-
-- Fixed a mysterious crash bug reported by Lingfeng (his client is way too mysterious).
-- Added UV offset, also completing the image disguise UV offset.
-- Added alt+click-to-select clips and moved the reversed direction into the `reverse timeline scroll direction` feature.
-
-#### 2.5.8
-
-- Improved the VFX plugin's `Destruction Wand` operation experience.
-- Added missing keyframe track localization for the VFX plugin.
-- Fixed compatibility between item spray particles and irl, restoring shadow display.
-
-#### 2.5.7
-
-- Optimized the performance of the motion path feature; currently only the `current frame only` mode is optimized.
-- Temporarily removed the BBS history improvements due to a bug.
-
-#### 2.5.6
-
-- Merged `tools` plugin features: shader curve fixes, structure disguise. Uninstall tools and fix!
-- Compatible with `Revoxelation` shaders, but there is an overexposure issue when first entering a world; rotate the view downward or restart the shader to recover.
-
-#### 2.5.5
-
-- Adapted to FS 2.4.
-- No longer supports previous versions!!!
-
-#### 2.5.4
-
-- The new movie library and disguise interface add a `set as default open` feature.
-- Enhanced `IMBlocker` compatibility.
-
-#### 2.5.3
-
-- Brand-new movie library interface, off by default.
-- Added game mode recovery after abnormal exit.
-- Added the BBS++ dedicated clipboard feature.
-- Blocked ctrl+B opening the recap feature.
-
-#### 2.5.2
-
-- Fixed a small issue with clip tracks.
-- Added transform functionality to the model's 6 ItemStack tracks.
-
-#### 2.5.1
-
-- AAA particle selection window size is now persisted.
-- Optimized clip paste logic; clips no longer paste onto tracks outside the screen.
-- Added `allow dragging to extend clip tracks`, off by default. When enabled, dragging a clip upward can expand more tracks. Feedback came from a guy on DC building a ladder!
-
-#### 2.5.0
-
-- Added `Alt scroll wheel timeline behavior` with three modes: default, disabled, scroll left/right.
-- Fixed the texture filter state restoration issue.
-- Restricted `aaa_particles` versions to 2.2.0/2.2.1; higher versions have a black screen bug.
-- The AAA particle selection window can now be resized.
-- Category icons on the new disguise interface home page now support right-click customization.
-- The playhead can now be dragged with the left mouse button on the timeline ruler.
-- Optimized clip segment dragging.
-
-#### 2.4.9
-
-- Fixed the conflict between `shader curves` and `Bliss-Shader-Unstable`.
-- Added a `compact folders` feature to the `new shader curve selection interface`.
-
-#### 2.4.8
-
-- Added the `new shader curve selection interface` toggle.
-- Under the `new shader curve selection interface`, adding a curve no longer closes the interface; instead the curve is highlighted, and clicking again cancels it.
-
-#### 2.4.7
-
-- Added the keyframe track definition interface.
-- Fixed a bug where external recordings could not be properly undone.
-
-#### 2.4.6
-
-> If you need to use `AAA particles`, do not install the new `aaa_particles` — it will cause a black screen. `bbs++` is incompatible with new `aaa_particles` versions.
-
-- Improved bbs's `shader curve selection interface`, also compatible with `tools`.
-- Fixed wemppy's bad habit of obsessively saving recently-used colors.
-- Optimized AAA particles.
-- Added the `world playback applies shader curves` toggle; when enabled, curve changes also take effect while playing movies in-world.
-
-#### 2.4.5
-
-- Pressing esc while not in the `main texture manager` now directly closes the texture manager.
-- Improved `undo history` to record in more detail, and added a setting for the maximum undo history steps.
-
-#### 2.4.4
-
-- Fixed `item spray` collision issues.
-- Made the `pbr texture interception logic` more robust.
-- Added a `clip overlap fixer` to improve clip collision interception logic, making it more robust (untested because the bug cannot be reproduced).
-- Fixed the issue where a paused playhead still took effect at the boundary of a `disabled camera clip`.
-- Removed the `merge stop particles` feature of `item spray`.
-
-#### 2.4.3
-
-- Added more emitter shapes for `item spray`.
-- Added scale fade-in time for `item spray`.
-- Optimized `item spray` irl shadow effects.
-
-#### 2.4.2
-
-- Fixed shadow issues between `item spray` and irl.
-- Added a max shadow count parameter.
-
-#### 2.4.1
-
-- `playback category` operation optimization: added multi-select drag and category renaming.
-- Adjusted `item spray` guide line display.
-- Fixed the bug where `item spray` particles shook with the view when shaders were enabled.
-- Fixed issues between `item spray` and irl.
-
-#### 2.4.0
-
-- Added the `item spray` disguise.
-- Added the `keyframe layout deep lock` toggle.
-
-#### 2.3.5
-
-- vfx plugin localization.
-
-#### 2.3.4
-
-- Fixed two bugs I never encountered.
-- Restored the `model texture error fix` feature.
-- Restored the `hide keyframe label column width handle` feature.
-
-#### 2.3.3
-
-- Fixed wemppy's projectile trajectory veering left.
-- Added a `filter` button to the `new disguise interface layout` when opened in several other interfaces.
-
-#### 2.3.2
-
-- Fixed the issue where dragging clip segments in BBSFS sometimes snapped back or got stuck.
-- Fixed bugs I never encountered......
-- Improved the texture manager with grid mode.
-- ESC can now cancel BBS hotkeys.
-- Added an `open model folder` button to the new disguise interface.
-
-#### 2.3.1
-
-- Added the `shader control` button.
-- Added settings items for the `shader control` button.
-
-#### 2.2.9
-
-- Added the `reverse timeline scroll` feature.
-
-#### 2.2.8
-
-- Adapted to BBSFS 2.3.1.
-- Removed redundant features:
-  - Removed the "streamlined editor loop" feature.
-  - Removed the "layout lock fix".
-  - Removed the "model texture error fix".
-- Changed:
-  - The `first-person view sway` feature now blocks BBSFS's original sway when enabled.
-
-#### 2.2.6
-
-- Fixed the issue where timeline ruler occlusion still allowed keyframes/clips to be clicked.
-- Completed `IRLights` plugin localization.
-
-#### ~~2.2.5~~
-
-- ~~Model texture error fix.~~
-
-#### 2.2.4
-
-- Added `IRLights` plugin localization and keyframe track localization.
-
-#### 2.2.3
-
-- Improved the vanilla bbsfs `disguise` interface UI.
-- Fixed the crash bug with negative speed keyframes in `AAA particles`, now limited to `0.01-10`.
-- Changed file sorting in the `audio` and `AAA particle` selection interfaces to natural sort.
-
-#### 2.2.0
-
-- Improved `start frame` and `end frame` for loop mode, optimizing the special effects playback experience.
-- Added a `smart freeze` toggle to the `AAA particle` edit interface to fix particle rendering errors when `start/end frames` are identical. When enabled, an extra frame is appended and the particle pauses after the first loop completes. Why is it a toggle? I don't know why I made it a toggle either.
-- `end frame` keyframes set below the `start frame` value are now force-set to the same value as `start frame`.
-- `start/end frames` now max out at `500`.
-- Added the `first-person view sway` feature; when enabled, playing `first-person playback` restores the original walking view sway effect, though not 100% identical.
-- Added `piercing render` for `AAA particles`; when enabled, particles render through **all blocks and entities**. Since this is not implemented through `aaaparticles` itself, **there may be a slight performance cost**.
-- Fixed the issue where `AAA particles` rendered through the right hand in first-person view after installing `Sodium`. **If both `piercing render` and `shaders` are enabled, this bug still exists.**
-
-#### 2.1.2
-
-- Optimized AAA particles — a whole **1KB** smaller than the previous version!!
-
-#### 2.1.1
-
-- Improved the `Shift directly select parent` feature; it now also works in the `model editor` interface.
-- Fixed flickering in `AAA particle` loop mode.
-- Added `start frame` and `end frame` keyframes for `AAA particles`, enabling more precise loop control and solving the seamless-loop issue in particle loop mode (e.g., magic circles).
-
-#### 2.0.7
-
-- Fixed compatibility between `BBS++` and the `PoseCurve` plugin.
-
-#### 2.0.5
-
-- Improved the `status icon` display position when pressing hotkey `L` to open loop mode in `BBSFS`'s `camera editor`, and added click-to-close functionality.
-
-#### 2.0.4
-
-- Fixed the crash bug when loading/unloading resource packs while `AAA particles` exist in the world.
-- Added the `Shift directly select parent` feature.
-
-#### 2.0.0
-
-- Added AAA particle disguise.
-
-#### 1.6.3
-
-- Curve keyframe modifications still take effect after enabling fly mode (NYK).
-
-#### 1.6.2
-
-- Fixed the issue where actors failed to switch modes when the editor auto-switched to adventure mode.
-- Double-click a clip on the timeline to enter the edit interface (NYK).
-- Fixed the crash when enabling fly mode in BBS 2.2 curve clips.
-
-#### 1.6.0
-
-- Fixed the bug where windows could still be dragged after locking the layout.
-- Added BBS-flavored gizmo interaction (toggleable):
-  - Hotkeys G/S/R only switch modes, removing the edit-after-multiple-presses behavior (optional).
-  - Hotkey T cycles between translate/scale/rotate; the vanilla FS `combined` mode can also be enabled via settings to make it a four-mode cycle.
-
-#### 1.5.0
-
-- Corrected localization of several keyframe names.
-- Disabled the plugin's NBT fix after BBSFS upgraded to 2.2.1.
-
-#### 1.4.0
-
-- Added LumenCore plugin keyframe name localization.
-- Auto-switch to spectator mode when entering the camera interface.
-- Improved the sound selection interface.
-
-#### 1.0.0
-
-- Changed the `cycle editor` hotkey "~": originally it cycled through three interfaces; changed it to only cycle between camera and playback. Toggleable.
-- Added search functionality to the animation-to-pose interface.
-- Fixed the issue where Chinese could not be switched in BBS interfaces with the input method conflict fix (IMBlocker) installed.
-- Added Chinese keyframe names, also editable via the mod's json (`assets\bbs\assets\strings`). Toggleable.
-- Fixed the bug where item keyframes lost detailed NBT.
+- Added Video Disguise (requires MediaPlayer-BBS, Windows x64 only)
+- Completed IRLights localization; fixed vfx shader errors and item spray conflicts
+
+#### 2.6.x
+- Pose frame enhancements: bone parameter brush, modified-bone orange indicator, skip current frame key value, multi-select paste, tree bone list
+- Improved Destruction Wand UX; fixed broken keyframe color bars
+- Added audio output device switch listener to prevent muting
+
+#### 2.5.x
+- Merged tools plugin: structure disguise, shader curve fixes, sun/moon declination keyframes
+- New movie library interface, BBS dedicated clipboard, Alt+scroll timeline behavior
+- AAA particle window resizable & persisted; allow extending clip tracks
+- Adapted to BBSFS 2.4; completed image disguise UV offset
+
+#### 2.4.x
+- Added Item Spray disguise with multiple items and emitter shapes; ongoing shadow & collision optimization
+- New shader curve selection interface; world playback applies shader curves
+- Improved undo history panel with configurable max steps
+
+#### 2.3.x
+- Added shader control button in movie editor (left-click toggle, right-click picker)
+- Fixed clip drag snapping back; fixed playhead projectile veer
+- Texture manager grid mode; ESC cancels hotkeys
+- vfx plugin localization
