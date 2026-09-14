@@ -31,6 +31,12 @@ public class BBSAddonsSettings
     /** 开启后，伪装界面将使用全新的双栏布局 */
     public static ValueBoolean newMorphingPanel;
 
+    /** Blockbench.exe 的完整路径。为空或指向的文件不存在时，伪装页右键「用 Blockbench 编辑」置灰 */
+    public static ValueString blockbenchPath;
+
+    /** 开启后，若模型目录下存在 .bbmodel 工程文件，则用它打开；否则用 .geo.json 打开 */
+    public static ValueBoolean blockbenchPreferBbmodel;
+
     /** 开启后，影片选择界面将使用新版影片库布局和交互 */
     public static ValueBoolean newFilmLibraryUi;
 
@@ -42,7 +48,7 @@ public class BBSAddonsSettings
 
     /** 开启后，关键帧编辑器布局锁定时也会隐藏轨道名称宽度的调节柄 */
     public static ValueBoolean enableUiKeyframesLayoutLock;
-    
+
     /** 开启后，右 Ctrl 在世界内播放影片时也会应用曲线剪辑里的光影参数 */
     public static ValueBoolean worldFilmShaderCurves;
 
@@ -141,7 +147,7 @@ public class BBSAddonsSettings
 
     /** AAA 粒子特效选择窗口保存的高度，0 表示使用默认比例 */
     public static ValueInt aaaEffectPickerHeight;
-    
+
     /** 影片库排序模式：0=名称升序，1=名称降序 */
     public static ValueInt filmLibrarySortMode;
 

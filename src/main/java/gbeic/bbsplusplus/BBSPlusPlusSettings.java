@@ -88,6 +88,10 @@ public class BBSPlusPlusSettings
         BBSAddonsSettings.newFilmLibraryUi = builder.getBoolean("new_film_library_ui", false);
         BBSAddonsSettings.shaderCurvePicker = builder.getBoolean("shader_curve_picker", false);
 
+        /* Blockbench 外部编辑：exe 路径 + 是否优先用 .bbmodel 工程文件打开 */
+        BBSAddonsSettings.blockbenchPath = builder.getString("blockbench_path", "");
+        BBSAddonsSettings.blockbenchPreferBbmodel = builder.getBoolean("blockbench_prefer_bbmodel", true);
+
         /* ===== 分类三：物品喷射 ===== */
         builder.category("item_spray", Icons.DUPE);
 
