@@ -26,6 +26,8 @@
 | Reverse timeline scroll direction | Off | When enabled, reverses the direction of the timeline driven by the scroll wheel in the movie editor, including Ctrl+scroll to move the playhead, Alt+scroll to move selected keyframes/clips, and Alt+scroll to scroll the timeline left/right. |
 | Shader control button        | Off     | Adds a button in the `movie editor`: left-click toggles on/off, right-click opens the `shader selection interface`.                                                                                                            |
 | New shader curve selection interface | Off | When enabled, adding shader curves in curve clips uses a new interface categorized by shader settings. When disabled, it uses the BBS vanilla flat list.                                                                       |
+| Blockbench executable path | Empty | Before right-clicking a user model in the disguise panel to open it in Blockbench, select the location of Blockbench.exe here. |
+| Prefer .bbmodel file       | On    | When the model folder contains a .bbmodel project, right-click opens it preferentially; otherwise opens the .geo.json file. |
 | Keyframe layout deep lock    | Off     | When enabled, if the `keyframe editor` layout is locked, the resize handle between the left track names and the right tracks is also hidden, and the width can no longer be adjusted.                                           |
 | World playback applies shader curves | Off | When enabled, while playing movies in-world with right Ctrl, the sun, weather, sky color, and Iris shader pack parameters in curve clips also take effect.                                                                   |
 | Allow dragging to extend clip tracks | Off | When enabled, dragging an entire clip beyond the top of the timeline no longer restricts the track hierarchy, allowing more tracks to be created like vanilla BBS.                                                            |
@@ -176,6 +178,12 @@
 - This project is an extension plugin for [BBSFS](https://github.com/Wemppy4/bbs-fs), implemented via Mixin.
 
 ### Mod Changelog
+
+#### 3.3
+- **Edit models in Blockbench**: right-click a user model in the disguise panel to open it directly in Blockbench. First set the Blockbench.exe path in Settings -> UI Enhancements. If a `.bbmodel` project exists in the model folder it is opened preferentially, otherwise the `.geo.json` is opened (toggle in settings). The menu item stays grayed when the path is unset/invalid or the model is not `.geo.json`; built-in BBS models do not show this item.
+- **Movie editor**: `R` now toggles between the current and the previous camera mode. The orbit controller is a persistent member, so camera angle, distance, and bound entity are preserved when switching back.
+- **Keyframe track localization**: filled in missing track names for hotbar item slots, velocity vX/vY/vZ, VFX enhancement, fluid, PBR, camera clip, Mob, and item spray tracks.
+
 
 #### 3.2.2
 - **Enchant Glint**: pose editor gains a vanilla-style enchant glint per bone, with custom color/alpha and apply-to-children via right-click (currently hidden under Iris shaders)
