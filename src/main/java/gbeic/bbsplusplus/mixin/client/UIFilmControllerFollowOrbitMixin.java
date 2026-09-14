@@ -44,6 +44,10 @@ public abstract class UIFilmControllerFollowOrbitMixin
     @Unique
     private boolean bbspp$freeCamSaved = false;
 
+    /** 切回自由模式后,在下一帧 handleCamera 中恢复相机位置(等 runner.setup 跑完) */
+    @Unique
+    private boolean bbspp$pendingFreeCamRestore = false;
+
     @Shadow
     private int pov;
 
@@ -107,15 +111,11 @@ public abstract class UIFilmControllerFollowOrbitMixin
             CMLSettings.followOrbitMode.set(pov == BBS_FOLLOW_ORBIT_MODE);
         }
 
-        /* 切回自由模式(0/1)时,恢复之前保存的相机坐标/角度/FOV,
-         * 并同步到飞行控制器(dashboard.orbit),否则下一帧会被覆盖。 */
+        /* 切回自由模式(0/1)时,标记需要恢复——真正的恢复在 handleCamera 里执行,
+         * 因为 runner.setup() 在 handleCamera 之前调用,会覆盖我们直接写的相机值。 */
         if (this.bbspp$freeCamSaved && bbspp$isFreeMode(pov))
         {
-            UIFilmController self = (UIFilmController) (Object) this;
-            Camera cam = self.panel.getCamera();
-
-            this.bbspp$freeCam.apply(cam);
-            self.panel.dashboard.orbit.setup(cam);
+            this.bbspp$pendingFreeCamRestore = true;
         }
     }
 
@@ -177,6 +177,16 @@ public abstract class UIFilmControllerFollowOrbitMixin
     private void bbspp_cml$handleFollowOrbit(Camera camera, float transition, CallbackInfo ci)
     {
         int mode = this.getPovMode();
+
+        /* 自由模式:如果有待恢复的相机状态,在此恢复。
+         * handleCamera 在 runner.setup() 之后调用,此时恢复不会被 clip/飞行覆盖。
+         * 同时同步 dashboard.orbit,保证下一帧飞行控制从正确位置开始。 */
+        if (this.bbspp$pendingFreeCamRestore && bbspp$isFreeMode(mode))
+        {
+            this.bbspp$freeCam.apply(camera);
+            ((UIFilmController) (Object) this).panel.dashboard.orbit.setup(camera);
+            this.bbspp$pendingFreeCamRestore = false;
+        }
 
         if (mode == UIFilmController.CAMERA_MODE_ORBIT)
         {
