@@ -2,6 +2,7 @@ package gbeic.bbsplusplus.mixin.client;
 
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
+import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.L10n;
@@ -35,6 +36,13 @@ public abstract class UIFilmControllerFollowOrbitMixin
     /** 上一个镜头模式(-1 = 尚未记录),用于 R 键在两个最近模式间循环 */
     @Unique
     private int bbspp$prevPov = -1;
+
+    /** 自由模式(0=镜头,1=自由)下的相机坐标/角度/FOV,切走再切回时恢复 */
+    @Unique
+    private final Position bbspp$freeCam = new Position();
+
+    @Unique
+    private boolean bbspp$freeCamSaved = false;
 
     @Shadow
     private int pov;
@@ -73,11 +81,21 @@ public abstract class UIFilmControllerFollowOrbitMixin
     @Inject(method = "setPov", at = @At("HEAD"))
     private void bbspp$recordPrevPov(int pov, CallbackInfo ci)
     {
+        int oldPov = this.pov;
+
         /* 记录切换前的旧模式,供循环快捷键使用。
          * 仅当模式真正发生变化时才记录,避免重复 setPov 覆盖掉历史。 */
-        if (this.pov != pov)
+        if (oldPov != pov)
         {
-            this.bbspp$prevPov = this.pov;
+            this.bbspp$prevPov = oldPov;
+        }
+
+        /* 离开自由模式(0/1)时,保存当前相机坐标/角度/FOV */
+        if (bbspp$isFreeMode(oldPov) && !bbspp$isFreeMode(pov))
+        {
+            Camera cam = ((UIFilmController) (Object) this).panel.getCamera();
+            this.bbspp$freeCam.set(cam);
+            this.bbspp$freeCamSaved = true;
         }
     }
 
@@ -88,6 +106,24 @@ public abstract class UIFilmControllerFollowOrbitMixin
         {
             CMLSettings.followOrbitMode.set(pov == BBS_FOLLOW_ORBIT_MODE);
         }
+
+        /* 切回自由模式(0/1)时,恢复之前保存的相机坐标/角度/FOV,
+         * 并同步到飞行控制器(dashboard.orbit),否则下一帧会被覆盖。 */
+        if (this.bbspp$freeCamSaved && bbspp$isFreeMode(pov))
+        {
+            UIFilmController self = (UIFilmController) (Object) this;
+            Camera cam = self.panel.getCamera();
+
+            this.bbspp$freeCam.apply(cam);
+            self.panel.dashboard.orbit.setup(cam);
+        }
+    }
+
+    @Unique
+    private static boolean bbspp$isFreeMode(int pov)
+    {
+        return pov == UIFilmController.CAMERA_MODE_CAMERA
+            || pov == UIFilmController.CAMERA_MODE_FREE;
     }
 
     @Inject(method = "getPovMode", at = @At("HEAD"), cancellable = true)
@@ -178,6 +214,7 @@ public abstract class UIFilmControllerFollowOrbitMixin
      * R 键:在当前镜头模式与上一个镜头模式之间来回切换。
      * 轨道控制器(OrbitFilmCameraController)是 UIFilmController 的常驻成员,
      * 切换 pov 模式只翻开关,不会重置轨道的角度/距离/绑定实体,因此切回后构图完全保留。
+     * 自由模式(0/1)的相机坐标在离开时自动保存,切回时恢复。
      */
     @Unique
     private void bbspp$cyclePrevCameraMode()
