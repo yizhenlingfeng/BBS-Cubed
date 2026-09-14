@@ -64,5 +64,6 @@
     "bbs.ui.forms.item_spray.shape.plane": "平面",
     "bbs.ui.forms.item_spray.shape.sphere_out": "球体向外",
     "bbs.ui.forms.item_spray.shape.sphere_in": "球体向内",
-    "bbs.ui.forms.video_billboard": "视频广告牌"
+    "bbs.ui.forms.video_billboard": "视频广告牌",
+    "bbs.ui.camera.clips.bbs:release_use_item": "释放物品"
 }

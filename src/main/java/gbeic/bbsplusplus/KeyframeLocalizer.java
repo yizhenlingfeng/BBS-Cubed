@@ -91,6 +91,10 @@ public class KeyframeLocalizer
         cn("item_legs", "护腿");
         cn("item_feet", "靴子");
         cn("selected_slot", "选中的格子");
+        cn("item_slot_", "快捷栏");
+        cn("vX", "速度 X");
+        cn("vY", "速度 Y");
+        cn("vZ", "速度 Z");
 
         /* 形态公共属性 */
         cn("visible", "可见性");
@@ -211,7 +215,66 @@ public class KeyframeLocalizer
         cn("user5", "用户 5");
         cn("user6", "用户 6");
 
+        /* VFX 插件注入到 BBS 原版 Form 上的增强轨道（拖影 / 混合 / 跟随偏移 / 文字增强等）。
+           同时写入 CN 表兜底，避免运行时 VFX_LOADED 检测时机导致 localize() 阶段未翻译。 */
+        cn("smear", "拖影");
+        cn("smear_frames", "涂抹帧");
+        cn("motion_lines", "动态线");
+        cn("blend", "混合");
+        cn("blend_mode", "混合模式");
+        cn("follow_offset", "跟随偏移");
+        cn("tracking", "字距");
+        cn("stroke_width", "描边宽度");
+        cn("stroke_color", "描边颜色");
+        cn("stroke_only", "仅描边");
+        cn("font", "字体");
+        cn("font_size", "字号");
+        cn("projection", "文字投影");
+        cn("proj_range", "投影范围");
+        cn("proj_fade", "投影淡出");
+        cn("gradient", "渐变");
+        cn("gradient_start", "渐变起始");
+        cn("gradient_end", "渐变结束");
+        cn("gradient_angle", "渐变角度");
+        cn("xavin$whole", "整个模型");
+
+        /* BBS 原版 Form 补充（MobForm / FramebufferForm） */
+        cn("mobId", "实体 ID");
+        cn("mobNbt", "实体 NBT");
+        cn("scale", "缩放");
+
+        /* FluidForm 流体形态（BBS++ 新增，走通用 CN 表） */
+        cn("mode", "模式");
+        cn("flowSpeed", "流速");
+        cn("turbulence", "湍流");
+        cn("opacity", "不透明度");
+        cn("texture_tint", "纹理着色");
+        cn("texture_whiten", "纹理泛白");
+        cn("physicsSensitivity", "物理灵敏度");
+        cn("subdivisions", "细分度");
+        cn("smoothShading", "平滑着色");
+        cn("debug", "调试");
+        cn("sizeX", "X 尺寸");
+        cn("sizeY", "Y 尺寸");
+        cn("sizeZ", "Z 尺寸");
+        cn("fillBlock", "填充方块");
+        cn("waveAmplitude", "波浪幅度");
+        cn("waveFrequency", "波浪频率");
+        cn("surfaceTension", "表面张力");
+        cn("dropSize", "水滴大小");
+        cn("viscosity", "粘度");
+
+        /* ModelFormCMLMixin 注入轨道（CML 动作叠加 / Molang 共享 / PBR 材质） */
+        cn("actions_overlay", "动作叠加层");
+        cn("molangShared", "Molang 变量共享");
+        cn("pbr_s_r", "PBR 平滑度");
+        cn("pbr_s_g", "PBR 金属度");
+        cn("pbr_s_b", "PBR 孔隙度");
+        cn("pbr_s_a", "PBR 自发光");
+        cn("pbr_n", "PBR 法线强度");
+
         /* 物品喷射形态专属。使用上下文映射，避免覆盖同名的光源、粒子、广告牌等公共轨道。 */
+        itemSpray("items", "喷射物品");
         itemSpray("amount", "数量");
         itemSpray("range", "射程");
         itemSpray("emissionShape", "发射形状");
@@ -660,6 +723,40 @@ public class KeyframeLocalizer
         vfx("shapesDelay_kf", "形状延迟");
         vfx("Shapes delay", "形状延迟");
         vfx("align", "对齐");
+
+        /* 摄像机 Clip 参数（form == null 分支，统一走 VFX_CN） */
+        vfx("audio", "音频文件");
+        /* 字幕片段 */
+        vfx("size", "字号");
+        vfx("textShadow", "文字阴影");
+        vfx("windowX", "窗口 X");
+        vfx("windowY", "窗口 Y");
+        vfx("backgroundOffset", "背景偏移");
+        vfx("shadowOpaque", "不透明阴影");
+        vfx("lineHeight", "行高");
+        vfx("maxWidth", "最大宽度");
+        vfx("imageRight", "图片居右");
+        vfx("imageScale", "图片缩放");
+        /* 分量开关 / 摇晃 */
+        vfx("active", "启用分量");
+        vfx("shake", "晃动周期");
+        vfx("shakeAmount", "晃动幅度");
+        /* 拖拽阻力 */
+        vfx("deterministic", "确定性");
+        vfx("factor", "阻力系数");
+        vfx("rate", "阻力速率");
+        /* 滑动变焦 / 实体跟随 */
+        vfx("focus", "焦点距离");
+        vfx("selector", "实体选择器");
+        /* 看向 / 绕对象旋转 */
+        vfx("relative", "相对");
+        vfx("atBlock", "看向方块");
+        vfx("forward", "朝向前方");
+        vfx("copy", "复制当前");
+        vfx("absolute", "绝对");
+        /* 追踪器 / 关键帧 */
+        vfx("look_at", "看向目标");
+        vfx("additive", "叠加");
 
         /* ═══════════════════════════════════════
            VFX LIGHTS 灯插件专属轨道（语言键前缀 bbspp.keyframe.vfxlight.）

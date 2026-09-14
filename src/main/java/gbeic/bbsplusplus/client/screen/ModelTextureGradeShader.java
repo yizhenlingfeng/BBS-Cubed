@@ -42,8 +42,13 @@ public final class ModelTextureGradeShader
     private static float baseWhiten;
     private static int debugCounter;
 
-    /* ---------- 附魔光效 ---------- */
-
+    /* ---------- 附魔光效 ----------
+     *
+     * TODO(未完成 / WIP)：Iris 光影兼容尚未完成。
+     * 当前实现为自建核心 shader（model_texture_grade）单 pass 加色，无 Iris 时正常；
+     * Iris 世界渲染时自建 program 不在 Iris 管线内，光效不显示。
+     * 计划方向：Iris 下改用原版 glint RenderType 材质路径（同组 VAO 二次绘制），
+     * 详见计划文档。在完成前，README 已知限制保留此说明。 */
     /**
      * 原版物品附魔光效纹理。1.20.1 / 1.20.4 的真实路径是 {@code enchanted_glint_item.png}
      * （从 ItemRenderer.ITEM_ENCHANTMENT_GLINT 的字节码确认，勿用旧名 enchanted_item_glint.png）。
@@ -242,8 +247,6 @@ public final class ModelTextureGradeShader
             apply(program, BASE_TINT, 0F);
         }
     }
-
-    /* ---------- 附魔光效 ---------- */
 
     /**
      * 写入一个 model group 的附魔光效开关。

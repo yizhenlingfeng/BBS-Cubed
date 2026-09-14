@@ -108,7 +108,6 @@ public class BBSPlusPlusSettings
 
         CMLSettings.replaySprintParticles = builder.getBoolean("replay_sprint_particles", false);
         CMLSettings.pickLimbTexture = builder.getBoolean("pick_limb_texture", true);
-        CMLSettings.enchantGlint = builder.getBoolean("enchant_glint", true);
         CMLSettings.fluidRealisticModelInteraction = builder.getBoolean("fluid_realistic_model_interaction", false);
 
         /* ===== 分类六：导出增强 ===== */
@@ -125,6 +124,12 @@ public class BBSPlusPlusSettings
         builder.category("performance", Icons.DUPE);
 
         BBSAddonsSettings.modelBlockRenderDistance = builder.getInt("model_block_render_distance", 256, 0, 1024);
+
+        /* ===== 分类八：未完成（WIP） ===== */
+        builder.category("wip", Icons.DUPE);
+
+        /* 附魔光效：Iris 光影兼容未完成，默认关闭（不显示姿势编辑器里的按钮）。 */
+        CMLSettings.enchantGlint = builder.getBoolean("enchant_glint", false);
     }
 
     private static IKey lang(String key)

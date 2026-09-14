@@ -133,8 +133,10 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
          * add() 的先后顺序就是面板自上而下的排列顺序。排在骨骼纹理之后，
          * 即落在姿势子页面右侧按钮列表的最下方。 */
         self.add(this.bbspp_cml$pickTexture);
-        self.add(this.bbspp_cml$glint);
-        self.add(this.bbspp_cml$glintColor);
+
+        /* glint 开关/取色器不在这里 add：由 refreshGlintButton 按设置显隐。
+         * BBS 的 ColumnResizer 布局不跳过不可见元素，setVisible(false) 仍占位，
+         * 隐藏时必须 removeFromParent，否则面板上留一块空白。 */
 
         this.bbspp_cml$refreshBoneTextureButton();
         this.bbspp_cml$refreshGlintButton();
@@ -446,21 +448,45 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             return;
         }
 
+        UIPoseEditor self = (UIPoseEditor) (Object) this;
         boolean enabled = CMLSettings.enchantGlint != null && CMLSettings.enchantGlint.get();
 
-        this.bbspp_cml$glint.setVisible(enabled);
-
-        if (this.bbspp_cml$glintColor != null)
-        {
-            this.bbspp_cml$glintColor.setVisible(enabled);
-        }
-
+        /* BBS ColumnResizer 布局不跳过不可见元素：隐藏时必须真的从父容器移除，
+         * 否则即使 setVisible(false) 也会在面板上留一块空白。 */
         if (enabled)
         {
+            if (this.bbspp_cml$glint.getParent() == null)
+            {
+                self.add(this.bbspp_cml$glint);
+            }
+
+            if (this.bbspp_cml$glintColor != null && this.bbspp_cml$glintColor.getParent() == null)
+            {
+                self.add(this.bbspp_cml$glintColor);
+            }
+
+            this.bbspp_cml$glint.setVisible(true);
+
+            if (this.bbspp_cml$glintColor != null)
+            {
+                this.bbspp_cml$glintColor.setVisible(true);
+            }
+
             this.bbspp_cml$syncGlintToggle();
         }
-    }
+        else
+        {
+            if (this.bbspp_cml$glint.getParent() != null)
+            {
+                this.bbspp_cml$glint.removeFromParent();
+            }
 
+            if (this.bbspp_cml$glintColor != null && this.bbspp_cml$glintColor.getParent() != null)
+            {
+                this.bbspp_cml$glintColor.removeFromParent();
+            }
+        }
+    }
     @Unique
     private void bbspp_cml$refreshBoneTextureButton()
     {
