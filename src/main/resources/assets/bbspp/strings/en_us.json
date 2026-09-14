@@ -869,6 +869,7 @@
     "bbspp.ui.export_animation.success_ik": "Animation %s was baked from IK/FK and exported to %s! External replay target/pole bindings fall back to configured bone positions.",
     "bbspp.ui.export_animation.title": "Export as animation",
     "bbspp.ui.film.follow_orbit": "Follow Orbit",
+    "bbspp.ui.film.toggle_previous_camera_mode": "Toggle previous camera mode",
     "bbspp.ui.film.library.all_films": "All Films",
     "bbspp.ui.film.library.browse": "Browse",
     "bbspp.ui.film.library.duplicate": "Duplicate Film",

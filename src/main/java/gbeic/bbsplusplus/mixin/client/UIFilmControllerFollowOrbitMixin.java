@@ -8,9 +8,11 @@ import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.controller.OrbitFilmCameraController;
 import mchorse.bbs_mod.ui.film.controller.UIFilmController;
+import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -29,6 +31,10 @@ public abstract class UIFilmControllerFollowOrbitMixin
 
     @Unique
     private boolean bbspp_snow$restoreFollowOrbit = CMLSettings.followOrbitMode != null && CMLSettings.followOrbitMode.get();
+
+    /** 上一个镜头模式(-1 = 尚未记录),用于 R 键在两个最近模式间循环 */
+    @Unique
+    private int bbspp$prevPov = -1;
 
     @Shadow
     private int pov;
@@ -53,9 +59,25 @@ public abstract class UIFilmControllerFollowOrbitMixin
     @Inject(method = "<init>", at = @At("RETURN"))
     private void bbspp_snow$restoreFollowOrbitMode(CallbackInfo ci)
     {
+        /* 注册"与上一个镜头模式循环"快捷键(默认 R 键),归入影片控制器栏 */
+        ((UIFilmController) (Object) this).keys()
+            .register(SnowUIKeys.TOGGLE_PREVIOUS_CAMERA_MODE_KEY, this::bbspp$cyclePrevCameraMode)
+            .category(UIKeys.FILM_CONTROLLER_KEYS_CATEGORY);
+
         if (this.bbspp_snow$restoreFollowOrbit)
         {
             this.setPov(BBS_FOLLOW_ORBIT_MODE);
+        }
+    }
+
+    @Inject(method = "setPov", at = @At("HEAD"))
+    private void bbspp$recordPrevPov(int pov, CallbackInfo ci)
+    {
+        /* 记录切换前的旧模式,供循环快捷键使用。
+         * 仅当模式真正发生变化时才记录,避免重复 setPov 覆盖掉历史。 */
+        if (this.pov != pov)
+        {
+            this.bbspp$prevPov = this.pov;
         }
     }
 
@@ -150,5 +172,22 @@ public abstract class UIFilmControllerFollowOrbitMixin
         }
 
         ci.cancel();
+    }
+
+    /**
+     * R 键:在当前镜头模式与上一个镜头模式之间来回切换。
+     * 轨道控制器(OrbitFilmCameraController)是 UIFilmController 的常驻成员,
+     * 切换 pov 模式只翻开关,不会重置轨道的角度/距离/绑定实体,因此切回后构图完全保留。
+     */
+    @Unique
+    private void bbspp$cyclePrevCameraMode()
+    {
+        if (this.bbspp$prevPov < 0 || this.bbspp$prevPov == this.getPovMode())
+        {
+            return;
+        }
+
+        this.setPov(this.bbspp$prevPov);
+        UIUtils.playClick();
     }
 }

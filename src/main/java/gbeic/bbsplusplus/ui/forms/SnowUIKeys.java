@@ -48,4 +48,12 @@ public class SnowUIKeys
         GLFW.GLFW_KEY_W,
         GLFW.GLFW_KEY_LEFT_SHIFT
     ).categoryKey("keyframes");
+
+    /* Film controller: 与上一个镜头模式循环 */
+    public static final IKey TOGGLE_PREVIOUS_CAMERA_MODE = L10n.lang("bbspp.ui.film.toggle_previous_camera_mode");
+    public static final KeyCombo TOGGLE_PREVIOUS_CAMERA_MODE_KEY = new KeyCombo(
+        "toggle_previous_camera_mode",
+        TOGGLE_PREVIOUS_CAMERA_MODE,
+        GLFW.GLFW_KEY_R
+    ).categoryKey("film_controller");
 }

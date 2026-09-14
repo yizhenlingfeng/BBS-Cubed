@@ -869,6 +869,7 @@
     "bbspp.ui.export_animation.success_ik": "动画 %s 已将 IK/FK 烘焙导出到 %s!外部回放 target/pole 无法离线解析,将使用配置骨位置。",
     "bbspp.ui.export_animation.title": "导出为动画",
     "bbspp.ui.film.follow_orbit": "跟随轨道",
+    "bbspp.ui.film.toggle_previous_camera_mode": "与上一个镜头模式循环",
     "bbspp.ui.film.library.all_films": "全部影片",
     "bbspp.ui.film.library.browse": "浏览",
     "bbspp.ui.film.library.duplicate": "复制影片",
