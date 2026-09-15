@@ -33,8 +33,7 @@ public abstract class UIClipsDoubleClickMixin
     @Shadow(remap = true)
     private Clips clips;
 
-    @Shadow(remap = true)
-    public Scale scale;
+    @Shadow(remap = false) protected final Scale xAxis = null;
 
     @Shadow(remap = true)
     public abstract int fromLayerY(int mouseY);
@@ -85,7 +84,7 @@ public abstract class UIClipsDoubleClickMixin
         if (mouseX != this.bbs_lastClickX || mouseY != this.bbs_lastClickY) return;
         if (System.currentTimeMillis() - this.bbs_lastClickTime >= 500L) return;
 
-        int tick = (int) Math.floor(this.scale.from(mouseX));
+        int tick = (int) Math.floor(this.xAxis.from(mouseX));
         int layerIndex = this.fromLayerY(mouseY);
         Clip clip = this.clips.getClipAt(tick, layerIndex);
 

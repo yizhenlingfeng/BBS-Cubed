@@ -70,7 +70,7 @@ public class UIBBSPPCategorySidebar extends UIElement
                     UIKeys.FORMS_CATEGORIES_ADD_CATEGORY_DESCRIPTION,
                     (str) ->
                     {
-                        userForms.addUserCategory(new UserFormCategory(IKey.constant(str), formCategories.visibility.get(java.util.UUID.randomUUID().toString()), userForms));
+                        userForms.addUserCategory(new UserFormCategory(IKey.constant(str), formCategories.preferences.visible(java.util.UUID.randomUUID().toString()), userForms));
                         if (this.getParent() instanceof UIBBSPPFormList)
                         {
                             ((UIBBSPPFormList) this.getParent()).setupForms(formCategories);
@@ -210,7 +210,7 @@ public class UIBBSPPCategorySidebar extends UIElement
                         UIKeys.FORMS_CATEGORIES_ADD_CATEGORY_DESCRIPTION,
                         (str) ->
                         {
-                            userForms.addUserCategory(new UserFormCategory(IKey.constant(str), formCategories.visibility.get(java.util.UUID.randomUUID().toString()), userForms));
+                            userForms.addUserCategory(new UserFormCategory(IKey.constant(str), formCategories.preferences.visible(java.util.UUID.randomUUID().toString()), userForms));
                             if (UIBBSPPCategorySidebar.this.getParent() instanceof UIBBSPPFormList)
                             {
                                 ((UIBBSPPFormList) UIBBSPPCategorySidebar.this.getParent()).setupForms(formCategories);

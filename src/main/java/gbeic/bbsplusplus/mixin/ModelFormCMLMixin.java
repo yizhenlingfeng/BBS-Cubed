@@ -56,25 +56,7 @@ public abstract class ModelFormCMLMixin implements MolangSharedProvider, Texture
     private ValueFloat bbspp_cml$textureWhiten;
 
     @Unique
-    private final Map<String, Map<String, Integer>> bbspp_snow$pbrOverrides = new HashMap<>();
-
-    @Unique
     private final Map<String, Map<String, Integer>> bbspp_snow$bonePbrOverrides = new HashMap<>();
-
-    @Unique
-    private ValueFloat bbspp_snow$pbrSmoothness;
-
-    @Unique
-    private ValueFloat bbspp_snow$pbrMetal;
-
-    @Unique
-    private ValueFloat bbspp_snow$pbrPorosity;
-
-    @Unique
-    private ValueFloat bbspp_snow$pbrEmissive;
-
-    @Unique
-    private ValueFloat bbspp_snow$pbrNormal;
 
     @Inject(
         method = "<init>()V",
@@ -140,16 +122,6 @@ public abstract class ModelFormCMLMixin implements MolangSharedProvider, Texture
         ((ModelForm) (Object) this).add(this.bbspp_cml$textureTint);
         ((ModelForm) (Object) this).add(this.bbspp_cml$textureWhiten);
 
-        this.bbspp_snow$pbrSmoothness = new ValueFloat("pbr_s_r", 0F, 0F, 255F);
-        this.bbspp_snow$pbrMetal = new ValueFloat("pbr_s_g", 0F, 0F, 255F);
-        this.bbspp_snow$pbrPorosity = new ValueFloat("pbr_s_b", 0F, 0F, 255F);
-        this.bbspp_snow$pbrEmissive = new ValueFloat("pbr_s_a", 0F, 0F, 254F);
-        this.bbspp_snow$pbrNormal = new ValueFloat("pbr_n", 0F, 0F, 255F);
-        ((ModelForm) (Object) this).add(this.bbspp_snow$pbrSmoothness);
-        ((ModelForm) (Object) this).add(this.bbspp_snow$pbrMetal);
-        ((ModelForm) (Object) this).add(this.bbspp_snow$pbrPorosity);
-        ((ModelForm) (Object) this).add(this.bbspp_snow$pbrEmissive);
-        ((ModelForm) (Object) this).add(this.bbspp_snow$pbrNormal);
     }
 
     @Override
@@ -180,12 +152,6 @@ public abstract class ModelFormCMLMixin implements MolangSharedProvider, Texture
     public List<ValueActionsConfig> bbspp_cml$getAdditionalActionsOverlays()
     {
         return this.bbspp_cml$additionalActionsOverlays;
-    }
-
-    @Override
-    public Map<String, Map<String, Integer>> bbspp_snow$getPbrOverrides()
-    {
-        return this.bbspp_snow$pbrOverrides;
     }
 
     @Override

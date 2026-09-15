@@ -7,8 +7,6 @@
         "ActionPlaybackMixin",
         "ActionsConfigKeyframeFactoryMixin",
         "BBSSettingsCMLMixin",
-        
-        "FormPropertiesPBRMixin",
         "KeyframeSegmentCMLMixin",
         "MiscFormTextureGradeMixin",
         "ModelFormCMLMixin",

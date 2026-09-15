@@ -1,7 +1,6 @@
 package gbeic.bbsplusplus.client.structure;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import gbeic.bbsplusplus.structure.StructureStickRegistry;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -71,6 +70,9 @@ public final class VFXDestructionWandSelection
 
     private static final float CUSTOM_SOUND_VOLUME = 1.5F;
     private static final float LINE_WIDTH = 3.0F;
+
+    /** 拖拽选区提示音（沿用原结构棒音效资源，结构棒移除后在此自持 SoundEvent）。 */
+    private static final SoundEvent DRAG_SOUND = SoundEvent.of(new Identifier("bbspp", "structure_stick_drag"));
 
     private static BlockPos start;
     private static BlockPos end;
@@ -274,7 +276,7 @@ public final class VFXDestructionWandSelection
         lastDragMeasure = measure;
         soundCooldown = DRAG_SOUND_COOLDOWN_TICKS;
 
-        playSound(client, StructureStickRegistry.STRUCTURE_STICK_DRAG, CUSTOM_SOUND_VOLUME, dragPitch);
+        playSound(client, DRAG_SOUND, CUSTOM_SOUND_VOLUME, dragPitch);
     }
 
     private static void handleAttackHold(MinecraftClient client)

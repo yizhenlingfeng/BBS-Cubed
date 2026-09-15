@@ -9,7 +9,6 @@ import gbeic.bbsplusplus.cubic.animation.AdditiveAnimator;
 import gbeic.bbsplusplus.cubic.animation.AdditiveLayerContext;
 import gbeic.bbsplusplus.cubic.animation.AdditiveProceduralAnimator;
 import gbeic.bbsplusplus.pbr.render.BonePBRContext;
-import gbeic.bbsplusplus.pbr.render.PBRTextureContext;
 import gbeic.bbsplusplus.settings.CMLSettings;
 import gbeic.bbsplusplus.utils.MolangVariableScopes;
 import mchorse.bbs_mod.cubic.ModelInstance;
@@ -70,14 +69,12 @@ public class ModelFormRendererMixin
         ModelForm form = ((ModelFormRenderer) (Object) this).getForm();
         PBRModelFormAccess access = (PBRModelFormAccess) form;
 
-        PBRTextureContext.set(access.bbspp_snow$getPbrOverrides());
         BonePBRContext.setOverrides(access.bbspp_snow$getBonePbrOverrides());
     }
 
     @Inject(method = "render3D", at = @At("RETURN"), remap = false)
     private void bbspp_snow$clearPbrContext(FormRenderingContext context, CallbackInfo ci)
     {
-        PBRTextureContext.clear();
         BonePBRContext.clearOverrides();
         BonePBRContext.clearCurrentBone();
     }

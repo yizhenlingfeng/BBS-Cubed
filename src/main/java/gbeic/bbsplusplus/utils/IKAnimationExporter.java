@@ -13,6 +13,8 @@ import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
 import mchorse.bbs_mod.cubic.render.CubicRenderer.PivotFrame;
 import mchorse.bbs_mod.cubic.render.ModelPivotFrames;
 import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.forms.forms.utils.FormBone;
+import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
@@ -307,20 +309,11 @@ public final class IKAnimationExporter
     {
         session.model.resetPose();
         session.model.applyPose(pose == null ? new Pose() : pose);
-        session.form.ikControlOverrides.clear();
+        IKControls sampled = (controls == null || controls.isEmpty())
+            ? null
+            : (IKControls) PoseAnimationExporter.sampleValue((List) controls, tick);
 
-        if (controls != null && !controls.isEmpty())
-        {
-            IKControls value = (IKControls) PoseAnimationExporter.sampleValue((List) controls, tick);
-
-            if (value != null)
-            {
-                for (Map.Entry<String, IKControl> entry : value.controls.entrySet())
-                {
-                    session.form.ikControlOverrides.put(entry.getKey(), entry.getValue().copy());
-                }
-            }
-        }
+        applyIkRuntime(session.form, sampled);
 
         ModelIKRuntime.apply(session.instance, null, null);
 
@@ -455,6 +448,32 @@ public final class IKAnimationExporter
         return new ArrayList<>(ordered);
     }
 
+        private static void clearIkRuntime(ModelForm form)
+    {
+        for (BaseValue value : form.bones.getAll())
+        {
+            if (value instanceof FormBone bone)
+            {
+                bone.ik.setRuntimeValue(null);
+            }
+        }
+    }
+
+    private static void applyIkRuntime(ModelForm form, IKControls controls)
+    {
+        clearIkRuntime(form);
+
+        if (controls == null)
+        {
+            return;
+        }
+
+        for (Map.Entry<String, IKControl> entry : controls.controls.entrySet())
+        {
+            form.bones.getOrCreate(entry.getKey()).ik.setRuntimeValue(entry.getValue().copy());
+        }
+    }
+
     private static final class BakeSession implements AutoCloseable
     {
         private final ModelInstance instance;
@@ -481,9 +500,12 @@ public final class IKAnimationExporter
             this.wanted = new HashSet<>(this.bones);
             this.oldForm = instance.form;
 
-            for (Map.Entry<String, IKControl> entry : form.ikControlOverrides.entrySet())
+            for (BaseValue value : form.bones.getAll())
             {
-                this.oldControls.put(entry.getKey(), entry.getValue().copy());
+                if (value instanceof FormBone bone && bone.ik.getRuntimeValue() != null)
+                {
+                    this.oldControls.put(bone.getId(), bone.ik.getRuntimeValue().copy());
+                }
             }
 
             captureStates();
@@ -586,11 +608,11 @@ public final class IKAnimationExporter
         @Override
         public void close()
         {
-            this.form.ikControlOverrides.clear();
+            clearIkRuntime(this.form);
 
             for (Map.Entry<String, IKControl> entry : this.oldControls.entrySet())
             {
-                this.form.ikControlOverrides.put(entry.getKey(), entry.getValue().copy());
+                this.form.bones.getOrCreate(entry.getKey()).ik.setRuntimeValue(entry.getValue().copy());
             }
 
             if (this.model instanceof Model cubic)

@@ -3,7 +3,7 @@ package gbeic.bbsplusplus.client.renderer;
 import gbeic.bbsplusplus.BBSAddonsSettings;
 import gbeic.bbsplusplus.client.debug.ItemSprayDebug;
 import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
+import mchorse.bbs_mod.api.events.ModelBlockEntityUpdateCallback;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;

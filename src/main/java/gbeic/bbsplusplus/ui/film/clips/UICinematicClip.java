@@ -66,7 +66,7 @@ public class UICinematicClip extends UIClip<CinematicClip>
             KeyframeChannel channel = channels[i];
 
             view.addSheet(new UIKeyframeSheet(channel.getId(), ClipTrackTitles.titleOf(channel),
-                UIKeyframeEditor.COLORS[i % UIKeyframeEditor.COLORS.length], false, channel, null));
+                UIKeyframeEditor.COLORS[i % UIKeyframeEditor.COLORS.length], channel, null));
         }
 
         view.getGraph().clearSelection();

@@ -1,14 +1,13 @@
 package gbeic.bbsplusplus.mixin;
 
 import mchorse.bbs_mod.l10n.L10n;
-import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
+import gbeic.bbsplusplus.util.PanelHighlight;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.UIFilmPreview;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
-import mchorse.bbs_mod.utils.Direction;
 import gbeic.bbsplusplus.BBSAddonsSettings;
 import gbeic.bbsplusplus.util.IrisHelper;
 import net.fabricmc.loader.api.FabricLoader;
@@ -72,7 +71,7 @@ public abstract class UIFilmPreviewMixin {
                     }
 
                     if (IrisHelper.isShadersEnabled()) {
-                        UIDashboardPanels.renderHighlight(context.batcher, this.area, Direction.BOTTOM);
+                        PanelHighlight.bottom(context.batcher, this.area);
                     }
                     super.render(context);
                 }

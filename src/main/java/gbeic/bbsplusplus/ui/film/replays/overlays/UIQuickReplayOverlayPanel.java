@@ -54,7 +54,7 @@ public class UIQuickReplayOverlayPanel extends UIOverlayPanel {
             return null;
         }
 
-        List<UIQuickReplayOverlayPanel> panels = uiScreen.getMenu().getRoot().getChildren(UIQuickReplayOverlayPanel.class);
+        List<UIQuickReplayOverlayPanel> panels = UIScreen.getCurrentMenu().getRoot().getChildren(UIQuickReplayOverlayPanel.class);
 
         return panels.isEmpty() ? null : panels.get(0);
     }
@@ -188,7 +188,7 @@ public class UIQuickReplayOverlayPanel extends UIOverlayPanel {
         int panelHeight = 32 + visibleRows * this.list.scroll.scrollItemSize;
 
         this.minW(240).maxW(240);
-        this.minH(panelHeight).maxH(panelHeight);
+        this.h(panelHeight).maxH(panelHeight);
         this.list.relative(this.content).x(6).y(6).w(1F, -12).h(1F, -12);
         this.content.add(this.list);
     }

@@ -1,14 +1,12 @@
 package gbeic.bbsplusplus;
 
-import mchorse.bbs_mod.events.BBSAddonMod;
+import mchorse.bbs_mod.api.BBSAddonMod;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gbeic.bbsplusplus.api.KeyframeTrackExtensionRegistry;
 import gbeic.bbsplusplus.command.BBSPlusPlusCommand;
-import gbeic.bbsplusplus.network.StructureStickNetworking;
-import gbeic.bbsplusplus.structure.StructureStickRegistry;
 
 /**
  * BBS++ 主入口点。
@@ -27,8 +25,6 @@ public class BBSPlusPlusMod implements ModInitializer, BBSAddonMod
         LOGGER.info("BBS++ initialized!");
 
         BBSPlusPlusBlocks.register();
-        StructureStickRegistry.register();
-        StructureStickNetworking.registerServer();
         this.registerKeyframeTrackExtensions();
         CommandRegistrationCallback.EVENT.register(BBSPlusPlusCommand::register);
 

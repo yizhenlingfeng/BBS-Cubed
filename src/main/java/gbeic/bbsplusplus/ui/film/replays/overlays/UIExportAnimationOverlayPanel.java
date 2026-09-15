@@ -10,7 +10,8 @@ import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.ik.IKControls;
 import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.film.replays.FormProperties;
-import mchorse.bbs_mod.film.replays.PerLimbService;
+import mchorse.bbs_mod.film.replays.tracks.TrackId;
+import mchorse.bbs_mod.film.replays.tracks.TrackKind;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
@@ -565,14 +566,14 @@ public class UIExportAnimationOverlayPanel extends UIOverlayPanel
 
                 for (UIKeyframeSheet boneSheet : this.boneSheets)
                 {
-                    PerLimbService.PoseBonePath path = PerLimbService.parsePoseBonePath(boneSheet.id);
+                    TrackId path = TrackId.parse(boneSheet.id, TrackKind.BONE);
 
                     if (path == null || boneSheet.selection.getSelected().isEmpty())
                     {
                         continue;
                     }
 
-                    tracks.put(path.bone(), (List) boneSheet.selection.getSelected());
+                    tracks.put(path.subject(), (List) boneSheet.selection.getSelected());
                 }
 
                 if (bakeIK)
@@ -608,7 +609,7 @@ public class UIExportAnimationOverlayPanel extends UIOverlayPanel
         String id = path == null || path.isEmpty()
             ? "ik_controls"
             : path + FormUtils.PATH_SEPARATOR + "ik_controls";
-        KeyframeChannel channel = this.properties.properties.get(id);
+        KeyframeChannel channel = this.properties.get(TrackId.parse(id));
 
         if (channel == null || channel.getFactory() != KeyframeFactories.IK)
         {

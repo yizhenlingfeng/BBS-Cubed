@@ -147,7 +147,7 @@ final class ItemSprayWorldItemRenderer
 
                 // 因为每个形态颜色可能不同，所以需要在渲染时单独给每个粒子应用它的专属颜色。
                 Color rc = new Color(1, 1, 1, 1);
-                FormColorBlend.blend(rc, item.color, false);
+                FormColorBlend.blend(rc, item.color);
                 consumers.setSubstitute(BBSRendering.getColorConsumer(rc));
 
                 stack.push();

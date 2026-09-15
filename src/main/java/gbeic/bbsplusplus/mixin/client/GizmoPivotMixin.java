@@ -78,7 +78,7 @@ public abstract class GizmoPivotMixin implements GizmoPivotTarget
             return;
         }
 
-        if (this.bbspp_cml$pivotTransform.isLocal())
+        if (this.bbspp_cml$pivotTransform.getSpace().isLocal())
         {
             stack.translate(
                 pivot.x * transform.scale.x,

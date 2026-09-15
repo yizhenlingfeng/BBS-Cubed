@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import mchorse.bbs_mod.film.replays.PerLimbService;
+import mchorse.bbs_mod.film.replays.tracks.TrackId;
+import mchorse.bbs_mod.film.replays.tracks.TrackKind;
 import mchorse.bbs_mod.forms.states.AnimationState;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.Keys;
@@ -43,22 +44,33 @@ public abstract class UIAnimationStatePoseInsertMixin
             {
                 UIUtils.playClick();
             }
-        }).active(this::bbspp_cml$hasExpandedPoseTracks);
+        }).active(this::bbspp_cml$hasPoseTracks);
     }
 
     @Unique
-    private boolean bbspp_cml$hasExpandedPoseTracks()
+    private boolean bbspp_cml$hasPoseTracks()
     {
-        return this.state != null
-            && this.keyframeEditor != null
-            && !this.keyframeEditor.view.getDopeSheet().getExpandedPoseTabIds().isEmpty();
+        if (this.state == null || this.keyframeEditor == null)
+        {
+            return false;
+        }
+
+        for (TrackId track : this.state.properties.tracks.keySet())
+        {
+            if (track.is(TrackKind.BONE))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Unique
     @SuppressWarnings("unchecked")
     private boolean bbspp_cml$insertPoseKeyframesAtCursor()
     {
-        if (!this.bbspp_cml$hasExpandedPoseTracks())
+        if (!this.bbspp_cml$hasPoseTracks())
         {
             return false;
         }
@@ -68,9 +80,9 @@ public abstract class UIAnimationStatePoseInsertMixin
 
         BaseValue.edit(this.state.properties, (properties) ->
         {
-            for (KeyframeChannel<?> channel : properties.properties.values())
+            for (KeyframeChannel<?> channel : properties.tracks.values())
             {
-                if (!PerLimbService.isPoseBoneChannel(channel.getId()))
+                if (TrackId.kindOf(channel.getId()) != TrackKind.BONE)
                 {
                     continue;
                 }

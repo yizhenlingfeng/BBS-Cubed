@@ -2,7 +2,8 @@ package gbeic.bbsplusplus.mixin.client;
 
 import gbeic.bbsplusplus.ui.film.replays.ExportUIKeys;
 import gbeic.bbsplusplus.ui.film.replays.overlays.UIExportAnimationOverlayPanel;
-import mchorse.bbs_mod.film.replays.PerLimbService;
+import mchorse.bbs_mod.film.replays.tracks.TrackId;
+import mchorse.bbs_mod.film.replays.tracks.TrackKind;
 import mchorse.bbs_mod.film.replays.FormProperties;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
@@ -116,7 +117,7 @@ public abstract class UIKeyframesExportMenuMixin
                 return;
             }
 
-            PerLimbService.PoseBonePath anchorPath = PerLimbService.parsePoseBonePath(anchor.id);
+            TrackId anchorPath = TrackId.parse(anchor.id, TrackKind.BONE);
             Form form = this.bbspp_cml$resolveForm(anchor);
 
             if (anchorPath == null || !(form instanceof ModelForm modelForm) || ModelFormRenderer.getModel(modelForm) == null)
@@ -133,7 +134,7 @@ public abstract class UIKeyframesExportMenuMixin
                     continue;
                 }
 
-                PerLimbService.PoseBonePath path = PerLimbService.parsePoseBonePath(sheet.id);
+                TrackId path = TrackId.parse(sheet.id, TrackKind.BONE);
 
                 if (path != null && Objects.equals(path.formPath(), anchorPath.formPath()))
                 {
@@ -175,7 +176,7 @@ public abstract class UIKeyframesExportMenuMixin
         return sheet != null
             && sheet.isBoneTrack
             && sheet.channel.getFactory() == KeyframeFactories.POSE_TRANSFORM
-            && PerLimbService.isPoseBoneChannel(sheet.id)
+            && TrackId.kindOf(sheet.id) == TrackKind.BONE
             && sheet.selection.hasAny();
     }
 

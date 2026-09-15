@@ -1,11 +1,10 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.film.replays.tracks.TrackId;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ModelForm;
-import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
@@ -22,6 +21,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 回放编辑器里追加逐骨骼 PBR（bone_pbr）轨道页。
+ * 逐材质 PBR 轨道页已随 2.6 原生 FormMaterial 移除。
+ */
 @Mixin(value = UIReplaysEditor.class, remap = false)
 public class PBRUIReplaysEditorMixin
 {
@@ -36,33 +39,7 @@ public class PBRUIReplaysEditorMixin
             return;
         }
 
-        ModelInstance model = ModelFormRenderer.getModel(modelForm);
         String path = FormUtils.getPath(modelForm);
-
-        if (model != null && model.materials != null)
-        {
-            String[] keys = {"pbr_s_r", "pbr_s_g", "pbr_s_b", "pbr_s_a", "pbr_n"};
-            String[] titles = {"Smoothness", "F0/Metal", "Porosity/SSS", "Emissive", "Normal"};
-            int[] colors = {Colors.RED, Colors.GREEN, Colors.BLUE, Colors.YELLOW, Colors.CYAN};
-
-            for (String material : model.materials)
-            {
-                if (material == null || material.isEmpty())
-                {
-                    continue;
-                }
-
-                for (int i = 0; i < keys.length; i++)
-                {
-                    String leaf = material + "." + keys[i];
-                    String channelKey = path.isEmpty() ? leaf : path + FormUtils.PATH_SEPARATOR + leaf;
-                    String title = path.isEmpty() ? material + "/" + titles[i] : path + "/" + material + "/" + titles[i];
-                    KeyframeChannel<Float> channel = this.replay.properties.registerChannel(channelKey, KeyframeFactories.FLOAT);
-
-                    sheets.add(new UIKeyframeSheet(channelKey, () -> title, colors[i], false, channel, null).icon(Icons.MATERIAL));
-                }
-            }
-        }
 
         IKeyframeFactory factory = KeyframeFactories.FACTORIES.get("bone_pbr");
 
@@ -70,9 +47,9 @@ public class PBRUIReplaysEditorMixin
         {
             String channelKey = path.isEmpty() ? "bone_pbr" : path + FormUtils.PATH_SEPARATOR + "bone_pbr";
             String title = path.isEmpty() ? "BonePBR" : path + "/BonePBR";
-            KeyframeChannel channel = this.replay.properties.registerChannel(channelKey, factory);
+            KeyframeChannel channel = this.replay.properties.register(TrackId.parse(channelKey), factory);
 
-            sheets.add(new UIKeyframeSheet(channelKey, () -> title, Colors.CYAN, false, channel, null).icon(Icons.POSE).form(modelForm));
+            sheets.add(new UIKeyframeSheet(channelKey, () -> title, Colors.CYAN, channel, null).icon(Icons.POSE).form(modelForm));
         }
     }
 }

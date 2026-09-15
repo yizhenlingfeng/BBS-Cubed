@@ -46,8 +46,7 @@ public abstract class TrailFormRendererMixin
         color.set(context.color);
         FormColorBlend.blend(
             color,
-            ((FormColorProvider) form).bbspp_cml$getColor().get(),
-            form.additiveColor.get()
+            ((FormColorProvider) form).bbspp_cml$getColor().get()
         );
 
         RenderSystem.setShaderColor(color.r, color.g, color.b, color.a);

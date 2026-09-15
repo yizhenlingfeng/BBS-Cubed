@@ -6,6 +6,7 @@ import gbeic.bbsplusplus.util.ClipOverlapFixer;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
+import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.film.UIClips;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.Area;
@@ -91,6 +92,9 @@ public class UIClipsMixin
 
     @Shadow
     private List<Vector3i> grabbedData;
+
+    @Shadow(remap = false)
+    protected final Scale xAxis = null;
 
     @Shadow
     private boolean isSelecting()
@@ -259,7 +263,7 @@ public class UIClipsMixin
         {
             double offsetX = this.bbspp$getAltWheelHorizontalOffset(self, context);
 
-            self.scale.setShift(self.scale.getShift() + offsetX);
+            this.xAxis.setShift(this.xAxis.getShift() + offsetX);
             cir.setReturnValue(true);
         }
     }
@@ -267,7 +271,7 @@ public class UIClipsMixin
     @Unique
     private double bbspp$getAltWheelHorizontalOffset(UIClips self, UIContext context)
     {
-        double offsetX = (25F * BBSSettings.scrollingSensitivityHorizontal.get() * context.mouseWheel) / self.scale.getZoom();
+        double offsetX = (25F * BBSSettings.scrollingSensitivityHorizontal.get() * context.mouseWheel) / this.xAxis.getZoom();
 
         return BBSAddonsSettings.reverseTimelineScroll != null && BBSAddonsSettings.reverseTimelineScroll.get()
             ? -offsetX

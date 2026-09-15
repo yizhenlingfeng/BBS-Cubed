@@ -128,7 +128,7 @@ public abstract class UIDataContextMenuMixin extends UIElement
         {
             return;
         }
-        this.entries.list.setCurrentDirect(target);
+        this.entries.list.setCurrent(target);
     }
 
     @Unique

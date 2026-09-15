@@ -9,9 +9,7 @@ import gbeic.bbsplusplus.forms.renderers.GradedVanillaParticleFormRenderer;
 import gbeic.bbsplusplus.particles.ParticlePlusClient;
 import gbeic.bbsplusplus.premiere.PremiereExportHandler;
 import gbeic.bbsplusplus.pbr.BonePBRKeyframeFactory;
-import gbeic.bbsplusplus.pbr.PBRKeyframeFactory;
 import gbeic.bbsplusplus.pbr.ui.UIBonePBRKeyframeFactory;
-import gbeic.bbsplusplus.pbr.ui.UIPBRKeyframeFactory;
 import gbeic.bbsplusplus.settings.ValueSectionHeader;
 import gbeic.bbsplusplus.ui.film.clips.UICinematicClip;
 import gbeic.bbsplusplus.ui.film.clips.UIHotbarClip;
@@ -73,13 +71,7 @@ public class BBSFSloveCMLClient implements ClientModInitializer {
     public void onInitializeClient() {
         LOGGER.info("[FSloveCML] 客户端初始化开始...");
 
-        IKeyframeFactory pbrFactory = KeyframeFactories.FACTORIES.get("pbr");
         IKeyframeFactory bonePbrFactory = KeyframeFactories.FACTORIES.get("bone_pbr");
-
-        if (pbrFactory instanceof PBRKeyframeFactory)
-        {
-            UIKeyframeFactory.register(pbrFactory, UIPBRKeyframeFactory::new);
-        }
 
         if (bonePbrFactory instanceof BonePBRKeyframeFactory)
         {

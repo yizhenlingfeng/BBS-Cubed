@@ -147,7 +147,7 @@ public class AudioDropImporter
 
         if (timeline != null && directory.equals(audioFolder))
         {
-            int tick = Math.max(0, timeline.fromGraphX(mouseX));
+            int tick = (int) Math.max(0, timeline.fromGraphX(mouseX));
             int layer = Math.max(0, timeline.fromLayerY(mouseY));
 
             for (String name : imported)

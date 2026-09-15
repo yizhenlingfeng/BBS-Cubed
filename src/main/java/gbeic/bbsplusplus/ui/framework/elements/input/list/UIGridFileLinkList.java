@@ -403,8 +403,7 @@ public class UIGridFileLinkList extends UIFileLinkList {
                 this.applySelectionOnClick(index);
 
                 if (!this.isFiltering() && this.sorting && this.current.size() == 1) {
-                    this.dragging = index;
-                    this.dragTime = System.currentTimeMillis();
+                    this.startDrag(index, context);
                 }
 
                 if (this.callback != null) {
@@ -430,19 +429,20 @@ public class UIGridFileLinkList extends UIFileLinkList {
 
         if (this.sorting && !this.isFiltering()) {
             if (this.isDragging()) {
+                int from = this.getDraggingIndex();
                 int index = this.getIndexAtCursor(context);
 
-                if (index != -1 && index != this.dragging && this.exists(index)) {
-                    this.handleSwap(this.dragging, index);
+                if (index != -1 && index != from && this.exists(index)) {
+                    this.handleSwap(from, index);
                 } else if (index == -1 && this.area.isInside(context)) {
                     // 如果拖到空白处，默认放到最后
                     index = this.getList().size() - 1;
-                    if (index != this.dragging && this.exists(index)) {
-                        this.handleSwap(this.dragging, index);
+                    if (index != from && this.exists(index)) {
+                        this.handleSwap(from, index);
                     }
                 }
             }
-            this.dragging = -1;
+            this.drag.reset();
         }
 
         // 临时关闭 sorting 以绕过父类 UIList 的拖拽逻辑处理，仅调用其 scroll 释放逻辑

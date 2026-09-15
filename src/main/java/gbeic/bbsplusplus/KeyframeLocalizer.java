@@ -29,7 +29,6 @@ public class KeyframeLocalizer
     private static final Map<String, String> CN = new HashMap<>();
     private static final Map<String, String> ITEM_SPRAY_CN = new HashMap<>();
     private static final Map<String, String> AAA_PARTICLE_CN = new HashMap<>();
-    private static final Map<String, String> VIDEO_BILLBOARD_CN = new HashMap<>();
     private static final Map<String, String> VFX_CN = new HashMap<>();
     private static final Map<String, String> VFX_LIGHT_CN = new HashMap<>();
 
@@ -328,22 +327,7 @@ public class KeyframeLocalizer
         aaaParticle("trigger3", "触发器 3");
         aaaParticle("ignoreDepth", "穿透渲染");
 
-        /* 视频广告牌形态专属，避免 width/height/speed/loop 等通用属性影响其它形态。 */
-        videoBillboard("video", "视频文件");
-        videoBillboard("width", "宽度");
-        videoBillboard("height", "高度");
-        videoBillboard("offsetSeconds", "起始偏移");
-        videoBillboard("speed", "速度");
-        videoBillboard("paused", "暂停");
-        videoBillboard("restart", "重启");
-        videoBillboard("loop", "循环");
-        videoBillboard("loopStart", "循环起点");
-        videoBillboard("loopEnd", "循环终点");
-        videoBillboard("outOfRange", "超出处理");
-        videoBillboard("keepAspectRatio", "保持原始比例");
-        videoBillboard("billboard", "始终面向镜头");
-
-        /* ═══════════════════════════════════════
+        /* ═════════════════════════════════════════════
            BBS VFX 插件专属轨道（语言键前缀 bbspp.keyframe.vfx.）
            文本增强、曲线、拖影/动态线、混合、破坏盒、光束、穹顶、爆炸、风、冲击帧
            ═══════════════════════════════════════ */
@@ -858,11 +842,6 @@ public class KeyframeLocalizer
         AAA_PARTICLE_CN.put(key, chinese);
     }
 
-    private static void videoBillboard(String key, String chinese)
-    {
-        VIDEO_BILLBOARD_CN.put(key, chinese);
-    }
-
     private static void vfx(String key, String chinese)
     {
         VFX_CN.put(key, chinese);
@@ -997,13 +976,6 @@ public class KeyframeLocalizer
         return localizeWithMap(key, "bbspp.keyframe.aaa_particle.", AAA_PARTICLE_CN);
     }
 
-    /** 返回视频广告牌形态专属轨道名称，避免通用属性名影响其它形态。 */
-    public static String localizeVideoBillboard(String key)
-    {
-        return localizeWithMap(key, "bbspp.keyframe.video_billboard.", VIDEO_BILLBOARD_CN);
-    }
-
-    /** 返回 BBS VFX 插件专属轨道名称（语言键前缀 bbspp.keyframe.vfx.）。 */
     public static String localizeVFX(String key)
     {
         return localizeWithMap(key, "bbspp.keyframe.vfx.", VFX_CN);

@@ -106,8 +106,9 @@ public class UIBBSPPFormCategory extends UIFormCategory
     }
 
     @Override
-    public int computeContentHeight(int width)
+    protected int contentSize()
     {
+        int width = this.area.w;
         int maxW = Math.max(GRID_CELL_W, width);
         List<Form> forms = this.getForms();
 
@@ -201,7 +202,7 @@ public class UIBBSPPFormCategory extends UIFormCategory
     {
         int contentW = this.area.w;
         List<Form> forms = this.getForms();
-        int height = this.computeContentHeight(contentW);
+        int height = this.contentSize();
 
         /* 搜索无结果时调整高度 */
         if (!this.bbsppSearch.isEmpty() && forms.isEmpty())

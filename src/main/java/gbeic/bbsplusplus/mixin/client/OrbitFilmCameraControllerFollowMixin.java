@@ -18,12 +18,12 @@ public abstract class OrbitFilmCameraControllerFollowMixin
     private final Vector3d anchorPosition = new Vector3d();
 
     @Shadow
-    protected abstract Vector3f getReplayPivot(float transition);
+    protected abstract Vector3d getOrbitTarget(float transition);
 
     @Inject(method = "writeAnchor", at = @At("RETURN"))
     private void bbspp_cml$followRenderedModelPosition(IEntity entity, float transition, CallbackInfo ci)
     {
-        Vector3f renderedPivot = this.getReplayPivot(transition);
+        Vector3d renderedPivot = this.getOrbitTarget(transition);
 
         if (renderedPivot != null)
         {

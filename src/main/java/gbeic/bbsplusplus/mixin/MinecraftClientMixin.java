@@ -1,7 +1,6 @@
 package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.IMBlockerCompat;
-import gbeic.bbsplusplus.client.structure.StructureStickSelection;
 import gbeic.bbsplusplus.client.structure.VFXDestructionWandSelection;
 import net.minecraft.client.MinecraftClient;
 import org.spongepowered.asm.mixin.Mixin;
@@ -46,7 +45,7 @@ public class MinecraftClientMixin {
     private void bbspp$blockStructureStickUse(CallbackInfo ci) {
         MinecraftClient client = (MinecraftClient) (Object) this;
 
-        if (StructureStickSelection.shouldBlockUse(client) || VFXDestructionWandSelection.shouldBlockUse(client)) {
+        if (VFXDestructionWandSelection.shouldBlockUse(client)) {
             ci.cancel();
         }
     }
@@ -60,7 +59,7 @@ public class MinecraftClientMixin {
     private void bbspp$blockStructureStickAttack(CallbackInfoReturnable<Boolean> cir) {
         MinecraftClient client = (MinecraftClient) (Object) this;
 
-        if (StructureStickSelection.shouldBlockAttack(client) || VFXDestructionWandSelection.shouldBlockAttack(client)) {
+        if (VFXDestructionWandSelection.shouldBlockAttack(client)) {
             cir.setReturnValue(true);
         }
     }
@@ -74,7 +73,7 @@ public class MinecraftClientMixin {
     private void bbspp$blockStructureStickBreaking(boolean breaking, CallbackInfo ci) {
         MinecraftClient client = (MinecraftClient) (Object) this;
 
-        if (StructureStickSelection.shouldBlockAttack(client) || VFXDestructionWandSelection.shouldBlockAttack(client)) {
+        if (VFXDestructionWandSelection.shouldBlockAttack(client)) {
             ci.cancel();
         }
     }

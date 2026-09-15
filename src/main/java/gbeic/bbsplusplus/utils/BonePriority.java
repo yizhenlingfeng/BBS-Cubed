@@ -3,6 +3,7 @@ package gbeic.bbsplusplus.utils;
 import gbeic.bbsplusplus.settings.CMLSettings;
 import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.film.replays.tracks.TrackId;
 import mchorse.bbs_mod.forms.states.AnimationState;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
@@ -21,15 +22,15 @@ public class BonePriority
     {
         Replay replay = panel == null ? null : panel.replayEditor.getReplay();
 
-        openMenu(context, replay == null ? null : replay.properties.properties);
+        openMenu(context, replay == null ? null : replay.properties.tracks);
     }
 
     public static void openMenu(UIContext context, AnimationState state)
     {
-        openMenu(context, state == null ? null : state.properties.properties);
+        openMenu(context, state == null ? null : state.properties.tracks);
     }
 
-    public static void openMenu(UIContext context, Map<String, KeyframeChannel> channels)
+    public static void openMenu(UIContext context, Map<TrackId, KeyframeChannel> channels)
     {
         if (context == null)
         {
@@ -57,7 +58,7 @@ public class BonePriority
 
             IKeyframeFactory bonePbr = KeyframeFactories.FACTORIES.get("bone_pbr");
 
-            for (Map.Entry<String, KeyframeChannel> entry : channels.entrySet())
+            for (Map.Entry<TrackId, KeyframeChannel> entry : channels.entrySet())
             {
                 IKeyframeFactory factory = entry.getValue().getFactory();
 
@@ -66,7 +67,7 @@ public class BonePriority
                     continue;
                 }
 
-                String key = entry.getKey();
+                String key = entry.getKey().toKey();
 
                 menu.action(Icons.POSE, IKey.constant(key), key.equals(current), () ->
                 {

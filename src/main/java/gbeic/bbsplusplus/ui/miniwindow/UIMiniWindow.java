@@ -3,7 +3,7 @@ package gbeic.bbsplusplus.ui.miniwindow;
 import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.window.Window;
-import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
+import gbeic.bbsplusplus.util.PanelHighlight;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.IUIElement;
@@ -705,7 +705,7 @@ public class UIMiniWindow extends UIElement
         {
             if (ids.get(i).equals(this.activeId))
             {
-                UIDashboardPanels.renderHighlight(context.batcher, this.tabButtons.get(i).area, Direction.BOTTOM);
+                PanelHighlight.bottom(context.batcher, this.tabButtons.get(i).area);
             }
         }
     }

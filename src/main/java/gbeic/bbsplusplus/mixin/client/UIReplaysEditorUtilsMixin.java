@@ -1,15 +1,14 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import gbeic.bbsplusplus.api.PoseTabStateProvider;
 import gbeic.bbsplusplus.pbr.ui.UIBonePBRKeyframeFactory;
 import gbeic.bbsplusplus.utils.AnimationInterpInheritance;
 import gbeic.bbsplusplus.utils.BonePriority;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
+import mchorse.bbs_mod.film.replays.tracks.TrackId;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.film.replays.PerLimbService;
 import mchorse.bbs_mod.ui.film.ICursor;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditorUtils;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
@@ -50,12 +49,10 @@ public abstract class UIReplaysEditorUtilsMixin
         if (BonePriority.isExpandedLimbPriorityEnabled())
         {
             String formPath = FormUtils.getPath(form);
-            String boneKey = PerLimbService.toPoseBoneKey(formPath, bone);
+            String boneKey = TrackId.bone(formPath, bone).toKey();
             UIKeyframeSheet limb = bbspp_cml$findSheet(graph, boneKey);
 
-            if (limb != null
-                && keyframeEditor.view.getDopeSheet() instanceof PoseTabStateProvider poseTabs
-                && poseTabs.bbspp_cml$isExpandedPoseChild(limb))
+            if (limb != null)
             {
                 target = limb;
             }
@@ -106,9 +103,7 @@ public abstract class UIReplaysEditorUtilsMixin
         {
             UIKeyframeSheet limb = bbspp_cml$findSheet(graph, boneKey);
 
-            if (limb != null
-                && keyframeEditor.view.getDopeSheet() instanceof PoseTabStateProvider poseTabs
-                && poseTabs.bbspp_cml$isExpandedPoseChild(limb))
+            if (limb != null)
             {
                 cir.setReturnValue(limb);
 

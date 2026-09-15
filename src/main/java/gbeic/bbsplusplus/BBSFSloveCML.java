@@ -1,7 +1,6 @@
 package gbeic.bbsplusplus;
 
 import gbeic.bbsplusplus.pbr.BonePBRKeyframeFactory;
-import gbeic.bbsplusplus.pbr.PBRKeyframeFactory;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
@@ -22,7 +21,6 @@ public class BBSFSloveCML implements ModInitializer {
     @Override
     public void onInitialize() {
         /* 关键帧工厂是静态注册表，不依赖 BBS 初始化，可在主入口注册 */
-        KeyframeFactories.FACTORIES.put("pbr", new PBRKeyframeFactory());
         KeyframeFactories.FACTORIES.put("bone_pbr", new BonePBRKeyframeFactory());
 
         LOGGER.info("========================================");

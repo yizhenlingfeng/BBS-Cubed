@@ -1,7 +1,6 @@
 package gbeic.bbsplusplus.mixin.client;
 
 import gbeic.bbsplusplus.pbr.render.BonePBRContext;
-import gbeic.bbsplusplus.pbr.render.PBRTextureContext;
 import gbeic.bbsplusplus.pbr.render.PBRTextureModifier;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.iris.IrisTextureWrapper;
@@ -14,6 +13,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 逐骨骼 PBR 对 Iris 贴图包装的修改：当前骨骼存在 PBR 覆盖时，
+ * 把对应通道值烘焙进镜面/法线 GL 纹理。逐材质 PBR 已由 2.6 原生 FormMaterial 接管，相关分支移除。
+ */
 @Mixin(IrisTextureWrapper.class)
 public class IrisTextureWrapperPBRMixin
 {
@@ -38,30 +41,15 @@ public class IrisTextureWrapperPBRMixin
         }
 
         Map<String, Integer> bone = BonePBRContext.getCurrent();
+
+        if (bone == null || bone.isEmpty())
+        {
+            return;
+        }
+
         Map<String, Integer> values = new HashMap<>();
 
-        if (bone != null && !bone.isEmpty())
-        {
-            bbspp_snow$copy(values, bone, normal);
-        }
-        else
-        {
-            Map<String, Map<String, Integer>> context = PBRTextureContext.get();
-
-            if (context == null || context.isEmpty())
-            {
-                return;
-            }
-
-            for (Map<String, Integer> material : context.values())
-            {
-                bbspp_snow$maximum(values, material, "pbr_s_r", "s_r");
-                bbspp_snow$maximum(values, material, "pbr_s_g", "s_g");
-                bbspp_snow$maximum(values, material, "pbr_s_b", "s_b");
-                bbspp_snow$maximum(values, material, "pbr_s_a", "s_a");
-                bbspp_snow$maximum(values, material, "pbr_n", "n");
-            }
-        }
+        bbspp_snow$copy(values, bone, normal);
 
         cir.setReturnValue(PBRTextureModifier.getModifiedTextureId(cir.getReturnValue(), normal, values));
     }
@@ -80,10 +68,5 @@ public class IrisTextureWrapperPBRMixin
             target.put("s_a", source.getOrDefault("pbr_s_a", 0));
             target.put("emission_multiplier", source.getOrDefault("emission_multiplier", 100));
         }
-    }
-
-    private static void bbspp_snow$maximum(Map<String, Integer> target, Map<String, Integer> source, String sourceKey, String targetKey)
-    {
-        target.put(targetKey, Math.max(target.getOrDefault(targetKey, 0), source.getOrDefault(sourceKey, 0)));
     }
 }

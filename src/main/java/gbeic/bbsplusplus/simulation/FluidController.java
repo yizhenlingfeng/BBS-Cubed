@@ -11,6 +11,7 @@ import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.data.model.ModelMesh;
 import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
 import mchorse.bbs_mod.film.BaseFilmController;
+import mchorse.bbs_mod.film.FilmMatrices;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.MCEntity;
@@ -118,8 +119,8 @@ public class FluidController
 
                 MatrixCache map = renderer.collectMatrices(replayEntity, 0F);
 
-                Matrix4f defaultMatrix = BaseFilmController.getMatrixForRenderWithRotation(replayEntity, 0, 0, 0, 0F);
-                var totalMatrix = BaseFilmController.getTotalMatrix(controller.getEntities(), form.anchor.get(), defaultMatrix, 0, 0, 0, 0F, 0);
+                Matrix4f defaultMatrix = FilmMatrices.getMatrixForRenderWithRotation(replayEntity, 0, 0, 0, 0F);
+                var totalMatrix = FilmMatrices.getTotalMatrix(controller.getEntities(), form.anchor.get(), defaultMatrix, 0, 0, 0, 0F, 0);
                 Matrix4f entityMatrix = totalMatrix != null && totalMatrix.a != null ? totalMatrix.a : defaultMatrix;
 
                 if (form instanceof ModelForm)

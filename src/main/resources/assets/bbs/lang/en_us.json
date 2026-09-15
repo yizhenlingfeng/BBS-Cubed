@@ -8,29 +8,6 @@
     "block.bbs.emissive_chroma_black": "Glowing Chroma Black Block",
     "block.bbs.emissive_chroma_white": "Glowing Chroma White Block",
 
-    "item.bbs.structure_stick": "Structure Stick",
-
-    "bbsplusplus.structure_stick.selected": "Structure Stick: area selected",
-    "bbsplusplus.structure_stick.reselected": "Structure Stick: area reselected",
-    "bbsplusplus.structure_stick.cleared": "Structure Stick: selection cleared",
-    "bbsplusplus.structure_stick.start_moved": "Structure Stick: start point moved",
-    "bbsplusplus.structure_stick.end_moved": "Structure Stick: end point moved",
-    "bbsplusplus.structure_stick.no_selection": "Structure Stick: no area selected",
-    "bbsplusplus.structure_stick.too_large": "Structure Stick: area too large or invalid",
-    "bbsplusplus.structure_stick.no_permission": "Structure Stick: no permission to save structures",
-    "bbsplusplus.structure_stick.save_failed": "Structure Stick: failed to save",
-    "bbsplusplus.structure_stick.saved": "Structure Stick: saved structures/%s.nbt",
-
-    "bbsplusplus.structure_stick.save_title": "Save Structure",
-    "bbsplusplus.structure_stick.save_name": "Structure name",
-    "bbsplusplus.structure_stick.save": "Save",
-    "bbsplusplus.structure_stick.save_default": "Save as Default",
-
-    "bbsplusplus.structure_stick.tip.hold": "Hold ",
-    "bbsplusplus.structure_stick.tip.drag": " to drag out an area",
-    "bbsplusplus.structure_stick.tip.export": " to export as a structure",
-    "bbsplusplus.structure_stick.tip.clear": " to delete the area",
-
     "bbsplusplus.vfx_wand.selected": "Destruction Wand: area selected",
     "bbsplusplus.vfx_wand.cleared": "Destruction Wand: selection cleared",
     "bbsplusplus.vfx_wand.start_moved": "Destruction Wand: start point moved",

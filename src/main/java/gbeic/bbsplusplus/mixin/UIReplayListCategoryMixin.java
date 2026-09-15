@@ -53,11 +53,7 @@ public abstract class UIReplayListCategoryMixin
     public UIFilmPanel panel;
 
     @Shadow
-    @Final
-    private Set<String> collapsedCategories;
-
-    @Shadow
-    private String contextFolderCategoryName;
+    private String contextFolderPath;
 
     @Unique
     private List<Replay> bbspp$pendingCategoryDrop;
@@ -95,7 +91,7 @@ public abstract class UIReplayListCategoryMixin
         ((UIReplayList) (Object) this).context((menu) ->
         {
             Film film = this.panel.getData();
-            String category = this.contextFolderCategoryName;
+            String category = this.contextFolderPath;
 
             if (film == null || category == null)
             {
@@ -209,7 +205,7 @@ public abstract class UIReplayListCategoryMixin
         if (target.isFolder())
         {
             this.bbspp$pendingCategoryDrop = selected;
-            this.bbspp$pendingCategoryDropTarget = target.folderName;
+            this.bbspp$pendingCategoryDropTarget = target.folderPath;
         }
     }
 
@@ -267,11 +263,7 @@ public abstract class UIReplayListCategoryMixin
         }
 
         List<Replay> selected = new ArrayList<>(this.getSelectedReplays());
-        Set<String> names = new HashSet<>(film.replayCategoryNames.get());
-
-        names.remove(oldCategory);
-        names.add(newCategory);
-        film.replayCategoryNames.set(names);
+        film.replayCategories.ensure(newCategory);
 
         for (Replay replay : film.replays.getList())
         {
@@ -281,11 +273,13 @@ public abstract class UIReplayListCategoryMixin
             }
         }
 
-        boolean wasCollapsed = this.collapsedCategories.remove(oldCategory);
+        boolean wasCollapsed = !film.replayCategories.isExpanded(oldCategory);
+
+        film.replayCategories.removeRecord(oldCategory);
 
         if (wasCollapsed)
         {
-            this.collapsedCategories.add(newCategory);
+            film.replayCategories.setExpanded(newCategory, false);
         }
 
         this.refreshReplayList();
@@ -305,7 +299,7 @@ public abstract class UIReplayListCategoryMixin
 
         if (!category.isEmpty())
         {
-            this.collapsedCategories.remove(category);
+            this.panel.getData().replayCategories.setExpanded(category, true);
         }
 
         this.refreshReplayList();

@@ -322,7 +322,7 @@ public class PremiereExportHandler
                 {
                     if (client.currentScreen instanceof UIScreen)
                     {
-                        UIBaseMenu menu = ((UIScreen) client.currentScreen).getMenu();
+                        UIBaseMenu menu = UIScreen.getCurrentMenu();
                         if (menu != null && menu.context != null)
                         {
                             if (success)

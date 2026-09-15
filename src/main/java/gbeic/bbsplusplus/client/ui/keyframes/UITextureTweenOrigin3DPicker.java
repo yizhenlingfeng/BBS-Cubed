@@ -148,6 +148,7 @@ public class UITextureTweenOrigin3DPicker extends UIElement
         private boolean rotating;
         private int lastX;
         private int lastY;
+        private float bbsppDistance = 2.25F;
 
         private Preview(ModelForm source, Consumer<Vector3f> callback, Runnable editStart, Runnable editEnd)
         {
@@ -264,7 +265,8 @@ public class UITextureTweenOrigin3DPicker extends UIElement
             {
                 int step = Double.compare(-context.mouseWheel, 0D);
 
-                this.distance.setX(this.distance.getX() + step);
+                this.bbsppDistance += step;
+                this.setDistance(this.bbsppDistance);
             }
 
             return true;
@@ -386,7 +388,8 @@ public class UITextureTweenOrigin3DPicker extends UIElement
             float desiredDistance = Math.max(1F, span * 1.8F);
 
             this.setPosition(-center.x, center.y, -center.z);
-            this.setDistance(Math.max(1, Math.round((float) Math.sqrt(desiredDistance * 100F))));
+            this.bbsppDistance = Math.max(1, Math.round((float) Math.sqrt(desiredDistance * 100F)));
+            this.setDistance(this.bbsppDistance);
             this.setRotation(25F, -10F);
         }
 

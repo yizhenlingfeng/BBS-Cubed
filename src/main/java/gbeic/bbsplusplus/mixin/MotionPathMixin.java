@@ -123,7 +123,7 @@ public class MotionPathMixin
             last = Math.max(last, bbsplusplus$lastTick(channel));
         }
 
-        for (KeyframeChannel<?> channel : replay.properties.properties.values())
+        for (KeyframeChannel<?> channel : replay.properties.tracks.values())
         {
             first = Math.min(first, bbsplusplus$firstTick(channel));
             last = Math.max(last, bbsplusplus$lastTick(channel));
@@ -153,7 +153,7 @@ public class MotionPathMixin
         bbsplusplus$appendSignature(builder, replay.keyframes.y);
         bbsplusplus$appendSignature(builder, replay.keyframes.z);
 
-        for (KeyframeChannel<?> channel : replay.properties.properties.values())
+        for (KeyframeChannel<?> channel : replay.properties.tracks.values())
         {
             builder.append('#').append(channel.getId());
             bbsplusplus$appendSignature(builder, channel);

@@ -51,8 +51,8 @@ public final class ParticleEditorFileControls extends UIElement
         panel.saveIcon.tooltip(UIKeys.GENERAL_SAVE, Direction.LEFT);
         this.saveAs.tooltip(ParticlePlusUIKeys.SAVE_AS, Direction.LEFT);
         this.history.tooltip(ParticlePlusUIKeys.HISTORY, Direction.LEFT);
-        panel.iconBar.addAfter(panel.saveIcon, this.saveAs);
-        panel.iconBar.addAfter(this.saveAs, this.history);
+        panel.actions().common(this.saveAs);
+        panel.actions().common(this.history);
 
         panel.keys().register(Keys.UNDO, this::undo)
             .active(() -> panel.getData() != null)

@@ -6,18 +6,12 @@ import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.BBSPlusPlusSettings;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import gbeic.bbsplusplus.forms.AAAParticleForm;
-import gbeic.bbsplusplus.forms.StructureForm;
 import gbeic.bbsplusplus.client.renderer.AAAParticleFormRenderer;
 import gbeic.bbsplusplus.client.renderer.BBSEffectLoader;
-import gbeic.bbsplusplus.client.renderer.StructureFormRenderer;
-import gbeic.bbsplusplus.client.structure.StructureStickSelection;
-import gbeic.bbsplusplus.client.structure.StructureStickTooltip;
 import gbeic.bbsplusplus.client.structure.VFXDestructionWandSelection;
 import gbeic.bbsplusplus.client.structure.VFXDestructionWandTooltip;
 import gbeic.bbsplusplus.client.audio.AudioOutputDeviceWatcher;
 import gbeic.bbsplusplus.client.ui.forms.editors.forms.UIAAAParticleForm;
-import gbeic.bbsplusplus.client.ui.forms.editors.forms.UIStructureForm;
-import gbeic.bbsplusplus.structure.StructureStickRegistry;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.resources.packs.InternalAssetsSourcePack;
 import mchorse.bbs_mod.ui.forms.editors.UIFormEditor;
@@ -98,37 +92,7 @@ public class BBSPlusPlusModClient implements ClientModInitializer
             }
         });
 
-        this.registerStructureStick();
         this.registerVFXDestructionWand();
-
-        // 视频伪装（VideoBillboard）依赖 mediaplayer 前置模组，检测到才注册
-        if (FabricLoader.getInstance().isModLoaded("mediaplayer"))
-        {
-            ClientLifecycleEvents.CLIENT_STARTED.register(client ->
-            {
-                try
-                {
-                    FormUtilsClient.register(gbeic.bbsplusplus.forms.VideoBillboardForm.class, gbeic.bbsplusplus.client.renderer.VideoBillboardFormRenderer::new);
-                    UIFormEditor.register(gbeic.bbsplusplus.forms.VideoBillboardForm.class, gbeic.bbsplusplus.client.ui.forms.editors.forms.UIVideoBillboardForm::new);
-
-                    java.io.File videoDir = new java.io.File(BBSMod.getAssetsFolder(), "video");
-                    if (!videoDir.exists() && videoDir.mkdirs())
-                    {
-                        BBSPlusPlusMod.LOGGER.info("已创建视频资产文件夹: {}", videoDir.getAbsolutePath());
-                    }
-
-                    addFormToExtraCategory(new gbeic.bbsplusplus.forms.VideoBillboardForm(), "VideoBillboardForm");
-                }
-                catch (Exception e)
-                {
-                    BBSPlusPlusMod.LOGGER.warn("注册视频广告牌形态失败: {}", e.getMessage());
-                }
-            });
-        }
-        else
-        {
-            BBSPlusPlusMod.LOGGER.info("未检测到 mediaplayer 前置模组，跳过视频广告牌功能注册。");
-        }
 
         // 注册资源包，用于提供粒子预览图等资源
         ClientLifecycleEvents.CLIENT_STARTED.register(client ->
@@ -143,8 +107,6 @@ public class BBSPlusPlusModClient implements ClientModInitializer
             }
         });
 
-        // 性能优化：P0 Dashboard 预热 + P1 VAO 分帧烘焙 tick 驱动
-        gbeic.bbsplusplus.performance.PerformanceOptimizationManager.register();
     }
 
     private void registerAAAParticles()
@@ -249,35 +211,6 @@ public class BBSPlusPlusModClient implements ClientModInitializer
     }
 
     /**
-     * 注册结构棒的客户端交互与结构表单。
-     * <p>
-     * 移植自 BBSTools 4.1。结构棒的所有操作（框选、画线框、导出）都在客户端完成，
-     * 因此这里同时接上按键轮询、世界渲染回调和物品提示。
-     * </p>
-     */
-    private void registerStructureStick()
-    {
-        StructureStickSelection.register();
-        StructureStickTooltip.register();
-
-        ClientLifecycleEvents.CLIENT_STARTED.register(client ->
-        {
-            try
-            {
-                FormUtilsClient.register(StructureForm.class, StructureFormRenderer::new);
-                UIFormEditor.register(StructureForm.class, UIStructureForm::new);
-
-                StructureStickRegistry.prepareAssetsFolder();
-                addFormToExtraCategory(createPreviewStructureForm(), "StructureForm");
-            }
-            catch (Exception e)
-            {
-                BBSPlusPlusMod.LOGGER.warn("注册结构表单失败: {}", e.getMessage());
-            }
-        });
-    }
-
-    /**
      * 注册 BBS VFX 破坏魔杖的手感增强。
      * <p>
      * 该功能在新版 {@code bbsvfx} 或旧版 {@code xavin} 已加载时启用，并且通过物品 ID
@@ -295,51 +228,6 @@ public class BBSPlusPlusModClient implements ClientModInitializer
 
         VFXDestructionWandSelection.register();
         VFXDestructionWandTooltip.register();
-    }
-
-    /**
-     * 给「额外」分类里的结构表单预填一个原版橡树结构。
-     * <p>
-     * 否则分类里显示的是一个空表单，预览框里什么都看不到。
-     * 优先使用内置的 structures/oak_tree.nbt，找不到时回退到目录中第一个结构文件。
-     * </p>
-     */
-    private static StructureForm createPreviewStructureForm()
-    {
-        StructureForm form = new StructureForm();
-
-        // 优先使用内置的原版橡树结构
-        try
-        {
-            for (mchorse.bbs_mod.resources.Link link : mchorse.bbs_mod.BBSMod.getProvider().getLinksFromPath(mchorse.bbs_mod.resources.Link.assets("structures")))
-            {
-                if ("structures/oak_tree.nbt".equals(link.path))
-                {
-                    form.structureFile.set(link.path);
-                    return form;
-                }
-            }
-        }
-        catch (Exception ignored)
-        {}
-
-        // 回退：取目录中第一个 .nbt 文件
-        try
-        {
-            for (mchorse.bbs_mod.resources.Link link : mchorse.bbs_mod.BBSMod.getProvider().getLinksFromPath(mchorse.bbs_mod.resources.Link.assets("structures")))
-            {
-                if (link.path.toLowerCase().endsWith(".nbt"))
-                {
-                    form.structureFile.set(link.path);
-
-                    break;
-                }
-            }
-        }
-        catch (Exception ignored)
-        {}
-
-        return form;
     }
 
     /**

@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.keyframes;
 
 import mchorse.bbs_mod.film.replays.FormProperties;
+import mchorse.bbs_mod.film.replays.tracks.TrackId;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
@@ -29,8 +30,10 @@ public final class LegacyTextureTweenTrackMigration
     {
         List<String> legacyKeys = new ArrayList<>();
 
-        for (String key : properties.properties.keySet())
+        for (TrackId track : properties.tracks.keySet())
         {
+            String key = track.toKey();
+
             if (isLegacyChannel(key))
             {
                 legacyKeys.add(key);
@@ -46,7 +49,7 @@ public final class LegacyTextureTweenTrackMigration
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static void migrateChannel(FormProperties properties, String legacyKey)
     {
-        KeyframeChannel legacy = properties.properties.get(legacyKey);
+        KeyframeChannel legacy = properties.get(TrackId.parse(legacyKey));
 
         if (legacy == null || legacy.getFactory() != KeyframeFactories.LINK)
         {
@@ -54,11 +57,11 @@ public final class LegacyTextureTweenTrackMigration
         }
 
         String textureKey = toTextureChannel(legacyKey);
-        KeyframeChannel target = properties.properties.get(textureKey);
+        KeyframeChannel target = properties.get(TrackId.parse(textureKey));
 
         if (target == null)
         {
-            target = properties.registerChannel(textureKey, KeyframeFactories.LINK);
+            target = properties.register(TrackId.parse(textureKey), KeyframeFactories.LINK);
         }
 
         if (target == null || target.getFactory() != KeyframeFactories.LINK)
@@ -89,8 +92,7 @@ public final class LegacyTextureTweenTrackMigration
         }
 
         target.sort();
-        properties.properties.remove(legacyKey);
-        properties.remove(legacy);
+        properties.remove(TrackId.parse(legacyKey));
     }
 
     private static Keyframe<?> findAtTick(KeyframeChannel<?> channel, float tick)

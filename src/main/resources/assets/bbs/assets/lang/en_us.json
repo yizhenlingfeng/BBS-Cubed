@@ -63,6 +63,5 @@
     "bbs.ui.forms.item_spray.shape.cone": "Cone",
     "bbs.ui.forms.item_spray.shape.plane": "Plane",
     "bbs.ui.forms.item_spray.shape.sphere_out": "Sphere Out",
-    "bbs.ui.forms.item_spray.shape.sphere_in": "Sphere In",
-    "bbs.ui.forms.video_billboard": "Video Billboard"
+    "bbs.ui.forms.item_spray.shape.sphere_in": "Sphere In"
 }

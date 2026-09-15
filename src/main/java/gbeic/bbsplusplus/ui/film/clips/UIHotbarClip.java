@@ -70,7 +70,7 @@ public class UIHotbarClip extends UIClip<HotbarClip>
             /* 用带 IKey title 的 6 参构造，title 取翻译键 bbs.ui.camera.clips.bbs:<id>，
              * 缺失时 L10n 回退到 key 字符串，至少可见。 */
             view.addSheet(new UIKeyframeSheet(channel.getId(), ClipTrackTitles.titleOf(channel),
-                UIKeyframeEditor.COLORS[i % UIKeyframeEditor.COLORS.length], false, channel, null));
+                UIKeyframeEditor.COLORS[i % UIKeyframeEditor.COLORS.length], channel, null));
         }
 
         view.getGraph().clearSelection();
