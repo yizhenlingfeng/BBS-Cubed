@@ -2,6 +2,7 @@ package gbeic.bbsplusplus.mixin.client;
 
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.ui.film.controller.OrbitFilmCameraController;
+import gbeic.bbsplusplus.mixin.client.accessor.OrbitViewportControllerAccessor;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,9 +16,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class OrbitFilmCameraControllerFollowMixin
 {
     @Shadow
-    private final Vector3d anchorPosition = new Vector3d();
-
-    @Shadow
     protected abstract Vector3d getOrbitTarget(float transition);
 
     @Inject(method = "writeAnchor", at = @At("RETURN"))
@@ -27,7 +25,7 @@ public abstract class OrbitFilmCameraControllerFollowMixin
 
         if (renderedPivot != null)
         {
-            this.anchorPosition.set(renderedPivot);
+            ((OrbitViewportControllerAccessor) (Object) this).bbspp$getAnchorPosition().set(renderedPivot);
         }
     }
 }

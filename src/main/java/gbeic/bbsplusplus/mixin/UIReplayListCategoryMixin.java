@@ -109,7 +109,7 @@ public abstract class UIReplayListCategoryMixin
      * 导致释放到类别行时已经拿不到完整多选集合。
      * 修改后行为：在原版选择逻辑运行前缓存本次拖拽的多选回放，释放时用于批量移动。
      */
-    @Inject(method = "subMouseClicked", at = @At("HEAD"))
+    @Inject(method = "subMouseClicked", at = @At("HEAD"), require = 0)
     private void bbspp$captureMultiSelectionBeforeDrag(UIContext context, CallbackInfoReturnable<Boolean> cir)
     {
         this.bbspp$dragSelectionSnapshot = null;

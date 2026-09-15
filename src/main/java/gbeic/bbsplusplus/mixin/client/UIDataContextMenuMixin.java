@@ -4,11 +4,13 @@ import gbeic.bbsplusplus.utils.PresetDataOperations;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
-import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UISearchList;
+import mchorse.bbs_mod.ui.framework.elements.context.UIContextMenuBar;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIConfirmOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
+import mchorse.bbs_mod.ui.utils.context.MenuIcon;
+import mchorse.bbs_mod.ui.utils.context.MenuVerb;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.presets.UIDataContextMenu;
 import mchorse.bbs_mod.utils.presets.DataManager;
@@ -37,7 +39,7 @@ import java.util.function.Supplier;
 public abstract class UIDataContextMenuMixin extends UIElement
 {
     @Shadow(remap = false)
-    public UIElement row;
+    public UIContextMenuBar bar;
 
     @Shadow(remap = false)
     public UISearchList<String> entries;
@@ -57,14 +59,8 @@ public abstract class UIDataContextMenuMixin extends UIElement
     @Inject(method = "<init>", at = @At("TAIL"), remap = false)
     private void bbspp_cml$addRemoveRename(DataManager manager, String group, Supplier<MapType> supplier, Consumer<MapType> callback, CallbackInfo ci)
     {
-        UIIcon rename = new UIIcon(Icons.EDIT, (b) -> this.bbspp_cml$renameEntry());
-        UIIcon remove = new UIIcon(Icons.REMOVE, (b) -> this.bbspp_cml$removeEntry());
-
-        rename.tooltip(UIKeys.GENERAL_RENAME);
-        remove.tooltip(UIKeys.GENERAL_REMOVE);
-
-        this.row.add(rename);
-        this.row.add(remove);
+        this.bar.register(new MenuIcon(Icons.EDIT, UIKeys.GENERAL_RENAME, MenuVerb.Slot.COMMON, this::bbspp_cml$renameEntry));
+        this.bar.register(new MenuIcon(Icons.REMOVE, UIKeys.GENERAL_REMOVE, MenuVerb.Slot.COMMON, this::bbspp_cml$removeEntry));
     }
 
     @Unique

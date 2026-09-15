@@ -5,7 +5,7 @@ import mchorse.bbs_mod.ui.film.UIClips;
 import mchorse.bbs_mod.ui.film.UIClipsPanel;
 import mchorse.bbs_mod.ui.film.clips.UIClip;
 import mchorse.bbs_mod.ui.framework.UIContext;
-import mchorse.bbs_mod.ui.utils.Scale;
+import mchorse.bbs_mod.ui.framework.elements.utils.UITimelineCanvas;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Clips;
 import gbeic.bbsplusplus.util.DoubleClickHelper;
@@ -14,7 +14,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
@@ -32,8 +31,6 @@ public abstract class UIClipsDoubleClickMixin
 
     @Shadow(remap = true)
     private Clips clips;
-
-    @Shadow(remap = false) protected final Scale xAxis = null;
 
     @Shadow(remap = true)
     public abstract int fromLayerY(int mouseY);
@@ -57,18 +54,8 @@ public abstract class UIClipsDoubleClickMixin
     private long bbs_lastClickTime;
 
     /**
-     * 在 {@code setMouse} 被调用时记录点击位置和时间。
-     */
-    @Inject(method = "setMouse", at = @At("TAIL"), remap = true)
-    private void onSetMouse(int x, int y, CallbackInfo ci)
-    {
-        this.bbs_lastClickX = x;
-        this.bbs_lastClickY = y;
-        this.bbs_lastClickTime = System.currentTimeMillis();
-    }
-
-    /**
      * 在 {@code handleLeftClick} 开头检测双击并触发编辑。
+     * 2.6 中 setMouse 上移到父类 UITimelineCanvas，点击坐标直接取本方法入参。
      */
     @Inject(
         method = "handleLeftClick",
@@ -78,13 +65,21 @@ public abstract class UIClipsDoubleClickMixin
     )
     private void onHandleLeftClickHead(UIContext context, int mouseX, int mouseY, boolean ctrl, boolean shift, boolean alt, CallbackInfoReturnable<Boolean> cir)
     {
-        if (shift || this.hasEmbeddedView()) return;
+        long now = System.currentTimeMillis();
 
-        /* 双击检测：同位置 + 500ms 内 */
-        if (mouseX != this.bbs_lastClickX || mouseY != this.bbs_lastClickY) return;
-        if (System.currentTimeMillis() - this.bbs_lastClickTime >= 500L) return;
+        /* 双击检测：同位置 + 500ms 内（先读取上一次点击，再记录本次） */
+        boolean isDoubleClick = mouseX == this.bbs_lastClickX
+            && mouseY == this.bbs_lastClickY
+            && now - this.bbs_lastClickTime < 500L;
 
-        int tick = (int) Math.floor(this.xAxis.from(mouseX));
+        this.bbs_lastClickX = mouseX;
+        this.bbs_lastClickY = mouseY;
+        this.bbs_lastClickTime = now;
+
+        if (shift || this.hasEmbeddedView() || !isDoubleClick) return;
+
+        /* xAxis 在 2.6 上移到父类 UITimelineCanvas，通过公开 getXAxis() 读取 */
+        int tick = (int) Math.floor(((UITimelineCanvas) (Object) this).getXAxis().from(mouseX));
         int layerIndex = this.fromLayerY(mouseY);
         Clip clip = this.clips.getClipAt(tick, layerIndex);
 
@@ -98,7 +93,7 @@ public abstract class UIClipsDoubleClickMixin
         if (this.delegate instanceof UIClipsPanel clipsPanel)
         {
 
-            /* 通过 Shadow 访问 UIClipsPanel 的私有 panel 字段 */
+            /* 通过反射读取 UIClipsPanel 的私有 panel 字段 */
             UIClip<?> clipPanel = this.bbs_getPanel(clipsPanel);
 
             if (clipPanel != null)
@@ -110,7 +105,7 @@ public abstract class UIClipsDoubleClickMixin
         cir.setReturnValue(true);
     }
 
-    /** 通过 Shadow 读取 UIClipsPanel 的 {@code panel} 字段 */
+    /** 通过反射读取 UIClipsPanel 的 {@code panel} 字段 */
     @Unique
     private UIClip<?> bbs_getPanel(UIClipsPanel panel)
     {

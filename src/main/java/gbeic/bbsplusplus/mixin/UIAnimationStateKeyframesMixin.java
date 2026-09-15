@@ -14,7 +14,7 @@ import mchorse.bbs_mod.ui.utils.Area;
 @Mixin(value = UIAnimationStateKeyframes.class, remap = true)
 public class UIAnimationStateKeyframesMixin
 {
-    @Redirect(method = "renderOverlay", at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/ui/film/UIClips;renderCursor(Lmchorse/bbs_mod/ui/framework/UIContext;Ljava/lang/String;Lmchorse/bbs_mod/ui/utils/Area;I)V"))
+    @Redirect(method = "renderOverlay", at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/ui/film/UIClips;renderCursor(Lmchorse/bbs_mod/ui/framework/UIContext;Ljava/lang/String;Lmchorse/bbs_mod/ui/utils/Area;I)V"), require = 0)
     private void bbspp$fixCursorOffset(UIContext context, String label, Area area, int originalX)
     {
         // 通过矩阵平移 0.5 像素，实现真正的完美居中

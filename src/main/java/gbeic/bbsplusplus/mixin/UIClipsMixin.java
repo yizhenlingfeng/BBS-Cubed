@@ -8,6 +8,7 @@ import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
 import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.film.UIClips;
+import mchorse.bbs_mod.ui.framework.elements.utils.UITimelineCanvas;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.utils.clips.Clip;
@@ -90,8 +91,12 @@ public class UIClipsMixin
     @Shadow
     private List<Vector3i> grabbedData;
 
-    @Shadow(remap = false)
-    protected final Scale xAxis = null;
+    /* 2.6 中 xAxis 上移到父类 UITimelineCanvas，经公开 getXAxis() 读取 */
+    @Unique
+    private Scale bbspp$xAxis()
+    {
+        return ((UITimelineCanvas) (Object) this).getXAxis();
+    }
 
     @Shadow
     private boolean isSelecting()
@@ -259,7 +264,7 @@ public class UIClipsMixin
         {
             double offsetX = this.bbspp$getAltWheelHorizontalOffset(self, context);
 
-            this.xAxis.setShift(this.xAxis.getShift() + offsetX);
+            this.bbspp$xAxis().setShift(this.bbspp$xAxis().getShift() + offsetX);
             cir.setReturnValue(true);
         }
     }
@@ -267,7 +272,7 @@ public class UIClipsMixin
     @Unique
     private double bbspp$getAltWheelHorizontalOffset(UIClips self, UIContext context)
     {
-        double offsetX = (25F * BBSSettings.scrollingSensitivityHorizontal.get() * context.mouseWheel) / this.xAxis.getZoom();
+        double offsetX = (25F * BBSSettings.scrollingSensitivityHorizontal.get() * context.mouseWheel) / this.bbspp$xAxis().getZoom();
 
         return BBSAddonsSettings.reverseTimelineScroll != null && BBSAddonsSettings.reverseTimelineScroll.get()
             ? -offsetX

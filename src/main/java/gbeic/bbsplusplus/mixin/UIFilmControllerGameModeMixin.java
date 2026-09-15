@@ -104,7 +104,7 @@ public abstract class UIFilmControllerGameModeMixin
      */
     @Redirect(
         method = "renderHUD",
-        at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/settings/values/numeric/ValueBoolean;get()Ljava/lang/Object;"),
+        at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/settings/values/numeric/ValueBoolean;get()Ljava/lang/Object;"), require = 0,
         remap = true
     )
     private Object bbsplusplus$hideOriginalLoopHudIcon(ValueBoolean editorLoop)

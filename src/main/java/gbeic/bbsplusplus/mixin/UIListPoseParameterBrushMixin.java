@@ -135,7 +135,7 @@ public abstract class UIListPoseParameterBrushMixin<T>
      * 注入原因：骨骼列表的回调只拿到选择结果，无法可靠知道 Shift/Ctrl 操作下这次真正点中的目标骨骼。
      * 修改后的行为：先把实际点击行交给参数刷；点中复制源时保持原选择，其它目标粘贴后继续执行原版选择切换。
      */
-    @Inject(method = "applySelectionOnClick", at = @At("HEAD"), cancellable = true, remap = true)
+    @Inject(method = "applySelectionOnClick(I)V", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbspp$applyPoseParameterBrushFromList(int index, CallbackInfo ci)
     {
         if (!((Object) this instanceof UIPoseBoneStringList) || index < 0 || index >= this.list.size())

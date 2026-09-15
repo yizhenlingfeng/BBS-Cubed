@@ -90,7 +90,7 @@ public class ParticleEmitterMixin
     }
 
     @Inject(method = "render", at = @At("HEAD"))
-    private void bbspp_cml$beforeRender(VertexFormat format, Supplier<ShaderProgram> program, MatrixStack stack, int overlay, float transition, CallbackInfo ci)
+    private void bbspp_cml$beforeRender(VertexFormat format, Supplier<ShaderProgram> program, MatrixStack stack, int overlay, float transition, boolean flag, CallbackInfo ci)
     {
         if (this.scheme == null)
         {
@@ -352,7 +352,7 @@ public class ParticleEmitterMixin
     }
 
     @Inject(method = "render", at = @At("RETURN"))
-    private void bbspp_cml$afterRender(VertexFormat format, Supplier<ShaderProgram> program, MatrixStack stack, int overlay, float transition, CallbackInfo ci)
+    private void bbspp_cml$afterRender(VertexFormat format, Supplier<ShaderProgram> program, MatrixStack stack, int overlay, float transition, boolean flag, CallbackInfo ci)
     {
         RenderSystem.disableBlend();
         RenderSystem.defaultBlendFunc();
