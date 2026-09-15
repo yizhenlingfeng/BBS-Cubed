@@ -30,8 +30,8 @@ public abstract class UIKeyframeEditorSplitMixin
     @Shadow
     public UIKeyframeFactory editor;
 
-    @Shadow
-    private UIElement target;
+    @Unique
+    private boolean bbspp_cml$hasExternalTarget = false;
 
     @Unique
     private UIDraggable bbspp_cml$splitHandle;
@@ -55,7 +55,7 @@ public abstract class UIKeyframeEditorSplitMixin
 
         this.bbspp_cml$splitHandle = new UIDraggable((context) ->
         {
-            if (this.target != null || self.area.w <= 0)
+            if (this.bbspp_cml$hasExternalTarget || self.area.w <= 0)
             {
                 return;
             }
@@ -75,7 +75,7 @@ public abstract class UIKeyframeEditorSplitMixin
             .cursors(GLFW.GLFW_HRESIZE_CURSOR, GLFW.GLFW_HRESIZE_CURSOR)
             .rendering((context) ->
             {
-                if (this.target == null && this.bbspp_cml$splitHandle.isVisible())
+                if (!this.bbspp_cml$hasExternalTarget && this.bbspp_cml$splitHandle.isVisible())
                 {
                     int x = this.bbspp_cml$splitHandle.area.mx();
                     context.batcher.box(x, self.area.y, x + 1, self.area.ey(), Colors.ACTIVE | Colors.A75);
@@ -92,6 +92,7 @@ public abstract class UIKeyframeEditorSplitMixin
         CallbackInfoReturnable<UIKeyframeEditor> cir
     )
     {
+        this.bbspp_cml$hasExternalTarget = target != null;
         this.bbspp_cml$applySplitLayout();
     }
 
@@ -155,7 +156,7 @@ public abstract class UIKeyframeEditorSplitMixin
         }
 
         UIKeyframeEditor self = (UIKeyframeEditor) (Object) this;
-        boolean embedded = this.target == null;
+        boolean embedded = !this.bbspp_cml$hasExternalTarget;
 
         this.bbspp_cml$splitHandle.setVisible(embedded);
         this.bbspp_cml$splitHandle.setEnabled(embedded);

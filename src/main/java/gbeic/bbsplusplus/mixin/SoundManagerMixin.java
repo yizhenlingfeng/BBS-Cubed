@@ -39,7 +39,7 @@ public abstract class SoundManagerMixin
      * 修改行为：空链接直接返回空播放器。
      */
     @Inject(method = "playUnique", at = @At("HEAD"), cancellable = true, remap = true)
-    private void bbspp$skipNullUniqueSound(Link link, CallbackInfoReturnable<SoundPlayer> cir)
+    private void bbspp$skipNullUniqueSound(Object owner, Link link, CallbackInfoReturnable<SoundPlayer> cir)
     {
         if (link == null)
         {

@@ -3,7 +3,7 @@ package gbeic.bbsplusplus.mixin;
 import gbeic.bbsplusplus.client.WorldFilmShaderCurveState;
 import gbeic.bbsplusplus.client.renderer.VideoTimelineState;
 import gbeic.bbsplusplus.keyframes.EquipmentTransformRuntime;
-import io.netty.util.collection.IntObjectMap;
+import java.util.Map;
 import mchorse.bbs_mod.film.BaseFilmController;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.WorldFilmController;
@@ -28,7 +28,7 @@ public abstract class BaseFilmControllerMixin {
     public Film film;
 
     @Shadow(remap = true)
-    public IntObjectMap<IEntity> entities;
+    public Map<String, IEntity> entities;
 
     @Shadow(remap = true)
     public abstract int getTick();
@@ -94,19 +94,16 @@ public abstract class BaseFilmControllerMixin {
             return;
         }
 
-        for (IntObjectMap.PrimitiveEntry<IEntity> entry : this.entities.entries())
+        for (Replay replay : this.film.replays.getList())
         {
-            int i = entry.key();
-            IEntity entity = entry.value();
-
-            if (i < 0 || i >= this.film.replays.getList().size())
+            if (replay == null || !replay.enabled.get())
             {
                 continue;
             }
 
-            Replay replay = this.film.replays.getList().get(i);
+            IEntity entity = this.entities.get(replay.getId());
 
-            if (replay == null || !replay.enabled.get())
+            if (entity == null)
             {
                 continue;
             }

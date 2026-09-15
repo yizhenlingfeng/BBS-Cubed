@@ -73,9 +73,6 @@ public class UIClipsMixin
     private IUIClipsDelegate delegate;
 
     @Shadow
-    private boolean scrolling;
-
-    @Shadow
     private boolean scrubbing;
 
     @Shadow
@@ -244,7 +241,6 @@ public class UIClipsMixin
         UIClips self = (UIClips) (Object) this;
 
         if (!self.area.isInside(context)
-            || this.scrolling
             || self.hasEmbeddedView()
             || !Window.isAltPressed()
             || context.mouseWheel == 0D
