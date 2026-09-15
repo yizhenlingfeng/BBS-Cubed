@@ -3,7 +3,6 @@ package gbeic.bbsplusplus.mixin.client;
 import gbeic.bbsplusplus.api.GizmoPivotTarget;
 import gbeic.bbsplusplus.api.PivotHolder;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
-import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.ui.utils.Gizmo;
 import mchorse.bbs_mod.utils.pose.PoseTransform;
 import mchorse.bbs_mod.utils.pose.Transform;
@@ -42,14 +41,14 @@ public abstract class GizmoPivotMixin implements GizmoPivotTarget
     }
 
     @Inject(method = "renderStencil", at = @At("HEAD"), remap = false)
-    private void bbspp_cml$pushPivotedStencil(MatrixStack stack, StencilMap map, CallbackInfo ci)
+    private void bbspp_cml$pushPivotedStencil(MatrixStack stack, CallbackInfo ci)
     {
         stack.push();
         this.bbspp_cml$moveToPivot(stack);
     }
 
     @Inject(method = "renderStencil", at = @At("RETURN"), remap = false)
-    private void bbspp_cml$popPivotedStencil(MatrixStack stack, StencilMap map, CallbackInfo ci)
+    private void bbspp_cml$popPivotedStencil(MatrixStack stack, CallbackInfo ci)
     {
         stack.pop();
     }
