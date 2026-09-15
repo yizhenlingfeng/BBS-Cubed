@@ -23,12 +23,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(value = UIModelPhysicsFormPanel.class, remap = true)
 public abstract class UIModelPhysicsFormPanelMixin
 {
-    @Shadow protected String presetGroup;
-
-    @Shadow public abstract MapType toPresetData();
+    @Shadow(remap = false)
+    public abstract MapType toPresetData();
 
     @Inject(method = "updateFields", at = @At("TAIL"))
-    private void bbspp$autoSaveOnSave(boolean manually, CallbackInfo ci)
+    private void bbspp$autoSaveOnSave(CallbackInfo ci)
     {
         bbspp$tryAutoSave();
     }
@@ -46,12 +45,13 @@ public abstract class UIModelPhysicsFormPanelMixin
             return;
         }
         String preset = AutoSavePresetState.getSelectedPreset("physics");
-        if (preset == null || preset.isEmpty() || this.presetGroup == null || this.presetGroup.isEmpty())
+        String presetGroup = ((UIBoneListFormPanelAccessor) (Object) this).bbspp$getPresetGroup();
+        if (preset == null || preset.isEmpty() || presetGroup == null || presetGroup.isEmpty())
         {
             return;
         }
 
         AutoSavePresetState.scheduleSave("physics", ModelPhysicsManager.INSTANCE,
-                this.presetGroup, preset, this::toPresetData);
+                presetGroup, preset, this::toPresetData);
     }
 }

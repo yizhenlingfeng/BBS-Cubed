@@ -6,6 +6,7 @@
         "BBSModMixin",
         "MotionPathMixin",
         "UIDataContextMenuMixin",
+        "UIBoneListFormPanelAccessor",
         "UIModelIKFormPanelMixin",
         "UIModelPhysicsFormPanelMixin",
         "UIModelConstraintsFormPanelMixin",

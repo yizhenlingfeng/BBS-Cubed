@@ -1,13 +1,9 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import io.netty.util.collection.IntObjectMap;
-import mchorse.bbs_mod.film.Film;
-import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
-import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.context.UISimpleContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIAnchorKeyframeFactory;
@@ -30,6 +26,9 @@ import java.util.function.Consumer;
  * <p>The stock picker adds all actors to a menu but assumes actor ids are
  * contiguous.  The editor can contain more actors, or have holes after
  * removing one, so iterating the map entries keeps every real actor usable.</p>
+ *
+ * <p>2.6 起 actor 标识由 int 编号改为 String 名称，entities 为 {@code Map<String, IEntity>}，
+ * 回调为 {@code Consumer<String>}。</p>
  */
 @Mixin(value = UIAnchorKeyframeFactory.class, remap = false)
 public abstract class UIAnchorKeyframeFactoryMixin
@@ -40,16 +39,11 @@ public abstract class UIAnchorKeyframeFactoryMixin
     @Inject(method = "displayActors", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
     private static void bbspp_cml$displayScrollableActors(
         UIContext context,
-        IntObjectMap<IEntity> entities,
-        int value,
-        Consumer<Integer> callback,
+        Map<String, IEntity> entities,
+        String value,
+        Consumer<String> callback,
         CallbackInfo ci)
     {
-        List<UIFilmPanel> panels = context.menu.main.getChildren(UIFilmPanel.class);
-        UIFilmPanel panel = panels.isEmpty() ? null : panels.get(0);
-        Film film = panel == null ? null : panel.getData();
-        List<Replay> replays = film == null ? null : film.replays.getList();
-
         UISimpleContextMenu menu = new UISimpleContextMenu()
         {
             @Override
@@ -65,17 +59,17 @@ public abstract class UIAnchorKeyframeFactoryMixin
         };
         menu.actions.scroll.scrollItemSize = ACTOR_PICKER_ROW_HEIGHT;
 
+        List<Map.Entry<String, IEntity>> entries = new ArrayList<>(entities.entrySet());
+        entries.sort(Comparator.comparing(Map.Entry::getKey));
+
         context.replaceContextMenu((manager) ->
         {
             manager.custom(menu);
-            manager.action(Icons.CLOSE, UIKeys.GENERAL_NONE, Colors.NEGATIVE, () -> callback.accept(-1));
+            manager.action(Icons.CLOSE, UIKeys.GENERAL_NONE, Colors.NEGATIVE, () -> callback.accept(""));
 
-            List<Map.Entry<Integer, IEntity>> entries = new ArrayList<>(entities.entrySet());
-            entries.sort(Comparator.comparingInt(Map.Entry::getKey));
-
-            for (Map.Entry<Integer, IEntity> entry : entries)
+            for (Map.Entry<String, IEntity> entry : entries)
             {
-                int actor = entry.getKey();
+                String actor = entry.getKey();
                 IEntity entity = entry.getValue();
 
                 if (entity == null)
@@ -83,14 +77,11 @@ public abstract class UIAnchorKeyframeFactoryMixin
                     continue;
                 }
 
-                Replay replay = replays != null && actor >= 0 && actor < replays.size() ? replays.get(actor) : null;
                 Form form = entity.getForm();
-                String label = actor + (replay != null
-                    ? " - " + replay.getName()
-                    : (form == null ? "" : " - " + form.getFormIdOrName()));
+                String label = actor + (form == null ? "" : " - " + form.getFormIdOrName());
 
                 IKey key = IKey.constant(label);
-                manager.action(Icons.CLOSE, key, actor == value, () -> callback.accept(actor));
+                manager.action(Icons.CLOSE, key, value != null && value.equals(actor), () -> callback.accept(actor));
             }
         });
 

@@ -2,7 +2,6 @@ package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.client.ui.presets.AutoSavePresetState;
 import mchorse.bbs_mod.data.types.MapType;
-import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.ui.forms.editors.panels.UIModelConstraintsFormPanel;
 import mchorse.bbs_mod.utils.pose.ModelConstraintsManager;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,20 +22,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(value = UIModelConstraintsFormPanel.class, remap = true)
 public abstract class UIModelConstraintsFormPanelMixin
 {
-    @Shadow protected String presetGroup;
-
-    @Shadow public abstract MapType toPresetData();
+    @Shadow(remap = false)
+    public abstract MapType toPresetData();
 
     @Inject(method = "updateFields", at = @At("TAIL"))
     private void bbspp$autoSaveOnCommit(CallbackInfo ci)
     {
         bbspp$tryAutoSave();
-    }
-
-    @Inject(method = "startEdit(Lmchorse/bbs_mod/forms/forms/ModelForm;)V", at = @At("HEAD"))
-    private void bbspp$resetAutoSaveOnStartEdit(ModelForm form, CallbackInfo ci)
-    {
-        AutoSavePresetState.clear("constraints");
     }
 
     private void bbspp$tryAutoSave()
@@ -46,12 +38,13 @@ public abstract class UIModelConstraintsFormPanelMixin
             return;
         }
         String preset = AutoSavePresetState.getSelectedPreset("constraints");
-        if (preset == null || preset.isEmpty() || this.presetGroup == null || this.presetGroup.isEmpty())
+        String presetGroup = ((UIBoneListFormPanelAccessor) (Object) this).bbspp$getPresetGroup();
+        if (preset == null || preset.isEmpty() || presetGroup == null || presetGroup.isEmpty())
         {
             return;
         }
 
         AutoSavePresetState.scheduleSave("constraints", ModelConstraintsManager.INSTANCE,
-                this.presetGroup, preset, this::toPresetData);
+                presetGroup, preset, this::toPresetData);
     }
 }

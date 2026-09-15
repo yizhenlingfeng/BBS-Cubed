@@ -50,7 +50,7 @@ public abstract class UIPoseEditorMixin
     }
 
     @Inject(method = "setLighting", at = @At("TAIL"))
-    private void bbspp$autoSaveOnSetLighting(PoseTransform pt, boolean lighting, CallbackInfo ci)
+    private void bbspp$autoSaveOnSetLighting(PoseTransform pt, float lighting, CallbackInfo ci)
     {
         bbspp$tryAutoSave();
     }

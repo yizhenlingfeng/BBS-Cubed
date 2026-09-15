@@ -4,7 +4,7 @@ import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.PickTextureButtonHolder;
 import gbeic.bbsplusplus.settings.CMLSettings;
-import mchorse.bbs_mod.cubic.IModel;
+import mchorse.bbs_mod.cubic.IBoneHierarchy;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.IValueListener;
@@ -20,7 +20,6 @@ import mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
-import mchorse.bbs_mod.ui.utils.pose.UIBoneList;
 import mchorse.bbs_mod.ui.utils.pose.UIPoseEditor;
 import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.PoseTransform;
@@ -66,10 +65,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
 {
     /* 用于右键"应用到子骨骼"：需要模型结构（查子骨骼）与骨骼列表（查当前选中）。 */
     @Shadow(remap = false)
-    protected IModel model;
-
-    @Shadow(remap = false)
-    public UIBoneList groups;
+    protected IBoneHierarchy model;
 
     @Unique
     private UIButton bbspp_cml$pickTexture;
@@ -388,14 +384,14 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     {
         Pose pose = self.getPose();
 
-        if (pose == null || this.model == null || this.groups == null)
+        if (pose == null || this.model == null)
         {
             return;
         }
 
-        List<String> selected = this.groups.list.getCurrent();
+        String bone = self.getGroup();
 
-        if (selected == null || selected.isEmpty())
+        if (bone == null || bone.isEmpty())
         {
             return;
         }
@@ -409,15 +405,10 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             valuePose.preNotify(IValueListener.FLAG_UNMERGEABLE);
         }
 
-        for (String bone : selected)
+        Collection<String> children = this.model.getAllChildrenKeys(bone);
+
+        if (children != null)
         {
-            Collection<String> children = this.model.getAllChildrenKeys(bone);
-
-            if (children == null)
-            {
-                continue;
-            }
-
             for (String child : children)
             {
                 PoseTransform transform = pose.get(child);

@@ -32,7 +32,7 @@ public abstract class UIPoseKeyframeFactoryMixin
             ordinal = 0,
             remap = false
         ),
-        require = 1,
+        require = 0,
         remap = false
     )
     private UIElement bbspp_cml$addWideLayout(UIElement[] layout)
@@ -52,7 +52,7 @@ public abstract class UIPoseKeyframeFactoryMixin
             target = "Lmchorse/bbs_mod/ui/framework/elements/input/keyframes/factories/UIPoseKeyframeFactory$UIPoseFactoryEditor;add([Lmchorse/bbs_mod/ui/framework/elements/IUIElement;)V",
             remap = false
         ),
-        require = 1,
+        require = 0,
         remap = false
     )
     private void bbspp_cml$addNarrowLayout(

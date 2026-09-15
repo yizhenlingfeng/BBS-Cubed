@@ -23,9 +23,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(value = UIModelIKFormPanel.class, remap = true)
 public abstract class UIModelIKFormPanelMixin
 {
-    @Shadow protected String presetGroup;
-
-    @Shadow public abstract MapType toPresetData();
+    @Shadow(remap = false)
+    public abstract MapType toPresetData();
 
     @Inject(method = "updateFields", at = @At("TAIL"))
     private void bbspp$autoSaveOnCommit(CallbackInfo ci)
@@ -46,12 +45,13 @@ public abstract class UIModelIKFormPanelMixin
             return;
         }
         String preset = AutoSavePresetState.getSelectedPreset("ik");
-        if (preset == null || preset.isEmpty() || this.presetGroup == null || this.presetGroup.isEmpty())
+        String presetGroup = ((UIBoneListFormPanelAccessor) (Object) this).bbspp$getPresetGroup();
+        if (preset == null || preset.isEmpty() || presetGroup == null || presetGroup.isEmpty())
         {
             return;
         }
 
         AutoSavePresetState.scheduleSave("ik", ModelIKManager.INSTANCE,
-                this.presetGroup, preset, this::toPresetData);
+                presetGroup, preset, this::toPresetData);
     }
 }
