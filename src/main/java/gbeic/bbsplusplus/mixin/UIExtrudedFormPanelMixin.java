@@ -62,18 +62,4 @@ public abstract class UIExtrudedFormPanelMixin extends UIFormPanel<ExtrudedForm>
         );
     }
 
-    /**
-     * 注入目标：{@code UIExtrudedFormPanel#startEdit} 结束。
-     * 注入原因：切换挤出形态后需要刷新纹理变换输入值。
-     * 修改行为：同步当前偏移、缩放和旋转角度。
-     */
-    @Inject(method = "startEdit", at = @At("TAIL"))
-    private void bbspp$syncUvTransformControls(ExtrudedForm form, CallbackInfo ci)
-    {
-        if (form instanceof ExtrudedFormUVTransform uv)
-        {
-            this.bbspp$uvEditor.setValue(uv.bbspp$getUvTransformValue());
-            this.bbspp$uvRotation.setValue(uv.bbspp$getUvRotation().get());
-        }
-    }
 }
