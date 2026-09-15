@@ -46,7 +46,7 @@ public abstract class UIListPoseParameterBrushMixin<T>
      * 注入原因：右侧状态菱形必须拥有独立点击区，不能触发普通骨骼选择或参数刷粘贴。
      * 修改后的行为：左键点击状态槽时按当前多选切换骨骼是否跳过本 Pose 帧，并立即消费事件。
      */
-    @Inject(method = "subMouseClicked", at = @At("HEAD"), cancellable = true, remap = true)
+    @Inject(method = "subMouseClicked", at = @At("HEAD"), cancellable = true, remap = true, require = 0)
     private void bbspp$togglePoseBoneFromStateDiamond(UIContext context, CallbackInfoReturnable<Boolean> cir)
     {
         if (!((Object) this instanceof UIPoseBoneStringList self) || context.mouseButton != 0)
