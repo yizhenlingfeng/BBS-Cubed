@@ -11,6 +11,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 
 /**
  * 视频导出完成后生成音频 SRT 字幕的工具类。
@@ -84,7 +85,7 @@ public class AudioSubtitleExporter
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            BBSPlusPlusMod.LOGGER.warn("音频字幕导出失败", e);
         }
         finally
         {

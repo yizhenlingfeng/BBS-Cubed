@@ -3,7 +3,6 @@ package gbeic.bbsplusplus.mixin.client;
 import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.ActionsOverlayProvider;
 import gbeic.bbsplusplus.api.PivotHolder;
-import gbeic.bbsplusplus.api.TextureGradeHolder;
 import gbeic.bbsplusplus.cubic.animation.AdditiveAnimator;
 import gbeic.bbsplusplus.cubic.animation.AdditiveLayerContext;
 import gbeic.bbsplusplus.cubic.animation.AdditiveProceduralAnimator;
@@ -13,14 +12,11 @@ import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
 import mchorse.bbs_mod.cubic.animation.IAnimator;
 import mchorse.bbs_mod.cubic.animation.ProceduralAnimator;
-import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.entities.IEntity;
-import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.forms.values.ValueActionsConfig;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.math.Operation;
-import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.PoseTransform;
 import mchorse.bbs_mod.utils.resources.LinkUtils;
@@ -78,17 +74,6 @@ public class ModelFormRendererMixin
             {
                 ((BoneTextureHolder) target).bbspp_cml$setTexture(LinkUtils.copy(texture));
             }
-
-            TextureGradeHolder valueGrade = (TextureGradeHolder) value;
-            TextureGradeHolder targetGrade = (TextureGradeHolder) target;
-
-            if (valueGrade.bbspp_cml$getTextureTint().a > 0F)
-            {
-                targetGrade.bbspp_cml$setTextureTint(valueGrade.bbspp_cml$getTextureTint());
-            }
-
-            targetGrade.bbspp_cml$setTextureWhiten(MathUtils.clamp(
-                targetGrade.bbspp_cml$getTextureWhiten() + valueGrade.bbspp_cml$getTextureWhiten(), 0F, 1F));
 
             Vector3f valuePivot = ((PivotHolder) value).bbspp_cml$getPivot();
             Vector3f targetPivot = ((PivotHolder) target).bbspp_cml$getPivot();

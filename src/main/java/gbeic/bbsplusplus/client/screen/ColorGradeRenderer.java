@@ -15,6 +15,7 @@ import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
 import java.util.List;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 
 /**
  * 全屏 shader 后处理 —— 自 BBScml 的 ColorGradeRenderer 移植（shader 原文不动）。
@@ -592,7 +593,7 @@ public class ColorGradeRenderer
 
         if (GL20.glGetShaderi(vert, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE)
         {
-            System.err.println("[FSloveCML ColorGradeRenderer] Vertex shader failed:\n" + GL20.glGetShaderInfoLog(vert));
+            BBSPlusPlusMod.LOGGER.error("[FSloveCML ColorGradeRenderer] 顶点着色器编译失败：\n{}", GL20.glGetShaderInfoLog(vert));
             GL20.glDeleteShader(vert);
             failed = true;
 
@@ -605,7 +606,7 @@ public class ColorGradeRenderer
 
         if (GL20.glGetShaderi(frag, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE)
         {
-            System.err.println("[FSloveCML ColorGradeRenderer] Fragment shader failed:\n" + GL20.glGetShaderInfoLog(frag));
+            BBSPlusPlusMod.LOGGER.error("[FSloveCML ColorGradeRenderer] 片元着色器编译失败：\n{}", GL20.glGetShaderInfoLog(frag));
             GL20.glDeleteShader(vert);
             GL20.glDeleteShader(frag);
             failed = true;
@@ -624,7 +625,7 @@ public class ColorGradeRenderer
 
         if (GL20.glGetProgrami(program, GL20.GL_LINK_STATUS) == GL11.GL_FALSE)
         {
-            System.err.println("[FSloveCML ColorGradeRenderer] Link failed:\n" + GL20.glGetProgramInfoLog(program));
+            BBSPlusPlusMod.LOGGER.error("[FSloveCML ColorGradeRenderer] 着色器程序链接失败：\n{}", GL20.glGetProgramInfoLog(program));
             GL20.glDeleteProgram(program);
             failed = true;
 

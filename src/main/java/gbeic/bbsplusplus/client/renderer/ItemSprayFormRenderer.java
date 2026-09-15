@@ -28,6 +28,7 @@ import org.joml.Vector3f;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 
 /**
  * 物品喷射形态渲染器。
@@ -367,7 +368,7 @@ public class ItemSprayFormRenderer extends FormRenderer<ItemSprayForm> implement
         }
         catch (Throwable throwable)
         {
-            throwable.printStackTrace();
+            BBSPlusPlusMod.LOGGER.warn("物品喷射：3D 渲染失败", throwable);
         }
     }
 

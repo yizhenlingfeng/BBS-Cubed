@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Map;
 import java.util.TreeMap;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 
 /**
  * 识别 Blockbench 原生导出的步阶(step)关键帧。
@@ -107,7 +108,7 @@ public abstract class GeoAnimationParserMixin
         catch (Exception e)
         {
             /* step 检测失败不应影响动画解析 */
-            System.err.println("[BBS-Cubed] Step keyframe detection failed: " + e.getMessage());
+            BBSPlusPlusMod.LOGGER.warn("Blockbench step 帧识别失败：{}", e.getMessage());
         }
     }
 

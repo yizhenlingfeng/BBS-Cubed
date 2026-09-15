@@ -178,7 +178,7 @@ public class UIEffectPicker
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            BBSPlusPlusMod.LOGGER.warn("特效选择器：处理特效文件失败", e);
         }
 
         Collections.sort(list);

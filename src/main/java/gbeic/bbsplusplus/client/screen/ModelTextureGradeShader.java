@@ -40,7 +40,14 @@ public final class ModelTextureGradeShader
     private static boolean attempted;
     private static ResourceManager attemptedManager;
     private static float baseWhiten;
-    private static int debugCounter;
+
+    /*
+     * 注意：本类位于<b>每帧、每组模型</b>都会走到的渲染热路径上（select 每次切换 shader、
+     * apply 每次绘制 group）。这里曾有一对 "[FSloveCML-DBG]" 调试日志，因为只判断了
+     * debugCounter < 5 却漏了自增，导致 apply() 每帧都往日志写一行 —— 实测一轮游戏
+     * 就把 latest.log 撑到 1.7 GB（其中 99.8% 是这一行），并因同步写盘造成持续卡顿。
+     * 该日志已删除；今后不要在此类热路径上增加任何未做严格限流的日志。
+     */
 
     /* ---------- 附魔光效 ----------
      *
@@ -68,9 +75,6 @@ public final class ModelTextureGradeShader
 
     /** 光效扫过一轮的周期（毫秒）。改这里即可调快/调慢。 */
     private static final long GLINT_PERIOD_MS = 3000L;
-
-    /** 光效纹理所在的纹理单元（GlintSampler → GL_TEXTURE0 + 3）。 */
-    private static final int GLINT_TEXTURE_UNIT = 3;
 
     /** 光效纹理是否已成功注册到 shader 上。 */
     private static boolean glintAvailable;
@@ -143,16 +147,6 @@ public final class ModelTextureGradeShader
             current = fallback == null ? null : findByFormat(fallback.getFormat());
         }
 
-        if (debugCounter < 5)
-        {
-            debugCounter++;
-            BBSFSloveCML.LOGGER.info("[FSloveCML-DBG] select: fallback=" + (fallback == null ? "null" : fallback.getClass().getSimpleName())
-                + " format=" + (fallback == null || fallback.getFormat() == null ? "null" : fallback.getFormat().getVertexSizeByte() + "B/" + fallback.getFormat().getElements().size())
-                + " found=" + (current != null)
-                + " tint=" + (tint == null ? "null" : tint.r + "," + tint.g + "," + tint.b + "," + tint.a)
-                + " whiten=" + whiten);
-        }
-
         if (current == null)
         {
             return fallback;
@@ -207,15 +201,6 @@ public final class ModelTextureGradeShader
         GlUniform tintUniform = program.getUniform("TextureTint");
         GlUniform whitenUniform = program.getUniform("TextureWhiten");
 
-        if (debugCounter < 5)
-        {
-            BBSFSloveCML.LOGGER.info("[FSloveCML-DBG] apply: program=" + program.getClass().getSimpleName()
-                + " tintUniform=" + (tintUniform != null)
-                + " whitenUniform=" + (whitenUniform != null)
-                + " tint=" + tint.r + "," + tint.g + "," + tint.b + "," + tint.a
-                + " whiten=" + whiten);
-        }
-
         /* 只有声明了纹理调色 uniform 的 shader 才写入，避免对原版/Iris shader 误操作。 */
         if (tintUniform == null && whitenUniform == null)
         {
@@ -230,21 +215,6 @@ public final class ModelTextureGradeShader
         if (whitenUniform != null)
         {
             whitenUniform.set(Math.max(0F, Math.min(1F, whiten)));
-        }
-    }
-
-    public static void applyGroup(ShaderProgram program, Color tint, float whiten)
-    {
-        Color appliedTint = tint.a > 0.0001F ? tint : BASE_TINT;
-        float appliedWhiten = whiten > 0.0001F ? whiten : baseWhiten;
-
-        if (appliedTint.a > 0.0001F || appliedWhiten > 0.0001F)
-        {
-            apply(program, appliedTint, appliedWhiten);
-        }
-        else
-        {
-            apply(program, BASE_TINT, 0F);
         }
     }
 

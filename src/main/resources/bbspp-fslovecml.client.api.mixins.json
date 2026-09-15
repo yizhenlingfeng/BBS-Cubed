@@ -7,8 +7,7 @@
         "UIClipsInvoker",
         "UIClipsPanelAccess",
         "UIDockLayoutAccess",
-        "UIFilmPanelLayoutAccess",
-        "OrbitViewportControllerAccessor"
+        "UIFilmPanelLayoutAccess"
     ],
     "injectors": {
         "defaultRequire": 1

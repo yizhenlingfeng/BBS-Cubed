@@ -1,7 +1,6 @@
 package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.client.renderer.VideoTimelineState;
-import mchorse.bbs_mod.ui.film.UIClips;
 import mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import org.spongepowered.asm.mixin.Mixin;

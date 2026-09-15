@@ -3,15 +3,12 @@ package gbeic.bbsplusplus.mixin.client;
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.GroupGlintHolder;
 import gbeic.bbsplusplus.api.GroupTextureHolder;
-import gbeic.bbsplusplus.api.GroupTextureGradeHolder;
-import gbeic.bbsplusplus.api.TextureGradeHolder;
 import gbeic.bbsplusplus.client.screen.ModelTextureGradeShader;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.render.CubicVAORenderer;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.colors.Color;
-import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.util.math.MatrixStack;
@@ -44,22 +41,11 @@ public class CubicVAORendererMixin
     private ShaderProgram program;
 
     @Inject(method = "renderGroup", at = @At("HEAD"), require = 1, remap = false)
-    private void bbspp_cml$applyTextureGrade(BufferBuilder builder, MatrixStack stack, ModelGroup group, Model model, CallbackInfoReturnable<Boolean> cir)
+    private void bbspp_cml$applyGroupGlint(BufferBuilder builder, MatrixStack stack, ModelGroup group, Model model, CallbackInfoReturnable<Boolean> cir)
     {
-        /* 优先使用 Model.applyPose() 传播的 group 级调色/白化；
+        /* 附魔光效：优先使用 Model.applyPose() 传播的 group 级光效；
          * 若未激活（动画器绕过 applyPose 直接设 group.current），
-         * 回退到 Transform 上的渲染期调色/白化。 */
-        GroupTextureGradeHolder grade = (GroupTextureGradeHolder) group;
-        Color tint = grade.bbspp_cml$getTextureTint();
-        float whiten = grade.bbspp_cml$getTextureWhiten();
-
-        if (tint.a <= 0.0001F && whiten <= 0.0001F && group.current instanceof TextureGradeHolder renderGrade)
-        {
-            tint = renderGrade.bbspp_cml$getTextureTint();
-            whiten = renderGrade.bbspp_cml$getTextureWhiten();
-        }
-
-        /* 附魔光效：与调色/白化同样的"group 级优先，回退到 group.current"取法。 */
+         * 回退到 Transform 上的渲染期光效。 */
         boolean glint = group != null && ((GroupGlintHolder) group).bbspp_cml$getGlint();
         Color glintColor = group != null ? ((GroupGlintHolder) group).bbspp_cml$getGlintColor() : null;
 
@@ -69,9 +55,7 @@ public class CubicVAORendererMixin
             glintColor = renderGlint.bbspp_cml$getGlintColor();
         }
 
-        ModelTextureGradeShader.applyGroup(this.program, tint, whiten);
-
-        /* 附魔光效：必须逐组写入（含关闭时的 0）—— 否则同一模型里前一个开了光效的骨骼
+        /* 必须逐组写入（含关闭时的 0）—— 否则同一模型里前一个开了光效的骨骼
          * 会把状态泄漏给后一个。仅限 VAO 渲染；CPU 路径靠 select() 的整模型 fallback。 */
         if (ModelTextureGradeShader.isGlintPerGroup())
         {

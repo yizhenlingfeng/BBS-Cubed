@@ -26,12 +26,34 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 
 /**
  * 改进伪装表单列表, 具有侧边导航栏、首页、排版切换、图标缩放、拖拽移动和模型预览。
  */
 public class UIBBSPPFormList extends UIFormList
 {
+    /** 顶部工具条高度，与原生 {@link UIFormList#BAR_HEIGHT} 对齐。 */
+    private static final int BAR_H = UIFormList.BAR_HEIGHT;
+
+    /**
+     * 原生状态条高度 —— 即「当前伪装」那一条。
+     *
+     * <p>原生 {@code UIFormList.renderStatus()} 把它画在 {@code area.y + BAR_HEIGHT} 起的
+     * {@link UIFormList#STATUS_HEIGHT} 像素带里，而且绘制在 {@code super.render()} **之前**，
+     * 于是任何从它上面盖过去的子元素都会把它压在页面底层。本类原先把侧边栏与内容区
+     * 都放在 {@code y = 24}，正好盖掉状态条的 24~36 段，问题即源于此。</p>
+     */
+    private static final int STATUS_H = UIFormList.STATUS_HEIGHT;
+
+    /**
+     * 侧边栏 / 内容区的起始 y。
+     *
+     * <p>由 {@link #BAR_H} + {@link #STATUS_H} 组成，把状态条那一条完整让出来，
+     * 使「当前伪装」显示在模型（表单）栏的正上方，而不是被压在底层。</p>
+     */
+    private static final int CONTENT_Y = BAR_H + STATUS_H;
+
     public UIBBSPPCategorySidebar sidebar;
     public UIBBSPPCategoryHome home;
     public UIElement contentArea;
@@ -49,7 +71,7 @@ public class UIBBSPPFormList extends UIFormList
 
         // 1. 设置顶部栏
         this.bar.resetFlex();
-        this.bar.relative(this).x(0).y(0).w(1F).h(24).row(4).height(24);
+        this.bar.relative(this).x(0).y(0).w(1F).h(BAR_H).row(4).height(BAR_H);
         this.search.h(18);
 
         this.openModelsBtn = new UIIcon(
@@ -75,17 +97,23 @@ public class UIBBSPPFormList extends UIFormList
 
         // 2. 设置侧边栏
         this.sidebar = new UIBBSPPCategorySidebar(this::onSidebarSelect);
-        this.sidebar.relative(this).x(0).y(24).w(120).h(1F, -24);
+        this.sidebar.relative(this).x(0).y(CONTENT_Y).w(120).h(1F, -CONTENT_Y);
 
         // 3. 设置内容区域（右侧）
         this.contentArea = new UIElement();
 
         // 4. 设置首页
         this.home = new UIBBSPPCategoryHome(this::onHomeCategorySelect);
-        this.home.full(this.contentArea);
+
+        /* 注意：这里不能用 full(parent)。
+         * UIElement.full() 的实现是 relative(p).wh(1F, 1F) —— 它只改宽高，**不会清零 x/y 偏移**。
+         * 而 forms 在原生 UIFormList 构造器里已经被设过 xy(0, BAR_HEIGHT + STATUS_HEIGHT)，
+         * 那个 y=36 的偏移会原样保留；contentArea 本身又在 y=36，于是 forms 实际落在 72px 处，
+         * 表现为「模型栏上方多出一块空白」。所以这里显式把 x/y 一起清掉。 */
+        this.home.relative(this.contentArea).x(0).y(0).w(1F).h(1F);
 
         // 5. 设置表单（原始的 scrollview）
-        this.forms.full(this.contentArea);
+        this.forms.relative(this.contentArea).x(0).y(0).w(1F).h(1F);
 
         this.contentArea.add(this.home, this.forms);
         this.add(this.bar, this.sidebar, this.contentArea);
@@ -163,10 +191,54 @@ public class UIBBSPPFormList extends UIFormList
         {
             int sw = this.sidebar.getSidebarWidth();
             this.sidebar.w(sw);
-            this.contentArea.relative(this).x(sw).y(24).w(1F, -sw).h(1F, -24);
+            this.contentArea.relative(this).x(sw).y(CONTENT_Y).w(1F, -sw).h(1F, -CONTENT_Y);
         }
 
         super.resize();
+
+        this.bbspp$logLayoutOnce();
+    }
+
+    /* ==================== 临时诊断：定位内容区顶部空白（定位完请删除本段） ==================== */
+
+    private static int bbspp$layoutLogs;
+
+    private void bbspp$logLayoutOnce()
+    {
+        /* 只在列表真正拿到尺寸后取样 —— 构造期的 resize 里 list 还是 0x0，没有参考价值。 */
+        if (bbspp$layoutLogs >= 4 || this.contentArea == null || this.forms == null || this.area.w <= 0 || this.area.h <= 0)
+        {
+            return;
+        }
+
+        bbspp$layoutLogs++;
+
+        StringBuilder sb = new StringBuilder("[morph-layout] ");
+
+        sb.append("list=").append(bbspp$area(this.area));
+        sb.append(" bar=").append(bbspp$area(this.bar == null ? null : this.bar.area));
+        sb.append(" sidebar=").append(bbspp$area(this.sidebar == null ? null : this.sidebar.area));
+        sb.append(" content=").append(bbspp$area(this.contentArea.area));
+        sb.append(" forms=").append(bbspp$area(this.forms.area));
+        sb.append(" home=").append(bbspp$area(this.home == null ? null : this.home.area));
+        sb.append(" homeVis=").append(this.home != null && this.home.isVisible());
+        sb.append(" formsVis=").append(this.forms.isVisible());
+        sb.append(" formsKids=").append(this.forms.getChildren().size());
+
+        for (IUIElement child : this.forms.getChildren())
+        {
+            if (child instanceof UIElement el)
+            {
+                sb.append(" kid=").append(el.getClass().getSimpleName()).append(bbspp$area(el.area));
+            }
+        }
+
+        BBSPlusPlusMod.LOGGER.info(sb.toString());
+    }
+
+    private static String bbspp$area(mchorse.bbs_mod.ui.utils.Area area)
+    {
+        return area == null ? "null" : "(" + area.x + "," + area.y + " " + area.w + "x" + area.h + ")";
     }
 
     private void onSidebarSelect(UIBBSPPCategorySidebar.CategoryItem item)
@@ -492,7 +564,7 @@ public class UIBBSPPFormList extends UIFormList
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            BBSPlusPlusMod.LOGGER.warn("伪装列表：拖拽移动模型失败", e);
             this.getContext().notifyError(L10n.lang("bbspp.ui.morph.move_failed"));
             return false;
         }

@@ -69,6 +69,5 @@
   "bbspp.ui.morph.target_builtin": "Target category is built-in, cannot move into",
   "bbspp.ui.morph.move_success": "Model moved",
   "bbspp.ui.morph.target_exists": "A model with the same name already exists at the target",
-  "bbspp.ui.morph.move_failed": "Failed to move model",
-  "bbspp.ui.film.follow_orbit": "Follow Orbit"
+  "bbspp.ui.morph.move_failed": "Failed to move model"
 }

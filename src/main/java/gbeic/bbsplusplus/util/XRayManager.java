@@ -6,6 +6,7 @@ import mod.chloeprime.aaaparticles.client.internal.CollisionCallbackSupport;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 
 /**
  * X-Ray 管理器，用于处理穿透方块的粒子效果渲染。
@@ -46,7 +47,7 @@ public class XRayManager {
             com.mojang.blaze3d.systems.RenderSystem.assertOnRenderThread();
             XRAY_MANAGER = new EffekseerManager();
             if (!XRAY_MANAGER.init(100000)) {
-                System.err.println("Failed to initialize XRAY EffekseerManager");
+                BBSPlusPlusMod.LOGGER.warn("[XRayManager] XRAY EffekseerManager 初始化失败");
             }
             XRAY_MANAGER.setCollisionCallback(CollisionCallbackSupport.Impl.DEFAULT_TRACER);
             XRAY_MANAGER.setupWorkerThreads(2);
@@ -67,7 +68,7 @@ public class XRayManager {
                 XRAY_MANAGER.stopAllEffects();
                 XRAY_MANAGER.close();
             } catch (Exception e) {
-                e.printStackTrace();
+                BBSPlusPlusMod.LOGGER.warn("[XRayManager] 关闭 XRay 管理器失败", e);
             }
             XRAY_MANAGER = null;
         }
@@ -76,7 +77,7 @@ public class XRayManager {
     public static void migrate(ParticleEmitter emitter, boolean shouldBeXRay, mod.chloeprime.aaaparticles.api.client.EffectDefinition effectDef, ParticleEmitter.Type targetType) {
         try {
             if (UNSAFE == null || MANAGER_FIELD_OFFSET < 0 || HANDLE_FIELD_OFFSET < 0) {
-                System.err.println("[XRayManager] Unsafe 或字段偏移量未就绪，跳过管理器迁移");
+                BBSPlusPlusMod.LOGGER.warn("[XRayManager] Unsafe 或字段偏移量未就绪，跳过管理器迁移");
                 return;
             }
 
@@ -103,7 +104,7 @@ public class XRayManager {
             UNSAFE.putInt(emitter, HANDLE_FIELD_OFFSET, newHandle);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            BBSPlusPlusMod.LOGGER.warn("[XRayManager] 迁移发射器管理器失败", e);
         }
     }
 
@@ -115,7 +116,7 @@ public class XRayManager {
             field.setAccessible(true);
             return (Unsafe) field.get(null);
         } catch (Exception e) {
-            System.err.println("[XRayManager] 获取 Unsafe 实例失败: " + e.getMessage());
+            BBSPlusPlusMod.LOGGER.warn("[XRayManager] 获取 Unsafe 实例失败", e);
             return null;
         }
     }
@@ -125,7 +126,7 @@ public class XRayManager {
             Field field = clazz.getDeclaredField(fieldName);
             return UNSAFE.objectFieldOffset(field);
         } catch (Exception e) {
-            System.err.println("[XRayManager] 获取字段偏移量失败 " + clazz.getSimpleName() + "." + fieldName + ": " + e.getMessage());
+            BBSPlusPlusMod.LOGGER.warn("[XRayManager] 获取字段偏移量失败 {}.{}", clazz.getSimpleName(), fieldName, e);
             return -1L;
         }
     }
@@ -135,7 +136,7 @@ public class XRayManager {
             Field field = clazz.getDeclaredField(fieldName);
             return UNSAFE.staticFieldOffset(field);
         } catch (Exception e) {
-            System.err.println("[XRayManager] 获取静态字段偏移量失败 " + clazz.getSimpleName() + "." + fieldName + ": " + e.getMessage());
+            BBSPlusPlusMod.LOGGER.warn("[XRayManager] 获取静态字段偏移量失败 {}.{}", clazz.getSimpleName(), fieldName, e);
             return -1L;
         }
     }
@@ -145,7 +146,7 @@ public class XRayManager {
             Field field = clazz.getDeclaredField(fieldName);
             return UNSAFE.staticFieldBase(field);
         } catch (Exception e) {
-            System.err.println("[XRayManager] 获取静态字段基址失败 " + clazz.getSimpleName() + "." + fieldName + ": " + e.getMessage());
+            BBSPlusPlusMod.LOGGER.warn("[XRayManager] 获取静态字段基址失败 {}.{}", clazz.getSimpleName(), fieldName, e);
             return null;
         }
     }
@@ -162,7 +163,7 @@ public class XRayManager {
                         (java.util.EnumMap<ParticleEmitter.Type, EffekseerManager>) supplier.get();
                 return map.get(type);
             } catch (Exception e) {
-                e.printStackTrace();
+                BBSPlusPlusMod.LOGGER.warn("[XRayManager] 创建/获取 EffekseerManager 失败", e);
                 return null;
             }
         }

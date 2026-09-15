@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 
 /**
  * 物品喷射和 IR Lights 的兼容桥接层。
@@ -124,7 +125,7 @@ final class ItemSprayIRLiteBridge
         }
         catch (Throwable throwable)
         {
-            throwable.printStackTrace();
+            BBSPlusPlusMod.LOGGER.warn("物品喷射：IRLights 阴影投射失败", throwable);
         }
 
         return true;

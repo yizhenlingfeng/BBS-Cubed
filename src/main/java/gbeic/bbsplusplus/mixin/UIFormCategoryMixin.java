@@ -10,7 +10,6 @@ import mchorse.bbs_mod.ui.forms.UIFormList;
 import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -31,19 +30,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(value = UIFormCategory.class, remap = false)
 public abstract class UIFormCategoryMixin
 {
-    @Shadow
-    public Form selected;
-
     @Inject(method = "<init>", at = @At("TAIL"), remap = false)
     private void bbspp$addEditInBlockbench(FormCategory category, UIFormList list, CallbackInfo ci)
     {
         UIFormCategory self = (UIFormCategory) (Object) this;
 
-        /* 注意：this.selected 在构造时为 null，模型是右键时才选中的，
-         * 必须在 lambda 内部（每次开菜单时）读取，不能在构造时捕获。 */
+        /* 注意：模型是右键时才确定的，必须在 lambda 内部（每次开菜单时）读取，
+         * 不能在构造时捕获。
+         *
+         * 必须用 {@code getContextForm()} 而不是 {@code this.selected}：
+         * 2.6 下右键某个格子时原版 UIFormCategory.subMouseClicked 只把被点中的
+         * 模型记进私有的 contextForm，并不会选中它；getContextForm() 返回
+         * "右键点到的模型，没有则回退到已选中项"。此前直接读 selected，
+         * 导致分类里没选中任何模型时右键菜单找不到该项。 */
         self.context((menu) ->
         {
-            Form selected = this.selected;
+            Form selected = self.getContextForm();
 
             if (!(selected instanceof ModelForm modelForm))
             {

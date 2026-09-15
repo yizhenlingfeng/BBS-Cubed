@@ -9,23 +9,21 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Adds readable labels and visual identity to generated texture-grade tracks. */
+/**
+ * Adds readable labels and visual identity to generated texture-grade tracks.
+ *
+ * <p>挂在 {@link UIKeyframeSheet#applyStyle()} 而非构造器：BBSFS 2.6 重写了构造器体系，
+ * 旧的 7 参构造器描述符已失效（{@code defaultRequire=1} 会让目标类直接加载失败）。
+ * {@code applyStyle()} 对所有构造路径都会在末尾执行，且签名稳定。</p>
+ */
 @Mixin(value = UIKeyframeSheet.class, remap = false)
 public abstract class UIKeyframeSheetTextureGradeMixin
 {
-    @Inject(method = "<init>(Ljava/lang/String;Lmchorse/bbs_mod/l10n/keys/IKey;IZLmchorse/bbs_mod/utils/keyframes/KeyframeChannel;Lmchorse/bbs_mod/settings/values/base/BaseValueBasic;Z)V", at = @At("TAIL"), remap = false)
-    private void bbspp_cml$labelTextureGrade(
-        String id,
-        mchorse.bbs_mod.l10n.keys.IKey title,
-        int color,
-        boolean separator,
-        mchorse.bbs_mod.utils.keyframes.KeyframeChannel channel,
-        mchorse.bbs_mod.settings.values.base.BaseValueBasic property,
-        boolean isBoneTrack,
-        CallbackInfo ci
-    )
+    @Inject(method = "applyStyle", at = @At("RETURN"), remap = false)
+    private void bbspp_cml$labelTextureGrade(CallbackInfo ci)
     {
         UIKeyframeSheet sheet = (UIKeyframeSheet) (Object) this;
+        String id = sheet.id;
 
         if (id == null)
         {

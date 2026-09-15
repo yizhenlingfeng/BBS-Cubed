@@ -2,12 +2,10 @@ package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
-import gbeic.bbsplusplus.api.TextureGradeHolder;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
-import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.AutoBezier;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.resources.LinkUtils;
@@ -44,16 +42,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * （尤其是 equals 与 lerp）都会表现为"关键帧上光效闪烁或莫名丢失"。</p>
  */
 @Mixin(value = PoseTransform.class, remap = false)
-public class PoseTransformMixin implements BoneTextureHolder, TextureGradeHolder, GlintHolder
+public class PoseTransformMixin implements BoneTextureHolder, GlintHolder
 {
     @Unique
     private Link bbspp_cml$texture;
-
-    @Unique
-    private final Color bbspp_cml$textureTint = new Color(1F, 1F, 1F, 0F);
-
-    @Unique
-    private float bbspp_cml$textureWhiten;
 
     @Unique
     private boolean bbspp_cml$glint;
@@ -72,30 +64,6 @@ public class PoseTransformMixin implements BoneTextureHolder, TextureGradeHolder
     public void bbspp_cml$setTexture(Link texture)
     {
         this.bbspp_cml$texture = texture;
-    }
-
-    @Override
-    public Color bbspp_cml$getTextureTint()
-    {
-        return this.bbspp_cml$textureTint;
-    }
-
-    @Override
-    public float bbspp_cml$getTextureWhiten()
-    {
-        return this.bbspp_cml$textureWhiten;
-    }
-
-    @Override
-    public void bbspp_cml$setTextureTint(Color color)
-    {
-        this.bbspp_cml$textureTint.copy(color);
-    }
-
-    @Override
-    public void bbspp_cml$setTextureWhiten(float value)
-    {
-        this.bbspp_cml$textureWhiten = MathUtils.clamp(value, 0F, 1F);
     }
 
     @Override
@@ -133,14 +101,6 @@ public class PoseTransformMixin implements BoneTextureHolder, TextureGradeHolder
             data.put("texture", LinkUtils.toData(this.bbspp_cml$texture));
         }
 
-        if (this.bbspp_cml$textureTint.a > 0F)
-        {
-            data.putInt("texture_tint", this.bbspp_cml$textureTint.getARGBColor());
-        }
-        if (this.bbspp_cml$textureWhiten > 0F)
-        {
-            data.putFloat("texture_whiten", this.bbspp_cml$textureWhiten);
-        }
         if (this.bbspp_cml$glint)
         {
             data.putBool("glint", true);
@@ -163,8 +123,6 @@ public class PoseTransformMixin implements BoneTextureHolder, TextureGradeHolder
             this.bbspp_cml$texture = null;
         }
 
-        this.bbspp_cml$textureTint.set(data.getInt("texture_tint", 0x00ffffff));
-        this.bbspp_cml$textureWhiten = MathUtils.clamp(data.getFloat("texture_whiten"), 0F, 1F);
         this.bbspp_cml$glint = data.getBool("glint");
         this.bbspp_cml$glintColor.set(data.getInt("glint_color", 0xFFFFFFFF));
     }
@@ -175,12 +133,6 @@ public class PoseTransformMixin implements BoneTextureHolder, TextureGradeHolder
         if (transform instanceof BoneTextureHolder holder)
         {
             this.bbspp_cml$texture = LinkUtils.copy(holder.bbspp_cml$getTexture());
-        }
-
-        if (transform instanceof TextureGradeHolder holder)
-        {
-            this.bbspp_cml$textureTint.copy(holder.bbspp_cml$getTextureTint());
-            this.bbspp_cml$textureWhiten = holder.bbspp_cml$getTextureWhiten();
         }
 
         if (transform instanceof GlintHolder holder)
@@ -204,15 +156,6 @@ public class PoseTransformMixin implements BoneTextureHolder, TextureGradeHolder
             }
         }
 
-        if (cir.getReturnValueZ() && obj instanceof TextureGradeHolder holder)
-        {
-            if (!this.bbspp_cml$textureTint.equals(holder.bbspp_cml$getTextureTint())
-                || this.bbspp_cml$textureWhiten != holder.bbspp_cml$getTextureWhiten())
-            {
-                cir.setReturnValue(false);
-            }
-        }
-
         /* 布尔量同样必须参与判等：否则"只有光效不同"的两个 Pose 会被判等，
          * 关键帧去重/值比较场景会把开了光效的帧错误地合并掉。 */
         if (cir.getReturnValueZ() && obj instanceof GlintHolder holder)
@@ -229,9 +172,6 @@ public class PoseTransformMixin implements BoneTextureHolder, TextureGradeHolder
     private void bbspp_cml$identityTexture(CallbackInfo ci)
     {
         this.bbspp_cml$texture = null;
-        this.bbspp_cml$textureTint.set(Colors.WHITE);
-        this.bbspp_cml$textureTint.a = 0F;
-        this.bbspp_cml$textureWhiten = 0F;
         this.bbspp_cml$glint = false;
         this.bbspp_cml$glintColor.set(0xFFFFFFFF);
     }
@@ -245,25 +185,6 @@ public class PoseTransformMixin implements BoneTextureHolder, TextureGradeHolder
     {
         this.bbspp_cml$texture = LinkUtils.copy(bbspp_cml$closestTexture(a, b, x));
         this.bbspp_cml$glint = bbspp_cml$closestGlint(a, b, x);
-
-        if (preA instanceof TextureGradeHolder pre && a instanceof TextureGradeHolder current
-            && b instanceof TextureGradeHolder next && postB instanceof TextureGradeHolder post)
-        {
-            Color preTint = pre.bbspp_cml$getTextureTint();
-            Color currentTint = current.bbspp_cml$getTextureTint();
-            Color nextTint = next.bbspp_cml$getTextureTint();
-            Color postTint = post.bbspp_cml$getTextureTint();
-
-            this.bbspp_cml$textureTint.set(
-                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preTint.r, currentTint.r, nextTint.r, postTint.r, x)), 0F, 1F),
-                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preTint.g, currentTint.g, nextTint.g, postTint.g, x)), 0F, 1F),
-                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preTint.b, currentTint.b, nextTint.b, postTint.b, x)), 0F, 1F),
-                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preTint.a, currentTint.a, nextTint.a, postTint.a, x)), 0F, 1F)
-            );
-            this.bbspp_cml$textureWhiten = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(
-                pre.bbspp_cml$getTextureWhiten(), current.bbspp_cml$getTextureWhiten(),
-                next.bbspp_cml$getTextureWhiten(), post.bbspp_cml$getTextureWhiten(), x)), 0F, 1F);
-        }
 
         /* 光效颜色与调色一样可插值（照抄 textureTint 的实现）。 */
         if (preA instanceof GlintHolder preG && a instanceof GlintHolder curG
@@ -292,26 +213,6 @@ public class PoseTransformMixin implements BoneTextureHolder, TextureGradeHolder
     {
         this.bbspp_cml$texture = LinkUtils.copy(bbspp_cml$closestTexture(a, b, x));
         this.bbspp_cml$glint = bbspp_cml$closestGlint(a, b, x);
-
-        if (preA instanceof TextureGradeHolder pre && a instanceof TextureGradeHolder current
-            && b instanceof TextureGradeHolder next && postB instanceof TextureGradeHolder post)
-        {
-            Color preTint = pre.bbspp_cml$getTextureTint();
-            Color currentTint = current.bbspp_cml$getTextureTint();
-            Color nextTint = next.bbspp_cml$getTextureTint();
-            Color postTint = post.bbspp_cml$getTextureTint();
-
-            this.bbspp_cml$textureTint.set(
-                (float) MathUtils.clamp(AutoBezier.get(preTint.r, currentTint.r, nextTint.r, postTint.r, pt, at, bt, qt, clamped, x), 0F, 1F),
-                (float) MathUtils.clamp(AutoBezier.get(preTint.g, currentTint.g, nextTint.g, postTint.g, pt, at, bt, qt, clamped, x), 0F, 1F),
-                (float) MathUtils.clamp(AutoBezier.get(preTint.b, currentTint.b, nextTint.b, postTint.b, pt, at, bt, qt, clamped, x), 0F, 1F),
-                (float) MathUtils.clamp(AutoBezier.get(preTint.a, currentTint.a, nextTint.a, postTint.a, pt, at, bt, qt, clamped, x), 0F, 1F)
-            );
-            this.bbspp_cml$textureWhiten = (float) MathUtils.clamp(AutoBezier.get(
-                pre.bbspp_cml$getTextureWhiten(), current.bbspp_cml$getTextureWhiten(),
-                next.bbspp_cml$getTextureWhiten(), post.bbspp_cml$getTextureWhiten(),
-                pt, at, bt, qt, clamped, x), 0F, 1F);
-        }
 
         /* 光效颜色与调色一样可插值（照抄 textureTint 的 AutoBezier 实现）。 */
         if (preA instanceof GlintHolder preG && a instanceof GlintHolder curG
@@ -342,19 +243,6 @@ public class PoseTransformMixin implements BoneTextureHolder, TextureGradeHolder
             {
                 this.bbspp_cml$texture = LinkUtils.copy(texture);
             }
-        }
-
-        if (transform instanceof TextureGradeHolder holder)
-        {
-            Color tint = holder.bbspp_cml$getTextureTint();
-
-            if (tint.a > 0F)
-            {
-                this.bbspp_cml$textureTint.copy(tint);
-            }
-
-            this.bbspp_cml$textureWhiten = MathUtils.clamp(
-                this.bbspp_cml$textureWhiten + holder.bbspp_cml$getTextureWhiten(), 0F, 1F);
         }
 
         /* 叠加语义（对齐 texture 的"源有则覆盖"）：源开了光效就打开，

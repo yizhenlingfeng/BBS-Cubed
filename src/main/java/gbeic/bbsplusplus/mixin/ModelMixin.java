@@ -4,9 +4,7 @@ import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.GroupGlintHolder;
 import gbeic.bbsplusplus.api.GroupTextureHolder;
-import gbeic.bbsplusplus.api.GroupTextureGradeHolder;
 import gbeic.bbsplusplus.api.PivotHolder;
-import gbeic.bbsplusplus.api.TextureGradeHolder;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.resources.Link;
@@ -52,15 +50,12 @@ public abstract class ModelMixin
         {
             PoseTransform transform = entry.getValue();
             Link texture = ((BoneTextureHolder) transform).bbspp_cml$getTexture();
-            TextureGradeHolder textureGrade = (TextureGradeHolder) transform;
             Vector3f pivot = ((PivotHolder) transform).bbspp_cml$getPivot();
             boolean glint = ((GlintHolder) transform).bbspp_cml$getGlint();
             boolean pivoted = pivot.x != 0F || pivot.y != 0F || pivot.z != 0F;
-            boolean graded = textureGrade.bbspp_cml$getTextureTint().a > 0F
-                || textureGrade.bbspp_cml$getTextureWhiten() > 0F;
 
             /* glint 必须计入这个提前跳过判断，否则"只开光效"的骨骼会被整段忽略。 */
-            if (texture == null && !pivoted && !graded && !glint)
+            if (texture == null && !pivoted && !glint)
             {
                 continue;
             }
@@ -75,14 +70,6 @@ public abstract class ModelMixin
             if (texture != null)
             {
                 ((GroupTextureHolder) group).bbspp_cml$setTextureOverride(texture);
-            }
-
-            if (graded)
-            {
-                GroupTextureGradeHolder groupGrade = (GroupTextureGradeHolder) group;
-
-                groupGrade.bbspp_cml$setTextureTint(textureGrade.bbspp_cml$getTextureTint());
-                groupGrade.bbspp_cml$setTextureWhiten(textureGrade.bbspp_cml$getTextureWhiten());
             }
 
             /* 只置 true 不置 false：false 由每帧的 ModelGroup.reset() 负责，

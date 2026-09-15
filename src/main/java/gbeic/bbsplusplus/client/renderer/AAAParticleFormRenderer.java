@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 
 /**
  * AAA 粒子表单渲染器。
@@ -348,7 +349,7 @@ public class AAAParticleFormRenderer extends FormRenderer<AAAParticleForm> imple
                         inAnyFilm = true;
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    BBSPlusPlusMod.LOGGER.warn("AAA 粒子：读取影片控制器状态失败", e);
                     inAnyFilm = true; // 异常兜底
                 }
                 

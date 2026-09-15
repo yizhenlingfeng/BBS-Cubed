@@ -7,7 +7,6 @@ import gbeic.bbsplusplus.BBSPlusPlusSettings;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import gbeic.bbsplusplus.forms.AAAParticleForm;
 import gbeic.bbsplusplus.client.renderer.AAAParticleFormRenderer;
-import gbeic.bbsplusplus.client.renderer.BBSEffectLoader;
 import gbeic.bbsplusplus.client.structure.VFXDestructionWandSelection;
 import gbeic.bbsplusplus.client.structure.VFXDestructionWandTooltip;
 import gbeic.bbsplusplus.client.audio.AudioOutputDeviceWatcher;
@@ -88,7 +87,7 @@ public class BBSPlusPlusModClient implements ClientModInitializer
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                BBSPlusPlusMod.LOGGER.warn("注册物品喷射形态到额外分类失败", e);
             }
         });
 
@@ -103,7 +102,7 @@ public class BBSPlusPlusModClient implements ClientModInitializer
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                BBSPlusPlusMod.LOGGER.warn("注册内置资源包失败", e);
             }
         });
 
@@ -177,7 +176,7 @@ public class BBSPlusPlusModClient implements ClientModInitializer
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                BBSPlusPlusMod.LOGGER.warn("注册 AAA 粒子表单与关键帧工厂失败", e);
             }
 
 

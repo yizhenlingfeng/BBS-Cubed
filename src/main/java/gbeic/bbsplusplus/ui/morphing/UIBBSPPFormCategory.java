@@ -63,16 +63,42 @@ public class UIBBSPPFormCategory extends UIFormCategory
     }
 
     /**
+     * 是否处于「搜索中」。
+     *
+     * <p><b>必须做 null 判断</b>：父类构造器会经由
+     * {@code UIFormCategory.<init> → setCellSize() → relayout() → contentSize()}
+     * 虚调用到本类重写的 {@link #contentSize()}，而那一刻子类字段初始化器尚未执行，
+     * {@code bbsppSearch} 仍是 null（同理 {@code iconScale} 是 0）。</p>
+     */
+    private boolean hasSearch()
+    {
+        return this.bbsppSearch != null && !this.bbsppSearch.isEmpty();
+    }
+
+    /**
+     * 当前的图标缩放百分比。
+     *
+     * <p>父类构造期子类字段尚未初始化（{@code iconScale == 0}），此时按默认 100 处理，
+     * 否则会按 0% 算出退化的单元格尺寸。</p>
+     */
+    private int scalePercent()
+    {
+        return this.iconScale > 0 ? this.iconScale : 100;
+    }
+
+    /**
      * 获取当前模式下的单元格宽度。
      */
     private int getCellWidth()
     {
+        int scale = this.scalePercent();
+
         if (this.listMode)
         {
-            return Math.max(100, LIST_CELL_W * this.iconScale / 100);
+            return Math.max(100, LIST_CELL_W * scale / 100);
         }
 
-        return Math.max(20, GRID_CELL_W * this.iconScale / 100);
+        return Math.max(20, GRID_CELL_W * scale / 100);
     }
 
     /**
@@ -80,12 +106,14 @@ public class UIBBSPPFormCategory extends UIFormCategory
      */
     private int getCellHeight()
     {
+        int scale = this.scalePercent();
+
         if (this.listMode)
         {
-            return Math.max(32, LIST_CELL_H * this.iconScale / 100);
+            return Math.max(32, LIST_CELL_H * scale / 100);
         }
 
-        return Math.max(30, GRID_CELL_H * this.iconScale / 100);
+        return Math.max(30, GRID_CELL_H * scale / 100);
     }
 
     /**
@@ -112,7 +140,7 @@ public class UIBBSPPFormCategory extends UIFormCategory
         int maxW = Math.max(GRID_CELL_W, width);
         List<Form> forms = this.getForms();
 
-        if (!this.bbsppSearch.isEmpty() && forms.isEmpty())
+        if (this.hasSearch() && forms.isEmpty())
         {
             return 0;
         }
@@ -205,15 +233,21 @@ public class UIBBSPPFormCategory extends UIFormCategory
         int height = this.contentSize();
 
         /* 搜索无结果时调整高度 */
-        if (!this.bbsppSearch.isEmpty() && forms.isEmpty())
+        if (this.hasSearch() && forms.isEmpty())
         {
             if (this.bbsppLastHeight != height)
             {
                 this.bbsppLastHeight = height;
                 this.h(height);
+
+                /* 只标记布局失效，不要在这里直接 resize 父容器。
+                 * 本方法运行在渲染中途，父容器此刻正遍历子元素；在遍历里再触发一次
+                 * resize 会重入列布局，把游标推进两遍，后面的兄弟元素被甩到很下面
+                 * （表现为内容区顶部多出一块空白）。BBS 的 UIItemGrid.syncHeight 注释
+                 * 里专门警告过这一点，它自己用的就是 invalidateLayout()。 */
                 if (this.getParentContainer() != null)
                 {
-                    this.getParentContainer().resize();
+                    this.getParentContainer().invalidateLayout();
                 }
             }
             return;
@@ -362,7 +396,9 @@ public class UIBBSPPFormCategory extends UIFormCategory
             if (this.getParentContainer() != null)
             {
                 this.h(height);
-                this.getParentContainer().resize();
+
+                /* 同上：渲染中途只标记布局失效，避免重入父容器的列布局把内容整体推下去。 */
+                this.getParentContainer().invalidateLayout();
             }
         }
     }

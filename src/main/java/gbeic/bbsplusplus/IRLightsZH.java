@@ -10,6 +10,6 @@ public class IRLightsZH implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        System.out.println("[IRLightsZH] IRLights 中文汉化插件已加载。");
+        BBSPlusPlusMod.LOGGER.info("[IRLightsZH] IRLights 中文汉化插件已加载。");
     }
 }

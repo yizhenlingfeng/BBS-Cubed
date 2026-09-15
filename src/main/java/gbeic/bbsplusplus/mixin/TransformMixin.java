@@ -1,15 +1,11 @@
 package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.api.PivotHolder;
-import gbeic.bbsplusplus.api.TextureGradeHolder;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.utils.interps.AutoBezier;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.pose.Transform;
-import mchorse.bbs_mod.utils.colors.Color;
-import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.MathUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
@@ -39,43 +35,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * cast 到 {@link PivotHolder} 恒安全。</p>
  */
 @Mixin(value = Transform.class, remap = false)
-public abstract class TransformMixin implements PivotHolder, TextureGradeHolder
+public abstract class TransformMixin implements PivotHolder
 {
     @Unique
     private final Vector3f bbspp_cml$pivot = new Vector3f();
-
-    /** 渲染期纹理调色（挂在 Transform 上，供 group.current 使用；
-     *  字段名与 PoseTransformMixin 的 bbspp_cml$textureTint 区分以避免子类字段冲突） */
-    @Unique
-    private final Color bbspp_cml$renderTextureTint = new Color(1F, 1F, 1F, 0F);
-
-    /** 渲染期纹理白化强度（0-1） */
-    @Unique
-    private float bbspp_cml$renderTextureWhiten = 0F;
-
-    @Override
-    public Color bbspp_cml$getTextureTint()
-    {
-        return this.bbspp_cml$renderTextureTint;
-    }
-
-    @Override
-    public float bbspp_cml$getTextureWhiten()
-    {
-        return this.bbspp_cml$renderTextureWhiten;
-    }
-
-    @Override
-    public void bbspp_cml$setTextureTint(Color tint)
-    {
-        this.bbspp_cml$renderTextureTint.copy(tint);
-    }
-
-    @Override
-    public void bbspp_cml$setTextureWhiten(float whiten)
-    {
-        this.bbspp_cml$renderTextureWhiten = MathUtils.clamp(whiten, 0F, 1F);
-    }
 
     @Override
     public Vector3f bbspp_cml$getPivot()
@@ -87,24 +50,12 @@ public abstract class TransformMixin implements PivotHolder, TextureGradeHolder
     private void bbspp_cml$identityPivot(CallbackInfo ci)
     {
         this.bbspp_cml$pivot.set(0F, 0F, 0F);
-        this.bbspp_cml$renderTextureTint.set(0x00ffffff);
-        this.bbspp_cml$renderTextureWhiten = 0F;
     }
 
     @Inject(method = "copy(Lmchorse/bbs_mod/utils/pose/Transform;)V", at = @At("TAIL"), remap = false)
     private void bbspp_cml$copyPivot(Transform transform, CallbackInfo ci)
     {
         this.bbspp_cml$pivot.set(((PivotHolder) transform).bbspp_cml$getPivot());
-
-        /* 源为 TextureGradeHolder（PoseTransform 或带渲染期调色的 Transform）时，
-         * 把调色/白化复制到当前 Transform 的渲染期字段，使动画器设置 group.current 时不丢失。
-         * PoseTransform 的 getTextureTint() 返回其自身字段（PoseTransformMixin 覆盖），
-         * 普通 Transform 的 getTextureTint() 返回渲染期字段（本 mixin）。 */
-        if (transform instanceof TextureGradeHolder holder)
-        {
-            this.bbspp_cml$renderTextureTint.copy(holder.bbspp_cml$getTextureTint());
-            this.bbspp_cml$renderTextureWhiten = holder.bbspp_cml$getTextureWhiten();
-        }
     }
 
     @Inject(method = "add(Lmchorse/bbs_mod/utils/pose/Transform;)V", at = @At("TAIL"), remap = false)

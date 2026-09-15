@@ -548,14 +548,4 @@ public class AnimationStateLayoutSupport
         );
     }
 
-    private mchorse.bbs_mod.ui.utils.icons.Icon getStatePanelIcon(String panelId)
-    {
-        return switch (panelId)
-        {
-            case AnimationStateLayoutSource.PREVIEW -> Icons.VIDEO_CAMERA;
-            case AnimationStateLayoutSource.TIMELINE -> Icons.GRAPH;
-            case AnimationStateLayoutSource.INSPECTOR -> Icons.PROPERTIES;
-            default -> Icons.FILE;
-        };
-    }
 }

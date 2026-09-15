@@ -21,6 +21,7 @@ import org.joml.Matrix4f;
 
 import java.util.ArrayList;
 import java.util.List;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 
 /**
  * 物品喷射粒子的普通世界渲染器。
@@ -205,7 +206,7 @@ final class ItemSprayWorldItemRenderer
                 }
                 catch (Throwable throwable)
                 {
-                    throwable.printStackTrace();
+                    BBSPlusPlusMod.LOGGER.warn("物品喷射：世界粒子渲染失败", throwable);
                 }
                 finally
                 {

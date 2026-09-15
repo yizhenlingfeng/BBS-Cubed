@@ -4,6 +4,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 
 public class IrisHelper {
     private static boolean initialized = false;
@@ -25,7 +26,7 @@ public class IrisHelper {
             Class<?> screenClass = Class.forName("net.irisshaders.iris.gui.screen.ShaderPackScreen");
             shaderScreenConstructor = screenClass.getConstructor(Screen.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            BBSPlusPlusMod.LOGGER.warn("Iris 兼容：解析 ShaderPackScreen 失败", e);
         }
     }
 
@@ -41,7 +42,7 @@ public class IrisHelper {
                 toggleShadersMethod.invoke(null, MinecraftClient.getInstance(), !enabled);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            BBSPlusPlusMod.LOGGER.warn("Iris 兼容：切换光影失败", e);
         }
     }
 
@@ -74,7 +75,7 @@ public class IrisHelper {
                 });
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            BBSPlusPlusMod.LOGGER.warn("Iris 兼容：打开光影选择界面失败", e);
         }
     }
 }

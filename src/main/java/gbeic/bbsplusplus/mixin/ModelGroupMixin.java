@@ -2,12 +2,9 @@ package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.api.GroupGlintHolder;
 import gbeic.bbsplusplus.api.GroupTextureHolder;
-import gbeic.bbsplusplus.api.GroupTextureGradeHolder;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.resources.Link;
-import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
-import mchorse.bbs_mod.utils.colors.Colors;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,18 +21,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *
  * <p>"附魔光效"（{@link GroupGlintHolder}）与纹理覆盖同一生命周期：reset 清空、
  * applyPose 重填。</p>
+ *
+ * <p>此前这里还有逐骨骼「纹理调色 / 白化」字段（{@code GroupTextureGradeHolder}），
+ * 已随姿势材质栏一并移除。</p>
  */
 @Mixin(value = ModelGroup.class, remap = false)
-public class ModelGroupMixin implements GroupTextureHolder, GroupTextureGradeHolder, GroupGlintHolder
+public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder
 {
     @Unique
     private Link bbspp_cml$textureOverride;
-
-    @Unique
-    private final Color bbspp_cml$textureTint = new Color(1F, 1F, 1F, 0F);
-
-    @Unique
-    private float bbspp_cml$textureWhiten;
 
     @Unique
     private boolean bbspp_cml$glint;
@@ -53,30 +47,6 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupTextureGradeHol
     public void bbspp_cml$setTextureOverride(Link texture)
     {
         this.bbspp_cml$textureOverride = texture;
-    }
-
-    @Override
-    public Color bbspp_cml$getTextureTint()
-    {
-        return this.bbspp_cml$textureTint;
-    }
-
-    @Override
-    public float bbspp_cml$getTextureWhiten()
-    {
-        return this.bbspp_cml$textureWhiten;
-    }
-
-    @Override
-    public void bbspp_cml$setTextureTint(Color color)
-    {
-        this.bbspp_cml$textureTint.copy(color);
-    }
-
-    @Override
-    public void bbspp_cml$setTextureWhiten(float value)
-    {
-        this.bbspp_cml$textureWhiten = MathUtils.clamp(value, 0F, 1F);
     }
 
     @Override
@@ -110,9 +80,6 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupTextureGradeHol
     private void bbspp_cml$clearTextureOverride(CallbackInfo ci)
     {
         this.bbspp_cml$textureOverride = null;
-        this.bbspp_cml$textureTint.set(Colors.WHITE);
-        this.bbspp_cml$textureTint.a = 0F;
-        this.bbspp_cml$textureWhiten = 0F;
         this.bbspp_cml$glint = false;
         this.bbspp_cml$glintColor.set(0xFFFFFFFF);
     }

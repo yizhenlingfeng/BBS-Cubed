@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 
 /**
  * Mixin — 在 {@link UIClips} 时间轴中添加双击剪辑检测。
@@ -117,7 +118,7 @@ public abstract class UIClipsDoubleClickMixin
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            BBSPlusPlusMod.LOGGER.warn("剪辑双击编辑：读取面板字段失败", e);
             return null;
         }
     }

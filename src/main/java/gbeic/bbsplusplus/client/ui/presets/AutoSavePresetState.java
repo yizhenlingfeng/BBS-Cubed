@@ -16,6 +16,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 
 /**
  * 预设自动保存状态管理。
@@ -121,7 +122,7 @@ public class AutoSavePresetState
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                BBSPlusPlusMod.LOGGER.warn("预设自动保存：提交写入任务失败", e);
             }
         }, DELAY_MS, TimeUnit.MILLISECONDS);
         pendingTasks.put(type, future);
@@ -150,7 +151,7 @@ public class AutoSavePresetState
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            BBSPlusPlusMod.LOGGER.warn("预设自动保存：读取当前预设数据失败", e);
             return;
         }
         if (data == null)
@@ -181,7 +182,7 @@ public class AutoSavePresetState
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            BBSPlusPlusMod.LOGGER.warn("预设自动保存：解析预设文件失败", e);
             return;
         }
         if (file == null)
@@ -211,7 +212,7 @@ public class AutoSavePresetState
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                BBSPlusPlusMod.LOGGER.warn("预设自动保存：写入预设文件失败", e);
             }
         });
     }

@@ -72,8 +72,6 @@ public class BBSPlusPlusSettings
         CMLSettings.bonePriorityExpandedLimb.invisible();
         CMLSettings.bonePriorityTrack = builder.getString("bone_priority_track", "");
         CMLSettings.bonePriorityTrack.invisible();
-        CMLSettings.followOrbitMode = builder.getBoolean("follow_orbit_mode", false);
-        CMLSettings.followOrbitMode.invisible();
         CMLSettings.animationStateLayout = builder.getString("animation_state_layout", "");
         CMLSettings.animationStateLayout.invisible();
         CMLSettings.animationStateHiddenPanels = builder.getString("animation_state_hidden_panels", "");
