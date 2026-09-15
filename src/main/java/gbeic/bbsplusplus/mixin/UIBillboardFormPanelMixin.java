@@ -54,17 +54,4 @@ public abstract class UIBillboardFormPanelMixin extends UIFormPanel<BillboardFor
         );
     }
 
-    /**
-     * 注入目标：{@code UIBillboardFormPanel#startEdit} 结束。
-     * 注入原因：切换广告牌形态后需要刷新缩放输入值。
-     * 修改行为：把当前 U/V 缩放同步到新增控件。
-     */
-    @Inject(method = "startEdit", at = @At("TAIL"))
-    private void bbspp$syncUvScaleControls(BillboardForm form, CallbackInfo ci)
-    {
-        if (form instanceof BillboardFormUVScale uvScale)
-        {
-            this.bbspp$uvScaleEditor.setValue(uvScale.bbspp$getUvScaleValue());
-        }
-    }
 }
