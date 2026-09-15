@@ -85,3 +85,29 @@
 ## 七、明确保留、当前仍启用（勿误删）
 
 流体、AAA 粒子、粒子 Plus、物品喷射、附魔光效、纹理补间（应用环节待重接）、Premiere/SRT/音频导出、Hotbar/Cinematic/Replay 三剪辑、动作叠加/Additive/Molang、迷你窗、回放时间控制、剪辑可见性、Pose 参数刷/跳过/橙标/多选/列选择、逐骨骼 PBR 数据层与逐骨骼纹理、UV 变换、VFX 破坏魔杖增强、骨骼优先级/动画插值继承、Gizmo pivot、Alt 滚轮时间线、循环按钮、各类汉化与 bug 修复。
+
+---
+
+## 八、第二轮修复（2026-09-15，已 build 通过）
+
+### 已删除
+- **CelestialUniformsMixin（B1）**：2.6 原生自带同名 Mixin（`@ModifyConstant(-90F)` + `BBSRendering.getSunHorizontalRotation()`），本插件 `BBSRenderingMixin` 已挂钩喂入曲线值，我方 field-redirect 版冗余冲突，已 `git rm` 并从 shadercurves 配置移除。
+
+### 已重接并重新启用（编译+build 验证）
+| Mixin | 2.6 适配 |
+|---|---|
+| MotionPathMixin | `Pair<String,Boolean>`→`FilmTarget`；`computeBoneTrajectory`→`computeSampledTrajectory`；`boneTrajectory`→`sampledTrajectory`；`signature(Replay,String)`→`signature(Replay,FilmTarget)` |
+| UIDataContextMenuMixin | shadow `row`→`bar:UIContextMenuBar`；自动保存按钮改 `new MenuIcon(Icons.SAVE,…,Slot.COMMON,runnable)` + `bar.register`（动态高亮改为静态，功能保留） |
+| UIModelIK/Physics/ConstraintsFormPanelMixin | `presetGroup` 改 shadow 父类 `UIBoneListFormPanel` 的 protected 字段；删 `syncingUI`（已删）；funnel 从 commitChanges/save → 子类覆写的 `updateFields()` |
+| UIFilmPanelVisibilityMixin | 顶栏三件套（topBarActions/renderTopBarButton/getTabsRightInsetPx）全删，改构造末尾 `panel.actions().action(visibilityButton)` |
+| UIActionsConfigEditorMixin | 字段/构造器/pickAction 仍在；删除 5 个脆弱的 `lambda$new$1..5` 同步注入（loop/speed/fade/tick/selection），保留循环控件初始化与 pickAction |
+| ParticleManagerVanillaFormMixin | **误报纠正**：目标是原版 `net.minecraft.client.particle.ParticleManager`（方法在原版仍在，且 require=0），非 BBS 类，已重新启用 |
+| FormPropertiesPBRMixin | 注册 `registerChannel(String,…)`→`register(TrackId,…)`；应用 `applyProperty`→挂私有静态 `apply(TrackContext,TrackId,KeyframeChannel,F,F)` HEAD 拦截 bone_pbr |
+| FormPropertiesTextureTweenMixin | `applyProperty` HEAD/RETURN→同一静态 `apply` 的 HEAD/RETURN，用 `track.toKey()` 判断 texture 通道；`fromData` 迁移保留 |
+
+### 仍停用（本轮未做，需后续）
+| Mixin | 原因 / 下一步 |
+|---|---|
+| UITexturePickerMixin（B3） | 2.6 picker 重构为 `multiList:UIFilteredLinkList`（旧 `right/picker/updateFolderButton` 删）；网格列表需改挂 UIFilteredLinkList 体系 |
+| PBRUIReplaysEditorMixin（B5） | `flushForm` 已删，建表走 `TrackCatalog`+`UIReplaysEditorUtils.buildSheets`；bone_pbr 通道应用已通，编辑器加表需接入新目录体系 |
+| UIModelBlockPanelGlobalMixin / PaletteCacheMixin | 仍指向旧 `lambda$new$13/$9`；2.6 重新编号（运行 jar 为混淆名，需 Loom dev jar 反查）；纯刷新/缓存微优化 |

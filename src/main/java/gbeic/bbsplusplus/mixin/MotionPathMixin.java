@@ -4,7 +4,7 @@ import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.settings.values.ui.ValueMotionPath;
 import mchorse.bbs_mod.ui.film.controller.MotionPath;
 import mchorse.bbs_mod.ui.film.controller.UIFilmController;
-import mchorse.bbs_mod.utils.Pair;
+import mchorse.bbs_mod.film.FilmTarget;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import org.spongepowered.asm.mixin.Mixin;
@@ -43,7 +43,7 @@ public class MotionPathMixin
      * 修改行为：只保存当前线程同步渲染所需的配置引用，不改变原渲染流程。
      */
     @Inject(method = "render", at = @At("HEAD"), remap = true)
-    private static void bbsplusplus$captureMotionPathConfig(WorldRenderContext context, ValueMotionPath config, UIFilmController controller, Replay replay, Pair<String, Boolean> bone, float currentTick, CallbackInfo ci)
+    private static void bbsplusplus$captureMotionPathConfig(WorldRenderContext context, ValueMotionPath config, UIFilmController controller, Replay replay, FilmTarget target, float currentTick, CallbackInfo ci)
     {
         bbsplusplus$currentMotionPathConfig = config;
         bbsplusplus$currentMotionPathTick = currentTick;
@@ -55,7 +55,7 @@ public class MotionPathMixin
      * 修改行为：清理本次调用上下文。
      */
     @Inject(method = "render", at = @At("RETURN"), remap = true)
-    private static void bbsplusplus$clearMotionPathConfig(WorldRenderContext context, ValueMotionPath config, UIFilmController controller, Replay replay, Pair<String, Boolean> bone, float currentTick, CallbackInfo ci)
+    private static void bbsplusplus$clearMotionPathConfig(WorldRenderContext context, ValueMotionPath config, UIFilmController controller, Replay replay, FilmTarget target, float currentTick, CallbackInfo ci)
     {
         bbsplusplus$currentMotionPathConfig = null;
         bbsplusplus$currentMotionPathTick = 0F;
@@ -67,13 +67,13 @@ public class MotionPathMixin
      * 修改行为：在原有动画内容签名之外追加当前采样窗口。
      */
     @Redirect(
-        method = "boneTrajectory",
-        at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/ui/film/controller/MotionPath;signature(Lmchorse/bbs_mod/film/replays/Replay;Ljava/lang/String;)Ljava/lang/String;"),
+        method = "sampledTrajectory",
+        at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/ui/film/controller/MotionPath;signature(Lmchorse/bbs_mod/film/replays/Replay;Lmchorse/bbs_mod/film/FilmTarget;)Ljava/lang/String;"),
         remap = true
     )
-    private static String bbsplusplus$signatureWithMotionPathWindow(Replay replay, String bonePath)
+    private static String bbsplusplus$signatureWithMotionPathWindow(Replay replay, FilmTarget target)
     {
-        String signature = bbsplusplus$signature(replay, bonePath);
+        String signature = bbsplusplus$signature(replay, target);
         float[] window = bbsplusplus$visibleRange(replay);
 
         return window == null ? signature : signature + "|window=" + window[0] + ':' + window[1];
@@ -85,7 +85,7 @@ public class MotionPathMixin
      * 修改行为：开启该选项时只采样当前帧前后配置范围内的骨骼路径；关闭时仍采样整段。
      */
     @Redirect(
-        method = "computeBoneTrajectory",
+        method = "computeSampledTrajectory",
         at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/ui/film/controller/MotionPath;range(Lmchorse/bbs_mod/film/replays/Replay;)[F"),
         remap = true
     )
@@ -145,8 +145,9 @@ public class MotionPathMixin
     }
 
     @Unique
-    private static String bbsplusplus$signature(Replay replay, String bonePath)
+    private static String bbsplusplus$signature(Replay replay, FilmTarget target)
     {
+        String bonePath = target == null ? "" : (target.boneOrNull() == null ? target.toString() : target.boneOrNull());
         StringBuilder builder = new StringBuilder(replay.getId()).append('|').append(bonePath);
 
         bbsplusplus$appendSignature(builder, replay.keyframes.x);

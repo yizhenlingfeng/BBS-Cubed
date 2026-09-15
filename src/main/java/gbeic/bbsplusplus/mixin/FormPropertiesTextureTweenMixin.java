@@ -4,6 +4,8 @@ import gbeic.bbsplusplus.client.texture.TextureTweenContext;
 import gbeic.bbsplusplus.keyframes.LegacyTextureTweenTrackMigration;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.replays.FormProperties;
+import mchorse.bbs_mod.film.replays.tracks.TrackContext;
+import mchorse.bbs_mod.film.replays.tracks.TrackId;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ModelForm;
@@ -18,25 +20,24 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 把纹理补间接入模型原生纹理轨道，并在加载阶段触发旧轨道迁移。
  *
  * <p>原生 {@code texture} 轨道负责保存 Link，补间参数作为关键帧扩展字段挂在同一关键帧上。
- * 属性应用期间通过轨道路径反查所属模型，为运行时纹理生成器提供模型上下文。</p>
+ * 2.6 适配：属性应用不再有 {@code applyProperty}，逐通道应用统一走
+ * {@code apply(TrackContext,TrackId,KeyframeChannel,float,float)}；在其 HEAD/RETURN 包裹模型上下文。</p>
  */
 @Mixin(value = FormProperties.class, remap = false)
-public class FormPropertiesTextureTweenMixin
+public abstract class FormPropertiesTextureTweenMixin
 {
-    /**
-     * 注入目标：{@code FormProperties.applyProperty(...)} 入口。
-     * 注入原因：关键帧段本身无法反查所属模型，而属性路径可以定位原生纹理属性的父模型。
-     * 修改行为：模型原生纹理轨道插值前，把目标模型写入线程局部上下文。
-     */
-    @Inject(method = "applyProperty", at = @At("HEAD"))
-    private void bbsppp$beginTextureTweenContext(float tick, Form form, KeyframeChannel<?> channel, float blend, CallbackInfo ci)
+    private static final String APPLY = "apply(Lmchorse/bbs_mod/film/replays/tracks/TrackContext;Lmchorse/bbs_mod/film/replays/tracks/TrackId;Lmchorse/bbs_mod/utils/keyframes/KeyframeChannel;FF)V";
+
+    @Inject(method = APPLY, at = @At("HEAD"))
+    private static void bbsppp$beginTextureTweenContext(TrackContext context, TrackId track, KeyframeChannel<?> channel,
+                                                        float tick, float blend, CallbackInfo ci)
     {
-        if (!bbsppp$isModelTextureChannel(channel.getId()))
+        if (!bbsppp$isModelTextureChannel(track.toKey()))
         {
             return;
         }
 
-        BaseValueBasic<?> property = FormUtils.getProperty(form, channel.getId());
+        BaseValueBasic<?> property = FormUtils.getProperty(context.root(), track.toKey());
 
         if (property != null && property.getParent() instanceof ModelForm modelForm)
         {
@@ -44,25 +45,16 @@ public class FormPropertiesTextureTweenMixin
         }
     }
 
-    /**
-     * 注入目标：{@code FormProperties.applyProperty(...)} 返回前。
-     * 注入原因：模型上下文只能覆盖当前纹理轨道插值，不能泄漏到后续属性。
-     * 修改行为：原生纹理轨道处理完成后立即清理线程局部上下文。
-     */
-    @Inject(method = "applyProperty", at = @At("RETURN"))
-    private void bbsppp$endTextureTweenContext(float tick, Form form, KeyframeChannel<?> channel, float blend, CallbackInfo ci)
+    @Inject(method = APPLY, at = @At("RETURN"))
+    private static void bbsppp$endTextureTweenContext(TrackContext context, TrackId track, KeyframeChannel<?> channel,
+                                                     float tick, float blend, CallbackInfo ci)
     {
-        if (bbsppp$isModelTextureChannel(channel.getId()))
+        if (bbsppp$isModelTextureChannel(track.toKey()))
         {
             TextureTweenContext.end();
         }
     }
 
-    /**
-     * 注入目标：{@link FormProperties#fromData(BaseType)} 完成后。
-     * 注入原因：旧工程仍可能包含独立的纹理补间轨道。
-     * 修改行为：调用临时迁移器，把旧轨道合并进对应的原生纹理轨道并删除旧轨道。
-     */
     @Inject(method = "fromData", at = @At("TAIL"))
     private void bbsppp$migrateLegacyTextureTweenTrack(BaseType data, CallbackInfo ci)
     {

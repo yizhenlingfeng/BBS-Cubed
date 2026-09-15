@@ -23,12 +23,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(value = UIModelIKFormPanel.class, remap = true)
 public abstract class UIModelIKFormPanelMixin
 {
-    @Shadow private String presetGroup;
-    @Shadow private boolean syncingUI;
+    @Shadow protected String presetGroup;
 
     @Shadow public abstract MapType toPresetData();
 
-    @Inject(method = "commitChanges", at = @At("TAIL"))
+    @Inject(method = "updateFields", at = @At("TAIL"))
     private void bbspp$autoSaveOnCommit(CallbackInfo ci)
     {
         bbspp$tryAutoSave();
@@ -42,7 +41,7 @@ public abstract class UIModelIKFormPanelMixin
 
     private void bbspp$tryAutoSave()
     {
-        if (this.syncingUI || !AutoSavePresetState.isEnabled("ik"))
+        if (!AutoSavePresetState.isEnabled("ik"))
         {
             return;
         }

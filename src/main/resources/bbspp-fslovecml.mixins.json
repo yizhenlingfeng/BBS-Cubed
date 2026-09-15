@@ -4,6 +4,7 @@
     "compatibilityLevel": "JAVA_17",
     "mixins": [
         "ActionConfigMixin",
+        "FormPropertiesPBRMixin",
         "ActionPlaybackMixin",
         "ActionsConfigKeyframeFactoryMixin",
         "BBSSettingsCMLMixin",

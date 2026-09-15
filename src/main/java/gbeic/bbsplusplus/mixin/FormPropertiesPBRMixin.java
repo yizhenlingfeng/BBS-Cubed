@@ -5,6 +5,8 @@ import gbeic.bbsplusplus.pbr.BonePBRData;
 import gbeic.bbsplusplus.pbr.BonePBRKeyframeFactory;
 import gbeic.bbsplusplus.pbr.PBRChannel;
 import mchorse.bbs_mod.film.replays.FormProperties;
+import mchorse.bbs_mod.film.replays.tracks.TrackContext;
+import mchorse.bbs_mod.film.replays.tracks.TrackId;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
@@ -27,12 +29,15 @@ import java.util.Map;
  * 2.6 原生 FormMaterial 已提供逐材质 PBR，本插件原有的「逐材质 PBR」整段移除；
  * 但原生 FormBone 没有 PBR 字段，因此逐骨骼 PBR 作为本插件独有能力保留。
  * </p>
+ * <p>2.6 适配：注册走 {@code register(TrackId, factory)}；应用不再有 {@code applyProperty}，
+ * 统一由 {@code apply(TrackContext,TrackId,KeyframeChannel,float,float)} 按 TrackBehaviours 分发，
+ * 这里在该静态分发方法的 HEAD 拦截 bone_pbr 通道自行求值并取消原生分发。</p>
  */
 @Mixin(value = FormProperties.class, remap = false)
 public abstract class FormPropertiesPBRMixin
 {
     @Shadow
-    public abstract KeyframeChannel registerChannel(String key, IKeyframeFactory factory);
+    public abstract KeyframeChannel register(TrackId track, IKeyframeFactory factory);
 
     @Inject(method = "getOrCreate", at = @At("HEAD"), cancellable = true)
     private void bbspp_snow$getOrCreate(Form form, String key, CallbackInfoReturnable<KeyframeChannel> cir)
@@ -45,49 +50,48 @@ public abstract class FormPropertiesPBRMixin
 
             if (factory instanceof BonePBRKeyframeFactory)
             {
-                cir.setReturnValue(this.registerChannel(key, factory));
+                cir.setReturnValue(this.register(TrackId.parse(key), factory));
             }
         }
     }
 
-    @Inject(method = "applyProperty", at = @At("HEAD"), cancellable = true)
-    private void bbspp_snow$apply(float tick, Form form, KeyframeChannel value, float blend, CallbackInfo ci)
+    @Inject(
+        method = "apply(Lmchorse/bbs_mod/film/replays/tracks/TrackContext;Lmchorse/bbs_mod/film/replays/tracks/TrackId;Lmchorse/bbs_mod/utils/keyframes/KeyframeChannel;FF)V",
+        at = @At("HEAD"),
+        cancellable = true
+    )
+    private static void bbspp_snow$apply(TrackContext context, TrackId track, KeyframeChannel value,
+                                         float tick, float blend, CallbackInfo ci)
     {
-        if (!(form instanceof ModelForm modelForm))
+        if (!"bone_pbr".equals(track.property()) || !(context.root() instanceof ModelForm modelForm))
         {
             return;
         }
 
-        String key = value.getId();
-        String leaf = bbspp_snow$leaf(key);
+        Map<String, Map<String, Integer>> overrides = ((PBRModelFormAccess) modelForm).bbspp_snow$getBonePbrOverrides();
+        KeyframeSegment segment = value.find(tick);
 
-        if ("bone_pbr".equals(leaf))
+        if (segment == null)
         {
-            Map<String, Map<String, Integer>> overrides = ((PBRModelFormAccess) modelForm).bbspp_snow$getBonePbrOverrides();
-            KeyframeSegment segment = value.find(tick);
-
-            if (segment == null)
+            if (blend >= 1F)
             {
-                if (blend >= 1F)
-                {
-                    overrides.clear();
-                }
-            }
-            else
-            {
-                BonePBRData data = ((BonePBRData) segment.createInterpolated()).copy();
-
-                for (PBRChannel channel : data.getAll().values())
-                {
-                    channel.clamp();
-                }
-
                 overrides.clear();
-                overrides.putAll(data.toIntMap());
+            }
+        }
+        else
+        {
+            BonePBRData data = ((BonePBRData) segment.createInterpolated()).copy();
+
+            for (PBRChannel channel : data.getAll().values())
+            {
+                channel.clamp();
             }
 
-            ci.cancel();
+            overrides.clear();
+            overrides.putAll(data.toIntMap());
         }
+
+        ci.cancel();
     }
 
     @Unique

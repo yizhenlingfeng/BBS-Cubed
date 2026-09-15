@@ -7,7 +7,6 @@
     "client": [
         "ShaderCurvesMixin",
         "CustomUniformsSetupAccessor",
-        "CelestialUniformsMixin",
         "IrisRenderingPipelineMixin",
         "ShadowRendererMixin",
         "CenterDepthSamplerMixin"

@@ -5,7 +5,9 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
-import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
+import mchorse.bbs_mod.ui.framework.elements.context.UIContextMenuBar;
+import mchorse.bbs_mod.ui.utils.context.MenuIcon;
+import mchorse.bbs_mod.ui.utils.context.MenuVerb;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UISearchList;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
@@ -38,9 +40,8 @@ import java.util.function.Supplier;
 public abstract class UIDataContextMenuMixin extends UIElement
 {
     @Shadow public UISearchList entries;
-    @Shadow public UIElement row;
+    @Shadow public UIContextMenuBar bar;
 
-    @Unique private UIIcon bbspp$autoSaveIcon;
     @Unique private String bbspp$type;
 
     @Inject(method = "<init>", at = @At("TAIL"))
@@ -55,7 +56,7 @@ public abstract class UIDataContextMenuMixin extends UIElement
             this.bbspp$type = manager.getClass().getName();
         }
 
-        this.bbspp$autoSaveIcon = new UIIcon(Icons.SAVE, (btn) ->
+        this.bar.register(new MenuIcon(Icons.SAVE, L10n.lang("bbspp.ui.preset.auto_save"), MenuVerb.Slot.COMMON, () ->
         {
             if (this.bbspp$type == null)
             {
@@ -79,15 +80,7 @@ public abstract class UIDataContextMenuMixin extends UIElement
             }
 
             AutoSavePresetState.setEnabled(this.bbspp$type, newState);
-            btn.active(newState);
-        });
-        // 关闭时暗淡（半透明白），开启时高亮（纯白）
-        this.bbspp$autoSaveIcon.iconColor(0x60FFFFFF);
-        this.bbspp$autoSaveIcon.activeColor(0xFFFFFFFF);
-        this.bbspp$autoSaveIcon.hoverColor(0xFFFFFFFF);
-        this.bbspp$autoSaveIcon.tooltip(L10n.lang("bbspp.ui.preset.auto_save"));
-        this.bbspp$autoSaveIcon.active(AutoSavePresetState.isEnabled(this.bbspp$type));
-        this.row.add(this.bbspp$autoSaveIcon);
+        }));
     }
 
     @Inject(method = "send", at = @At("HEAD"))
@@ -110,11 +103,6 @@ public abstract class UIDataContextMenuMixin extends UIElement
     @Inject(method = "render", at = @At("TAIL"))
     private void bbspp$onRender(UIContext context, CallbackInfo ci)
     {
-        if (this.bbspp$autoSaveIcon != null && this.bbspp$type != null)
-        {
-            this.bbspp$autoSaveIcon.active(AutoSavePresetState.isEnabled(this.bbspp$type));
-        }
-
         if (this.bbspp$type == null || this.entries == null || this.entries.list == null)
         {
             return;

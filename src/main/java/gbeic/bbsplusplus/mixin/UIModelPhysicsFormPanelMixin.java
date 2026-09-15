@@ -23,12 +23,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(value = UIModelPhysicsFormPanel.class, remap = true)
 public abstract class UIModelPhysicsFormPanelMixin
 {
-    @Shadow private String presetGroup;
-    @Shadow private boolean syncingUI;
+    @Shadow protected String presetGroup;
 
     @Shadow public abstract MapType toPresetData();
 
-    @Inject(method = "save", at = @At("TAIL"))
+    @Inject(method = "updateFields", at = @At("TAIL"))
     private void bbspp$autoSaveOnSave(boolean manually, CallbackInfo ci)
     {
         bbspp$tryAutoSave();
@@ -42,7 +41,7 @@ public abstract class UIModelPhysicsFormPanelMixin
 
     private void bbspp$tryAutoSave()
     {
-        if (this.syncingUI || !AutoSavePresetState.isEnabled("physics"))
+        if (!AutoSavePresetState.isEnabled("physics"))
         {
             return;
         }
