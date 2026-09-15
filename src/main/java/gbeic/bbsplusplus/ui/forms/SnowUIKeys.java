@@ -28,13 +28,6 @@ public class SnowUIKeys
     public static final IKey BONE_PRIORITY_EXPANDED_LIMB = L10n.lang("bbspp.ui.bone_priority.expanded_limb");
     public static final IKey BONE_PRIORITY_DEFAULT = L10n.lang("bbspp.ui.bone_priority.default");
 
-    public static final IKey BONE_PBR_SMOOTHNESS = L10n.lang("bbspp.ui.bone_pbr.smoothness");
-    public static final IKey BONE_PBR_METAL = L10n.lang("bbspp.ui.bone_pbr.metal");
-    public static final IKey BONE_PBR_POROSITY = L10n.lang("bbspp.ui.bone_pbr.porosity");
-    public static final IKey BONE_PBR_EMISSIVE = L10n.lang("bbspp.ui.bone_pbr.emissive");
-    public static final IKey BONE_PBR_NORMAL = L10n.lang("bbspp.ui.bone_pbr.normal");
-    public static final IKey BONE_PBR_EMISSION_MULTIPLIER = L10n.lang("bbspp.ui.bone_pbr.emission_multiplier");
-
     public static final IKey MINI_WINDOW_CONVERT = L10n.lang("bbspp.ui.mini_window.convert");
     public static final IKey MINI_WINDOW_RESTORE = L10n.lang("bbspp.ui.mini_window.restore");
     public static final IKey MINI_WINDOW_COLLAPSE = L10n.lang("bbspp.ui.mini_window.collapse");

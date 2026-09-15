@@ -21,7 +21,6 @@
         "FormRendererTextureGradeContextMixin",
         "GeoAnimationParserMixin",
         "GizmoPivotMixin",
-        "IrisTextureWrapperPBRMixin",
         "MathBuilderMixin",
         "MatrixStackUtilsMixin",
         "ModelFormRendererMixin",

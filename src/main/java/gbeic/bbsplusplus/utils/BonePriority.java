@@ -56,13 +56,11 @@ public class BonePriority
                 return;
             }
 
-            IKeyframeFactory bonePbr = KeyframeFactories.FACTORIES.get("bone_pbr");
-
             for (Map.Entry<TrackId, KeyframeChannel> entry : channels.entrySet())
             {
                 IKeyframeFactory factory = entry.getValue().getFactory();
 
-                if (factory != KeyframeFactories.POSE && factory != KeyframeFactories.SHAPE_KEYS && factory != bonePbr)
+                if (factory != KeyframeFactories.POSE && factory != KeyframeFactories.SHAPE_KEYS)
                 {
                     continue;
                 }

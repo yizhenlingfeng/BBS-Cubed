@@ -1,6 +1,5 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import gbeic.bbsplusplus.pbr.ui.UIBonePBRKeyframeFactory;
 import gbeic.bbsplusplus.utils.AnimationInterpInheritance;
 import gbeic.bbsplusplus.utils.BonePriority;
 import mchorse.bbs_mod.cubic.ModelInstance;
@@ -85,10 +84,6 @@ public abstract class UIReplaysEditorUtilsMixin
         if (keyframeEditor.editor instanceof UIPoseKeyframeFactory poseFactory)
         {
             poseFactory.poseEditor.selectBone(bone);
-        }
-        else if (keyframeEditor.editor instanceof UIBonePBRKeyframeFactory bonePBRFactory)
-        {
-            bonePBRFactory.selectBone(bone);
         }
 
         ci.cancel();

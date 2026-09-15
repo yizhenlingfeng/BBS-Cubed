@@ -6,7 +6,6 @@ import gbeic.bbsplusplus.api.GroupTextureHolder;
 import gbeic.bbsplusplus.api.GroupTextureGradeHolder;
 import gbeic.bbsplusplus.api.TextureGradeHolder;
 import gbeic.bbsplusplus.client.screen.ModelTextureGradeShader;
-import gbeic.bbsplusplus.pbr.render.BonePBRContext;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.render.CubicVAORenderer;
@@ -47,8 +46,6 @@ public class CubicVAORendererMixin
     @Inject(method = "renderGroup", at = @At("HEAD"), require = 1, remap = false)
     private void bbspp_cml$applyTextureGrade(BufferBuilder builder, MatrixStack stack, ModelGroup group, Model model, CallbackInfoReturnable<Boolean> cir)
     {
-        BonePBRContext.setCurrentBone(group == null ? null : group.id);
-
         /* 优先使用 Model.applyPose() 传播的 group 级调色/白化；
          * 若未激活（动画器绕过 applyPose 直接设 group.current），
          * 回退到 Transform 上的渲染期调色/白化。 */
@@ -81,13 +78,6 @@ public class CubicVAORendererMixin
             ModelTextureGradeShader.applyGlint(this.program, glint, glintColor);
         }
     }
-
-    @Inject(method = "renderGroup", at = @At("RETURN"), require = 1, remap = false)
-    private void bbspp_snow$clearBonePbr(BufferBuilder builder, MatrixStack stack, ModelGroup group, Model model, CallbackInfoReturnable<Boolean> cir)
-    {
-        BonePBRContext.clearCurrentBone();
-    }
-
     @Redirect(
         method = "renderGroup",
         at = @At(

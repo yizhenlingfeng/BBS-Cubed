@@ -1,7 +1,6 @@
 package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.api.MolangSharedProvider;
-import gbeic.bbsplusplus.api.PBRModelFormAccess;
 import gbeic.bbsplusplus.api.TextureGradeProvider;
 import gbeic.bbsplusplus.api.ActionsOverlayProvider;
 import gbeic.bbsplusplus.settings.CMLSettings;
@@ -32,7 +31,7 @@ import java.util.Map;
  * 消费点在 {@code AnimatorMixin}(client)。
  */
 @Mixin(value = ModelForm.class, remap = false)
-public abstract class ModelFormCMLMixin implements MolangSharedProvider, TextureGradeProvider, PBRModelFormAccess, ActionsOverlayProvider
+public abstract class ModelFormCMLMixin implements MolangSharedProvider, TextureGradeProvider, ActionsOverlayProvider
 {
     @Unique
     private static final String[] bbspp_ACTION_SLOTS = {
@@ -54,9 +53,6 @@ public abstract class ModelFormCMLMixin implements MolangSharedProvider, Texture
 
     @Unique
     private ValueFloat bbspp_cml$textureWhiten;
-
-    @Unique
-    private final Map<String, Map<String, Integer>> bbspp_snow$bonePbrOverrides = new HashMap<>();
 
     @Inject(
         method = "<init>()V",
@@ -152,11 +148,5 @@ public abstract class ModelFormCMLMixin implements MolangSharedProvider, Texture
     public List<ValueActionsConfig> bbspp_cml$getAdditionalActionsOverlays()
     {
         return this.bbspp_cml$additionalActionsOverlays;
-    }
-
-    @Override
-    public Map<String, Map<String, Integer>> bbspp_snow$getBonePbrOverrides()
-    {
-        return this.bbspp_snow$bonePbrOverrides;
     }
 }

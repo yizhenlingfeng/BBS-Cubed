@@ -8,8 +8,6 @@ import gbeic.bbsplusplus.forms.renderers.FluidFormRenderer;
 import gbeic.bbsplusplus.forms.renderers.GradedVanillaParticleFormRenderer;
 import gbeic.bbsplusplus.particles.ParticlePlusClient;
 import gbeic.bbsplusplus.premiere.PremiereExportHandler;
-import gbeic.bbsplusplus.pbr.BonePBRKeyframeFactory;
-import gbeic.bbsplusplus.pbr.ui.UIBonePBRKeyframeFactory;
 import gbeic.bbsplusplus.settings.ValueSectionHeader;
 import gbeic.bbsplusplus.ui.film.clips.UICinematicClip;
 import gbeic.bbsplusplus.ui.film.clips.UIHotbarClip;
@@ -70,13 +68,6 @@ public class BBSFSloveCMLClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         LOGGER.info("[FSloveCML] 客户端初始化开始...");
-
-        IKeyframeFactory bonePbrFactory = KeyframeFactories.FACTORIES.get("bone_pbr");
-
-        if (bonePbrFactory instanceof BonePBRKeyframeFactory)
-        {
-            UIKeyframeFactory.register(bonePbrFactory, UIBonePBRKeyframeFactory::new);
-        }
 
         try {
             /* 注册 addon 自有的内部资源源包到主 AssetProvider（source="assets"）。
