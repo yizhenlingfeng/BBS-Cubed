@@ -65,6 +65,10 @@ public class KeyframeLocalizer
         cn("sprinting", "疾跑状态");
         cn("grounded", "落地状态");
         cn("damage", "受伤状态");
+        cn("swimming", "游泳状态");
+        cn("riding", "骑乘状态");
+        cn("flying", "飞行状态");
+        cn("gliding", "滑翔状态");
 
         /* 手柄摇杆 */
         cn("stick_lx", "左摇杆 X");
@@ -280,6 +284,7 @@ public class KeyframeLocalizer
         cn("relief", "凹凸强度");
         cn("glow", "发光强度");
         cn("overlay", "颜色叠加");
+        cn("color_overlay", "颜色叠加");
         cn("culling", "面剔除");
         cn("layer", "渲染层");
         cn("render_last", "最后渲染");
@@ -967,14 +972,22 @@ public class KeyframeLocalizer
         if (BBSAddonsSettings.chineseKeyframeNames != null
             && BBSAddonsSettings.chineseKeyframeNames.get())
         {
+            /* 同时支持两种 id 分隔格式：
+             * - 旧版 BBS 2.5：path/to/bone.property（/ 分隔）
+             * - 新版 BBS 2.6：material.smoothness / ik.chain1.target（. 分隔）
+             * 取最后一段作为 property 名来查翻译。 */
             String prefix = "";
             String body = key;
             int slash = key.lastIndexOf('/');
+            int dot = key.lastIndexOf('.');
 
-            if (slash >= 0)
+            /* 取更靠后的分隔符作为分割点 */
+            int split = Math.max(slash, dot);
+
+            if (split >= 0)
             {
-                prefix = key.substring(0, slash + 1);
-                body = key.substring(slash + 1).trim();
+                prefix = key.substring(0, split + 1);
+                body = key.substring(split + 1).trim();
             }
 
             if (body.isEmpty())
@@ -1079,14 +1092,17 @@ public class KeyframeLocalizer
         if (BBSAddonsSettings.chineseKeyframeNames != null
             && BBSAddonsSettings.chineseKeyframeNames.get())
         {
+            /* 同时支持 / 和 . 两种 id 分隔格式（旧版 / 分隔，新版 2.6 . 分隔） */
             String prefix = "";
             String body = key;
             int slash = key.lastIndexOf('/');
+            int dot = key.lastIndexOf('.');
+            int split = Math.max(slash, dot);
 
-            if (slash >= 0)
+            if (split >= 0)
             {
-                prefix = key.substring(0, slash + 1);
-                body = key.substring(slash + 1).trim();
+                prefix = key.substring(0, split + 1);
+                body = key.substring(split + 1).trim();
             }
 
             if (body.isEmpty())
