@@ -38,10 +38,8 @@
 | Max render distance          | 0       | Item spray particles beyond this distance skip rendering. Set to 0 to automatically follow the client's render distance.                                                                                                       |
 | Max render count per frame   | 1024    | Limits how many item spray particles can be drawn per frame. Set to 0 for no limit.                                                                                                                                             |
 | IRL shadow max item count    | 1024    | When IRLights light shadows are enabled, limits how many item spray particles participate in projection. Set to 0 to disable item spray projection.                                                                             |
-| **Gizmo Rework**             |         |                                                                                                                                                                                                                                |
-| Blockbench-flavored Gizmo    | Off     | When enabled, the Gizmo display mode defaults to translate; G/S/R only switch the Gizmo display mode (no editing), and the T key cycles only through translate, scale, and rotate.                                               |
-| T key cycle includes combined mode | Off | Makes the T key cycle include the combined Gizmo. Only takes effect when the option above is enabled.                                                                                                                           |
-| Keep original hotkey behavior | Off    | Pressing G/S/R a second time does not restore the mode; instead it executes the original hotkey function. Only takes effect when the option above is enabled.                                                                   |
+| **Performance Optimization** |         |                                                                                                                                                                                                                                |
+| Model block render distance | 0       | Vanilla defaults to 512 blocks. Lower this value to reduce rendering and picking overhead for distant model blocks. Set to 0 to use the vanilla default.                                                                 |
 
 ### AAA Particles
 
@@ -178,6 +176,14 @@
 - This project is an extension plugin for [BBSFS](https://github.com/Wemppy4/bbs-fs), implemented via Mixin.
 
 ### Mod Changelog
+
+#### 3.5.0 (BBSFS 2.6 Adaptation)
+* **Adapted to BBSFS 2.6.1**: completed runtime adaptation, fixed multiple Mixin target drift and crash chains during startup and rendering
+* **Track localization**: added Chinese translations for 2.6 material property tracks (smoothness, metalness, subsurface scattering, emission, etc.), IK tracks (target, pole, weight, chain length, etc.), physics tracks (damping, wind strength, collision radius, etc.), and bone constraint tracks; now supports both `/` and `.` track ID separator formats
+* **Fixed hidden disguise form**: after the 2.6 rendering chain change, the Mixin target migrated from BaseFilmController to FilmEntityRenderer, restoring the "hide disguise form" feature
+* **Removed conflicting features**: structure disguise, video disguise, per-bone PBR, pose material panel, follow track camera mode, and other features conflicting with 2.6 vanilla have been removed
+* **Cleaned up dead code**: removed TextureThumbnailManager, UIGridFileLinkList, PBR UI, and other deprecated modules; removed Gizmo rework settings
+* **Texture tween enhancements**: pixel dissolve mode gains flash and PBR emission support; 3D spread origin picker adapted to the 2.6 drag system
 
 #### 3.3
 - **Edit models in Blockbench**: right-click a user model in the disguise panel to open it directly in Blockbench. First set the Blockbench.exe path in Settings -> UI Enhancements. If a `.bbmodel` project exists in the model folder it is opened preferentially, otherwise the `.geo.json` is opened (toggle in settings). The menu item stays grayed when the path is unset/invalid or the model is not `.geo.json`; built-in BBS models do not show this item.
