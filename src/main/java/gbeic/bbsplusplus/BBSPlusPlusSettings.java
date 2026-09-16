@@ -13,14 +13,15 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
 /**
  * BBS++ 独立设置模块的注册入口。
  * <p>
- * 设置模块内部分为六个分类，显示在设置界面的分类列表中：
+ * 设置模块内部分为分类，显示在设置界面的分类列表中：
  * <ul>
  *   <li>BBS 增强 — 界面与交互增强，含 snow 前四项核心开关</li>
  *   <li>增强界面 — 全新伪装界面、影片库、光影曲线选择界面</li>
  *   <li>物品喷射 — 物品喷射粒子渲染与性能</li>
- *   <li>Gizmo 改版 — Blockbench 风格 Gizmo 交互</li>
  *   <li>CML 扩展 — 回放疾跑粒子、骨骼纹理、流体精确交互</li>
  *   <li>导出增强 — Premiere 导出、音频字幕导出</li>
+ *   <li>性能优化 — 模型方块渲染距离等</li>
+ *   <li>未完成（WIP） — 实验性功能</li>
  * </ul>
  * </p>
  */
@@ -98,14 +99,7 @@ public class BBSPlusPlusSettings
         BBSAddonsSettings.itemSprayMaxRenderedItems = builder.getInt("item_spray_max_rendered_items", 1024, 0, 8192);
         BBSAddonsSettings.itemSprayIRLiteShadowMaxItems = builder.getInt("item_spray_irlite_shadow_max_items", 1024, 0, 4096);
 
-        /* ===== 分类四：Gizmo 改版 ===== */
-        builder.category("gizmo_modifications", Icons.DUPE);
-
-        BBSAddonsSettings.gizmoBlockbenchMode = builder.getBoolean("gizmo_blockbench_mode", false);
-        BBSAddonsSettings.gizmoTCombined = builder.getBoolean("gizmo_t_combined", false);
-        BBSAddonsSettings.gizmoKeepOriginal = builder.getBoolean("gizmo_keep_original", false);
-
-        /* ===== 分类五：CML 增强 ===== */
+        /* ===== 分类四：CML 增强 ===== */
         builder.category("cml_enhancements", Icons.DUPE);
 
         CMLSettings.replaySprintParticles = builder.getBoolean("replay_sprint_particles", false);

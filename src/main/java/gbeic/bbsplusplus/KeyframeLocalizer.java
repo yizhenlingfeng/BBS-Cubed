@@ -272,6 +272,61 @@ public class KeyframeLocalizer
         cn("pbr_s_a", "PBR 自发光");
         cn("pbr_n", "PBR 法线强度");
 
+        /* BBS 2.6 材质属性轨道（MaterialPropTrack） */
+        cn("smoothness", "光泽度");
+        cn("metallic", "金属度");
+        cn("sss", "次表面散射");
+        cn("pixel_emission", "自发光强度");
+        cn("relief", "凹凸强度");
+        cn("glow", "发光强度");
+        cn("overlay", "颜色叠加");
+        cn("culling", "面剔除");
+        cn("layer", "渲染层");
+        cn("render_last", "最后渲染");
+        cn("material_texture", "材质纹理");
+
+        /* BBS 2.6 IK 轨道（ControlsTrack / BoneIKIO） */
+        cn("ik", "IK 链");
+        cn("ik_target", "IK 目标");
+        cn("pole", "极向量");
+        cn("pole_angle", "极角");
+        cn("weight", "权重");
+        cn("stretch", "拉伸");
+        cn("squash", "压缩");
+        cn("softness", "柔软度");
+        cn("chain_length", "链长");
+        cn("joint", "关节活动度");
+        cn("tip_rotation", "末端跟随");
+        cn("target_bone", "目标骨骼");
+
+        /* BBS 2.6 物理轨道（BonePhysicsIO / PhysicsControl） */
+        cn("physics", "物理骨链");
+        cn("damping", "阻尼");
+        cn("iterations", "解算质量");
+        cn("collisions", "世界碰撞");
+        cn("wind_strength", "风力");
+        cn("wind_direction", "风方向");
+        cn("wind_turbulence", "阵风强度");
+        cn("wind_local", "局部方向");
+        cn("radius", "碰撞半径");
+
+        /* BBS 2.6 骨骼约束轨道（BoneConstraintTrack） */
+        cn("constraint", "骨骼约束");
+        cn("limit", "角度限制");
+        cn("min", "最小角度");
+        cn("max", "最大角度");
+        cn("lock", "轴向锁定");
+        cn("apply_to_children", "应用于子骨骼");
+
+        /* BBS 2.6 结构形态原生轨道 */
+        cn("origin", "原点");
+        cn("rotation_axis", "旋转轴");
+
+        /* BBS 2.6 视频/图片形态原生轨道 */
+        cn("video_offset", "视频偏移");
+        cn("video_speed", "视频速度");
+        cn("keep_aspect", "保持宽高比");
+
         /* 物品喷射形态专属。使用上下文映射，避免覆盖同名的光源、粒子、广告牌等公共轨道。 */
         itemSpray("items", "喷射物品");
         itemSpray("amount", "数量");
