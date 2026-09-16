@@ -990,6 +990,10 @@ public class KeyframeLocalizer
                 body = key.substring(split + 1).trim();
             }
 
+            /* 2.6 新轨道体系的前缀（如 materials.*. / ik. / physics.）是轨道类型标识，
+               不是骨骼路径，用户不需要看到。当前缀里包含 * 通配符时，直接去掉前缀。 */
+            boolean stripPrefix = prefix.contains("*");
+
             if (body.isEmpty())
             {
                 return null;
@@ -999,7 +1003,7 @@ public class KeyframeLocalizer
 
             if (extension != null && extension.chineseName() != null && !extension.chineseName().isEmpty())
             {
-                return prefix + extension.chineseName();
+                return stripPrefix ? extension.chineseName() : prefix + extension.chineseName();
             }
 
             /* 1. 优先查用户自定义 JSON（bbs_addons_*.json 中的 bbspp.keyframe.*） */
@@ -1007,7 +1011,7 @@ public class KeyframeLocalizer
 
             if (l10nResult != null)
             {
-                return prefix + l10nResult;
+                return stripPrefix ? l10nResult : prefix + l10nResult;
             }
 
             /* 2. 数字后缀匹配：pose_overlay1 → 查 pose_overlay + " 1" */
@@ -1015,7 +1019,7 @@ public class KeyframeLocalizer
 
             if (withSuffix != null)
             {
-                return prefix + withSuffix;
+                return stripPrefix ? withSuffix : prefix + withSuffix;
             }
 
             /* 3. 硬编码兜底 */
@@ -1023,7 +1027,7 @@ public class KeyframeLocalizer
 
             if (exact != null)
             {
-                return prefix + exact;
+                return stripPrefix ? exact : prefix + exact;
             }
         }
 
