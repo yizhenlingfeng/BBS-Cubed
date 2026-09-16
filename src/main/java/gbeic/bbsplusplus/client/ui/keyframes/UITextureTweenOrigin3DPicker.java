@@ -38,8 +38,9 @@ import java.util.function.Consumer;
 /**
  * 纹理补间扩散起点的三维模型表面取点器。
  *
- * <p>组件以模型绑定姿态显示当前纹理，右键通过射线与模型三角形求交选择表面点；左键旋转、
- * 中键平移、滚轮缩放。底部三个数值框用于百分比微调，三维十字标记始终与运行时扩散使用的
+ * <p>组件以模型绑定姿态显示当前纹理，右键通过射线与模型三角形求交选择表面点；左键拖动旋转、
+ * Shift+左键或中键拖动平移、Ctrl+滚轮缩放 —— 这三项全部交给基类 {@link UIModelRenderer}
+ * 自己的拖拽系统处理。底部三个数值框用于百分比微调，三维十字标记始终与运行时扩散使用的
  * AABB 归一化模型坐标保持同步。</p>
  */
 public class UITextureTweenOrigin3DPicker extends UIElement
@@ -145,9 +146,6 @@ public class UITextureTweenOrigin3DPicker extends UIElement
         private final Runnable editEnd;
         private final Vector3f value = new Vector3f(0.5F);
         private final Area viewportArea = new Area();
-        private boolean rotating;
-        private int lastX;
-        private int lastY;
         private float bbsppDistance = 2.25F;
 
         private Preview(ModelForm source, Consumer<Vector3f> callback, Runnable editStart, Runnable editEnd)
@@ -224,27 +222,14 @@ public class UITextureTweenOrigin3DPicker extends UIElement
                 return true;
             }
 
-            if (context.mouseButton == 0)
-            {
-                this.rotating = true;
-                this.lastX = context.mouseX;
-                this.lastY = context.mouseY;
-
-                return true;
-            }
-
+            /* 左键（含 Shift+左键的平移）必须交回基类 UIModelRenderer 自己的拖拽系统。
+             *
+             * 2.6 起基类把相机姿态的唯一真源放在**私有**的 targetRotation / targetPos /
+             * targetDistance 上，每帧再从它们同步（或插值）进 camera —— 直接改
+             * camera.rotation 会被下一帧覆盖，表现为"按住左键拖不动视角"。
+             * 同时基类的拖拽状态 dragging 只在它自己的 subMouseClicked 里置位，
+             * 不调 super 就永远不会开始拖拽。 */
             return super.subMouseClicked(context);
-        }
-
-        @Override
-        public boolean subMouseReleased(UIContext context)
-        {
-            boolean wasRotating = this.rotating;
-
-            this.rotating = false;
-            super.subMouseReleased(context);
-
-            return wasRotating;
         }
 
         /**
@@ -270,20 +255,6 @@ public class UITextureTweenOrigin3DPicker extends UIElement
             }
 
             return true;
-        }
-
-        @Override
-        protected void processInputs(UIContext context)
-        {
-            super.processInputs(context);
-
-            if (this.rotating)
-            {
-                this.camera.rotation.y -= MathUtils.toRad(this.lastX - context.mouseX);
-                this.camera.rotation.x -= MathUtils.toRad(this.lastY - context.mouseY);
-                this.lastX = context.mouseX;
-                this.lastY = context.mouseY;
-            }
         }
 
         @Override

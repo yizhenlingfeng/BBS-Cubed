@@ -140,25 +140,22 @@ public abstract class UILinkKeyframeFactoryMixin extends UIKeyframeFactory<Link>
         });
 
         mode.tooltip(L10n.lang("bbsppp.ui.keyframes.texture_tween_mode.tooltip"));
-        refreshControls[0] = () -> updateModeControls(this.scroll, mode, reverse, flash, flashColorLabel, flashColor,
-            pbrGlow, pbrGlowStrengthLabel, pbrGlowStrength, blockSize,
-            dissipateIntensityLabel, dissipateIntensity, modeValue[0]);
 
-        this.scroll.add(mode);
-        refreshControls[0].run();
-
-        this.scroll.add(UI.label(L10n.lang("bbsppp.ui.keyframes.texture_tween_origin")));
+        /* 扩散起点：只在真正会用到它的模式（消散 / 像素溶解）下展示。
+           「关闭」模式（以及纯颜色渐变）下扩散起点没有任何效果，显示出来只会误导。 */
+        UILabel originLabel = UI.label(L10n.lang("bbsppp.ui.keyframes.texture_tween_origin"));
+        UIElement originControl;
 
         if (ModelBindingGeometry.create(modelForm) == null)
         {
             UILabel unsupported = UI.label(L10n.lang("bbsppp.ui.keyframes.texture_tween_origin.unsupported"));
 
             unsupported.tooltip(L10n.lang("bbsppp.ui.keyframes.texture_tween_origin.unsupported.tooltip"));
-            this.scroll.add(unsupported);
+            originControl = unsupported;
         }
         else
         {
-            UITextureTweenOrigin3DPicker origin = new UITextureTweenOrigin3DPicker(
+            originControl = new UITextureTweenOrigin3DPicker(
                 modelForm,
                 (point) -> setOrigin(editor, point.x, point.y, point.z),
                 editor::cacheKeyframes,
@@ -166,9 +163,15 @@ public abstract class UILinkKeyframeFactoryMixin extends UIKeyframeFactory<Link>
             ).setValue(tween.bbsppp$getTextureTweenOriginX(), tween.bbsppp$getTextureTweenOriginY(),
                 tween.bbsppp$getTextureTweenOriginZ());
 
-            origin.tooltip(L10n.lang("bbsppp.ui.keyframes.texture_tween_origin.tooltip"));
-            this.scroll.add(origin);
+            originControl.tooltip(L10n.lang("bbsppp.ui.keyframes.texture_tween_origin.tooltip"));
         }
+
+        refreshControls[0] = () -> updateModeControls(this.scroll, mode, reverse, flash, flashColorLabel, flashColor,
+            pbrGlow, pbrGlowStrengthLabel, pbrGlowStrength, blockSize,
+            dissipateIntensityLabel, dissipateIntensity, originLabel, originControl, modeValue[0]);
+
+        this.scroll.add(mode);
+        refreshControls[0].run();
     }
 
     private static boolean isTextureTweenTrack(Keyframe<?> keyframe)
@@ -428,60 +431,24 @@ public abstract class UILinkKeyframeFactoryMixin extends UIKeyframeFactory<Link>
                                            UILabel flashColorLabel, UIColor flashColor, UIToggle pbrGlow,
                                            UILabel pbrGlowStrengthLabel, UITrackpad pbrGlowStrength, UIButton blockSize,
                                            UILabel dissipateIntensityLabel, UITrackpad dissipateIntensity,
+                                           UILabel originLabel, UIElement originControl,
                                            int modeValue)
     {
         boolean changed = false;
 
         if (isDissipateMode(modeValue))
         {
-            changed |= addAfterIfMissing(scroll, mode, reverse);
-            changed |= addAfterIfMissing(scroll, reverse, flash);
-
-            if (flash.getValue())
-            {
-                changed |= addAfterIfMissing(scroll, flash, flashColorLabel);
-                changed |= addAfterIfMissing(scroll, flashColorLabel, flashColor);
-                changed |= addAfterIfMissing(scroll, flashColor, pbrGlow);
-
-                if (pbrGlow.getValue())
-                {
-                    changed |= addAfterIfMissing(scroll, pbrGlow, pbrGlowStrengthLabel);
-                    changed |= addAfterIfMissing(scroll, pbrGlowStrengthLabel, pbrGlowStrength);
-                }
-                else
-                {
-                    changed |= removeIfPresent(pbrGlowStrength);
-                    changed |= removeIfPresent(pbrGlowStrengthLabel);
-                }
-            }
-            else
-            {
-                changed |= removeIfPresent(pbrGlowStrength);
-                changed |= removeIfPresent(pbrGlowStrengthLabel);
-                changed |= removeIfPresent(pbrGlow);
-                changed |= removeIfPresent(flashColor);
-                changed |= removeIfPresent(flashColorLabel);
-            }
-
-            UIElement blockAnchor = pbrGlowStrength.hasParent() ? pbrGlowStrength
-                : pbrGlow.hasParent() ? pbrGlow : flashColor.hasParent() ? flashColor : flash;
-
-            changed |= addAfterIfMissing(scroll, blockAnchor, blockSize);
-            changed |= addAfterIfMissing(scroll, blockSize, dissipateIntensityLabel);
-            changed |= addAfterIfMissing(scroll, dissipateIntensityLabel, dissipateIntensity);
+            changed |= applyDissolveChain(scroll, mode, reverse, true, flash, flashColorLabel, flashColor,
+                pbrGlow, pbrGlowStrengthLabel, pbrGlowStrength, blockSize,
+                dissipateIntensityLabel, dissipateIntensity);
         }
         else if (modeValue == ITextureTweenKeyframe.TEXTURE_TWEEN_PIXEL_DISSOLVE)
         {
-            changed |= removeIfPresent(pbrGlowStrength);
-            changed |= removeIfPresent(pbrGlowStrengthLabel);
-            changed |= removeIfPresent(pbrGlow);
-            changed |= removeIfPresent(flashColor);
-            changed |= removeIfPresent(flashColorLabel);
-            changed |= removeIfPresent(flash);
-            changed |= removeIfPresent(reverse);
-            changed |= removeIfPresent(dissipateIntensity);
-            changed |= removeIfPresent(dissipateIntensityLabel);
-            changed |= addAfterIfMissing(scroll, mode, blockSize);
+            /* 像素溶解与消散同属「溶解」家族：闪白、闪光颜色、LabPBR 发光、发光亮度与扩散强度
+               对两者都成立，区别只是像素溶解没有扩散方向，因此不提供「消散倒退」。 */
+            changed |= applyDissolveChain(scroll, mode, reverse, false, flash, flashColorLabel, flashColor,
+                pbrGlow, pbrGlowStrengthLabel, pbrGlowStrength, blockSize,
+                dissipateIntensityLabel, dissipateIntensity);
         }
         else
         {
@@ -497,10 +464,85 @@ public abstract class UILinkKeyframeFactoryMixin extends UIKeyframeFactory<Link>
             changed |= removeIfPresent(dissipateIntensityLabel);
         }
 
+        /* 扩散起点只在会用到它的模式下展示：关闭（以及纯颜色渐变）时它不起任何作用。 */
+        changed |= removeIfPresent(originControl);
+        changed |= removeIfPresent(originLabel);
+
+        if (modeValue != ITextureTweenKeyframe.TEXTURE_TWEEN_OFF)
+        {
+            UIElement originAnchor = dissipateIntensity.hasParent() ? dissipateIntensity
+                : blockSize.hasParent() ? blockSize : mode;
+
+            changed |= addAfterIfMissing(scroll, originAnchor, originLabel);
+            changed |= addAfterIfMissing(scroll, originLabel, originControl);
+        }
+
         if (changed)
         {
             scroll.resize();
         }
+    }
+
+    /**
+     * 消散与像素溶解共用的「溶解家族」控件链：
+     * 闪白 → 闪光颜色 → LabPBR 发光 → 发光亮度 → 块大小 → 扩散强度。
+     *
+     * @param withReverse 是否展示「消散倒退」—— 只有带扩散方向性的消散模式才有意义，
+     *                    像素溶解没有方向，因此不提供。
+     */
+    private static boolean applyDissolveChain(UIScrollView scroll, UIButton mode, UIToggle reverse, boolean withReverse,
+                                              UIToggle flash, UILabel flashColorLabel, UIColor flashColor,
+                                              UIToggle pbrGlow, UILabel pbrGlowStrengthLabel, UITrackpad pbrGlowStrength,
+                                              UIButton blockSize, UILabel dissipateIntensityLabel,
+                                              UITrackpad dissipateIntensity)
+    {
+        boolean changed = false;
+
+        if (withReverse)
+        {
+            changed |= addAfterIfMissing(scroll, mode, reverse);
+            changed |= addAfterIfMissing(scroll, reverse, flash);
+        }
+        else
+        {
+            changed |= removeIfPresent(reverse);
+            changed |= addAfterIfMissing(scroll, mode, flash);
+        }
+
+        if (flash.getValue())
+        {
+            changed |= addAfterIfMissing(scroll, flash, flashColorLabel);
+            changed |= addAfterIfMissing(scroll, flashColorLabel, flashColor);
+            changed |= addAfterIfMissing(scroll, flashColor, pbrGlow);
+
+            if (pbrGlow.getValue())
+            {
+                changed |= addAfterIfMissing(scroll, pbrGlow, pbrGlowStrengthLabel);
+                changed |= addAfterIfMissing(scroll, pbrGlowStrengthLabel, pbrGlowStrength);
+            }
+            else
+            {
+                changed |= removeIfPresent(pbrGlowStrength);
+                changed |= removeIfPresent(pbrGlowStrengthLabel);
+            }
+        }
+        else
+        {
+            changed |= removeIfPresent(pbrGlowStrength);
+            changed |= removeIfPresent(pbrGlowStrengthLabel);
+            changed |= removeIfPresent(pbrGlow);
+            changed |= removeIfPresent(flashColor);
+            changed |= removeIfPresent(flashColorLabel);
+        }
+
+        UIElement blockAnchor = pbrGlowStrength.hasParent() ? pbrGlowStrength
+            : pbrGlow.hasParent() ? pbrGlow : flashColor.hasParent() ? flashColor : flash;
+
+        changed |= addAfterIfMissing(scroll, blockAnchor, blockSize);
+        changed |= addAfterIfMissing(scroll, blockSize, dissipateIntensityLabel);
+        changed |= addAfterIfMissing(scroll, dissipateIntensityLabel, dissipateIntensity);
+
+        return changed;
     }
 
     private static boolean addAfterIfMissing(UIScrollView scroll, UIElement anchor, UIElement element)

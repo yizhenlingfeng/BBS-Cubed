@@ -347,7 +347,10 @@ public class TextureTweenManager
         int argbB = sourceB.diffuse().colors()[index];
         boolean visibleA = sourceA.diffuse().isVisible(index);
         boolean visibleB = sourceB.diffuse().isVisible(index);
-        boolean flashing = entry.key.mode == TEXTURE_TWEEN_DISSIPATE && entry.key.flash && visibleA && !useB
+        /* 「消散闪白」对消散与像素溶解同样成立：两者都是"像素即将被抹掉"，闪白就是抹掉前的预告。
+           像素溶解没有扩散方向，所以只有反向（消散倒退）一路不适用。 */
+        boolean flashing = (entry.key.mode == TEXTURE_TWEEN_DISSIPATE || entry.key.mode == TEXTURE_TWEEN_PIXEL_DISSOLVE)
+            && entry.key.flash && visibleA && !useB
             && step > 0 && step >= threshold - FLASH_STEPS;
         boolean reverseFlashing = entry.key.mode == TEXTURE_TWEEN_DISSIPATE_REVERSE && entry.key.flash && visibleB && useB
             && step < STEPS && step <= threshold + FLASH_STEPS;
@@ -355,7 +358,7 @@ public class TextureTweenManager
 
         if (flashing || reverseFlashing)
         {
-            int baseColor = entry.key.mode == TEXTURE_TWEEN_DISSIPATE ? argbA : argbB;
+            int baseColor = entry.key.mode == TEXTURE_TWEEN_DISSIPATE_REVERSE ? argbB : argbA;
             float flashOpacity = channel(entry.flashColor, 24) / 255F;
 
             diffuseColor = blendRgb(baseColor, entry.flashColor, flashOpacity);
@@ -669,7 +672,9 @@ public class TextureTweenManager
 
             boolean hasNormal = sourceA.hasNormal() || sourceB.hasNormal();
             boolean hasSpecular = sourceA.hasSpecular() || sourceB.hasSpecular()
-                || key.flash && key.pbrGlow && (key.mode == TEXTURE_TWEEN_DISSIPATE || key.mode == TEXTURE_TWEEN_DISSIPATE_REVERSE);
+                || key.flash && key.pbrGlow && (key.mode == TEXTURE_TWEEN_DISSIPATE
+                    || key.mode == TEXTURE_TWEEN_DISSIPATE_REVERSE
+                    || key.mode == TEXTURE_TWEEN_PIXEL_DISSOLVE);
             int textureCount = 1 + (hasNormal ? 1 : 0) + (hasSpecular ? 1 : 0);
             /* 每张结果纹理同时占用一份 CPU 上传缓冲区和一份 GPU 纹理。 */
             long byteSize = (long) count * textureCount * 8L + thresholds.length;

@@ -195,50 +195,6 @@ public class UIBBSPPFormList extends UIFormList
         }
 
         super.resize();
-
-        this.bbspp$logLayoutOnce();
-    }
-
-    /* ==================== 临时诊断：定位内容区顶部空白（定位完请删除本段） ==================== */
-
-    private static int bbspp$layoutLogs;
-
-    private void bbspp$logLayoutOnce()
-    {
-        /* 只在列表真正拿到尺寸后取样 —— 构造期的 resize 里 list 还是 0x0，没有参考价值。 */
-        if (bbspp$layoutLogs >= 4 || this.contentArea == null || this.forms == null || this.area.w <= 0 || this.area.h <= 0)
-        {
-            return;
-        }
-
-        bbspp$layoutLogs++;
-
-        StringBuilder sb = new StringBuilder("[morph-layout] ");
-
-        sb.append("list=").append(bbspp$area(this.area));
-        sb.append(" bar=").append(bbspp$area(this.bar == null ? null : this.bar.area));
-        sb.append(" sidebar=").append(bbspp$area(this.sidebar == null ? null : this.sidebar.area));
-        sb.append(" content=").append(bbspp$area(this.contentArea.area));
-        sb.append(" forms=").append(bbspp$area(this.forms.area));
-        sb.append(" home=").append(bbspp$area(this.home == null ? null : this.home.area));
-        sb.append(" homeVis=").append(this.home != null && this.home.isVisible());
-        sb.append(" formsVis=").append(this.forms.isVisible());
-        sb.append(" formsKids=").append(this.forms.getChildren().size());
-
-        for (IUIElement child : this.forms.getChildren())
-        {
-            if (child instanceof UIElement el)
-            {
-                sb.append(" kid=").append(el.getClass().getSimpleName()).append(bbspp$area(el.area));
-            }
-        }
-
-        BBSPlusPlusMod.LOGGER.info(sb.toString());
-    }
-
-    private static String bbspp$area(mchorse.bbs_mod.ui.utils.Area area)
-    {
-        return area == null ? "null" : "(" + area.x + "," + area.y + " " + area.w + "x" + area.h + ")";
     }
 
     private void onSidebarSelect(UIBBSPPCategorySidebar.CategoryItem item)
