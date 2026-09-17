@@ -3,6 +3,7 @@
 build/
 
 # IDE
+.idea/
 .idea/*
 !.idea/runConfigurations/
 *.iml
