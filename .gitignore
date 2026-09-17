@@ -20,8 +20,6 @@ mchorse/
 
 references/
 AGENTS.md
-docs/*
-!docs/AAA.png
 run/
 bin/
 private/
