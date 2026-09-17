@@ -54,7 +54,6 @@ public class BBSPlusPlusSettings
 
         /* snow 前四项核心开关整合到 BBS 增强 */
         CMLSettings.pivotTransform = builder.getBoolean("pivot_transform", true);
-        CMLSettings.poseKeyframeCollapse = builder.getBoolean("pose_keyframe_collapse", true);
         CMLSettings.snowActions = builder.getBoolean("snow_actions", true);
         CMLSettings.lockedLayoutPreventsResizing = builder.getBoolean("locked_layout_prevents_resizing", false);
 

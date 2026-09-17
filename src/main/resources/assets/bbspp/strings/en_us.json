@@ -1,4 +1,4 @@
-{
+﻿{
     "bbs.config.bbs_snow.fluid_realistic_model_interaction": "Realistic fluid model interaction",
     "bbs.config.bbs_snow.fluid_realistic_model_interaction-comment": "Per-bone fluid interaction for cubic models; off = entity root only (faster)",
     "bbs.config.bbs_snow.locked_layout_prevents_resizing": "Disable edge dragging while layout is locked",
@@ -7,8 +7,6 @@
     "bbs.config.bbs_snow.pick_limb_texture-comment": "Show bone texture picker button in pose editor",
     "bbs.config.bbs_snow.pivot_transform": "Pivot transform",
     "bbs.config.bbs_snow.pivot_transform-comment": "Show the pivot editing row in XYZ transform editors (pose, etc.)",
-    "bbs.config.bbs_snow.pose_keyframe_collapse": "Pose keyframe collapse",
-    "bbs.config.bbs_snow.pose_keyframe_collapse-comment": "Show hierarchical collapse arrows on expanded pose bone tracks",
     "bbs.config.bbs_snow.premiere_export_audio_only": "Audio-only export",
     "bbs.config.bbs_snow.premiere_export_audio_only-comment": "Skip video recording; only export individual audio and XML/SRT into the package folder",
     "bbs.config.bbs_snow.premiere_export_enabled": "Premiere export feature",
@@ -131,8 +129,6 @@
     "bbspp.config.bbs_enhancements.pivot_transform-comment": "Show the pivot editing row in XYZ transform editors (pose, etc.)",
     "bbspp.config.bbs_enhancements.pose_bone_tree_view": "Pose Bone Tree List",
     "bbspp.config.bbs_enhancements.pose_bone_tree_view-comment": "When enabled, pose editor bones are indented by the model hierarchy and connected with tree guides. Search results remain flat",
-    "bbspp.config.bbs_enhancements.pose_keyframe_collapse": "Pose keyframe collapse",
-    "bbspp.config.bbs_enhancements.pose_keyframe_collapse-comment": "Show hierarchical collapse arrows on expanded pose bone tracks",
     "bbspp.config.bbs_enhancements.prevent_negative_keyframes": "Prevent negative keyframes",
     "bbspp.config.bbs_enhancements.prevent_negative_keyframes-comment": "When enabled, prevents dragging or adding keyframes before 0 seconds (negative time) in the keyframe editor.",
     "bbspp.config.bbs_enhancements.private_bbs_clipboard": "Use BBS Cubed private clipboard",

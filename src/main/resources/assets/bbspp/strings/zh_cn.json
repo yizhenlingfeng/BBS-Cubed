@@ -1,4 +1,4 @@
-{
+﻿{
     "bbs.config.bbs_snow.fluid_realistic_model_interaction": "流体精确模型交互",
     "bbs.config.bbs_snow.fluid_realistic_model_interaction-comment": "开启后流体与模型逐骨骼精确交互(仅 Cubic 模型);关闭时按实体根位置交互,性能更好",
     "bbs.config.bbs_snow.locked_layout_prevents_resizing": "锁定布局后禁止拖动边缘",
@@ -7,8 +7,6 @@
     "bbs.config.bbs_snow.pick_limb_texture-comment": "在姿态编辑器中显示骨骼纹理选择按钮",
     "bbs.config.bbs_snow.pivot_transform": "中心点变换",
     "bbs.config.bbs_snow.pivot_transform-comment": "在 pose 等 XYZ 变换界面显示中心点(pivot)编辑行",
-    "bbs.config.bbs_snow.pose_keyframe_collapse": "Pose 关键帧折叠",
-    "bbs.config.bbs_snow.pose_keyframe_collapse-comment": "在 Pose 关键帧展开的骨骼行上显示层级折叠箭头",
     "bbs.config.bbs_snow.premiere_export_audio_only": "仅音频导出",
     "bbs.config.bbs_snow.premiere_export_audio_only-comment": "开启后不录制视频,只导出独立音频与 XML/SRT 到打包文件夹",
     "bbs.config.bbs_snow.premiere_export_enabled": "Premiere export功能",
@@ -131,8 +129,6 @@
     "bbspp.config.bbs_enhancements.pivot_transform-comment": "在 pose 等 XYZ 变换界面显示中心点(pivot)编辑行",
     "bbspp.config.bbs_enhancements.pose_bone_tree_view": "姿势骨骼树形列表",
     "bbspp.config.bbs_enhancements.pose_bone_tree_view-comment": "开启后，姿势编辑器的骨骼列表会按模型父子层级缩进并绘制树形连接线；搜索时仍平铺显示匹配项",
-    "bbspp.config.bbs_enhancements.pose_keyframe_collapse": "Pose 关键帧折叠",
-    "bbspp.config.bbs_enhancements.pose_keyframe_collapse-comment": "在 Pose 关键帧展开的骨骼行上显示层级折叠箭头",
     "bbspp.config.bbs_enhancements.prevent_negative_keyframes": "禁止出现负数关键帧",
     "bbspp.config.bbs_enhancements.prevent_negative_keyframes-comment": "开启后，禁止在关键帧编辑器中将关键帧拖动或添加到0秒之前（负数时间）。",
     "bbspp.config.bbs_enhancements.private_bbs_clipboard": "使用 BBS Cubed 专用剪贴板",

@@ -10,7 +10,7 @@ import mchorse.bbs_mod.settings.values.numeric.ValueFloat;
  * <p>所有设置项由 {@code gbeic.bbsplusplus.BBSPlusPlusSettings#register}
  * 统一注册到 BBS Cubed 独立设置模块中，分属不同分类：</p>
  * <ul>
- *   <li>BBS 增强 — pivotTransform / poseKeyframeCollapse / snowActions / lockedLayoutPreventsResizing（前四项核心开关）</li>
+ *   <li>BBS 增强 — pivotTransform / snowActions / lockedLayoutPreventsResizing</li>
  *   <li>CML 增强 — replaySprintParticles / pickLimbTexture / enchantGlint / fluidRealisticModelInteraction</li>
  *   <li>导出增强 — premiereExport* 系列</li>
  *   <li>隐藏设置 — bonePriority* / animationState* / keyframeEditorTimelineRatio</li>
@@ -31,7 +31,6 @@ public class CMLSettings {
 
     /* BBS_snow 设置 */
     public static ValueBoolean pivotTransform;             // XYZ 变换中心点(pivot)功能
-    public static ValueBoolean poseKeyframeCollapse;       // Pose 关键帧骨骼折叠功能
     public static ValueBoolean bonePriorityExpandedLimb;   // 骨骼优先性:优先选择已展开 pose 的肢体轨道
     public static ValueString bonePriorityTrack;           // 骨骼优先性:点击骨骼跳转的优先轨道("" = 跟随原版)
     public static ValueBoolean snowActions;                // snow_actions 时间线功能
