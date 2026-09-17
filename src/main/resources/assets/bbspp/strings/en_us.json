@@ -1,4 +1,4 @@
-﻿{
+{
     "bbs.config.bbs_snow.fluid_realistic_model_interaction": "Realistic fluid model interaction",
     "bbs.config.bbs_snow.fluid_realistic_model_interaction-comment": "Per-bone fluid interaction for cubic models; off = entity root only (faster)",
     "bbs.config.bbs_snow.locked_layout_prevents_resizing": "Disable edge dragging while layout is locked",

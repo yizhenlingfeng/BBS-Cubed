@@ -1,4 +1,4 @@
-﻿{
+{
     "bbs.config.bbs_snow.fluid_realistic_model_interaction": "流体精确模型交互",
     "bbs.config.bbs_snow.fluid_realistic_model_interaction-comment": "开启后流体与模型逐骨骼精确交互(仅 Cubic 模型);关闭时按实体根位置交互,性能更好",
     "bbs.config.bbs_snow.locked_layout_prevents_resizing": "锁定布局后禁止拖动边缘",
