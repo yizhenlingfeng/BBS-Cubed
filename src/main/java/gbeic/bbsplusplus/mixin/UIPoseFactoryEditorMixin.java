@@ -187,7 +187,7 @@ public abstract class UIPoseFactoryEditorMixin implements IPoseParameterBrush
         UIPoseKeyframeFactory.UIPoseFactoryEditor.apply(this.editor, this.keyframe, (pose) ->
         {
             PoseBoneSkipData.setSkipped(pose, bone, false);
-            pose.get(bone).copy(snapshot);
+            pose.getOrCreate(bone).copy(snapshot);
         });
         this.bbspp$cancelParameterBrush();
 
@@ -314,7 +314,7 @@ public abstract class UIPoseFactoryEditorMixin implements IPoseParameterBrush
         UIPoseKeyframeFactory.UIPoseFactoryEditor.apply(editor, keyframe, (pose) ->
         {
             PoseBoneSkipData.setSkipped(pose, bone, false);
-            consumer.accept(pose.get(bone));
+            consumer.accept(pose.getOrCreate(bone));
         });
     }
 
@@ -397,7 +397,7 @@ public abstract class UIPoseFactoryEditorMixin implements IPoseParameterBrush
                 for (Map.Entry<String, PoseTransform> target : targets)
                 {
                     PoseBoneSkipData.setSkipped(pose, target.getKey(), false);
-                    pose.get(target.getKey()).copy(target.getValue());
+                    pose.getOrCreate(target.getKey()).copy(target.getValue());
                 }
 
                 selected.postNotify();

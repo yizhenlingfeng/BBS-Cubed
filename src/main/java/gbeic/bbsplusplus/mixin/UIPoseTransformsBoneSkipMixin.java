@@ -44,7 +44,7 @@ public class UIPoseTransformsBoneSkipMixin
             for (String bone : bones)
             {
                 PoseBoneSkipData.setSkipped(pose, bone, false);
-                consumer.accept(bone, pose.get(bone));
+                consumer.accept(bone, pose.getOrCreate(bone));
             }
         });
     }
@@ -69,7 +69,7 @@ public class UIPoseTransformsBoneSkipMixin
             for (String bone : bones)
             {
                 PoseBoneSkipData.setSkipped(pose, bone, false);
-                consumer.accept(pose.get(bone));
+                consumer.accept(pose.getOrCreate(bone));
             }
         });
     }
