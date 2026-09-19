@@ -178,6 +178,11 @@
 
 ### MOD更新日志
 
+#### 3.5.1（IRL汉化完善 + 兼容修复）：
+* **IRLights 汉化补全**：完整重写翻译表，覆盖新版 IRL 1.1.7 全部 UI 文本（光源类型/参数/预设标签等）及轨道编辑器短名（Thickness/Volumetric/Back rim/Front rim strength/Outlined replays/Lit replays 等）
+* **修复 IRL 1.1.7 兼容**：`IRLiteGuideVisibilityMixin` 的 `renderGuide` 注入签名补充 `boolean guideVisible` 参数，适配新版方法描述符
+* **修复轨道名前缀**：`KeyframeLocalizer` 剥离 `irlights.` 命名空间前缀，避免轨道名显示为 `irlights.遮罩纹理`
+
 #### 3.5.0（BBSFS 2.6 适配）：
 * **适配 BBSFS 2.6.1**：完成运行时适配，修复启动/渲染期多处 Mixin 目标漂移与崩溃链
 * **轨道汉化补全**：新增 2.6 材质属性轨道（光泽度/金属度/次表面散射/自发光等）、IK 轨道（目标/极向量/权重/链长等）、物理轨道（阻尼/风力/碰撞半径等）、骨骼约束轨道中文汉化；同时支持 / 和 . 两种轨道 id 分隔格式
