@@ -46,17 +46,7 @@ def minecraftVersionRange = "${minecraft_version_range}"
 def javaVersionRange = "${java_version_range}"
 def loaderVersionRange = "${loader_version_range}"
 
-// 版本专属源码目录（如 src/versions/1.20.4/java）：存放无法跨版本共享的少量实现（NbtCompat）
-sourceSets {
-    main {
-        java {
-            srcDir "src/versions/${targetMc}/java"
-        }
-    }
-}
-
 // 按版本隔离构建输出目录，防止 1.20.1 / 1.20.4 编译产物交叉污染
-// （此前共享 build/ 目录会导致旧版本 NbtCompat.class 残留，被错误打进另一版本的 jar）
 layout.buildDirectory = layout.projectDirectory.dir("build/${targetMc}")
 
 base {
@@ -118,7 +108,7 @@ dependencies {
     // Fabric API（提供 ClientTickEvents、ClientLifecycleEvents 等）
     modImplementation "net.fabricmc.fabric-api:fabric-api:${mcVer.fabric_api}"
 
-    // 引用本地 BBS FS（run/mods 中的实际运行版本），编译期解析 Mixin 目标类
+    // 本地 BBS FS（libs/ 隔离，modCompileOnly，不进 runClient 运行时）：编译期解析 Mixin 目标类
     modCompileOnly files(mcVer.bbs_jar)
 
     // Iris 光影（仅编译期）：光影曲线相关 Mixin 需要引用 Iris 的类，运行时没装 Iris 也不会加载这些注入

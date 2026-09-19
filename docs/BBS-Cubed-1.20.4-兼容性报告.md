@@ -160,3 +160,21 @@ cd "D:\Desktop\Mod\源码\BBS-PlusPlus-main"
 - 产物逐一核验：字节码 major=61（Java 17）；`fabric.mod.json` 内 `minecraft: ">=1.20.1 <=1.20.4"`、`java: ">=17 <22"`、`fabricloader: ">=0.15.0"` 展开正确。
 - 跨版本 API 差异（NbtIo、Screen.renderBackground）经 `javap` 反编译两版本目标 jar 逐一比对后按双兼容方案修复。
 - 未覆盖：真实 1.20.4 客户端运行时验证（环境无游戏运行时）——见 §4.3 已知限制。
+
+---
+
+## 7. 现状更新（2026-09-19）
+
+- 模组版本：`mod_version=3.5.0`（原报告为 3.1）。
+- BBS 升级到 **2.6.1**：编译期 BBS jar 已从 `run/<mc>/mods/` 移到隔离目录 `libs/`，作 `modCompileOnly`，不进入 `runClient` 运行时：
+  - `bbs_jar_1.20.1=libs/bbs-2.6.1-1.20.1-zh_CN.jar`
+  - `bbs_jar_1.20.4=libs/bbs-2.6.1-1.20.4.jar`
+  - 这样 `run/<mc>/mods/` 可自由放置/禁用实际运行版本（如当前 1.20.1 dev 运行目录仍用 2.5.2、2.6.1 改为 `.disabled`），编译与运行解耦。
+- `fabric.mod.json` 的 `depends` 新增 `"bbs": ">=2.6-0"`（BBS 2.6 addon 迁移要求）。
+- 版本隔离源码 `src/versions/<mc>/java`（NbtCompat）已移除，跨版本 NBT 读写差异改在共享源码内处理；`src/versions` 目录已不存在，`build.gradle` 中对应的 `sourceSets { srcDir "src/versions/..." }` 死配置块已一并删除。
+- 双版本从零构建复核：`./gradlew build`（1.20.1）与 `./gradlew build1204`（1.20.4）均 BUILD SUCCESSFUL，产物为
+  - `build/1.20.1/libs/BBS-Cubed-3.5.0+1.20.1.jar`
+  - `build/1.20.4/libs/BBS-Cubed-3.5.0+1.20.4.jar`
+  - 两 jar 的 `fabric.mod.json` 均为 `minecraft: >=1.20.1 <=1.20.4`、`java: >=17 <22`、`bbs: >=2.6-0`。
+- 注意：`build1204`/`build1201` 是 `GradleBuild` 嵌套任务；若直接改 `gradle.properties`，注意 IDE（如 IntelliJ）Gradle 同步可能把该文件还原到 VCS 版本，改完用 `Select-String bbs_jar gradle.properties` 复核落盘。
+- 仍存在 `Cannot remap ... [BBS 类]` 警告（若干 `@Shadow`/`@Inject` 目标在 BBS 2.6 中已不存在），不影响构建；需在真实 BBS 2.6 客户端启动时确认相关 Mixin 路径。
