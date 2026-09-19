@@ -178,9 +178,8 @@
 ### Mod Changelog
 
 #### 3.5.1 (IRL Localization & Compatibility Fix)
-* **IRLights localization complete**: rewrote the translation table covering all new IRL 1.1.7 UI text (light types/parameters/preset labels) and track editor short names (Thickness, Volumetric, Back rim, Front rim strength, Outlined replays, Lit replays, etc.)
+* **IRLights localization complete**: rewrote the Chinese translation table covering all new IRL 1.1.7 UI text (light types/parameters/preset labels) and track editor short names (Thickness, Volumetric, Back rim, Front rim strength, Outlined replays, Lit replays, etc.)
 * **IRL 1.1.7 compatibility**: fixed `IRLiteGuideVisibilityMixin` `renderGuide` injection signature by adding the `boolean guideVisible` parameter to match the new method descriptor
-* **Fixed track name prefix**: `KeyframeLocalizer` now strips the `irlights.` namespace prefix, preventing track names from showing as `irlights.Mask Texture`
 
 #### 3.5.0 (BBSFS 2.6 Adaptation)
 * **Adapted to BBSFS 2.6.1**: completed runtime adaptation, fixed multiple Mixin target drift and crash chains during startup and rendering
