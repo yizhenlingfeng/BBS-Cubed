@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class IRLiteGuideVisibilityMixin
 {
     @Inject(method = "renderGuide", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
-    private void bbspp_cml$hideGuide(FormRenderingContext context, Color color, CallbackInfo ci)
+    private void bbspp_cml$hideGuide(FormRenderingContext context, Color color, boolean guideVisible, CallbackInfo ci)
     {
         if (!FilmVisibilityController.isIrlVisible())
         {

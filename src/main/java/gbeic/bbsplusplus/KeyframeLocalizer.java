@@ -992,7 +992,7 @@ public class KeyframeLocalizer
 
             /* 2.6 新轨道体系的前缀（如 materials.*. / ik. / physics.）是轨道类型标识，
                不是骨骼路径，用户不需要看到。当前缀里包含 * 通配符时，直接去掉前缀。 */
-            boolean stripPrefix = prefix.contains("*");
+            boolean stripPrefix = prefix.contains("*") || prefix.equals("irlights.");
 
             if (body.isEmpty())
             {
