@@ -41,6 +41,8 @@
         "UIAnimationStatePoseInsertMixin",
         "UIBaseMenuFloatLayerMixin",
         "UIClipInspectorEmbedMixin",
+        "UIColorAccessor",
+        "UIColorMixin",
         "UIDashboardPanelMiniWindowMixin",
         "UIDataPathListParticleMixin",
         "UIDockLayoutMiniWindowMixin",
