@@ -1,6 +1,7 @@
 {
     "bbs.config.bbspp.iris_button_tooltip": "Shaders Control",
     "bbs.ui.camera.panels.curves.sun_path_rotation": "Sun Path Rotation",
+    "bbs.ui.camera.panels.curves.chroma_sky_color": "Chroma Sky Color",
     "bbs.ui.camera.panels.curves.center_depth": "Focus Point",
     "bbs.ui.texture_manager_layout_tooltip": "Toggle Layout",
     "bbs.ui.texture_manager_layout.list": "List",

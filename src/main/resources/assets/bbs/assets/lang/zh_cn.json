@@ -1,6 +1,7 @@
 {
     "bbs.config.bbspp.iris_button_tooltip": "光影控制",
     "bbs.ui.camera.panels.curves.sun_path_rotation": "日月偏角",
+    "bbs.ui.camera.panels.curves.chroma_sky_color": "色度天空颜色",
     "bbs.ui.camera.panels.curves.center_depth": "焦点",
     "bbs.ui.texture_manager_layout_tooltip": "切换排版",
     "bbs.ui.texture_manager_layout.list": "列表模式",

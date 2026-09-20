@@ -11,6 +11,7 @@ import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.ui.forms.IUIFormList;
 import mchorse.bbs_mod.ui.forms.UIFormList;
 import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
+import mchorse.bbs_mod.ui.forms.categories.UIRecentFormCategory;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.IUIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -250,6 +251,7 @@ public class UIBBSPPFormList extends UIFormList
 
         boolean listMode = this.isListMode();
         int scale = this.getIconScale();
+        UIBBSPPFormCategory recentCat = null;
 
         for (UIFormCategory oldCat : allCats)
         {
@@ -258,12 +260,25 @@ public class UIBBSPPFormList extends UIFormList
             newCat.iconScale = scale;
             newCat.selected = oldCat.selected;
             this.bbsppCategories.add(newCat);
+
+            // 如果旧分类是"最近使用"，记录新分类以便同步父类 recent 字段
+            if (oldCat instanceof UIRecentFormCategory)
+            {
+                recentCat = newCat;
+            }
         }
 
         /* 用新分类替换父类 categories 列表，确保 getSelected() 能找到选中的分类 */
         List<UIFormCategory> parentCats = ((UIFormListAccessor) this).getCategories();
         parentCats.clear();
         parentCats.addAll(this.bbsppCategories);
+
+        /* 同步父类 recent 字段指向新分类，否则 setSelected() 会把内联表单加到孤立的旧 recent 上，
+         * getSelected() 遍历新 categories 找不到它，返回 null，导致编辑器打开失败。 */
+        if (recentCat != null)
+        {
+            ((UIFormListAccessor) this).setRecent(recentCat);
+        }
 
         String currentSelectionId = MorphingDefaultCategory.get();
 

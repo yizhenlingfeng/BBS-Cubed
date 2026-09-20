@@ -11,4 +11,7 @@ public interface UIFormListAccessor
 {
     @Accessor("categories")
     List<UIFormCategory> getCategories();
+
+    @Accessor("recent")
+    void setRecent(UIFormCategory recent);
 }
