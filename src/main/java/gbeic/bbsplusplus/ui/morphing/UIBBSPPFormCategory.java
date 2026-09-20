@@ -1,18 +1,32 @@
 package gbeic.bbsplusplus.ui.morphing;
 
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.cubic.CubicLoader;
+import mchorse.bbs_mod.cubic.ModelInstance;
+import mchorse.bbs_mod.cubic.model.ModelManager;
+import mchorse.bbs_mod.data.DataToString;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.categories.FormCategory;
 import mchorse.bbs_mod.forms.categories.ModelFormCategory;
 import mchorse.bbs_mod.forms.categories.UserFormCategory;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.UIFormList;
 import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.IUIElement;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageFolderOverlayPanel;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.IOUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -53,6 +67,46 @@ public class UIBBSPPFormCategory extends UIFormCategory
     public UIBBSPPFormCategory(FormCategory category, UIFormList list)
     {
         super(category, list);
+
+        /* 补充 UIModelFormCategory 构造器中添加的"导出模型为 .bbs.json"右键菜单。
+         * setupForms() 用本类替换了原生分类对象，子类构造器不会被执行，
+         * 导致原生 UIModelFormCategory 中通过 this.context(...) 注册的导出按钮丢失。 */
+        this.context((menu) ->
+        {
+            if (!(this.getContextForm() instanceof ModelForm modelForm) || this.isGroupContext())
+            {
+                return;
+            }
+
+            menu.action(Icons.UPLOAD, UIKeys.FORMS_CATEGORIES_CONTEXT_EXPORT_MODEL, () ->
+            {
+                ModelInstance model = ModelFormRenderer.getModel(modelForm);
+
+                if (model != null)
+                {
+                    MapType map = CubicLoader.toData(model);
+
+                    try
+                    {
+                        File path = BBSMod.getAssetsPath(ModelManager.MODELS_PREFIX + modelForm.model.get() + "/exported._bbs.json");
+
+                        IOUtils.writeText(path, DataToString.toString(map, true));
+
+                        UIMessageFolderOverlayPanel overlayPanel = new UIMessageFolderOverlayPanel(
+                            UIKeys.FORMS_CATEGORIES_CONTEXT_EXPORT_MODEL_TITLE,
+                            UIKeys.FORMS_CATEGORIES_CONTEXT_EXPORT_MODEL_DESCRIPTION,
+                            path.getParentFile()
+                        );
+
+                        UIOverlay.addOverlay(this.getContext(), overlayPanel);
+                    }
+                    catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        });
     }
 
     @Override
