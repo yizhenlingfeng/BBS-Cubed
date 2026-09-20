@@ -37,6 +37,11 @@ public final class VisibilityMixinConfigPlugin implements IMixinConfigPlugin
             return loader.isModLoaded("vfxlights");
         }
 
+        if (mixinClassName.endsWith("TogetherClientNetworkReplaySelectionMixin"))
+        {
+            return loader.isModLoaded("bbs_together");
+        }
+
         return true;
     }
 
