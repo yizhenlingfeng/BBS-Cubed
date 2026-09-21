@@ -155,6 +155,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$pbrRelief = this.bbspp_cml$createPbrSlider(self, (poseT, v) -> ((BonePbrHolder) poseT).bbspp_cml$setRelief(v));
 
         this.bbspp_cml$pbrSection = new UISection(UIKeys.FORMS_EDITORS_MATERIAL_SECTION_PBR);
+        this.bbspp_cml$pbrSection.setExpanded(false);
         this.bbspp_cml$pbrSection.fields.add(
             UI.labelRow(UIKeys.FORMS_EDITORS_MATERIAL_SMOOTHNESS, this.bbspp_cml$pbrSmoothness),
             UI.labelRow(UIKeys.FORMS_EDITORS_MATERIAL_METALLIC, this.bbspp_cml$pbrMetallic),
