@@ -70,10 +70,6 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     @Shadow(remap = false)
     protected IBoneHierarchy model;
 
-    /* 材质栏：PBR 栏插在它下面。 */
-    @Shadow(remap = false)
-    public UISection material;
-
     @Unique
     private UIButton bbspp_cml$pickTexture;
 
@@ -171,7 +167,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         /* UIPoseEditor 本体是一个 column().vertical().stretch() 的纵向列，
          * add() 的先后顺序就是面板自上而下的排列顺序。
          * PBR 栏排在材质栏之后、骨骼纹理按钮之前。 */
-        this.material.add(this.bbspp_cml$pbrSection);
+        self.add(this.bbspp_cml$pbrSection);
         self.add(this.bbspp_cml$pickTexture);
 
         /* glint 开关/取色器不在这里 add：由 refreshGlintButton 按设置显隐。
