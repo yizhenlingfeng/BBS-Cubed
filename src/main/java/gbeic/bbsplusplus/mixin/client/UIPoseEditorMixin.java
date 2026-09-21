@@ -186,6 +186,40 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$syncPbrSliders();
     }
 
+    /**
+     * BBS 2.7 中 {@code UIPoseKeyframeFactory.resize()} 会根据面板宽度调用
+     * {@code poseEditor.buildLayout(wide)}，而 {@code buildLayout} 开头做了
+     * {@code removeAll()} 重建布局——这会把构造函数 TAIL 里 add 的 PBR 栏、
+     * 骨骼纹理按钮和 glint 开关全部清掉。
+     *
+     * <p>每次 buildLayout 返回后重新挂载我们的元素：PBR 栏和 pickTexture 按钮在
+     * {@code getParent() == null} 时重新 add；glint/取色器由 refreshGlintButton
+     * 按设置显隐。构造函数内部首次 buildLayout 时 PBR 栏尚未创建（null），自动跳过。</p>
+     */
+    @Inject(method = "buildLayout", at = @At("RETURN"), remap = false)
+    private void bbspp_cml$reattachAfterBuildLayout(boolean wide, CallbackInfo ci)
+    {
+        if (this.bbspp_cml$pbrSection == null)
+        {
+            return;
+        }
+
+        UIPoseEditor self = (UIPoseEditor) (Object) this;
+
+        if (this.bbspp_cml$pbrSection.getParent() == null)
+        {
+            self.add(this.bbspp_cml$pbrSection);
+        }
+
+        if (this.bbspp_cml$pickTexture != null && this.bbspp_cml$pickTexture.getParent() == null)
+        {
+            self.add(this.bbspp_cml$pickTexture);
+        }
+
+        this.bbspp_cml$refreshGlintButton();
+        this.bbspp_cml$refreshBoneTextureButton();
+    }
+
     @Inject(method = "selectBone(Ljava/lang/String;)V", at = @At("TAIL"), remap = false)
     private void bbspp_cml$syncGlintOnSelectBone(String bone, CallbackInfo ci)
     {
