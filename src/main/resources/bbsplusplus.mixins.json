@@ -22,6 +22,7 @@
         "UIAnimationToPoseOverlayPanelMixin",
         "UIPoseFactoryEditorMixin",
         "UIPoseTransformsBoneSkipMixin",
+        "UIPoseTransformKeyframeFactoryMixin",
         "UIKeyframesPoseParameterBrushMixin",
         "UIListPoseParameterBrushMixin",
         "PoseBoneSkipMixin",
