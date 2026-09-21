@@ -9,8 +9,7 @@ import org.spongepowered.asm.mixin.Mixin;
 
 /**
  * 给 {@link CubicCubeRenderer}（含子类 CubicVAORenderer，即全部实际渲染路径）
- * 添加 {@code applyGroupTransformations} 覆盖：在接口 default 序列的
- * rotate/scale 前后插入 pose 中心点的成对平移。
+ * 添加 pose 中心点变换支持。
  *
  * <p>为何不直接注入接口：Mixin 对 interface 目标的 injector 支持不可靠
  * （静默不生效）；jar 中该类未覆盖此方法，mixin 合并的方法即成为

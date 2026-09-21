@@ -1,8 +1,10 @@
 package gbeic.bbsplusplus.mixin;
 
+import gbeic.bbsplusplus.api.BonePbrHolder;
 import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.GroupGlintHolder;
+import gbeic.bbsplusplus.api.GroupPbrHolder;
 import gbeic.bbsplusplus.api.GroupTextureHolder;
 import gbeic.bbsplusplus.api.PivotHolder;
 import mchorse.bbs_mod.cubic.data.model.Model;
@@ -54,8 +56,14 @@ public abstract class ModelMixin
             boolean glint = ((GlintHolder) transform).bbspp_cml$getGlint();
             boolean pivoted = pivot.x != 0F || pivot.y != 0F || pivot.z != 0F;
 
+            /* PBR：任一值 > 0 即认为该骨骼有 PBR 覆盖。 */
+            BonePbrHolder pbr = (BonePbrHolder) transform;
+            boolean hasPbr = pbr.bbspp_cml$getSmoothness() > 0F || pbr.bbspp_cml$getMetallic() > 0F
+                || pbr.bbspp_cml$getSss() > 0F || pbr.bbspp_cml$getEmission() > 0F
+                || pbr.bbspp_cml$getRelief() > 0F;
+
             /* glint 必须计入这个提前跳过判断，否则"只开光效"的骨骼会被整段忽略。 */
-            if (texture == null && !pivoted && !glint)
+            if (texture == null && !pivoted && !glint && !hasPbr)
             {
                 continue;
             }
@@ -80,6 +88,18 @@ public abstract class ModelMixin
 
                 groupGlint.bbspp_cml$setGlint(true);
                 groupGlint.bbspp_cml$setGlintColor(((GlintHolder) transform).bbspp_cml$getGlintColor());
+            }
+
+            /* PBR：只在有值时写入（全 0 由 reset() 负责清空）。 */
+            if (hasPbr)
+            {
+                GroupPbrHolder groupPbr = (GroupPbrHolder) group;
+
+                groupPbr.bbspp_cml$setSmoothness(pbr.bbspp_cml$getSmoothness());
+                groupPbr.bbspp_cml$setMetallic(pbr.bbspp_cml$getMetallic());
+                groupPbr.bbspp_cml$setSss(pbr.bbspp_cml$getSss());
+                groupPbr.bbspp_cml$setEmission(pbr.bbspp_cml$getEmission());
+                groupPbr.bbspp_cml$setRelief(pbr.bbspp_cml$getRelief());
             }
 
             if (pivoted)

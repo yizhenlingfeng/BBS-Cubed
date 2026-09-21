@@ -1,5 +1,6 @@
 package gbeic.bbsplusplus.mixin;
 
+import gbeic.bbsplusplus.api.BonePbrHolder;
 import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
 import mchorse.bbs_mod.data.types.MapType;
@@ -42,7 +43,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * （尤其是 equals 与 lerp）都会表现为"关键帧上光效闪烁或莫名丢失"。</p>
  */
 @Mixin(value = PoseTransform.class, remap = false)
-public class PoseTransformMixin implements BoneTextureHolder, GlintHolder
+public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BonePbrHolder
 {
     @Unique
     private Link bbspp_cml$texture;
@@ -53,6 +54,22 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder
     /** 光效颜色，默认白色 = 原版观感。alpha 通道会一并乘进最终亮度。 */
     @Unique
     private final Color bbspp_cml$glintColor = new Color(1F, 1F, 1F, 1F);
+
+    /* PBR 五值（LabPBR specular channels），0~1，全 0 = 无 PBR。 */
+    @Unique
+    private float bbspp_cml$pbrSmoothness;
+
+    @Unique
+    private float bbspp_cml$pbrMetallic;
+
+    @Unique
+    private float bbspp_cml$pbrSss;
+
+    @Unique
+    private float bbspp_cml$pbrEmission;
+
+    @Unique
+    private float bbspp_cml$pbrRelief;
 
     @Override
     public Link bbspp_cml$getTexture()
@@ -93,6 +110,68 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder
         }
     }
 
+    /* ---- PBR getters / setters ---- */
+
+    @Override
+    public float bbspp_cml$getSmoothness()
+    {
+        return this.bbspp_cml$pbrSmoothness;
+    }
+
+    @Override
+    public void bbspp_cml$setSmoothness(float value)
+    {
+        this.bbspp_cml$pbrSmoothness = value;
+    }
+
+    @Override
+    public float bbspp_cml$getMetallic()
+    {
+        return this.bbspp_cml$pbrMetallic;
+    }
+
+    @Override
+    public void bbspp_cml$setMetallic(float value)
+    {
+        this.bbspp_cml$pbrMetallic = value;
+    }
+
+    @Override
+    public float bbspp_cml$getSss()
+    {
+        return this.bbspp_cml$pbrSss;
+    }
+
+    @Override
+    public void bbspp_cml$setSss(float value)
+    {
+        this.bbspp_cml$pbrSss = value;
+    }
+
+    @Override
+    public float bbspp_cml$getEmission()
+    {
+        return this.bbspp_cml$pbrEmission;
+    }
+
+    @Override
+    public void bbspp_cml$setEmission(float value)
+    {
+        this.bbspp_cml$pbrEmission = value;
+    }
+
+    @Override
+    public float bbspp_cml$getRelief()
+    {
+        return this.bbspp_cml$pbrRelief;
+    }
+
+    @Override
+    public void bbspp_cml$setRelief(float value)
+    {
+        this.bbspp_cml$pbrRelief = value;
+    }
+
     @Inject(method = "toData", at = @At("TAIL"), remap = false)
     private void bbspp_cml$writeTexture(MapType data, CallbackInfo ci)
     {
@@ -109,6 +188,12 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder
         {
             data.putInt("glint_color", this.bbspp_cml$glintColor.getARGBColor());
         }
+
+        if (this.bbspp_cml$pbrSmoothness != 0F) data.putFloat("pbr_smoothness", this.bbspp_cml$pbrSmoothness);
+        if (this.bbspp_cml$pbrMetallic != 0F)  data.putFloat("pbr_metallic", this.bbspp_cml$pbrMetallic);
+        if (this.bbspp_cml$pbrSss != 0F)       data.putFloat("pbr_sss", this.bbspp_cml$pbrSss);
+        if (this.bbspp_cml$pbrEmission != 0F)  data.putFloat("pbr_emission", this.bbspp_cml$pbrEmission);
+        if (this.bbspp_cml$pbrRelief != 0F)    data.putFloat("pbr_relief", this.bbspp_cml$pbrRelief);
     }
 
     @Inject(method = "fromData", at = @At("TAIL"), remap = false)
@@ -125,6 +210,12 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder
 
         this.bbspp_cml$glint = data.getBool("glint");
         this.bbspp_cml$glintColor.set(data.getInt("glint_color", 0xFFFFFFFF));
+
+        this.bbspp_cml$pbrSmoothness = data.getFloat("pbr_smoothness");
+        this.bbspp_cml$pbrMetallic = data.getFloat("pbr_metallic");
+        this.bbspp_cml$pbrSss = data.getFloat("pbr_sss");
+        this.bbspp_cml$pbrEmission = data.getFloat("pbr_emission");
+        this.bbspp_cml$pbrRelief = data.getFloat("pbr_relief");
     }
 
     @Inject(method = "copy(Lmchorse/bbs_mod/utils/pose/Transform;)V", at = @At("TAIL"), remap = false)
@@ -139,6 +230,15 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder
         {
             this.bbspp_cml$glint = holder.bbspp_cml$getGlint();
             this.bbspp_cml$glintColor.copy(holder.bbspp_cml$getGlintColor());
+        }
+
+        if (transform instanceof BonePbrHolder holder)
+        {
+            this.bbspp_cml$pbrSmoothness = holder.bbspp_cml$getSmoothness();
+            this.bbspp_cml$pbrMetallic = holder.bbspp_cml$getMetallic();
+            this.bbspp_cml$pbrSss = holder.bbspp_cml$getSss();
+            this.bbspp_cml$pbrEmission = holder.bbspp_cml$getEmission();
+            this.bbspp_cml$pbrRelief = holder.bbspp_cml$getRelief();
         }
     }
 
@@ -166,6 +266,18 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder
                 cir.setReturnValue(false);
             }
         }
+
+        if (cir.getReturnValueZ() && obj instanceof BonePbrHolder holder)
+        {
+            if (this.bbspp_cml$pbrSmoothness != holder.bbspp_cml$getSmoothness()
+                || this.bbspp_cml$pbrMetallic != holder.bbspp_cml$getMetallic()
+                || this.bbspp_cml$pbrSss != holder.bbspp_cml$getSss()
+                || this.bbspp_cml$pbrEmission != holder.bbspp_cml$getEmission()
+                || this.bbspp_cml$pbrRelief != holder.bbspp_cml$getRelief())
+            {
+                cir.setReturnValue(false);
+            }
+        }
     }
 
     @Inject(method = "identity()V", at = @At("TAIL"), remap = false)
@@ -174,6 +286,11 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder
         this.bbspp_cml$texture = null;
         this.bbspp_cml$glint = false;
         this.bbspp_cml$glintColor.set(0xFFFFFFFF);
+        this.bbspp_cml$pbrSmoothness = 0F;
+        this.bbspp_cml$pbrMetallic = 0F;
+        this.bbspp_cml$pbrSss = 0F;
+        this.bbspp_cml$pbrEmission = 0F;
+        this.bbspp_cml$pbrRelief = 0F;
     }
 
     @Inject(
@@ -202,6 +319,17 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder
                 (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preC.a, curC.a, nextC.a, postC.a, x)), 0F, 1F)
             );
         }
+
+        /* PBR 五值是连续浮点，可插值（与 glintColor 同构）。 */
+        if (preA instanceof BonePbrHolder preP && a instanceof BonePbrHolder curP
+            && b instanceof BonePbrHolder nextP && postB instanceof BonePbrHolder postP)
+        {
+            this.bbspp_cml$pbrSmoothness = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preP.bbspp_cml$getSmoothness(), curP.bbspp_cml$getSmoothness(), nextP.bbspp_cml$getSmoothness(), postP.bbspp_cml$getSmoothness(), x)), 0F, 1F);
+            this.bbspp_cml$pbrMetallic = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preP.bbspp_cml$getMetallic(), curP.bbspp_cml$getMetallic(), nextP.bbspp_cml$getMetallic(), postP.bbspp_cml$getMetallic(), x)), 0F, 1F);
+            this.bbspp_cml$pbrSss = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preP.bbspp_cml$getSss(), curP.bbspp_cml$getSss(), nextP.bbspp_cml$getSss(), postP.bbspp_cml$getSss(), x)), 0F, 1F);
+            this.bbspp_cml$pbrEmission = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preP.bbspp_cml$getEmission(), curP.bbspp_cml$getEmission(), nextP.bbspp_cml$getEmission(), postP.bbspp_cml$getEmission(), x)), 0F, 1F);
+            this.bbspp_cml$pbrRelief = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preP.bbspp_cml$getRelief(), curP.bbspp_cml$getRelief(), nextP.bbspp_cml$getRelief(), postP.bbspp_cml$getRelief(), x)), 0F, 1F);
+        }
     }
 
     @Inject(
@@ -229,6 +357,17 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder
                 (float) MathUtils.clamp(AutoBezier.get(preC.b, curC.b, nextC.b, postC.b, pt, at, bt, qt, clamped, x), 0F, 1F),
                 (float) MathUtils.clamp(AutoBezier.get(preC.a, curC.a, nextC.a, postC.a, pt, at, bt, qt, clamped, x), 0F, 1F)
             );
+        }
+
+        /* PBR 五值的 AutoBezier 插值。 */
+        if (preA instanceof BonePbrHolder preP && a instanceof BonePbrHolder curP
+            && b instanceof BonePbrHolder nextP && postB instanceof BonePbrHolder postP)
+        {
+            this.bbspp_cml$pbrSmoothness = (float) MathUtils.clamp(AutoBezier.get(preP.bbspp_cml$getSmoothness(), curP.bbspp_cml$getSmoothness(), nextP.bbspp_cml$getSmoothness(), postP.bbspp_cml$getSmoothness(), pt, at, bt, qt, clamped, x), 0F, 1F);
+            this.bbspp_cml$pbrMetallic = (float) MathUtils.clamp(AutoBezier.get(preP.bbspp_cml$getMetallic(), curP.bbspp_cml$getMetallic(), nextP.bbspp_cml$getMetallic(), postP.bbspp_cml$getMetallic(), pt, at, bt, qt, clamped, x), 0F, 1F);
+            this.bbspp_cml$pbrSss = (float) MathUtils.clamp(AutoBezier.get(preP.bbspp_cml$getSss(), curP.bbspp_cml$getSss(), nextP.bbspp_cml$getSss(), postP.bbspp_cml$getSss(), pt, at, bt, qt, clamped, x), 0F, 1F);
+            this.bbspp_cml$pbrEmission = (float) MathUtils.clamp(AutoBezier.get(preP.bbspp_cml$getEmission(), curP.bbspp_cml$getEmission(), nextP.bbspp_cml$getEmission(), postP.bbspp_cml$getEmission(), pt, at, bt, qt, clamped, x), 0F, 1F);
+            this.bbspp_cml$pbrRelief = (float) MathUtils.clamp(AutoBezier.get(preP.bbspp_cml$getRelief(), curP.bbspp_cml$getRelief(), nextP.bbspp_cml$getRelief(), postP.bbspp_cml$getRelief(), pt, at, bt, qt, clamped, x), 0F, 1F);
         }
     }
 
@@ -260,6 +399,16 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder
             {
                 this.bbspp_cml$glintColor.copy(glintColor);
             }
+        }
+
+        /* PBR 叠加：源任一值 > 0 则覆盖（与材质级 hasPbr 语义一致）。 */
+        if (transform instanceof BonePbrHolder holder)
+        {
+            if (holder.bbspp_cml$getSmoothness() > 0F) this.bbspp_cml$pbrSmoothness = holder.bbspp_cml$getSmoothness();
+            if (holder.bbspp_cml$getMetallic() > 0F)  this.bbspp_cml$pbrMetallic = holder.bbspp_cml$getMetallic();
+            if (holder.bbspp_cml$getSss() > 0F)       this.bbspp_cml$pbrSss = holder.bbspp_cml$getSss();
+            if (holder.bbspp_cml$getEmission() > 0F)  this.bbspp_cml$pbrEmission = holder.bbspp_cml$getEmission();
+            if (holder.bbspp_cml$getRelief() > 0F)    this.bbspp_cml$pbrRelief = holder.bbspp_cml$getRelief();
         }
     }
 

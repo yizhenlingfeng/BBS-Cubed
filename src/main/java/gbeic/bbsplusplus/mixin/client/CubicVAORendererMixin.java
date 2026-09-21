@@ -1,14 +1,22 @@
 package gbeic.bbsplusplus.mixin.client;
 
+import gbeic.bbsplusplus.api.BonePbrHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.GroupGlintHolder;
+import gbeic.bbsplusplus.api.GroupPbrHolder;
 import gbeic.bbsplusplus.api.GroupTextureHolder;
 import gbeic.bbsplusplus.client.screen.ModelTextureGradeShader;
+import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.render.CubicVAORenderer;
+import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.forms.renderers.utils.FormPbr;
+import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.colors.Color;
+import mchorse.bbs_mod.utils.iris.IrisUtils;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.util.math.MatrixStack;
@@ -35,10 +43,16 @@ import java.util.function.Function;
  * 覆盖同样不生效 —— 与原版行为一致，主场景（form 渲染）恒传 resolver。</p>
  */
 @Mixin(value = CubicVAORenderer.class, remap = false)
-public class CubicVAORendererMixin
+public abstract class CubicVAORendererMixin
 {
     @Shadow(remap = false)
     private ShaderProgram program;
+
+    @Shadow(remap = false)
+    private mchorse.bbs_mod.cubic.ModelInstance model;
+
+    @Shadow(remap = false)
+    private Function<String, Link> textureResolver;
 
     @Inject(method = "renderGroup", at = @At("HEAD"), require = 1, remap = false)
     private void bbspp_cml$applyGroupGlint(BufferBuilder builder, MatrixStack stack, ModelGroup group, Model model, CallbackInfoReturnable<Boolean> cir)
@@ -62,6 +76,7 @@ public class CubicVAORendererMixin
             ModelTextureGradeShader.applyGlint(this.program, glint, glintColor);
         }
     }
+
     @Redirect(
         method = "renderGroup",
         at = @At(
@@ -81,5 +96,86 @@ public class CubicVAORendererMixin
         }
 
         return resolver.apply((String) material);
+    }
+
+    /**
+     * 逐骨骼 PBR 覆盖：当当前 group 带有骨骼级 PBR 值（任一 > 0）时，
+     * 用骨骼的五值构造独立的 albedo variant key 并 track，使 Iris 的 PBR
+     * 按骨骼值生成 specular/normal 贴图，覆盖材质级 PBR。
+     *
+     * <p>原生 {@code FormPbr.resolveAlbedo} 按 form identity + material name
+     * 构造 variant key；这里在 group 有 PBR 覆盖时追加骨骼五值的量化片段，
+     * 确保不同 PBR 值的骨骼拿到不同 GL texture id（Iris 按 id 缓存 PBR holder）。</p>
+     */
+    @Redirect(
+        method = "renderGroup",
+        at = @At(
+            value = "INVOKE",
+            target = "Lmchorse/bbs_mod/forms/renderers/utils/FormPbr;resolveAlbedo(Lmchorse/bbs_mod/forms/forms/ModelForm;Ljava/lang/String;Lmchorse/bbs_mod/resources/Link;Lmchorse/bbs_mod/graphics/texture/Texture;)Lmchorse/bbs_mod/graphics/texture/Texture;",
+            remap = false
+        ),
+        require = 1,
+        remap = false
+    )
+    private Texture bbspp_cml$resolveBonePbrAlbedo(ModelForm form, String material, Link link, Texture texture, BufferBuilder builder, MatrixStack stack, ModelGroup group, Model model)
+    {
+        /* 先走原生逻辑（材质级 PBR）。 */
+        Texture base = FormPbr.resolveAlbedo(form, material, link, texture);
+
+        /* 逐骨骼 PBR 覆盖：仅在 Iris 启用、link 有效时介入。 */
+        if (form == null || link == null || !BBSRendering.isIrisShadersEnabled())
+        {
+            return base;
+        }
+
+        /* 优先使用 Model.applyPose() 传播的 group 级 PBR；
+         * 若未激活（动画器绕过 applyPose 直接设 group.current），
+         * 回退到 Transform 上的渲染期 PBR（与 glint 的 fallback 同构）。 */
+        GroupPbrHolder pbr = (GroupPbrHolder) group;
+        float smooth = pbr.bbspp_cml$getSmoothness();
+        float metal = pbr.bbspp_cml$getMetallic();
+        float sss = pbr.bbspp_cml$getSss();
+        float emission = pbr.bbspp_cml$getEmission();
+        float relief = pbr.bbspp_cml$getRelief();
+
+        if (smooth <= 0F && metal <= 0F && sss <= 0F && emission <= 0F && relief <= 0F
+            && group.current instanceof BonePbrHolder renderPbr)
+        {
+            smooth = renderPbr.bbspp_cml$getSmoothness();
+            metal = renderPbr.bbspp_cml$getMetallic();
+            sss = renderPbr.bbspp_cml$getSss();
+            emission = renderPbr.bbspp_cml$getEmission();
+            relief = renderPbr.bbspp_cml$getRelief();
+        }
+
+        if (smooth <= 0F && metal <= 0F && sss <= 0F && emission <= 0F && relief <= 0F)
+        {
+            return base;
+        }
+
+        /* 构造骨骼级 variant key：追加五值的量化片段，确保每个唯一 PBR 组合拿到独立 GL id。 */
+        String materialKey = material == null ? "" : material;
+        String boneKey = "pbr_bone:" + materialKey + ":" + System.identityHashCode(form)
+            + ":" + Math.round(smooth * 255F)
+            + ":" + Math.round(metal * 255F)
+            + ":" + Math.round(sss * 255F)
+            + ":" + Math.round(emission * 255F)
+            + ":" + Math.round(relief * 255F);
+
+        if (BBSModClient.getTextures() == null)
+        {
+            return base;
+        }
+
+        Texture variant = BBSModClient.getTextures().getVariant(link, boneKey);
+
+        if (variant == null || variant == BBSModClient.getTextures().getError())
+        {
+            return base;
+        }
+
+        IrisUtils.trackPbrVariant(variant, link, smooth, metal, sss, emission, relief);
+
+        return variant;
     }
 }

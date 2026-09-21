@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.api.GroupGlintHolder;
+import gbeic.bbsplusplus.api.GroupPbrHolder;
 import gbeic.bbsplusplus.api.GroupTextureHolder;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.resources.Link;
@@ -26,7 +27,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 已随姿势材质栏一并移除。</p>
  */
 @Mixin(value = ModelGroup.class, remap = false)
-public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder
+public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder, GroupPbrHolder
 {
     @Unique
     private Link bbspp_cml$textureOverride;
@@ -36,6 +37,22 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder
 
     @Unique
     private final Color bbspp_cml$glintColor = new Color(1F, 1F, 1F, 1F);
+
+    /* PBR 渲染期覆盖值，全 0 = 无覆盖（回落材质级 PBR）。 */
+    @Unique
+    private float bbspp_cml$pbrSmoothness;
+
+    @Unique
+    private float bbspp_cml$pbrMetallic;
+
+    @Unique
+    private float bbspp_cml$pbrSss;
+
+    @Unique
+    private float bbspp_cml$pbrEmission;
+
+    @Unique
+    private float bbspp_cml$pbrRelief;
 
     @Override
     public Link bbspp_cml$getTextureOverride()
@@ -76,11 +93,78 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder
         }
     }
 
+    /* ---- PBR getters / setters ---- */
+
+    @Override
+    public float bbspp_cml$getSmoothness()
+    {
+        return this.bbspp_cml$pbrSmoothness;
+    }
+
+    @Override
+    public void bbspp_cml$setSmoothness(float value)
+    {
+        this.bbspp_cml$pbrSmoothness = value;
+    }
+
+    @Override
+    public float bbspp_cml$getMetallic()
+    {
+        return this.bbspp_cml$pbrMetallic;
+    }
+
+    @Override
+    public void bbspp_cml$setMetallic(float value)
+    {
+        this.bbspp_cml$pbrMetallic = value;
+    }
+
+    @Override
+    public float bbspp_cml$getSss()
+    {
+        return this.bbspp_cml$pbrSss;
+    }
+
+    @Override
+    public void bbspp_cml$setSss(float value)
+    {
+        this.bbspp_cml$pbrSss = value;
+    }
+
+    @Override
+    public float bbspp_cml$getEmission()
+    {
+        return this.bbspp_cml$pbrEmission;
+    }
+
+    @Override
+    public void bbspp_cml$setEmission(float value)
+    {
+        this.bbspp_cml$pbrEmission = value;
+    }
+
+    @Override
+    public float bbspp_cml$getRelief()
+    {
+        return this.bbspp_cml$pbrRelief;
+    }
+
+    @Override
+    public void bbspp_cml$setRelief(float value)
+    {
+        this.bbspp_cml$pbrRelief = value;
+    }
+
     @Inject(method = "reset()V", at = @At("TAIL"), remap = false)
     private void bbspp_cml$clearTextureOverride(CallbackInfo ci)
     {
         this.bbspp_cml$textureOverride = null;
         this.bbspp_cml$glint = false;
         this.bbspp_cml$glintColor.set(0xFFFFFFFF);
+        this.bbspp_cml$pbrSmoothness = 0F;
+        this.bbspp_cml$pbrMetallic = 0F;
+        this.bbspp_cml$pbrSss = 0F;
+        this.bbspp_cml$pbrEmission = 0F;
+        this.bbspp_cml$pbrRelief = 0F;
     }
 }

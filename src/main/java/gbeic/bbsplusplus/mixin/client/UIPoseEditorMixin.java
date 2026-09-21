@@ -1,5 +1,6 @@
 package gbeic.bbsplusplus.mixin.client;
 
+import gbeic.bbsplusplus.api.BonePbrHolder;
 import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.PickTextureButtonHolder;
@@ -13,11 +14,14 @@ import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.editors.panels.widgets.UIModelPoseEditor;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.UISection;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
+import mchorse.bbs_mod.ui.framework.elements.input.UISliderTrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory;
+import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.pose.UIPoseEditor;
@@ -75,6 +79,25 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     @Unique
     private UIColor bbspp_cml$glintColor;
 
+    /* PBR 折叠栏：五个滑条，与材质栏同构，插在材质栏与骨骼纹理按钮之间。 */
+    @Unique
+    private UISection bbspp_cml$pbrSection;
+
+    @Unique
+    private UISliderTrackpad bbspp_cml$pbrSmoothness;
+
+    @Unique
+    private UISliderTrackpad bbspp_cml$pbrMetallic;
+
+    @Unique
+    private UISliderTrackpad bbspp_cml$pbrSss;
+
+    @Unique
+    private UISliderTrackpad bbspp_cml$pbrEmission;
+
+    @Unique
+    private UISliderTrackpad bbspp_cml$pbrRelief;
+
     @Override
     public UIButton bbspp_cml$getPickTextureButton()
     {
@@ -124,9 +147,26 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             });
         });
 
+        /* ---- PBR 折叠栏 ---- */
+        this.bbspp_cml$pbrSmoothness = this.bbspp_cml$createPbrSlider(self, (poseT, v) -> ((BonePbrHolder) poseT).bbspp_cml$setSmoothness(v));
+        this.bbspp_cml$pbrMetallic = this.bbspp_cml$createPbrSlider(self, (poseT, v) -> ((BonePbrHolder) poseT).bbspp_cml$setMetallic(v));
+        this.bbspp_cml$pbrSss = this.bbspp_cml$createPbrSlider(self, (poseT, v) -> ((BonePbrHolder) poseT).bbspp_cml$setSss(v));
+        this.bbspp_cml$pbrEmission = this.bbspp_cml$createPbrSlider(self, (poseT, v) -> ((BonePbrHolder) poseT).bbspp_cml$setEmission(v));
+        this.bbspp_cml$pbrRelief = this.bbspp_cml$createPbrSlider(self, (poseT, v) -> ((BonePbrHolder) poseT).bbspp_cml$setRelief(v));
+
+        this.bbspp_cml$pbrSection = new UISection(UIKeys.FORMS_EDITORS_MATERIAL_SECTION_PBR);
+        this.bbspp_cml$pbrSection.fields.add(
+            UI.labelRow(UIKeys.FORMS_EDITORS_MATERIAL_SMOOTHNESS, this.bbspp_cml$pbrSmoothness),
+            UI.labelRow(UIKeys.FORMS_EDITORS_MATERIAL_METALLIC, this.bbspp_cml$pbrMetallic),
+            UI.labelRow(UIKeys.FORMS_EDITORS_MATERIAL_SSS, this.bbspp_cml$pbrSss),
+            UI.labelRow(UIKeys.FORMS_EDITORS_MATERIAL_PIXEL_EMISSION, this.bbspp_cml$pbrEmission),
+            UI.labelRow(UIKeys.FORMS_EDITORS_MATERIAL_RELIEF, this.bbspp_cml$pbrRelief)
+        );
+
         /* UIPoseEditor 本体是一个 column().vertical().stretch() 的纵向列，
-         * add() 的先后顺序就是面板自上而下的排列顺序。排在骨骼纹理之后，
-         * 即落在姿势子页面右侧按钮列表的最下方。 */
+         * add() 的先后顺序就是面板自上而下的排列顺序。
+         * PBR 栏排在材质栏之后、骨骼纹理按钮之前。 */
+        self.add(this.bbspp_cml$pbrSection);
         self.add(this.bbspp_cml$pickTexture);
 
         /* glint 开关/取色器不在这里 add：由 refreshGlintButton 按设置显隐。
@@ -142,18 +182,21 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     private void bbspp_cml$syncGlintOnSetPose(Pose pose, String group, CallbackInfo ci)
     {
         this.bbspp_cml$syncGlintToggle();
+        this.bbspp_cml$syncPbrSliders();
     }
 
     @Inject(method = "selectBone(Ljava/lang/String;)V", at = @At("TAIL"), remap = false)
     private void bbspp_cml$syncGlintOnSelectBone(String bone, CallbackInfo ci)
     {
         this.bbspp_cml$syncGlintToggle();
+        this.bbspp_cml$syncPbrSliders();
     }
 
     @Inject(method = "selectBone(Ljava/lang/String;Z)V", at = @At("TAIL"), remap = false)
     private void bbspp_cml$syncGlintOnSelectBone2(String bone, boolean value, CallbackInfo ci)
     {
         this.bbspp_cml$syncGlintToggle();
+        this.bbspp_cml$syncPbrSliders();
     }
 
     @Unique
@@ -488,5 +531,58 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         boolean enabled = CMLSettings.pickLimbTexture != null && CMLSettings.pickLimbTexture.get();
 
         this.bbspp_cml$pickTexture.setVisible(enabled);
+    }
+
+    /**
+     * 创建一个 PBR 滑条：limit(0,1)，回调经 writeToSelection 写入当前选中骨骼，
+     * 右键菜单"应用到子骨骼"。
+     */
+    @Unique
+    private UISliderTrackpad bbspp_cml$createPbrSlider(UIPoseEditor self, java.util.function.BiConsumer<PoseTransform, Float> setter)
+    {
+        UISliderTrackpad slider = new UISliderTrackpad((v) ->
+        {
+            float value = v.floatValue();
+            this.bbspp_cml$writeToSelection(self, (poseT) -> setter.accept(poseT, value));
+        });
+
+        slider.limit(0D, 1D);
+
+        slider.context((ContextMenuManager manager) ->
+        {
+            manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
+            {
+                float value = (float) slider.getValue();
+                this.bbspp_cml$forEachSelectedChildren(self, (poseT) -> setter.accept(poseT, value));
+            });
+        });
+
+        return slider;
+    }
+
+    /** 换姿势 / 换选中骨骼时，把 PBR 五值滑条同步成当前骨骼的实际值。 */
+    @Unique
+    private void bbspp_cml$syncPbrSliders()
+    {
+        if (this.bbspp_cml$pbrSection == null)
+        {
+            return;
+        }
+
+        UIPoseEditor self = (UIPoseEditor) (Object) this;
+        PoseTransform current = this.bbspp_cml$getCurrentPoseTransform(self);
+
+        float smooth = current == null ? 0F : ((BonePbrHolder) current).bbspp_cml$getSmoothness();
+        float metal = current == null ? 0F : ((BonePbrHolder) current).bbspp_cml$getMetallic();
+        float sss = current == null ? 0F : ((BonePbrHolder) current).bbspp_cml$getSss();
+        float emission = current == null ? 0F : ((BonePbrHolder) current).bbspp_cml$getEmission();
+        float relief = current == null ? 0F : ((BonePbrHolder) current).bbspp_cml$getRelief();
+
+        /* setValue() 只写字段不触发回调，同步是安全的。 */
+        this.bbspp_cml$pbrSmoothness.setValue(smooth);
+        this.bbspp_cml$pbrMetallic.setValue(metal);
+        this.bbspp_cml$pbrSss.setValue(sss);
+        this.bbspp_cml$pbrEmission.setValue(emission);
+        this.bbspp_cml$pbrRelief.setValue(relief);
     }
 }
