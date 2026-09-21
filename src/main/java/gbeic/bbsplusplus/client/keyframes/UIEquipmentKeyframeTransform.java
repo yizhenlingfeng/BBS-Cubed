@@ -45,7 +45,7 @@ public class UIEquipmentKeyframeTransform extends UIKeyframePropTransform
     @Override
     protected void applyToSelection(Consumer<Transform> consumer)
     {
-        Integer autoTick = this.editor == null ? null : this.editor.getAutoKeyframeTick();
+        Float autoTick = this.editor == null ? null : this.editor.getAutoKeyframeTick();
 
         if (autoTick != null)
         {
@@ -84,7 +84,7 @@ public class UIEquipmentKeyframeTransform extends UIKeyframePropTransform
     }
 
     @Override
-    protected Transform getAutoKeyTransform(int tick)
+    protected Transform getAutoKeyTransform(float tick)
     {
         UIKeyframeSheet sheet = this.editor.getGraph().getSheet(this.keyframe);
         Keyframe<?> recorded = this.ensureEquipmentKeyframe(sheet, tick);
@@ -116,7 +116,7 @@ public class UIEquipmentKeyframeTransform extends UIKeyframePropTransform
         }
     }
 
-    private Keyframe<?> ensureEquipmentKeyframe(UIKeyframeSheet sheet, int tick)
+    private Keyframe<?> ensureEquipmentKeyframe(UIKeyframeSheet sheet, float tick)
     {
         if (sheet == null || !EquipmentKeyframeTransforms.isEquipmentChannel(sheet.channel.getId()))
         {

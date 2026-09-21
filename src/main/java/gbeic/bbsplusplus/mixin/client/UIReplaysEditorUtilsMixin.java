@@ -142,7 +142,7 @@ public abstract class UIReplaysEditorUtilsMixin
     }
 
     @Inject(method = "fillAnimationPose", at = @At("TAIL"), remap = false)
-    private static void bbspp_cml$inheritInterpolation(UIKeyframeSheet sheet, float i, ModelInstance model, IEntity entity, Animation animation, int current, CallbackInfo ci)
+    private static void bbspp_cml$inheritInterpolation(UIKeyframeSheet sheet, float i, ModelInstance model, IEntity entity, Animation animation, float current, CallbackInfo ci)
     {
         IInterp inherited = AnimationInterpInheritance.pickInterp(animation, i);
 

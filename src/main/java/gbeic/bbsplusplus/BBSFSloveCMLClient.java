@@ -6,6 +6,8 @@ import gbeic.bbsplusplus.clips.screen.CinematicClip;
 import gbeic.bbsplusplus.forms.FluidForm;
 import gbeic.bbsplusplus.forms.renderers.FluidFormRenderer;
 import gbeic.bbsplusplus.forms.renderers.GradedVanillaParticleFormRenderer;
+import gbeic.bbsplusplus.forms.renderers.UnknownFormRenderer;
+import mchorse.bbs_mod.forms.forms.UnknownForm;
 import gbeic.bbsplusplus.particles.ParticlePlusClient;
 import gbeic.bbsplusplus.premiere.PremiereExportHandler;
 import gbeic.bbsplusplus.settings.ValueSectionHeader;
@@ -98,6 +100,12 @@ public class BBSFSloveCMLClient implements ClientModInitializer {
 
             FormUtilsClient.register(VanillaParticleForm.class, GradedVanillaParticleFormRenderer::new);
             LOGGER.info("[FSloveCML] 原版粒子伪装颜色渲染器注册成功!");
+
+            /* 为运行时缺失的 form 类型（UnknownForm，例如回放里残留的 irlite:spotlight
+             * 等未安装前置的 form）注册空 renderer，避免轨道相机收集骨骼矩阵时
+             * getRenderer() 返回 null 导致 NPE 崩溃。 */
+            FormUtilsClient.register(UnknownForm.class, UnknownFormRenderer::new);
+            LOGGER.info("[FSloveCML] UnknownForm 空 renderer 注册成功（防止缺失 form 类型崩溃）");
 
             /* 注册 easing:"bezier" 标记,让动画导入/导出能携带贝塞尔插值(联动 PoseCurve) */
             AnimationInterpInheritance.registerBezierEasing();

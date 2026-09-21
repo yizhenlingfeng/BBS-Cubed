@@ -78,7 +78,12 @@ public abstract class ModelFormCMLMixin implements MolangSharedProvider, Texture
         );
         form.add(this.bbspp_cml$actionsOverlay);
 
-        for (int i = 0; i < BBSSettings.recordingPoseTransformOverlays.get(); i++)
+        /* 2.7 起 pose_transform_overlays 拆为 pose_overlays 与 transform_overlays 两个计数；
+         * CML 的 actions overlay 作为并行覆盖集，数量与二者之和保持一致。 */
+        int overlayCount = (BBSSettings.recordingPoseOverlays == null ? 0 : BBSSettings.recordingPoseOverlays.get())
+            + (BBSSettings.recordingTransformOverlays == null ? 0 : BBSSettings.recordingTransformOverlays.get());
+
+        for (int i = 0; i < overlayCount; i++)
         {
             ValueActionsConfig overlay = new ValueActionsConfig(
                 "actions_overlay" + i,

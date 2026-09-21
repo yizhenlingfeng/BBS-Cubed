@@ -21,9 +21,9 @@ mchorse/
 
 references/
 AGENTS.md
+.error_report_analysis/
 run/
 bin/
 private/
 tools/
 .zcode/
-libs/

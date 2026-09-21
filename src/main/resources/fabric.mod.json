@@ -39,7 +39,7 @@
         "fabricloader": "${loader_version_range}",
         "minecraft": "${minecraft_version_range}",
         "java": "${java_version_range}",
-        "bbs": ">=2.6-0"
+        "bbs": ">=2.7-0"
     },
     "breaks": {
         "aaa_particles": [

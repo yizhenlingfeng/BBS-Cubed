@@ -1,0 +1,48 @@
+# gradle
+
+.gradle/
+build/
+out/
+classes/
+
+# eclipse
+
+*.launch
+
+# idea
+
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# vscode
+
+.settings/
+.vscode/
+bin/
+.classpath
+.project
+
+# macos
+
+*.DS_Store
+
+# fabric
+
+run/
+run_2/
+run_server/
+
+# java
+
+logs/
+hs_err_*.log
+replay_*.log
+*.hprof
+*.jfr
+
+ik_test/*
+.claude/settings.local.json
+OrthoCamera-1.20.1
+temp_change_log.md

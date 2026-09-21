@@ -11,7 +11,6 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.List;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * 让变换面板和 Gizmo 对骨骼的实际编辑自动恢复该骨骼参与当前 Pose 帧。
@@ -49,28 +48,10 @@ public class UIPoseTransformsBoneSkipMixin
         });
     }
 
-    /**
-     * 注入目标：{@code UIPoseTransforms#reset} 的多骨骼重置调用。
-     * 注入原因：重置也是一次明确编辑，应立即让结果在动画中生效。
-     * 修改后的行为：同一通知中恢复参与并重置每根选中骨骼。
+    /*
+     * 2.7 起 UIPoseTransforms#reset() 不再直接调用 UIPoseFactoryEditor.apply(...)，
+     * 而是走 this.applyToTarget(...) -> applyToSelection(...) -> applyBones(...)，
+     * 已经被上面 applyBones 的 @Redirect 覆盖（重置时同样会先 setSkipped(false)），
+     * 因此旧的 reset 重定向在 2.7 中目标调用不存在，必须移除。
      */
-    @Redirect(
-        method = "reset",
-        at = @At(
-            value = "INVOKE",
-            target = "Lmchorse/bbs_mod/ui/framework/elements/input/keyframes/factories/UIPoseKeyframeFactory$UIPoseFactoryEditor;apply(Lmchorse/bbs_mod/ui/framework/elements/input/keyframes/UIKeyframes;Lmchorse/bbs_mod/utils/keyframes/Keyframe;Ljava/util/List;Ljava/util/function/Consumer;)V"
-        )
-    )
-    private void bbspp$unskipBeforeTransformReset(UIKeyframes editor, Keyframe<?> keyframe, List<String> bones,
-                                                  Consumer<PoseTransform> consumer)
-    {
-        UIPoseKeyframeFactory.UIPoseFactoryEditor.apply(editor, keyframe, (pose) ->
-        {
-            for (String bone : bones)
-            {
-                PoseBoneSkipData.setSkipped(pose, bone, false);
-                consumer.accept(pose.getOrCreate(bone));
-            }
-        });
-    }
 }

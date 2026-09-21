@@ -1,0 +1,12 @@
+{
+    "required": true,
+    "package": "wemppy.bbs_physics.mixin",
+    "compatibilityLevel": "JAVA_17",
+    "mixins": [
+        "FormMixin",
+        "ModelFormMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}
