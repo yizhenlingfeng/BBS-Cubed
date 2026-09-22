@@ -947,6 +947,7 @@
   "bbspp.ui.film.replays.texture_tint": "纹理调色",
   "bbspp.ui.film.replays.texture_whiten": "纹理白化",
   "bbspp.ui.film.toggle_previous_camera_mode": "与上一个镜头模式循环",
+  "bbspp.ui.film.visibility_menu": "可见性菜单",
   "bbspp.ui.film.visibility.camera_reference": "镜头参考线",
   "bbspp.ui.film.visibility.disguise": "显示伪装",
   "bbspp.ui.film.visibility.ik": "IK 辅助线",

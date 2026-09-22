@@ -284,6 +284,7 @@
   "bbspp.ui.film.replays.texture_tint": "Texture tint",
   "bbspp.ui.film.replays.texture_whiten": "Whiten texture",
   "bbspp.ui.film.toggle_previous_camera_mode": "Toggle previous camera mode",
+  "bbspp.ui.film.visibility_menu": "Visibility menu",
   "bbspp.ui.film.visibility.camera_reference": "Camera reference guide",
   "bbspp.ui.film.visibility.disguise": "Show disguise",
   "bbspp.ui.film.visibility.ik": "IK guides",

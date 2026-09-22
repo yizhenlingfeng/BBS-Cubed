@@ -49,4 +49,12 @@ public class SnowUIKeys
         TOGGLE_PREVIOUS_CAMERA_MODE,
         GLFW.GLFW_KEY_R
     ).categoryKey("film_controller");
+
+    /* Film controller: 打开影片面板的可见性菜单（默认 F5，可在按键绑定里改绑） */
+    public static final IKey FILM_VISIBILITY_MENU = L10n.lang("bbspp.ui.film.visibility_menu");
+    public static final KeyCombo FILM_VISIBILITY_MENU_KEY = new KeyCombo(
+        "film_visibility_menu",
+        FILM_VISIBILITY_MENU,
+        GLFW.GLFW_KEY_F5
+    ).categoryKey("film_controller");
 }
