@@ -1,0 +1,48 @@
+﻿.\gradlew.bat : Picked up JAVA_TOOL_OPTIONS: "-Dorg.lwjgl.openal.libname=C:/lwjgl/soft_oal.dll"
+所在位置 行:1 字符: 45
++ ... d\源码\BBS-Cubed"; .\gradlew.bat build1201 --console=plain 2>&1 | Tee-O ...
++                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Picked up JAVA_...l/soft_oal.dll":String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+> Configure project :
+Fabric Loom: 1.15.5
+
+> Configure project :BBS-Cubed
+Fabric Loom: 1.15.5
+
+> Task :BBS-Cubed:compileJava UP-TO-DATE
+> Task :BBS-Cubed:processResources
+> Task :BBS-Cubed:classes
+> Task :BBS-Cubed:jar
+> Task :BBS-Cubed:processIncludeJars UP-TO-DATE
+> Task :BBS-Cubed:compileTestJava NO-SOURCE
+> Task :BBS-Cubed:processTestResources NO-SOURCE
+> Task :BBS-Cubed:testClasses UP-TO-DATE
+> Task :BBS-Cubed:test NO-SOURCE
+> Task :BBS-Cubed:validateAccessWidener NO-SOURCE
+> Task :BBS-Cubed:check UP-TO-DATE
+Cannot remap subMouseClicked because it does not exist in any of the targets [mchorse/bbs_mod/ui/framework/elements/input/list/UIList]
+Cannot remap appear because it does not exist in any of the targets [mchorse/bbs_mod/ui/film/UIFilmPanel]
+Cannot remap close because it does not exist in any of the targets [mchorse/bbs_mod/ui/film/UIFilmPanel]
+Cannot remap disappear because it does not exist in any of the targets [mchorse/bbs_mod/ui/film/UIFilmPanel]
+Cannot remap subMouseClicked because it does not exist in any of the targets [mchorse/bbs_mod/ui/film/replays/UIReplayList]
+Cannot remap renderModel because it does not exist in any of the targets [mchorse/bbs_mod/forms/renderers/BillboardFormRenderer]
+> Task :BBS-Cubed:remapJar
+> Task :BBS-Cubed:remapSourcesJar SKIPPED
+> Task :BBS-Cubed:assemble
+> Task :BBS-Cubed:build
+> Task :build1201
+
+[Incubating] Problems report is available at: file:///D:/Desktop/Mod/%E6%BA%90%E7%A0%81/BBS-Cubed/build/1.20.1/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.7.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 7s
+1 actionable task: 1 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.1/userguide/configuration_cache_enabling.html

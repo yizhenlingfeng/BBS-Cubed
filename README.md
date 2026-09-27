@@ -178,6 +178,12 @@
 
 ### MOD更新日志
 
+#### 3.5.2（姿势 PBR 栏 + BBS FS 2.7 适配）：
+* **姿势编辑器 PBR 栏**：姿势页新增 PBR 折叠栏，提供光泽度/金属度/次表面散射/自发光/凹凸五值调节（默认折叠）；影片编辑器的姿势轨道与肢体轨道同步添加 PBR 栏
+* **材质栏右键菜单优化**：姿势页材质栏的颜色/叠加色右键菜单改为列表式，并新增「调色卡」项
+* **适配 BBS FS 2.7**：修复 tick 浮点化与 overlay 拆分，移除失效的 reset 重定向，新增 UnknownFormRenderer 兜底渲染
+* **修复**：新伪装页面右键菜单恢复「导出模型为 .bbs.json」按钮；修复回放编辑按钮跳转模型列表而非直接打开模型编辑器的问题；消除未安装 BBS Together 时的 Mixin 类加载警告
+
 #### 3.5.1（IRL汉化完善 + 兼容修复）：
 * **IRLights 汉化补全**：完整重写中文翻译表，覆盖新版 IRL 1.1.7 全部 UI 文本（光源类型/参数/预设标签等）及轨道编辑器短名（Thickness/Volumetric/Back rim/Front rim strength/Outlined replays/Lit replays 等）
 * **修复 IRL 1.1.7 兼容**：`IRLiteGuideVisibilityMixin` 的 `renderGuide` 注入签名补充 `boolean guideVisible` 参数，适配新版方法描述符

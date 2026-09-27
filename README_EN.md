@@ -177,6 +177,12 @@
 
 ### Mod Changelog
 
+#### 3.5.2 (Pose PBR Panel + BBS FS 2.7 Adaptation)
+* **Pose editor PBR panel**: the pose page gains a collapsible PBR panel with five values—smoothness, metalness, subsurface scattering, emission, and normal/height (collapsed by default); the pose track and limb track in the movie editor also get a PBR panel
+* **Material panel right-click menu**: the color/overlay-color right-click menu in the pose material panel is now list-style, with a new "color palette" entry
+* **Adapted to BBS FS 2.7**: fixed tick float conversion and overlay split, removed the dead reset redirect, and added UnknownFormRenderer as a render fallback
+* **Fixes**: restored the "export model as .bbs.json" item in the new disguise page right-click menu; fixed the replay edit button jumping to the model list instead of opening the model editor directly; suppressed Mixin class-loading warnings when BBS Together is not installed
+
 #### 3.5.1 (IRL Localization & Compatibility Fix)
 * **IRLights localization complete**: rewrote the Chinese translation table covering all new IRL 1.1.7 UI text (light types/parameters/preset labels) and track editor short names (Thickness, Volumetric, Back rim, Front rim strength, Outlined replays, Lit replays, etc.)
 * **IRL 1.1.7 compatibility**: fixed `IRLiteGuideVisibilityMixin` `renderGuide` injection signature by adding the `boolean guideVisible` parameter to match the new method descriptor
