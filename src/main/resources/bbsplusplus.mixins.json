@@ -123,7 +123,8 @@
         "UIFilmRecorderMixin",
         "VideoRecorderMixin",
         "ModelBlockEntityRendererDistanceMixin",
-        "UIModelBlockPanelGizmoThrottleMixin"
+        "UIModelBlockPanelGizmoThrottleMixin",
+        "client.UIModelBlockPanelUndoMixin"
             ],
     "injectors": {
         "defaultRequire": 1
