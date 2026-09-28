@@ -1,4 +1,4 @@
-﻿# BBS Cubed
+# BBS Cubed
 
 > An enhancement plugin for [BBSFS](https://github.com/Wemppy4/bbs-fs)
 
@@ -176,6 +176,11 @@
 - This project is an extension plugin for [BBSFS](https://github.com/Wemppy4/bbs-fs), implemented via Mixin.
 
 ### Mod Changelog
+
+#### 3.5.3 (Model Block Preview Undo/Redo)
+* **Undo/redo for model block preview**: in the dashboard's model block preview panel, you can now press `Ctrl+Z` to undo and `Ctrl+Y` to redo. Moving models, adjusting position/rotation/scale, switching forms, modifying body properties and equipment — all changes can be undone. Quick consecutive edits are automatically merged into one step, so you won't undo several changes at once
+* **Fixed F5 menu in movie panel**: fixed the issue where pressing F5 in the movie panel didn't open the visibility menu. This shortcut can now be rebound in key settings; after rebinding, F5 reverts to the vanilla perspective toggle
+* **Fixed wrong parameter display after undo**: fixed an issue where position, rotation, and scale parameter input boxes showed values that didn't match the actual state after undo/redo
 
 #### 3.5.2 (Pose PBR Panel + BBS FS 2.7 Adaptation)
 * **Pose editor PBR panel**: the pose page gains a collapsible PBR panel with five values—smoothness, metalness, subsurface scattering, emission, and normal/height (collapsed by default); the pose track and limb track in the movie editor also get a PBR panel

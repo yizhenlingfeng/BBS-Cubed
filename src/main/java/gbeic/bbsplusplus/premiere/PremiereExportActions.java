@@ -25,7 +25,7 @@ public final class PremiereExportActions
 
     public static void openSettings(UIFilmPanel filmPanel)
     {
-        UIOverlay.addOverlay(filmPanel.getContext(), new UIPremiereExportSettingsOverlayPanel());
+        UIOverlay.addOverlay(filmPanel.getContext(), new UIPremiereExportSettingsOverlayPanel(filmPanel));
     }
 
     public static void onClick(UIFilmPanel filmPanel)

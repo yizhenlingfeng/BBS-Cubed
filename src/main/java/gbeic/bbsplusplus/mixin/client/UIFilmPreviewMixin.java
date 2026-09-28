@@ -1,5 +1,6 @@
 package gbeic.bbsplusplus.mixin.client;
 
+import gbeic.bbsplusplus.premiere.IPremiereExportButton;
 import gbeic.bbsplusplus.premiere.PremiereExportActions;
 import gbeic.bbsplusplus.premiere.PremiereUIKeys;
 import gbeic.bbsplusplus.settings.CMLSettings;
@@ -21,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 影片预览界面扩展：添加骨骼优先级按钮与 Premiere 导出按钮。
  */
 @Mixin(value = UIFilmPreview.class, remap = false)
-public abstract class UIFilmPreviewMixin
+public abstract class UIFilmPreviewMixin implements IPremiereExportButton
 {
     @Shadow
     private UIFilmPanel panel;
@@ -41,7 +42,6 @@ public abstract class UIFilmPreviewMixin
         this.bbspp_cml$bonePriority.tooltip(SnowUIKeys.BONE_PRIORITY);
         self.icons.addBefore(self.onionSkin, this.bbspp_cml$bonePriority);
 
-        /* 总是创建按钮，根据设置动态控制可见性，避免开关后需要重进游戏才刷新 */
         this.bbspp_cml$premiereExport = new UIIcon(Icons.SOUND, (b) -> PremiereExportActions.onClick(panel));
         this.bbspp_cml$premiereExport.tooltip(PremiereUIKeys.EXPORT, Direction.LEFT);
         this.bbspp_cml$premiereExport.context((menu) ->
@@ -56,19 +56,10 @@ public abstract class UIFilmPreviewMixin
     /**
      * 根据设置更新 Premiere 导出按钮的可见性。
      */
-    @Unique
-    private void bbspp_cml$updatePremiereButtonVisibility()
+    @Override
+    public void bbspp_cml$updatePremiereButtonVisibility()
     {
         boolean visible = CMLSettings.premiereExportEnabled != null && CMLSettings.premiereExportEnabled.get();
         this.bbspp_cml$premiereExport.setVisible(visible);
-    }
-
-    /**
-     * 每次界面更新时同步按钮可见性，设置开关后立即生效。
-     */
-    @Inject(method = "update", at = @At("HEAD"), remap = false)
-    private void bbspp_cml$onUpdate(CallbackInfo ci)
-    {
-        this.bbspp_cml$updatePremiereButtonVisibility();
     }
 }

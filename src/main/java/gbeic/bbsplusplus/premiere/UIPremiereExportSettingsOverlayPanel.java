@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.premiere;
 
 import gbeic.bbsplusplus.settings.CMLSettings;
+import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
@@ -18,15 +19,20 @@ public class UIPremiereExportSettingsOverlayPanel extends UIOverlayPanel
     private final UIToggle ntscFlag;
     private final UIToggle exportSrt;
 
-    public UIPremiereExportSettingsOverlayPanel()
+    private final UIFilmPanel filmPanel;
+
+    public UIPremiereExportSettingsOverlayPanel(UIFilmPanel filmPanel)
     {
         super(PremiereUIKeys.EXPORT_SETTINGS);
+
+        this.filmPanel = filmPanel;
 
         this.enabled = new UIToggle(L10n.lang("bbs.config.bbs_snow.premiere_export_enabled"), (b) ->
         {
             if (CMLSettings.premiereExportEnabled != null)
             {
                 CMLSettings.premiereExportEnabled.set(b.getValue());
+                this.bbspp_cml$updateButtonVisibility();
             }
         });
         this.enabled.tooltip(L10n.lang("bbs.config.bbs_snow.premiere_export_enabled-comment"));
@@ -77,6 +83,17 @@ public class UIPremiereExportSettingsOverlayPanel extends UIOverlayPanel
 
         this.content.add(editor.full(this.content));
         this.fill();
+    }
+
+    /**
+     * 开关启用选项时，实时更新影片预览中的按钮可见性。
+     */
+    private void bbspp_cml$updateButtonVisibility()
+    {
+        if (this.filmPanel != null && this.filmPanel.preview instanceof IPremiereExportButton)
+        {
+            ((IPremiereExportButton) this.filmPanel.preview).bbspp_cml$updatePremiereButtonVisibility();
+        }
     }
 
     private void fill()
