@@ -8,6 +8,7 @@ import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import gbeic.bbsplusplus.utils.BonePriority;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.UIFilmPreview;
+import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Direction;
@@ -33,6 +34,9 @@ public abstract class UIFilmPreviewMixin implements IPremiereExportButton
     @Unique
     private UIIcon bbspp_cml$premiereExport;
 
+    @Unique
+    private boolean bbspp_cml$lastPremiereVisible = false;
+
     @Inject(method = "<init>", at = @At("TAIL"), remap = false)
     private void bbspp_cml$addMonitorButtons(UIFilmPanel panel, CallbackInfo ci)
     {
@@ -50,6 +54,7 @@ public abstract class UIFilmPreviewMixin implements IPremiereExportButton
         });
         self.icons.add(this.bbspp_cml$premiereExport);
 
+        this.bbspp_cml$lastPremiereVisible = !CMLSettings.premiereExportEnabled.get();
         this.bbspp_cml$updatePremiereButtonVisibility();
     }
 
@@ -60,6 +65,19 @@ public abstract class UIFilmPreviewMixin implements IPremiereExportButton
     public void bbspp_cml$updatePremiereButtonVisibility()
     {
         boolean visible = CMLSettings.premiereExportEnabled != null && CMLSettings.premiereExportEnabled.get();
-        this.bbspp_cml$premiereExport.setVisible(visible);
+        if (this.bbspp_cml$lastPremiereVisible != visible)
+        {
+            this.bbspp_cml$lastPremiereVisible = visible;
+            this.bbspp_cml$premiereExport.setVisible(visible);
+        }
+    }
+
+    /**
+     * 每次渲染时检查设置，同步按钮可见性（从主设置界面改完后回来也能生效）。
+     */
+    @Inject(method = "render", at = @At("HEAD"), remap = false)
+    private void bbspp_cml$onRender(UIContext context, CallbackInfo ci)
+    {
+        this.bbspp_cml$updatePremiereButtonVisibility();
     }
 }
