@@ -4,7 +4,7 @@ import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.film.Film;
-import mchorse.bbs_mod.film.replays.PerLimbService;
+import mchorse.bbs_mod.film.replays.tracks.TrackId;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
@@ -27,6 +27,7 @@ import wemppy.bbs_physics.forms.IPhysicsForm;
 import wemppy.bbs_physics.forms.PhysicsForms;
 import wemppy.bbs_physics.ragdoll.FormRagdolls;
 import wemppy.bbs_physics.ragdoll.RagdollState;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -84,6 +85,7 @@ public final class PhysicsBake
 
     private final Film film;
     private final Replay replay;
+    /** Null selects the whole actor; an empty string selects only its root form. */
     private final String formPath;
 
     /** The tick being worked out — of the film, and of the replay (which may loop). */
@@ -126,6 +128,28 @@ public final class PhysicsBake
     /** The paths of the forms whose handle is to be set to 1 once the keys are in. */
     private final Set<String> baked = new LinkedHashSet<>();
 
+    private Form anchorRoot;
+    private Matrix4f anchorCorrection;
+    private boolean rootBody;
+
+    /** Preserve the release frame after baking removes the authority track. */
+    void anchorFrame(Form root, Matrix4f correction)
+    {
+        this.anchorRoot = root;
+        this.anchorCorrection = correction;
+    }
+
+    private Transform correctAnchor(Transform value)
+    {
+        if (this.anchorCorrection == null || this.anchorCorrection.equals(new Matrix4f(), 0.000001F)) return value;
+        Matrix4f matrix = new Matrix4f(this.anchorCorrection).mul(value.createMatrix());
+        matrix.getTranslation(value.translate);
+        matrix.getScale(value.scale);
+        value.rotationMode = Transform.RotationMode.QUATERNION;
+        matrix.getUnnormalizedRotation(value.quat).normalize();
+        return value;
+    }
+
     private int ticks;
 
     PhysicsBake(Film film, Replay replay, String formPath)
@@ -141,6 +165,9 @@ public final class PhysicsBake
         this.tick = tick;
         this.local = this.replay.getTick(tick);
         this.models.clear();
+        this.anchorRoot = null;
+        this.anchorCorrection = null;
+        this.rootBody = false;
     }
 
     /**
@@ -149,7 +176,7 @@ public final class PhysicsBake
      */
     public void body(Form form, String path, Vector3f position, Quaternionf rotation, float authority)
     {
-        if (!path.equals(this.formPath))
+        if (this.formPath != null && !path.equals(this.formPath))
         {
             return;
         }
@@ -177,6 +204,11 @@ public final class PhysicsBake
             value.quat.set(animated.createRotation()).slerp(new Quaternionf(rotation).normalize(), weight);
         }
 
+        if (path.isEmpty())
+        {
+            this.correctAnchor(value);
+            this.rootBody = true;
+        }
         this.stage(this.transformKey(path), KeyframeFactories.TRANSFORM, value, authority < 1F);
         this.baked.add(path);
     }
@@ -187,7 +219,7 @@ public final class PhysicsBake
      */
     public void bones(ModelForm form, String path)
     {
-        if (path.equals(this.formPath))
+        if (this.formPath == null || path.equals(this.formPath))
         {
             this.models.put(form, path);
         }
@@ -206,6 +238,14 @@ public final class PhysicsBake
      */
     void finishTick()
     {
+        if (this.anchorRoot != null && !this.rootBody)
+        {
+            Transform value = new Transform();
+            value.copy(this.anchorRoot.transform.get());
+            this.stage(this.transformKey(""), KeyframeFactories.TRANSFORM, this.correctAnchor(value),
+                !this.anchorCorrection.equals(new Matrix4f(), 0.00001F));
+        }
+
         this.ticks++;
 
         for (Map.Entry<ModelForm, String> entry : this.models.entrySet())
@@ -248,7 +288,7 @@ public final class PhysicsBake
                     continue;
                 }
 
-                String key = PerLimbService.toPoseBoneKey(entry.getValue(), group.id);
+                String key = TrackId.bone(entry.getValue(), group.id).toKey();
                 PoseTransform old = this.existing(key);
                 PoseTransform value = new PoseTransform();
 
@@ -414,6 +454,13 @@ public final class PhysicsBake
                 {
                     authority.removeAll();
                 }
+            }
+
+            // The death marker still keeps the body visible, but must not release the baked pose.
+            if (keys[0] > 0 && (this.formPath == null || this.formPath.isEmpty()) && this.baked.contains(""))
+            {
+                for (var death : this.replay.actions.getClips(wemppy.bbs_physics.actions.DeathActionClip.class))
+                    death.baked.set(true);
             }
         });
 

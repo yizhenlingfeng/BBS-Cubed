@@ -100,6 +100,7 @@ public final class SceneDebugRenderer
         }
 
         drawImpulses(scene, stack, camera);
+        DeathImpactRenderer.draw(scene, stack, camera);
     }
 
     /**
@@ -137,7 +138,7 @@ public final class SceneDebugRenderer
                 }
 
                 Point point = clip.point.get();
-                float radius = Math.max(clip.radius.get(), 0.05F);
+                float radius = Math.max(wemppy.bbs_physics.client.clips.ImpulseRadiusHandle.displayedRadius(clip), 0.05F);
                 int color = clip.isInside(local) ? IMPULSE_NOW : IMPULSE_ELSEWHERE;
 
                 stack.push();

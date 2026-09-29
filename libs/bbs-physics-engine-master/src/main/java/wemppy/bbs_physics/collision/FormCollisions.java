@@ -2,7 +2,7 @@ package wemppy.bbs_physics.collision;
 
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.settings.values.core.ValueData;
+import wemppy.bbs_physics.forms.ValueData;
 import wemppy.bbs_physics.forms.IPhysicsForm;
 
 /**
@@ -25,7 +25,7 @@ public final class FormCollisions
      * with every value BBS may add to a form in the future, and a collision there would silently
      * swap one for the other.
      */
-    public static final String KEY = "bbs_physics_collision";
+    public static final String KEY = "bbs_physics:collision";
 
     private FormCollisions()
     {}

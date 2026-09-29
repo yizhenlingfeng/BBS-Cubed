@@ -1,11 +1,16 @@
 package wemppy.bbs_physics.client.scene;
 
+import java.util.List;
+
 import mchorse.bbs_mod.film.BaseFilmController;
 import mchorse.bbs_mod.film.Film;
+import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import wemppy.bbs_physics.BBSPhysics;
 import wemppy.bbs_physics.BBSPhysicsSettings;
 import wemppy.bbs_physics.engine.JoltEngine;
+import wemppy.bbs_physics.forms.PhysicsForms;
+import wemppy.bbs_physics.actions.ImpulseActionClip;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 
 import java.util.Collections;
@@ -15,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Keeps one {@link FilmScene} per running film and takes the four calls the mixins make.
+ * Keeps one {@link FilmScene} per running film and takes the four calls BBS makes into it.
  *
  * <p>Scenes are keyed by the controller object rather than by the film's id, because the editor
  * throws its controller away and builds a new one whenever the cast changes — two controllers for
@@ -23,13 +28,23 @@ import java.util.Set;
  * old simulation.</p>
  *
  * <p>Nothing in here is allowed to take BBS down with it. The calls arrive from inside BBS's own
- * tick and render, injected there by a mixin, so an exception would land in the middle of the
- * host's frame. Every entry point therefore catches, reports once and drops the scene: a film
+ * tick and render — it posts them there itself (see {@code FilmEvents}) — so an exception would
+ * land in the middle of the host's frame. Every entry point therefore catches, reports once and drops the scene: a film
  * without physics is a far better outcome than a film that crashes the game.</p>
  */
 public class FilmScenes
 {
     private static final Map<BaseFilmController, FilmScene> SCENES = new IdentityHashMap<>();
+    private static final Map<String, FilmScene.Recording> RETAINED = new java.util.HashMap<>();
+
+    private static boolean manual(BaseFilmController controller)
+    {
+        return controller instanceof mchorse.bbs_mod.ui.film.controller.FilmEditorController
+            && BBSPhysicsSettings.manualCalculation != null && BBSPhysicsSettings.manualCalculation.get();
+    }
+
+    /** Films with no simulation: do not rescan their form trees on every tick. */
+    private static final Set<BaseFilmController> EMPTY = Collections.newSetFromMap(new IdentityHashMap<>());
 
     /**
      * Controllers whose scene threw on the way up or on the way forward.
@@ -55,17 +70,41 @@ public class FilmScenes
     /** The film's cast was assembled or rebuilt: the old simulation no longer describes it. */
     public static void onSetup(BaseFilmController controller)
     {
+        if (manual(controller) && controller.film != null)
+        {
+            for (var entry : SCENES.entrySet())
+            {
+                if (manual(entry.getKey()) && sameFilm(entry.getKey().film, controller.film))
+                    RETAINED.putIfAbsent(controller.film.getId(), entry.getValue().recording());
+            }
+        }
         drop(controller);
         dropOthersOf(controller);
 
-        if (!isEnabled())
-        {
-            return;
-        }
+        /* Construction is deferred until onTick. Repeated cast notifications before that tick
+         * must not each allocate a Jolt world and collect the same Minecraft blocks. */
+    }
 
+    private static void create(BaseFilmController controller)
+    {
         try
         {
-            FilmScene scene = new FilmScene(controller);
+            dropOthersOf(controller);
+
+            if (!hasSimulation(controller.film))
+            {
+                EMPTY.add(controller);
+                return;
+            }
+
+            if (!isEnabled())
+            {
+                FAILED.add(controller);
+                return;
+            }
+
+            FilmScene scene = new FilmScene(controller,
+                manual(controller) ? RETAINED.get(controller.film.getId()) : null);
 
             SCENES.put(controller, scene);
 
@@ -86,7 +125,10 @@ public class FilmScenes
     /** The film reached {@code tick} and every actor is already updated to it. */
     public static void onTick(BaseFilmController controller, int tick)
     {
-        if (!isEnabled())
+        if (controller instanceof mchorse.bbs_mod.ui.film.controller.FilmEditorController
+            && !manual(controller) && controller.film != null)
+            RETAINED.remove(controller.film.getId());
+        if (BBSPhysicsSettings.enabled == null || !BBSPhysicsSettings.enabled.get())
         {
             /* Switched off while a film was running. The scene goes now rather than at shutdown:
              * a Jolt world is native memory, and "physics is off" should mean the addon is not
@@ -100,14 +142,14 @@ public class FilmScenes
 
         if (scene == null)
         {
-            if (FAILED.contains(controller))
+            if (FAILED.contains(controller) || EMPTY.contains(controller))
             {
                 return;
             }
 
             /* A controller that started ticking without ever announcing its cast — build the scene
              * on first sight rather than never. */
-            onSetup(controller);
+            create(controller);
 
             scene = SCENES.get(controller);
 
@@ -117,12 +159,13 @@ public class FilmScenes
             }
         }
 
-        if (scene.needsRebuild())
+        else if (scene.needsRebuild())
         {
             /* The author changed how much of the world takes part. That is the set of bodies, not
              * their state, so no amount of re-simulating fixes it — the scene is assembled again,
              * here, rather than at the next time the cast happens to change. */
             onSetup(controller);
+            create(controller);
 
             scene = SCENES.get(controller);
 
@@ -161,25 +204,56 @@ public class FilmScenes
 
         Film film = SceneEdits.filmOf(value);
 
-        if (film == null || !SceneEdits.matters(value.getPath().strings))
+        if (film == null || (value != film && !SceneEdits.matters(value.getPath().strings)))
         {
             return;
         }
 
-        /* An edit is the one thing that can undo whatever made a scene fail — the author deleting
-         * the form that threw, most plainly — so it also clears the failures. One retry per edit is
-         * paced by a human hand, unlike one per tick. */
-        FAILED.clear();
+        onFilmEdited(film, List.of(value));
+    }
 
-        for (Map.Entry<BaseFilmController, FilmScene> entry : SCENES.entrySet())
+    public static void onFilmEdited(Film film, List<BaseValue> values)
+    {
+        boolean significant = false;
+        boolean impulseEdit = true;
+        for (BaseValue value : values)
         {
+            if (value != film && !SceneEdits.matters(value.getPath().strings)) continue;
+            significant = true;
+            boolean impulse = false;
+            for (BaseValue parent = value; parent != null && parent != film; parent = parent.getParent())
+            {
+                if (parent instanceof ImpulseActionClip) { impulse = true; break; }
+            }
+            impulseEdit &= impulse;
+        }
+        if (!significant) return;
+
+        FAILED.removeIf(controller -> sameFilm(controller.film, film));
+        EMPTY.removeIf(controller -> sameFilm(controller.film, film));
+
+        Iterator<Map.Entry<BaseFilmController, FilmScene>> scenes = SCENES.entrySet().iterator();
+
+        while (scenes.hasNext())
+        {
+            Map.Entry<BaseFilmController, FilmScene> entry = scenes.next();
             Film other = entry.getKey().film;
 
             /* Identity first, then the id: the editor and its controller normally share the very
              * same film object, but a controller rebuilt around a reloaded film would not. */
-            if (other == film || other != null && other.getId().equals(film.getId()))
+            if (sameFilm(other, film))
             {
-                entry.getValue().invalidate();
+                if (manual(entry.getKey()) || hasSimulation(other))
+                {
+                    entry.getValue().invalidate(impulseEdit);
+                }
+                else
+                {
+                    BaseFilmController controller = entry.getKey();
+                    entry.getValue().close();
+                    scenes.remove();
+                    EMPTY.add(controller);
+                }
             }
         }
     }
@@ -187,14 +261,9 @@ public class FilmScenes
     /** The film's actors have been drawn; the scene may draw its own things into the same pass. */
     public static void onRender(BaseFilmController controller, WorldRenderContext context)
     {
-        if (!isEnabled() || BBSPhysicsSettings.debug == null || !BBSPhysicsSettings.debug.get())
-        {
-            return;
-        }
-
         FilmScene scene = SCENES.get(controller);
 
-        if (scene == null)
+        if (scene == null || BBSPhysicsSettings.debug == null || !BBSPhysicsSettings.debug.get() || !isEnabled())
         {
             return;
         }
@@ -212,6 +281,18 @@ public class FilmScenes
              * again — the same crawl as a scene that cannot be assembled. */
             fail(controller);
         }
+    }
+
+    public static void requestCalculation(BaseFilmController controller)
+    {
+        if (controller == null || !isEnabled()) return;
+        // Only an explicit calculation replaces the retained recording.
+        if (controller.film != null) RETAINED.remove(controller.film.getId());
+        drop(controller);
+        dropOthersOf(controller);
+        create(controller);
+        FilmScene scene = SCENES.get(controller);
+        if (scene != null) scene.requestCalculation(controller.getTick());
     }
 
     /** The live scene of this controller, or null when it has none. */
@@ -269,6 +350,7 @@ public class FilmScenes
     /** The film is gone. */
     public static void onShutdown(BaseFilmController controller)
     {
+        if (manual(controller) && controller.film != null) RETAINED.remove(controller.film.getId());
         drop(controller);
     }
 
@@ -285,6 +367,7 @@ public class FilmScenes
          * attempt starts here — {@link #onSetup} drops before it builds — so the mark being set
          * after the drop, by {@link #fail}, is what makes an attempt one attempt. */
         FAILED.remove(controller);
+        EMPTY.remove(controller);
     }
 
     /** The scene is gone and is not to be built again until an edit or a rebuilt cast says so. */
@@ -330,6 +413,29 @@ public class FilmScenes
          * behind keeps a discarded controller, its film and its cast alive for as long as the game
          * runs. The mark is the leftover's only trace, so it is swept on the same terms. */
         FAILED.removeIf((other) -> isStale(controller, filmId, other));
+        EMPTY.removeIf((other) -> isStale(controller, filmId, other));
+    }
+
+    /** Reads authored flags only: no model loading, matrix evaluation or native initialization. */
+    private static boolean hasSimulation(Film film)
+    {
+        if (film != null)
+        {
+            for (Replay replay : film.replays.getList())
+            {
+                if (replay.enabled.get() && PhysicsForms.isSimulatedTree(replay.form.get()))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean sameFilm(Film other, Film film)
+    {
+        return other == film || other != null && other.getId().equals(film.getId());
     }
 
     private static boolean isStale(BaseFilmController controller, String filmId, BaseFilmController other)
@@ -352,6 +458,8 @@ public class FilmScenes
         }
 
         FAILED.clear();
+        EMPTY.clear();
+        RETAINED.clear();
     }
 
     public static int getSceneCount()

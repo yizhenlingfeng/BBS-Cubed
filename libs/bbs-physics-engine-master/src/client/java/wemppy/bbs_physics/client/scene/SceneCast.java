@@ -4,12 +4,12 @@ import mchorse.bbs_mod.film.BaseFilmController;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.forms.renderers.utils.RenderFrame;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The film's actors, as the simulation needs them: able to be stood on any tick, and put back
@@ -27,10 +27,12 @@ import java.util.List;
  * actors are here for exactly that reason — an actor with no physics of its own can still be the
  * one another actor is riding.</p>
  *
- * <p><b>The order is by replay index, ascending.</b> BBS keys its actors in a hash map, whose
+ * <p><b>The order is the film's own order of replays.</b> BBS keys its actors in a hash map, whose
  * iteration order is an implementation detail; here it decides which actor the scene is centred on
  * and in which order bodies enter the world, and Jolt resolves a pile in body order. Two runs of the
- * same film that disagreed about it would settle a stack of crates differently.</p>
+ * same film that disagreed about it would settle a stack of crates differently. So the cast is built
+ * by walking the film's replay list rather than the map — which since BBS 2.6 is also how an actor
+ * is found at all, the map being keyed by the replay's stable id.</p>
  */
 public final class SceneCast implements Iterable<SceneCast.Member>
 {
@@ -61,18 +63,20 @@ public final class SceneCast implements Iterable<SceneCast.Member>
 
     public SceneCast(BaseFilmController controller)
     {
-        List<Replay> replays = controller.film == null ? null : controller.film.replays.getList();
-        List<Integer> order = new ArrayList<>(controller.getEntities().keySet());
-
-        Collections.sort(order);
-
-        for (int index : order)
+        if (controller.film == null)
         {
-            IEntity entity = controller.getEntities().get(index);
+            return;
+        }
+
+        Map<String, IEntity> entities = controller.getEntities();
+
+        for (Replay replay : controller.film.replays.getList())
+        {
+            IEntity entity = entities.get(replay.getId());
 
             if (entity != null)
             {
-                this.members.add(new Member(entity, replays == null ? null : CollectionUtils.getSafe(replays, index)));
+                this.members.add(new Member(entity, replay));
             }
         }
     }
@@ -133,6 +137,11 @@ public final class SceneCast implements Iterable<SceneCast.Member>
      */
     public void apply(int tick)
     {
+        /* Track runtime writes do not bump the form's pose version. A catch-up evaluates many
+         * film ticks in one render frame, so both channel and anchor-matrix caches must forget
+         * the previous sample. This also covers restore(), before the viewport reads its pose. */
+        RenderFrame.invalidate();
+
         for (Member member : this.members)
         {
             if (member.replay == null)
@@ -144,6 +153,10 @@ public final class SceneCast implements Iterable<SceneCast.Member>
             Form root = member.entity.getForm();
 
             member.replay.keyframes.apply(local, member.entity);
+
+            // Physics owns the death pose. Vanilla's death tilt must not enter sampled matrices.
+            if (wemppy.bbs_physics.ragdoll.DeathReplay.at(member.replay, Integer.MAX_VALUE) != null)
+                member.entity.setDeathTime(0);
 
             if (root != null)
             {

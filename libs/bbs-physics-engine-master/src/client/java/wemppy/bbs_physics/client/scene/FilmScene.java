@@ -1,8 +1,8 @@
 package wemppy.bbs_physics.client.scene;
 
-import io.netty.util.collection.IntObjectMap;
 import mchorse.bbs_mod.film.BaseFilmController;
 import mchorse.bbs_mod.film.Film;
+import mchorse.bbs_mod.film.FilmMatrices;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
@@ -24,7 +24,11 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The physics of one film: a single Jolt world, a recording of what it did on every tick, and the
@@ -90,6 +94,27 @@ public class FilmScene implements AutoCloseable
      * This, and not the Jolt world, is what a drawn frame reads (§6).
      */
     private final PhysicsCache cache = new PhysicsCache();
+    private final Map<String, Integer> channelKeys = new java.util.HashMap<>();
+    private String channelActor = "";
+    private final Recording retained;
+
+    record Recording(PhysicsCache cache, Map<String, Integer> keys, double x, double y, double z, boolean complete, boolean full, int lostAt) {}
+
+    Recording recording()
+    {
+        return new Recording(this.cache, Map.copyOf(this.channelKeys), this.originX, this.originY, this.originZ, this.calculationComplete, this.full, this.lostAt);
+    }
+
+    void channelActor(String id) { this.channelActor = id; }
+
+    public int addChannel(String key, int floats)
+    {
+        int channel = this.cache.addChannel(floats);
+        this.channelKeys.put(this.channelActor + "/" + key, channel);
+        return channel;
+    }
+
+    public int addChannel(String key) { return this.addChannel(key, PhysicsCache.FLOATS); }
 
     /** The film's cast, borrowed by the simulation and handed back every time. */
     private final SceneCast cast;
@@ -98,7 +123,7 @@ public class FilmScene implements AutoCloseable
     private final SceneClips clips = new SceneClips(this);
 
     /** The film's cast, as the anchor resolution needs it — an anchor points at another actor. */
-    private final IntObjectMap<IEntity> entities;
+    private final Map<String, IEntity> entities;
 
     /** The film being simulated, for its length — the recording has no reason to run past the end. */
     private final Film film;
@@ -119,6 +144,12 @@ public class FilmScene implements AutoCloseable
      * {@link FilmScenes#onFilmEdited}) and answered on the next tick by starting over.
      */
     private boolean stale;
+    private final boolean editor;
+    private boolean calculationRequested;
+    private boolean calculationComplete;
+    private int requestedEnd;
+    private PhysicsCache impulsePreview;
+    private int impulsePreviewTick = -1;
 
     /** When the last edit arrived — the background catch-up keeps clear for a moment after one. */
     private long editedAt;
@@ -131,6 +162,7 @@ public class FilmScene implements AutoCloseable
 
     /** The scene-wide knobs this recording was made under — see {@link #applyWorldSettings()}. */
     private float gravity = PhysicsWorld.EARTH_GRAVITY;
+    private float speed = 1F;
     private int collisionSteps = PhysicsWorld.COLLISION_STEPS;
 
     /** The tick the film last asked for, against which the simulation's own tick is reported. */
@@ -160,6 +192,13 @@ public class FilmScene implements AutoCloseable
 
     public FilmScene(BaseFilmController controller)
     {
+        this(controller, null);
+    }
+
+    FilmScene(BaseFilmController controller, Recording retained)
+    {
+        this.retained = retained;
+        this.editor = controller instanceof mchorse.bbs_mod.ui.film.controller.FilmEditorController;
         this.world = new PhysicsWorld();
         this.timeline = new PhysicsTimeline(this.world);
         this.entities = controller.getEntities();
@@ -171,6 +210,17 @@ public class FilmScene implements AutoCloseable
         try
         {
             this.assemble(controller.getTick());
+            if (retained != null)
+            {
+                int[] channels = new int[this.cache.getChannelCount()];
+                java.util.Arrays.fill(channels, -1);
+                this.channelKeys.forEach((key, channel) -> channels[channel] = retained.keys().getOrDefault(key, -1));
+                this.cache.restore(retained.cache(), channels);
+                this.calculationComplete = retained.complete() && this.cache.getComputed() == retained.cache().getComputed();
+                this.full = retained.full();
+                this.lostAt = retained.lostAt();
+                this.stale = true;
+            }
 
             built = true;
         }
@@ -241,6 +291,13 @@ public class FilmScene implements AutoCloseable
      */
     private void pickOrigin()
     {
+        if (this.retained != null)
+        {
+            this.originX = this.retained.x();
+            this.originY = this.retained.y();
+            this.originZ = this.retained.z();
+            return;
+        }
         IEntity first = this.cast.first();
 
         if (first != null)
@@ -295,6 +352,11 @@ public class FilmScene implements AutoCloseable
     public PhysicsCache getCache()
     {
         return this.cache;
+    }
+
+    public RagdollRig.Impact getDeathImpact(wemppy.bbs_physics.actions.DeathActionClip clip)
+    {
+        return this.clips.deathImpact(clip, this.filmTick);
     }
 
     public List<SceneBody> getBodies()
@@ -384,9 +446,9 @@ public class FilmScene implements AutoCloseable
         return new SceneStatus(
             this.filmTick,
             this.cache.getComputed() - 1,
-            this.recordingEnd(this.filmTick),
+            this.manualCalculation() && this.calculationComplete ? this.cache.getComputed() - 1 : this.recordingEnd(this.filmTick),
             this.cache.has(this.filmTick),
-            this.stale || !this.backgroundAllowed(),
+            this.manualCalculation() ? this.waitingForCalculation() : this.stale || !this.backgroundAllowed(),
             this.full,
             this.lostAt,
             this.world.getBodyCount(),
@@ -453,6 +515,12 @@ public class FilmScene implements AutoCloseable
          * the tick after. */
         this.applyWorldSettings();
 
+        if (this.manualCalculation() && !this.calculationRequested)
+        {
+            this.distribute(tick);
+            return;
+        }
+
         if (this.stale)
         {
             this.stale = false;
@@ -461,11 +529,15 @@ public class FilmScene implements AutoCloseable
         }
 
         this.compute(tick);
+        this.calculationComplete = this.cache.getComputed()
+            > (this.manualCalculation() ? this.requestedEnd : this.recordingEnd(tick));
+        if (this.calculationRequested && (this.full || this.cache.getComputed() > this.requestedEnd))
+            this.calculationRequested = false;
         this.distribute(tick);
     }
 
     /**
-     * Picks up the scene-wide knobs — gravity and collision steps — and throws the recording away
+     * Picks up the scene-wide knobs — gravity, speed and collision steps — and throws the recording away
      * when either has moved.
      *
      * <p>They are part of the simulation's arithmetic, not a display option: half gravity is a
@@ -478,15 +550,19 @@ public class FilmScene implements AutoCloseable
         float gravity = BBSPhysicsSettings.gravity == null ? PhysicsWorld.EARTH_GRAVITY : BBSPhysicsSettings.gravity.get();
         int steps = BBSPhysicsSettings.collisionSteps == null ? PhysicsWorld.COLLISION_STEPS : BBSPhysicsSettings.collisionSteps.get();
 
-        if (gravity == this.gravity && steps == this.collisionSteps)
+        float speed = BBSPhysicsSettings.speed == null ? 1F : BBSPhysicsSettings.speed.get();
+
+        if (gravity == this.gravity && steps == this.collisionSteps && speed == this.speed)
         {
             return;
         }
 
         this.gravity = gravity;
+        this.speed = speed;
         this.collisionSteps = steps;
 
         this.world.setGravity(gravity);
+        this.world.setSpeed(speed);
         this.world.setCollisionSteps(steps);
 
         this.invalidate();
@@ -504,7 +580,7 @@ public class FilmScene implements AutoCloseable
      */
     private void compute(int cursor)
     {
-        int end = this.recordingEnd(cursor);
+        int end = this.manualCalculation() ? this.requestedEnd : this.recordingEnd(cursor);
 
         if (this.cache.getComputed() > end)
         {
@@ -575,6 +651,19 @@ public class FilmScene implements AutoCloseable
     private void poseTick(int tick)
     {
         this.cast.apply(tick);
+        this.clips.prepareDeaths(this.cast, tick);
+
+        /* The viewport may be anywhere. Every drive must instead see the last completed physics
+         * tick, including while computing a long batch or starting over after an edit. */
+        for (SceneActor actor : this.actors)
+        {
+            actor.readCache(this.cache, tick - 1, true);
+        }
+
+        /* Rebase the live Jolt pose onto this tick's animation before driving anything. Merely
+         * reading last tick's local cache would carry a free parent along with its newly moved
+         * actor/anchor. This is a private staging pass; the tick is still unreadable to playback. */
+        this.recordPoses(tick, this.cache.beginFrame(tick));
 
         for (SceneActor actor : this.actors)
         {
@@ -593,16 +682,14 @@ public class FilmScene implements AutoCloseable
      */
     private void record(int tick)
     {
+        PhysicsCache pending = this.cache.beginFrame(tick);
+
         for (SceneBody body : this.bodies)
         {
             body.record(this.world.getBodies(), this.cache, tick);
         }
 
-        for (SceneActor actor : this.actors)
-        {
-            actor.record(this.world, this, this.cache, tick);
-        }
-
+        this.recordPoses(tick, pending);
         this.cache.commit(tick);
 
         if (this.lostAt < 0 && this.anythingLost())
@@ -611,9 +698,64 @@ public class FilmScene implements AutoCloseable
         }
     }
 
-    /** Hands every body the recorded frame for {@code tick}, or the news that there is not one. */
+    /** Anchor targets publish before dependents, including through actors without physics.
+     * Marking on entry bounds cyclic anchor graphs just as BBS bounds their matrix walk. */
+    private void recordPoses(int tick, PhysicsCache pending)
+    {
+        Set<IEntity> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+
+        for (SceneActor actor : this.actors)
+        {
+            this.recordActor(actor.getEntity(), pending, tick, visited);
+        }
+    }
+
+    private void recordActor(IEntity entity, PhysicsCache pending, int tick, Set<IEntity> visited)
+    {
+        if (entity == null || !visited.add(entity))
+        {
+            return;
+        }
+
+        Form root = entity.getForm();
+
+        if (root != null)
+        {
+            Anchor anchor = root.anchor.get();
+            this.recordActor(this.entities.get(anchor.replay), pending, tick, visited);
+
+            if (anchor.previous != null)
+            {
+                this.recordActor(this.entities.get(anchor.previous.replay), pending, tick, visited);
+            }
+        }
+
+        SceneActor actor = this.actorOf(entity);
+
+        if (actor != null)
+        {
+            actor.record(this.world, this, this.cache, pending, tick);
+        }
+    }
+
+    /** Restores the displayed frame pair after the simulation borrowed the runtime slots. */
     private void distribute(int tick)
     {
+        if (this.impulsePreview != null)
+        {
+            if (tick == this.impulsePreviewTick && !this.cache.has(tick) && !this.full && this.lostAt < 0)
+            {
+                /* Reapply after computation, which borrows the same render slots. This frame is
+                 * only a visual placeholder; it never enters simulation or baking caches. */
+                for (SceneBody body : this.bodies) body.readCache(this.impulsePreview, 0, true);
+                for (SceneActor actor : this.actors) actor.readCache(this.impulsePreview, 0, true);
+                this.drawnTick = tick;
+                this.teleport = true;
+                return;
+            }
+            this.impulsePreview = null;
+        }
+
         /* A jump is anything but the one step forward that playback makes: across one there is no
          * meaningful previous tick, and interpolating out of it would draw bodies sliding the whole
          * way. Asking for the same tick again — a paused editor — is not a jump and needs nothing
@@ -629,6 +771,13 @@ public class FilmScene implements AutoCloseable
 
         for (SceneActor actor : this.actors)
         {
+            /* Recording borrows the runtime slots too. Restore the displayed pair, not the
+             * future tick last touched by background computation. */
+            if (!jumped)
+            {
+                actor.readCache(this.cache, this.drawnTick, true);
+            }
+
             actor.readCache(this.cache, tick, jumped);
         }
 
@@ -644,6 +793,27 @@ public class FilmScene implements AutoCloseable
         int duration = this.film == null ? 0 : this.film.camera.calculateDuration();
 
         return Math.max(cursor, duration + LOOKAHEAD_PAST_END);
+    }
+
+    private boolean manualCalculation()
+    {
+        return this.editor && BBSPhysicsSettings.manualCalculation != null && BBSPhysicsSettings.manualCalculation.get();
+    }
+
+    public boolean waitingForCalculation()
+    {
+        return this.manualCalculation() && !this.calculationComplete && !this.calculationRequested && !this.full
+            && (this.stale || this.cache.getComputed() <= this.recordingEnd(this.filmTick));
+    }
+
+    public void requestCalculation(int tick)
+    {
+        this.filmTick = Math.max(0, tick);
+        this.applyWorldSettings();
+        this.invalidate();
+        this.calculationComplete = false;
+        this.requestedEnd = this.recordingEnd(this.filmTick);
+        this.calculationRequested = true;
     }
 
     /**
@@ -667,7 +837,31 @@ public class FilmScene implements AutoCloseable
      */
     public void invalidate()
     {
+        this.invalidate(false);
+    }
+
+    /** Keep the last displayed result only for impulse edits at the unchanged cursor. */
+    public void invalidate(boolean impulseEdit)
+    {
+        if (this.manualCalculation())
+        {
+            this.stale = true;
+            this.calculationRequested = false;
+            return;
+        }
+        this.clips.clearDeathImpacts();
+        if (!impulseEdit)
+        {
+            this.impulsePreview = null;
+        }
+        else if (!this.stale && this.drawnTick == this.filmTick && this.cache.has(this.filmTick))
+        {
+            this.impulsePreview = this.cache.copyFrame(this.filmTick);
+            this.impulsePreviewTick = this.filmTick;
+        }
         this.stale = true;
+        this.calculationRequested = false;
+        this.calculationComplete = false;
         this.editedAt = System.nanoTime();
     }
 
@@ -683,7 +877,7 @@ public class FilmScene implements AutoCloseable
      * the bake out has stood every rig's state on every tick in turn.</p>
      *
      * @param replay   the replay whose keyframes receive the bake
-     * @param formPath where the form sits in the replay's form tree, by the walk's convention
+     * @param formPath where the form sits in the replay's form tree, or null for the whole actor
      * @return what was written, or null when this scene has no actor playing that replay
      */
     public PhysicsBake.Result bake(Replay replay, String formPath)
@@ -707,6 +901,7 @@ public class FilmScene implements AutoCloseable
             for (int tick = 0; tick <= last; tick++)
             {
                 this.cast.apply(tick);
+                this.clips.prepareDeaths(this.cast, tick);
 
                 Form root = member.entity.getForm();
 
@@ -730,6 +925,21 @@ public class FilmScene implements AutoCloseable
 
                 bake.at(tick);
 
+                if (formPath == null || formPath.isEmpty()) bake.anchorFrame(root, new Matrix4f());
+
+                if ((formPath == null || formPath.isEmpty()) && SceneActor.releaseAnchor(root.anchor.get()) != root.anchor.get())
+                {
+                    for (SceneActor other : this.actors) other.readCache(this.cache, tick, true);
+                    Matrix4f effective = this.actorWorld(member.entity);
+                    Anchor authored = root.anchor.get().copy();
+                    authored.previous = root.anchor.get().previous == null ? null : root.anchor.get().previous.copy();
+                    authored.x = root.anchor.get().x;
+                    Matrix4f plain = FilmMatrices.getMatrixForRenderWithRotation(member.entity, 0D, 0D, 0D, 1F);
+                    Pair<Matrix4f, Float> resolved = FilmMatrices.getTotalMatrix(
+                        this.entities, authored, plain, 0D, 0D, 0D, 1F, 0, false, null);
+                    bake.anchorFrame(root, new Matrix4f(resolved.a == null ? plain : resolved.a).invert().mul(effective));
+                }
+
                 for (SceneRig rig : actor.getRigs())
                 {
                     rig.bake(this.cache, tick, bake);
@@ -749,6 +959,12 @@ public class FilmScene implements AutoCloseable
         }
 
         return bake.write();
+    }
+
+    /** Bakes all supported physics in the actor's form tree in a single transaction. */
+    public PhysicsBake.Result bake(Replay replay)
+    {
+        return this.bake(replay, null);
     }
 
     /**
@@ -807,11 +1023,18 @@ public class FilmScene implements AutoCloseable
      */
     private void rewind()
     {
+        this.clips.clearDeathImpacts();
         this.cast.borrow();
 
         try
         {
             this.cast.apply(0);
+            this.clips.prepareDeaths(this.cast, 0);
+
+            for (SceneActor actor : this.actors)
+            {
+                actor.readCache(this.cache, -1, true);
+            }
 
             for (SceneActor actor : this.actors)
             {
@@ -883,7 +1106,7 @@ public class FilmScene implements AutoCloseable
             weight = 1F;
         }
 
-        if (weight <= 0F || resolve.replay == Anchor.NO_ATTACHMENT)
+        if (weight <= 0F || !resolve.hasTarget())
         {
             return ChainRig.Attach.NONE;
         }
@@ -920,8 +1143,17 @@ public class FilmScene implements AutoCloseable
         /* Everything else is a point: the actor itself, a bone of it, with the anchor's own offset —
          * the same resolution the film's anchors go through, at the tick the cast is standing on and
          * at transition 1 (0 is the previous tick — the Э1 lesson). */
-        Pair<Matrix4f, Float> matrix = BaseFilmController.getTotalMatrix(
-            this.entities, resolve, new Matrix4f(), 0D, 0D, 0D, 1F, 0, true, null);
+        Anchor targetAnchor = resolve;
+
+        if (anchor.isFadeIn() || anchor.isFadeOut())
+        {
+            targetAnchor = resolve.copy();
+            targetAnchor.previous = null;
+            targetAnchor.x = 1F;
+        }
+
+        Pair<Matrix4f, Float> matrix = FilmMatrices.getTotalMatrix(
+            this.entities, targetAnchor, new Matrix4f(), 0D, 0D, 0D, 1F, 0, true, null);
 
         if (matrix.a == null)
         {
@@ -952,17 +1184,27 @@ public class FilmScene implements AutoCloseable
      */
     Matrix4f actorWorld(IEntity entity)
     {
+        return this.actorWorld(entity, 1F);
+    }
+
+    Matrix4f actorWorld(IEntity entity, float transition)
+    {
+        return this.actorWorld(entity, transition, true);
+    }
+
+    Matrix4f actorWorld(IEntity entity, float transition, boolean anchoredFrame)
+    {
         /* Zero camera: the actor's placement in the world, not on the screen. */
-        Matrix4f matrix = BaseFilmController.getMatrixForRenderWithRotation(entity, 0D, 0D, 0D, 1F);
+        Matrix4f matrix = FilmMatrices.getMatrixForRenderWithRotation(entity, 0D, 0D, 0D, transition);
         Form root = entity.getForm();
 
-        if (root == null)
+        if (root == null || !anchoredFrame)
         {
             return matrix;
         }
 
-        Pair<Matrix4f, Float> anchored = BaseFilmController.getTotalMatrix(
-            this.entities, root.anchor.get(), matrix, 0D, 0D, 0D, 1F, 0, false, null);
+        Pair<Matrix4f, Float> anchored = FilmMatrices.getTotalMatrix(
+            this.entities, root.anchor.get(), matrix, 0D, 0D, 0D, transition, 0, false, null);
 
         return anchored.a == null ? matrix : anchored.a;
     }
@@ -986,6 +1228,7 @@ public class FilmScene implements AutoCloseable
     {
         ensureAnimators(root);
 
+        boolean evaluating = RagdollPoseApplier.isEvaluating();
         RagdollPoseApplier.setEvaluating(true);
 
         try
@@ -994,7 +1237,7 @@ public class FilmScene implements AutoCloseable
         }
         finally
         {
-            RagdollPoseApplier.setEvaluating(false);
+            RagdollPoseApplier.setEvaluating(evaluating);
         }
     }
 
@@ -1003,7 +1246,7 @@ public class FilmScene implements AutoCloseable
      * assumes the render path has already done this — on a freshly built cast it has not, and a
      * model form with body parts trips over the gap.
      */
-    private static void ensureAnimators(Form form)
+    static void ensureAnimators(Form form)
     {
         FormTreeWalk.walk(form, (child, path, anchor) ->
         {
@@ -1027,6 +1270,7 @@ public class FilmScene implements AutoCloseable
      */
     public boolean needsRebuild()
     {
+        if (this.manualCalculation()) return false;
         return this.window == null
             || this.window.radius() != BBSPhysicsSettings.worldRadius.get()
             || this.window.below() != BBSPhysicsSettings.worldBelow.get()

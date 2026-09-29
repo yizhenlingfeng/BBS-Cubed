@@ -4,7 +4,13 @@
     "compatibilityLevel": "JAVA_17",
     "mixins": [
         "FormMixin",
-        "ModelFormMixin"
+        "ReplayMixin",
+        "ModelFormMixin",
+        "StructureFormMixin",
+        "ActorDeathMixin",
+        "ActionManagerAccessor",
+        "ActionRecorderAccessor",
+        "DeathRecordingMixin"
     ],
     "injectors": {
         "defaultRequire": 1

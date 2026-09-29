@@ -3,22 +3,14 @@
     "package": "wemppy.bbs_physics.mixin.client",
     "compatibilityLevel": "JAVA_17",
     "client": [
-        "BaseFilmControllerMixin",
-        "FormCategoriesMixin",
-        "FormRendererMixin",
-        "ModelFormRendererMixin",
-        "ModelPhysicsRuntimeMixin",
-        "ModelPivotFramesMixin",
         "UIClipsMixin",
-        "UIFilmControllerMixin",
-        "UIFilmKeyframesMixin",
-        "UIFormEditorMixin",
-        "UIFormMixin",
-        "UIFormRendererMixin",
-        "UIFormUndoHandlerMixin",
-        "UIPickableFormRendererMixin",
-        "UISelectionScreenMixin",
-        "WorldFilmControllerMixin"
+        "DeathActorMixin",
+        "UILandingScreenMixin",
+        "DeathRecorderMixin",
+        "DeathFilmPanelMixin",
+        "DeathEditorRecordingMixin",
+        "DeathRecordingUndoMixin",
+        "DeathActionRecordingMixin"
     ],
     "injectors": {
         "defaultRequire": 1

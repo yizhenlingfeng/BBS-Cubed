@@ -5,6 +5,7 @@ import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.forms.forms.Form;
 import wemppy.bbs_physics.chain.FormChains;
+import wemppy.bbs_physics.client.scene.PoseEvaluation;
 import wemppy.bbs_physics.ragdoll.FormRagdolls;
 import wemppy.bbs_physics.ragdoll.RagdollState;
 import org.joml.Matrix4f;
@@ -49,7 +50,7 @@ public final class RagdollPoseApplier
      * True while a form whose ragdoll owns the pose is being rendered. The chain physics reads its
      * anchor frames through a walk that skips {@code offset} by default (the IK stretch rule);
      * while a ragdoll's offsets are in the groups, they are the character's fall and must be seen.
-     * Set per form by {@link #apply}, read by the {@code ModelPivotFrames} mixin.
+     * Set per form by {@link #apply}, read by the BBS pivot-frame API.
      */
     private static boolean chainStretch;
 
@@ -64,7 +65,7 @@ public final class RagdollPoseApplier
     /**
      * Whether the walk running right now is the simulation's own — the one that asks where the
      * <em>animation</em> has everything, because that is the target every rig pulls towards. Read
-     * by the body substitution too ({@code FormRendererMixin}): a form carrying the rigid body
+     * by the body substitution too ({@code PhysicsApiIntegration}): a form carrying the rigid body
      * modifier must answer that walk with its keyframes, not with where the body already is.
      */
     public static boolean isEvaluating()
@@ -99,8 +100,15 @@ public final class RagdollPoseApplier
          *
          * Order matters for nothing else: a bone belongs to one of them, never both (the chain
          * modifier claims bones the ragdoll does not have shapes for). */
-        walk(cubic, FormRagdolls.getState(form), transition);
-        walk(cubic, FormChains.getState(form), transition);
+        if (PoseEvaluation.allows(form, PoseEvaluation.Kind.RAGDOLL))
+        {
+            walk(cubic, FormRagdolls.getState(form), transition);
+        }
+
+        if (PoseEvaluation.allows(form, PoseEvaluation.Kind.CHAIN))
+        {
+            walk(cubic, FormChains.getState(form), transition);
+        }
     }
 
     /** One state's substitution pass, when it has anything to say about this frame. */

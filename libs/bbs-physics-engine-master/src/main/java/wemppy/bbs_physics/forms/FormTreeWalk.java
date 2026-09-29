@@ -4,6 +4,7 @@ import mchorse.bbs_mod.forms.forms.BodyPart;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.utils.StringUtils;
+import java.util.function.Predicate;
 
 /**
  * Walking a form and everything nested inside it, once, in the one order that matters.
@@ -15,11 +16,14 @@ import mchorse.bbs_mod.utils.StringUtils;
  * else depends on being got right:</p>
  *
  * <ul>
- * <li><b>The path.</b> A form is addressed by its position in the tree — "0/2" is the third body
- * part of the first — and that string is the key its evaluated matrix is read back by. The index
- * advances for <em>every</em> slot, including the empty ones, because BBS's own matrix walk does;
- * a walk that skipped empties would name every form after an empty slot wrongly and quietly drive
- * the wrong thing.</li>
+ * <li><b>The path.</b> A form is addressed by the chain of body part ids leading down to it, and
+ * that string is the key its evaluated matrix is read back by. It has to be built the same way
+ * BBS's own matrix walk builds it, down to the segment — a path that disagrees by one character
+ * reads back nothing, and the addon then quietly drives the wrong thing or nothing at all.
+ * <p>Up to BBS 2.4 a segment was the slot's position, which meant the index had to advance for
+ * empty slots too, and reordering body parts silently renamed everything after the one moved.
+ * Since 2.6 a body part carries an id that survives being reordered, and that id is the
+ * segment.</li>
  * <li><b>The anchor.</b> Descending out of a model means everything below hangs on one of its
  * bones, and that bone is what a ragdoll moves. So a child of a model takes that bone as its
  * anchor, and anything deeper inherits it: a sheet two groups down under an arm still hangs on the
@@ -30,6 +34,30 @@ public final class FormTreeWalk
 {
     private FormTreeWalk()
     {}
+
+    /** Presence checks need neither path strings nor a visit to siblings after a match. */
+    public static boolean any(Form form, Predicate<Form> predicate)
+    {
+        if (form == null)
+        {
+            return false;
+        }
+
+        if (predicate.test(form))
+        {
+            return true;
+        }
+
+        for (BodyPart part : form.parts.getAllTyped())
+        {
+            if (any(part.getForm(), predicate))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /** What a walk tells its caller about each form it reaches. */
     public interface Visitor
@@ -66,24 +94,20 @@ public final class FormTreeWalk
             return;
         }
 
-        int i = 0;
-
         for (BodyPart part : form.parts.getAllTyped())
         {
             Form child = part.getForm();
 
-            if (child != null)
+            if (child == null)
             {
-                String childAnchor = form instanceof ModelForm
-                    ? StringUtils.combinePaths(path, part.bone.get())
-                    : anchor;
-
-                walk(child, StringUtils.combinePaths(path, String.valueOf(i)), childAnchor, visitor);
+                continue;
             }
 
-            /* Outside the null check, mirroring the matrix walk: a partless slot still takes an
-             * index — see the class note on why that is not a detail. */
-            i += 1;
+            String childAnchor = form instanceof ModelForm
+                ? StringUtils.combinePaths(path, part.bone.get())
+                : anchor;
+
+            walk(child, StringUtils.combinePaths(path, part.getId()), childAnchor, visitor);
         }
     }
 }

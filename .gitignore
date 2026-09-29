@@ -27,3 +27,6 @@ bin/
 private/
 tools/
 .zcode/
+
+# WorkBuddy local workspace data (memory, daily logs)
+.workbuddy/

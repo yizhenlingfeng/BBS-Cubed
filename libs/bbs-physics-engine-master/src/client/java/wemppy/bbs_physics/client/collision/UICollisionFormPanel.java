@@ -1,5 +1,8 @@
 package wemppy.bbs_physics.client.collision;
 
+import mchorse.bbs_mod.api.client.editor.FormEditorTool;
+import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformSpace;
+
 import mchorse.bbs_mod.cubic.IModel;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.model.Model;
@@ -28,8 +31,6 @@ import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UISearchList;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.framework.elements.utils.UILabel;
-import mchorse.bbs_mod.ui.framework.elements.utils.UIText;
-import mchorse.bbs_mod.ui.utils.PickedBone;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIConstants;
 import mchorse.bbs_mod.ui.utils.bones.UIBoneTreeList;
@@ -42,6 +43,7 @@ import mchorse.bbs_mod.utils.pose.Transform;
 import wemppy.bbs_physics.BBSPhysicsSettings;
 import wemppy.bbs_physics.client.forms.PhysicsColors;
 import wemppy.bbs_physics.client.forms.PhysicsKeys;
+import wemppy.bbs_physics.client.forms.PhysicsFields;
 import wemppy.bbs_physics.client.forms.UIPhysicsBoneList;
 import wemppy.bbs_physics.collision.CollisionIO;
 import wemppy.bbs_physics.collision.CollisionKind;
@@ -87,7 +89,7 @@ import java.util.function.UnaryOperator;
  * pushed into eight bones would be eight boxes in eight wrong places. The bulk answer to "give these
  * bones a shape" already exists and is measured per bone — that is what "Automatic" mode is.</p>
  */
-public class UICollisionFormPanel extends UIFormPanel<Form>
+public class UICollisionFormPanel extends UIFormPanel<Form> implements FormEditorTool
 {
     /** One model pixel, in blocks — the step every distance here scrolls by. */
     private static final double PIXEL = 1D / 16D;
@@ -139,9 +141,6 @@ public class UICollisionFormPanel extends UIFormPanel<Form>
     public UIButton fitBounds;
     public UIButton clearAll;
 
-    /** Marked-up = solid, no modifier needed: the answer to "where is the obstacle modifier". */
-    private final UIText solid;
-
     private final UISection primitives;
 
     private FormCollision collision = FormCollision.EMPTY;
@@ -168,7 +167,7 @@ public class UICollisionFormPanel extends UIFormPanel<Form>
             {
                 this.slot = l.isEmpty() ? FormCollision.SELF : l.get(0);
 
-                PickedBone.set(this.slot);
+                this.boneSelection().set(this.slot);
             }
 
             this.selectShape(0);
@@ -186,7 +185,7 @@ public class UICollisionFormPanel extends UIFormPanel<Form>
         this.bones.background();
         this.bonesSearch = new UISearchList<>(this.bones);
         this.bonesSearch.label(UIKeys.GENERAL_SEARCH);
-        this.bonesSearch.h(20 + UIConstants.LIST_ITEM_HEIGHT * 8);
+        this.bonesSearch.h(20 + UIConstants.LIST_ITEM_HEIGHT * 8).expand();
         this.bones.context(() -> new UIDataContextMenu(PhysicsPresets.COLLISION, this.presetGroup, this::toPresetData, this::applyPresetData).tooltips("_CopyCollision",
             PhysicsKeys.COLLISION_CONTEXT_COPY,
             PhysicsKeys.COLLISION_CONTEXT_PASTE,
@@ -293,7 +292,6 @@ public class UICollisionFormPanel extends UIFormPanel<Form>
         this.fitBounds = new UIButton(PhysicsKeys.COLLISION_FIT, (b) -> this.fitBounds());
         this.fitBounds.tooltip(PhysicsKeys.COLLISION_FIT_TOOLTIP);
         this.clearAll = new UIButton(PhysicsKeys.COLLISION_CLEAR, (b) -> this.clearAll());
-        this.solid = new UIText(PhysicsKeys.COLLISION_SOLID).color(Colors.LIGHTER_GRAY, true).padding(0, 2);
 
         /* Folded, and below the automatic pass: automation is the answer for the common case, hand
          * placement is the correction. One level of folding and no deeper — a panel with sections
@@ -532,6 +530,12 @@ public class UICollisionFormPanel extends UIFormPanel<Form>
      * shape is placed by the same call that places it for the engine, so whatever the frame does to
      * a collider it does to the handles.</p>
      */
+    @Override
+    public Matrix4f getGizmoOrigin(float transition, TransformSpace space)
+    {
+        return this.gizmoOrigin(this.editor.editor.renderer.getTargetEntity(), transition, space.placesOnOwnFrame());
+    }
+
     public Matrix4f gizmoOrigin(IEntity entity, float transition, boolean local)
     {
         CollisionShape shape = this.authored();
@@ -699,7 +703,7 @@ public class UICollisionFormPanel extends UIFormPanel<Form>
             this.bones.fillBones(this.model.model, null);
             this.bones.filter(this.bonesSearch.search.getText());
 
-            if (!this.pickBoneInList(PickedBone.get()) && !this.bones.getList().isEmpty())
+            if (!this.pickBoneInList(this.boneSelection().get()) && !this.bones.getList().isEmpty())
             {
                 this.slot = this.bones.getList().get(0);
                 this.bones.setCurrentScroll(this.slot);
@@ -730,7 +734,7 @@ public class UICollisionFormPanel extends UIFormPanel<Form>
 
         this.slot = bone;
 
-        PickedBone.set(bone);
+        this.boneSelection().set(bone);
         this.bones.setCurrentScroll(bone);
         this.selectShape(0);
         this.updateLabels();
@@ -751,7 +755,7 @@ public class UICollisionFormPanel extends UIFormPanel<Form>
 
         if (model)
         {
-            this.options.add(this.bonesSearch, this.slotTitle);
+            this.options.add(PhysicsFields.boneSection("collision.bones", this.bonesSearch, this.slotTitle));
         }
 
         this.options.add(this.modeRow);
@@ -768,14 +772,13 @@ public class UICollisionFormPanel extends UIFormPanel<Form>
 
         if (model)
         {
-            this.options.add(this.thresholdRow, this.autoMark);
+            this.options.add(PhysicsFields.section(PhysicsKeys.SECTION_SETUP, "collision.setup.model", this.thresholdRow, this.autoMark, this.clearAll, this.preview));
         }
         else
         {
-            this.options.add(this.fitBounds);
+            this.options.add(PhysicsFields.section(PhysicsKeys.SECTION_SETUP, "collision.setup.form", this.fitBounds, this.clearAll, this.preview));
         }
 
-        this.options.add(this.clearAll, this.preview, this.solid);
         this.options.resize();
     }
 

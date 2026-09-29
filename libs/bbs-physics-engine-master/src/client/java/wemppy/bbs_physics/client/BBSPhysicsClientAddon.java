@@ -1,36 +1,58 @@
 package wemppy.bbs_physics.client;
 
-import mchorse.bbs_mod.events.BBSAddonMod;
-import mchorse.bbs_mod.events.Subscribe;
-import mchorse.bbs_mod.events.register.RegisterClientSettingsEvent;
-import mchorse.bbs_mod.events.register.RegisterL10nEvent;
-import mchorse.bbs_mod.forms.FormUtilsClient;
+import mchorse.bbs_mod.api.client.events.RegisterFilmToolsEvent;
+import mchorse.bbs_mod.api.client.events.RegisterFormPanelsEvent;
+import mchorse.bbs_mod.api.client.events.RegisterReplayActionsEvent;
+import mchorse.bbs_mod.ui.forms.editors.forms.UIForm;
+import wemppy.bbs_physics.client.clips.PhysicsFilmTool;
+import wemppy.bbs_physics.client.collision.UICollisionFormPanel;
+import wemppy.bbs_physics.client.forms.UIPhysicsFormPanel;
+import wemppy.bbs_physics.client.scene.FilmBake;
+
+import mchorse.bbs_mod.api.BBSAddonMod;
+import mchorse.bbs_mod.api.Subscribe;
+import mchorse.bbs_mod.api.client.events.RegisterClientSettingsEvent;
+import mchorse.bbs_mod.api.client.events.RegisterKeybindsEvent;
+import mchorse.bbs_mod.api.client.events.RegisterDashboardPanelsEvent;
+import mchorse.bbs_mod.api.client.events.RegisterClipPanelsEvent;
+import mchorse.bbs_mod.api.client.events.RegisterFormEditorsEvent;
+import mchorse.bbs_mod.api.client.events.RegisterFormRenderersEvent;
+import mchorse.bbs_mod.api.client.events.RegisterFormSectionsEvent;
+import mchorse.bbs_mod.api.client.events.RegisterL10nEvent;
+import mchorse.bbs_mod.api.client.events.RegisterPreviewOverlaysEvent;
+import mchorse.bbs_mod.api.client.events.RegisterTrackStylesEvent;
 import mchorse.bbs_mod.resources.Link;
-import mchorse.bbs_mod.ui.film.clips.UIClip;
-import mchorse.bbs_mod.ui.forms.editors.UIFormEditor;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import wemppy.bbs_physics.BBSPhysics;
 import wemppy.bbs_physics.BBSPhysicsSettings;
 import wemppy.bbs_physics.actions.ImpulseActionClip;
 import wemppy.bbs_physics.actions.TearActionClip;
 import wemppy.bbs_physics.balloon.BalloonForm;
+import wemppy.bbs_physics.chain.ChainForm;
 import wemppy.bbs_physics.client.clips.UIImpulseActionClip;
 import wemppy.bbs_physics.client.clips.UITearActionClip;
-import wemppy.bbs_physics.chain.ChainForm;
 import wemppy.bbs_physics.client.forms.BalloonFormRenderer;
 import wemppy.bbs_physics.client.forms.ChainFormRenderer;
 import wemppy.bbs_physics.client.forms.ClothFormRenderer;
+import wemppy.bbs_physics.client.forms.PhysicsFormSection;
 import wemppy.bbs_physics.client.forms.PhysicsKeys;
 import wemppy.bbs_physics.client.forms.UIBalloonFormPanel;
 import wemppy.bbs_physics.client.forms.UIChainFormPanel;
 import wemppy.bbs_physics.client.forms.UIClothFormPanel;
 import wemppy.bbs_physics.client.forms.UISoftForm;
+import wemppy.bbs_physics.client.scene.SceneStatusOverlay;
 import wemppy.bbs_physics.cloth.ClothForm;
+import wemppy.bbs_physics.forms.BodyKnob;
+import wemppy.bbs_physics.forms.PhysicsForms;
+import wemppy.bbs_physics.ragdoll.RagdollKnob;
+import wemppy.bbs_physics.chain.ChainKnob;
 
 import java.util.Collections;
+import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import wemppy.bbs_physics.client.scene.FilmScenes;
 
 /**
- * The client half of {@link wemppy.bbs_physics.BBSPhysicsAddon}, declared under the
+ * The client half of {@link BBSPhysicsAddon}, declared under the
  * {@code bbs-client-addon} entry point.
  *
  * <p>It is split off and kept in the client source set so that BBS's client-only event classes
@@ -38,6 +60,80 @@ import java.util.Collections;
  */
 public class BBSPhysicsClientAddon implements BBSAddonMod
 {
+    @Subscribe
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void onRegisterFormPanels(RegisterFormPanelsEvent event)
+    {
+        event.register(editor ->
+        {
+            if (editor instanceof UISoftForm) return;
+            UIForm raw = editor;
+            raw.registerPanel(new UICollisionFormPanel(raw), PhysicsKeys.COLLISION_TITLE, Icons.SHAPES);
+            raw.registerPanel(new UIPhysicsFormPanel(raw), PhysicsKeys.PHYSICS_TITLE, Icons.PHYSICS);
+        });
+    }
+
+    @Subscribe
+    public void onRegisterReplayActions(RegisterReplayActionsEvent event)
+    {
+        event.register(wemppy.bbs_physics.client.ragdoll.DeathSetup::section);
+    }
+
+    @Subscribe
+    public void onRegisterFilmTools(RegisterFilmToolsEvent event)
+    {
+        event.register(PhysicsFilmTool::new);
+    }
+
+    @Subscribe
+    public void onRegisterTrackStyles(RegisterTrackStylesEvent event)
+    {
+        event.register(PhysicsForms.AUTHORITY_KEY, Icons.PHYSICS, 0x62c980);
+        event.registerLabel(PhysicsForms.AUTHORITY_KEY, PhysicsKeys.AUTHORITY);
+
+        for (BodyKnob knob : BodyKnob.values())
+        {
+            event.register(knob.id, Icons.BLOCK, 0xe5a45b);
+            event.registerLabel(knob.id, switch (knob)
+            {
+                case MASS -> PhysicsKeys.MASS;
+                case FRICTION -> PhysicsKeys.FRICTION;
+                case RESTITUTION -> PhysicsKeys.RESTITUTION;
+                case LINEAR_DAMPING -> PhysicsKeys.BODY_DAMPING;
+                case ANGULAR_DAMPING -> PhysicsKeys.BODY_DAMPING;
+                case GRAVITY -> PhysicsKeys.BODY_GRAVITY;
+            });
+        }
+
+        for (RagdollKnob knob : RagdollKnob.values())
+        {
+            event.register(knob.id, Icons.POSE, 0xb28be0);
+            event.registerLabel(knob.id, switch (knob)
+            {
+                case MASS -> PhysicsKeys.RAGDOLL_MASS;
+                case DAMPING -> PhysicsKeys.RAGDOLL_DAMPING;
+                case FRICTION -> PhysicsKeys.RAGDOLL_FRICTION;
+                case GRAVITY -> PhysicsKeys.BODY_GRAVITY;
+                case MUSCLES -> PhysicsKeys.RAGDOLL_MUSCLES;
+                case MUSCLE_DAMPING -> PhysicsKeys.RAGDOLL_DAMPING;
+            });
+        }
+
+        for (ChainKnob knob : ChainKnob.values())
+        {
+            event.register(knob.id, Icons.CURVES, 0x58bec9);
+            event.registerLabel(knob.id, switch (knob)
+            {
+                case STIFFNESS -> PhysicsKeys.CHAIN_STIFFNESS_LABEL;
+                case DAMPING -> PhysicsKeys.CHAIN_DAMPING_LABEL;
+                case GRAVITY -> PhysicsKeys.BODY_GRAVITY;
+                case MASS -> PhysicsKeys.CHAIN_MASS;
+                case FALLOFF -> PhysicsKeys.CHAIN_FALLOFF_LABEL;
+                case BEND -> PhysicsKeys.CHAIN_BEND_LABEL;
+            });
+        }
+    }
+
     @Subscribe
     public void onRegisterL10n(RegisterL10nEvent event)
     {
@@ -48,21 +144,78 @@ public class BBSPhysicsClientAddon implements BBSAddonMod
     public void onRegisterClientSettings(RegisterClientSettingsEvent event)
     {
         event.register(Icons.PHYSICS, BBSPhysics.MOD_ID, BBSPhysicsSettings::register);
+    }
 
-        /* How cloth is drawn and how it is edited. Both registries are static maps keyed by the
-         * form's class, so an addon's form is as first-class as BBS's own. Done from an event
-         * rather than from the Fabric entry point for the same timing reason the form type itself
-         * is — see BBSPhysicsAddon. */
-        FormUtilsClient.register(ClothForm.class, ClothFormRenderer::new);
-        FormUtilsClient.register(BalloonForm.class, BalloonFormRenderer::new);
-        FormUtilsClient.register(ChainForm.class, ChainFormRenderer::new);
+    @Subscribe
+    public void onRegisterKeybinds(RegisterKeybindsEvent event)
+    {
+        event.register(PhysicsKeybinds.class);
+        event.registerCategoryIcon("bbs_physics", Icons.PHYSICS);
+    }
 
-        UIFormEditor.register(ClothForm.class, () -> new UISoftForm<>(UIClothFormPanel::new, PhysicsKeys.CLOTH_TITLE, Icons.MATERIAL));
-        UIFormEditor.register(BalloonForm.class, () -> new UISoftForm<>(UIBalloonFormPanel::new, PhysicsKeys.BALLOON_TITLE, Icons.SPHERE));
-        UIFormEditor.register(ChainForm.class, () -> new UISoftForm<>(UIChainFormPanel::new, PhysicsKeys.CHAIN_TITLE, Icons.CURVES));
+    @Subscribe
+    public void onRegisterDashboard(RegisterDashboardPanelsEvent event)
+    {
+        PhysicsKeybinds.migrateCalculationShortcut();
+        event.dashboard.overlay.keys().register(PhysicsKeybinds.TOGGLE_DEBUG, () ->
+        {
+            BBSPhysicsSettings.debug.toggle();
+        }).strict().active(() -> BBSPhysicsSettings.debug != null);
+        event.dashboard.overlay.keys().register(PhysicsKeybinds.CALCULATE, () ->
+        {
+            if (event.dashboard.getPanels().panel instanceof UIFilmPanel panel)
+                FilmScenes.requestCalculation(panel.getController().editorController);
+        }).strict().active(() -> event.dashboard.getPanels().panel instanceof UIFilmPanel
+            && BBSPhysicsSettings.enabled != null && BBSPhysicsSettings.enabled.get());
+    }
 
-        /* The Э5 action clips' panels — the same static registry BBS's own clip panels sit in. */
-        UIClip.register(ImpulseActionClip.class, UIImpulseActionClip::new);
-        UIClip.register(TearActionClip.class, UITearActionClip::new);
+    /**
+     * How each of the addon's forms is drawn. The registry is keyed by the form's exact class and
+     * then by its super classes, so an addon's form is as first-class as BBS's own.
+     */
+    @Subscribe
+    public void onRegisterFormRenderers(RegisterFormRenderersEvent event)
+    {
+        event.register(ClothForm.class, ClothFormRenderer::new);
+        event.register(BalloonForm.class, BalloonFormRenderer::new);
+        event.register(ChainForm.class, ChainFormRenderer::new);
+    }
+
+    /** How each of the addon's forms is edited — the same lookup as the renderer. */
+    @Subscribe
+    public void onRegisterFormEditors(RegisterFormEditorsEvent event)
+    {
+        event.register(ClothForm.class, () -> new UISoftForm<>(UIClothFormPanel::new, PhysicsKeys.CLOTH_TITLE, Icons.MATERIAL));
+        event.register(BalloonForm.class, () -> new UISoftForm<>(UIBalloonFormPanel::new, PhysicsKeys.BALLOON_TITLE, Icons.SPHERE));
+        event.register(ChainForm.class, () -> new UISoftForm<>(UIChainFormPanel::new, PhysicsKeys.CHAIN_TITLE, Icons.CURVES));
+    }
+
+    /**
+     * The addon's own tab of the form palette, where its three forms are picked from. Without it
+     * they would exist and work with nowhere for an author to reach them.
+     */
+    @Subscribe
+    public void onRegisterFormSections(RegisterFormSectionsEvent event)
+    {
+        event.register(PhysicsFormSection::new);
+    }
+
+    /**
+     * The scene's readout over the editor's viewport, shown with the debug overlay. A layer of the
+     * preview since BBS 2.6 — before it, the only way in was a mixin into the controller's HUD.
+     */
+    @Subscribe
+    public void onRegisterPreviewOverlays(RegisterPreviewOverlaysEvent event)
+    {
+        event.register(SceneStatusOverlay::new);
+    }
+
+    /** The Э5 action clips' panels — the same lookup BBS's own clip panels sit in. */
+    @Subscribe
+    public void onRegisterClipPanels(RegisterClipPanelsEvent event)
+    {
+        event.register(ImpulseActionClip.class, UIImpulseActionClip::new);
+        event.register(wemppy.bbs_physics.actions.DeathActionClip.class, wemppy.bbs_physics.client.clips.UIDeathActionClip::new);
+        event.register(TearActionClip.class, UITearActionClip::new);
     }
 }
