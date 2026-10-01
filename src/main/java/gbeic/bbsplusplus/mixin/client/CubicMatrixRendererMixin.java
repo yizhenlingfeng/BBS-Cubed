@@ -43,6 +43,10 @@ public abstract class CubicMatrixRendererMixin
     @Overwrite(remap = false)
     public void applyGroupTransformations(MatrixStack stack, ModelGroup group)
     {
+        /* 与 jar 原实现一致：先平移 group.offset（IK 拉伸与物理化 ragdoll 写入的
+         * pivot 位移），再走 channel 平移。漏掉这一步时 rotateGroup 仍会应用新的
+         * orient，肢体只会绕动画锚点转、不会跟随物理线框移动。 */
+        ICubicRenderer.offsetGroup(stack, group);
         ICubicRenderer.translateGroup(stack, group);
 
         this.origins.get(group.index).set(stack.peek().getPositionMatrix());

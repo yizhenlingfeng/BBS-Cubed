@@ -136,10 +136,16 @@ public final class ActionTimelineMeta
         {
             ActionTimelineConfig other = (ActionTimelineConfig) object;
 
+            /*
+             * 只比较结构性配置（clipId / overlay 标记 / 循环相关）。
+             * timelineFrame 与 timelineWeight 是 ActionTimelineEvaluator 逐帧
+             * 写入的播放态数值，一旦纳入 equals，原版 ModelFormRenderer.ensureAnimator()
+             * 的 Objects.equals(configs, lastConfigs) 每帧都会判 false，导致每帧
+             * setup(..., true) 重建全部 ActionPlayback、重置 fade，飞行动画抽搐。
+             * 它们不属于"配置变更"，必须排除在相等性判定之外。
+             */
             return Objects.equals(this.clipId, other.bbspp_cml$getClipId())
-                && this.timelineFrame == other.bbspp_cml$getTimelineFrame()
                 && this.overlayTimeline == other.bbspp_cml$isOverlayTimeline()
-                && this.timelineWeight == other.bbspp_cml$getTimelineWeight()
                 && this.loopBeyond == other.bbspp_cml$isLoopBeyond()
                 && this.loopInterval == other.bbspp_cml$getLoopInterval();
         }

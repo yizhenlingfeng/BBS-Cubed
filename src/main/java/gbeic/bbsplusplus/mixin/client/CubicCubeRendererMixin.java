@@ -20,6 +20,9 @@ public abstract class CubicCubeRendererMixin
 {
     public void applyGroupTransformations(MatrixStack stack, ModelGroup group)
     {
+        /* 与 ICubicRenderer 默认实现一致：先平移 group.offset（IK 拉伸与物理化
+         * ragdoll 写入的 pivot 位移），漏掉则肢体只绕动画锚点旋转、不跟随线框。 */
+        ICubicRenderer.offsetGroup(stack, group);
         ICubicRenderer.translateGroup(stack, group);
         ICubicRenderer.moveToGroupPivot(stack, group);
         CubicPivotTransformations.moveToPoseAnchor(stack, group);
