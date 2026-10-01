@@ -1,0 +1,102 @@
+plugins {
+	id 'fabric-loom' version '1.15-SNAPSHOT'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+repositories {
+	/* BBS is published here by `gradlew publishToMavenLocal` in the BBS repository. There is no
+	 * public repository for it. */
+	mavenLocal()
+
+	/* Sodium lives on Modrinth's maven; the exclusiveContent filter keeps the repository from
+	 * being consulted for anything else. Same shape as BBS's own build file. */
+	exclusiveContent {
+		forRepository {
+			maven {
+				name = "Modrinth"
+				url = "https://api.modrinth.com/maven"
+			}
+		}
+		filter {
+			includeGroup "maven.modrinth"
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+	/* Sodium so the dev client matches a real setup: BBS's sodium mixins apply, and the form
+	 * render path goes through the sodium vertex pipeline. Iris is still excluded — add
+	 * maven.modrinth:iris:1.7.0+1.20.1 the same way if shader rendering needs exercising. */
+	modImplementation "maven.modrinth:sodium:mc1.20.1-0.5.8"
+	modRuntimeOnly "maven.modrinth:iris:1.7.0+1.20.1"
+	runtimeOnly "org.anarres:jcpp:1.4.14"
+	runtimeOnly "io.github.douira:glsl-transformer:2.0.0-pre13"
+	modRuntimeOnly "maven.modrinth:resourcify:yUt9B3ZX"
+	modRuntimeOnly "net.fabricmc:fabric-language-kotlin:1.12.3+kotlin.2.0.21"
+
+	/* transitive = false keeps BBS's own Iris and glsl-transformer out of this build; Sodium is
+	 * declared above instead so the dev client runs with it. */
+	modImplementation("mchorse:bbs:${project.bbs_version}") { transitive = false }
+
+	testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+test {
+	useJUnitPlatform()
+}
+
+/* Windows Java can fail to connect its selector's Unix-domain socket in the user temp
+ * directory (PipeImpl: Invalid argument: connect), which kills runClient. Same guard as
+ * BBS's own build file: keep those short-lived sockets local to this checkout, which also
+ * covers the integrated server the client starts. */
+tasks.named('runClient', JavaExec) {
+	useXvfb = false
+	if (System.getProperty('os.name').startsWith('Windows')) {
+		def socketDir = layout.projectDirectory.dir('.gradle/sockets').asFile
+		systemProperty 'jdk.net.unixdomain.tmpdir', socketDir.absolutePath
+		doFirst {
+			socketDir.mkdirs()
+		}
+	}
+}
+
+/* Loom caches the remapped BBS by its Maven coordinates, and BBS's version does not change while
+ * it is being worked on — so a rebuilt BBS is silently ignored, and it looks exactly like the
+ * changes to BBS not existing. A flag one has to remember is a flag one forgets, so this notices
+ * on its own: if the published jar is newer than the cached remap, the cache goes. */
+def bbsJar = new File(new File(System.getProperty("user.home")), ".m2/repository/mchorse/bbs/${project.bbs_version}/bbs-${project.bbs_version}.jar")
+def remapCache = file(".gradle/loom-cache/remapped_mods/remapped/mchorse")
+
+if (bbsJar.exists() && remapCache.exists() && bbsJar.lastModified() > remapCache.lastModified()) {
+	logger.lifecycle("BBS was rebuilt since it was last remapped — clearing ${remapCache}")
+	delete(remapCache)
+}
+
+processResources {
+	inputs.property "version", project.version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": project.version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 17
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
+}

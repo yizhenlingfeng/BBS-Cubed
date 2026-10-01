@@ -1,0 +1,9 @@
+/* Gradle 9 fails the build on duplicate jar entries where Gradle 8 only warned. BBS's two
+ * source sets both carry an identical api/AGENTS.md, which collides in sourcesJar. The entries
+ * are the same file, so dropping the second copy is lossless. Applied from an init script so
+ * BBS's own build files stay untouched. */
+allprojects {
+    tasks.withType(Jar).configureEach {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+}

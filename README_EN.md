@@ -134,7 +134,7 @@
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Animation-to-pose search box  | Added an animation search box to the animation-to-pose window.                                                                    |
 | Sound selector tree list      | The sound selector interface displays in a tree structure for easier browsing.                                                    |
-| Double-click clip to edit (NYK) | Double-click a clip on the timeline to enter the edit interface.                                                                 |
+| Double-click clip to edit | Double-click a clip on the timeline to enter the edit interface. Supports BBS built-in clips and addon-provided custom clips such as Lezy. |
 | Glowing chroma block (NYK)    | Added a glowing chroma block.                                                                                                     |
 | IRLights plugin localization  | Localization of the IRLights plugin.                                                                                              |
 | Improved texture manager      | Added grid mode and thumbnails.                                                                                                   |
@@ -177,10 +177,12 @@
 
 ### Mod Changelog
 
-#### 3.5.4 (Physics + fly animation fixes)
+#### 3.5.4 (Physics + fly animation fixes + Lezy camera effect support)
 * **Fixed physics limbs not moving**: when physics is on, body parts now move together with the physics wireframe (previously they only rotated in place instead of following it)
 * **Fixed stuttery flight with snow_actions**: disguised models no longer twitch/jitter while flying when this feature is enabled
 * **snow_actions now defaults to off**: this advanced feature is off by default; enable it in settings if you need it
+* **Lezy track name localization**: added Chinese translations for all 49 keyframe tracks across the 4 new camera effect clips provided by the BBS Lezy mod (ColorClip / CinematicClip / LetterboxClip / VignetteClip), including color grading (saturation/hue/contrast/shadow-gain-midtone RGB), cinematic effects (vintage/VHS/grain/lens distortion/chromatic aberration/rain/light leak/heat haze), letterbox zoom, and vignette strength
+* **Double-click edit supports addon clips**: the double-click-to-open keyframe editor feature now automatically adapts to any custom UI clip with an "edit" button via reflection, without requiring the main mod to hardcode dependencies on addon classes; Lezy's ColorGrade / Cinematic / Letterbox / Vignette clips can now be double-clicked to open the keyframe panel directly
 
 #### 3.5.3 (Model Block Preview Undo/Redo)
 * **Undo/redo for model block preview**: in the dashboard's model block preview panel, you can now press `Ctrl+Z` to undo and `Ctrl+Y` to redo. Moving models, adjusting position/rotation/scale, switching forms, modifying body properties and equipment — all changes can be undone. Quick consecutive edits are automatically merged into one step, so you won't undo several changes at once

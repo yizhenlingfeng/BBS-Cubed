@@ -1,0 +1,54 @@
+# gradle
+
+.gradle/
+build/
+out/
+classes/
+
+# eclipse
+
+*.launch
+
+# idea
+
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# vscode
+
+.settings/
+.vscode/
+bin/
+.classpath
+.project
+
+# macos
+
+*.DS_Store
+
+# fabric
+
+run/
+logs/
+
+# java
+
+hs_err_*.log
+replay_*.log
+*.hprof
+*.jfr
+
+# bbsrc is its own git repo (symlink to App/bbs-fs-F6-Fix) — never commit it
+/bbsrc
+run-client.log
+
+# agent scratch — screenshots and request notes fed to the AI assistant, never part of the mod
+/ss/
+request-tambahan.txt
+TESTING_GUIDE.md
+TESTER_GUIDE.md
+AGENTS.md
+*.mp4
+*.webm

@@ -885,6 +885,61 @@ public class KeyframeLocalizer
         vfxLight("bottom", "下");
         vfxLight("left", "左");
         vfxLight("right", "右");
+
+        /* ═══════════════════════════════════════
+           BBS Lezy 相机效果片段轨道（ColorGrade / Cinematic / Letterbox / Vignette）
+           这些 clip 的 property 为 null，走通用 CN 表查找
+           ═══════════════════════════════════════ */
+
+        /* ColorClip 颜色调色 */
+        cn("overlayAlpha", "叠加透明度");
+        cn("saturation", "饱和度");
+        cn("hue", "色相");
+        cn("brightness", "亮度");
+        cn("contrast", "对比度");
+        cn("liftR", "阴影红");
+        cn("liftG", "阴影绿");
+        cn("liftB", "阴影蓝");
+        cn("gammaR", "中间调红");
+        cn("gammaG", "中间调绿");
+        cn("gammaB", "中间调蓝");
+        cn("gainR", "高光红");
+        cn("gainG", "高光绿");
+        cn("gainB", "高光蓝");
+
+        /* CinematicClip 电影感效果 */
+        cn("vintage", "复古");
+        cn("vhs", "VHS录像带");
+        cn("grain_strength", "噪点强度");
+        cn("grain_size", "噪点大小");
+        cn("lensDistortion", "镜头畸变");
+        cn("lens_distance_factor", "镜头距离系数");
+        cn("lens_radius", "镜头半径");
+        cn("lens_hardness", "镜头硬度");
+        cn("lens_sharpen", "镜头锐化");
+        cn("radialBlur", "径向模糊");
+        cn("aberration", "色差");
+        cn("aberration_angle", "色差角度");
+        cn("aberration_directional", "色差方向");
+        cn("aberration_radius", "色差半径");
+        cn("aberration_hardness", "色差硬度");
+        cn("aberration_balance", "色差平衡");
+        cn("aberration_center_x", "色差中心X");
+        cn("aberration_center_y", "色差中心Y");
+        cn("aberration_green", "色差绿色通道");
+        cn("aberration_spectrum", "色差光谱");
+        cn("rain", "雨效");
+        cn("dust", "灰尘");
+        cn("lightLeak", "漏光");
+        cn("heat_strength", "热浪强度");
+        cn("heat_speed", "热浪速度");
+        cn("heat_scale", "热浪范围");
+
+        /* LetterboxClip 黑边遮幅（height/width/color/rotation/offsetX/offsetY/smoothness 已在上方通用表中） */
+        cn("zoom", "缩放");
+
+        /* VignetteClip 暗角（smoothness/color 已在上方通用表中） */
+        cn("strength", "强度");
     }
 
     private static void cn(String key, String chinese)

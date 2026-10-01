@@ -4,6 +4,7 @@ import mchorse.bbs_mod.ui.film.clips.UIClip;
 import mchorse.bbs_mod.ui.film.clips.UIKeyframeClip;
 import mchorse.bbs_mod.ui.film.clips.UIRemapperClip;
 import mchorse.bbs_mod.ui.film.clips.UICurveClip;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 
 /**
  * 双击剪辑辅助工具 — 直接调用剪辑编辑面板的 "编辑" 按钮。
@@ -40,6 +41,56 @@ public class DoubleClickHelper
             return true;
         }
 
+        /* 通用分支：对 addon 提供的自定义 UI clip（如 BBS Lezy 的
+           UIColorClip / UICinematicClip / UILetterboxClip / UIVignetteClip），
+           通过反射查找 public edit 字段并触发点击，避免主模组硬编码依赖 addon 类。 */
+        try
+        {
+            java.lang.reflect.Field field = findEditField(clipPanel.getClass());
+
+            if (field != null)
+            {
+                UIButton edit = (UIButton) field.get(clipPanel);
+
+                if (edit != null)
+                {
+                    edit.clickItself();
+                    return true;
+                }
+            }
+        }
+        catch (Exception ignored)
+        {}
+
         return false;
+    }
+
+    /** 沿类层级向上查找名为 edit 或 editAll 的 UIButton 字段 */
+    private static java.lang.reflect.Field findEditField(Class<?> clazz) throws IllegalAccessException
+    {
+        String[] names = {"edit", "editAll"};
+
+        while (clazz != null && clazz != Object.class)
+        {
+            for (String name : names)
+            {
+                try
+                {
+                    java.lang.reflect.Field field = clazz.getDeclaredField(name);
+
+                    if (UIButton.class.isAssignableFrom(field.getType()))
+                    {
+                        field.setAccessible(true);
+                        return field;
+                    }
+                }
+                catch (NoSuchFieldException ignored)
+                {}
+            }
+
+            clazz = clazz.getSuperclass();
+        }
+
+        return null;
     }
 }
