@@ -177,10 +177,18 @@
 
 ### Mod Changelog
 
+#### 3.5.4 (Physics + fly animation fixes)
+* **Fixed physics limbs not moving**: when physics is on, body parts now move together with the physics wireframe (previously they only rotated in place instead of following it)
+* **Fixed stuttery flight with snow_actions**: disguised models no longer twitch/jitter while flying when this feature is enabled
+* **snow_actions now defaults to off**: this advanced feature is off by default; enable it in settings if you need it
+
 #### 3.5.3 (Model Block Preview Undo/Redo)
 * **Undo/redo for model block preview**: in the dashboard's model block preview panel, you can now press `Ctrl+Z` to undo and `Ctrl+Y` to redo. Moving models, adjusting position/rotation/scale, switching forms, modifying body properties and equipment — all changes can be undone. Quick consecutive edits are automatically merged into one step, so you won't undo several changes at once
 * **Fixed F5 menu in movie panel**: fixed the issue where pressing F5 in the movie panel didn't open the visibility menu. This shortcut can now be rebound in key settings; after rebinding, F5 reverts to the vanilla perspective toggle
 * **Fixed wrong parameter display after undo**: fixed an issue where position, rotation, and scale parameter input boxes showed values that didn't match the actual state after undo/redo
+* **Fixed Premiere export audio crackle**: the WAV audio exported to Premiere previously had crackling and popping artifacts; this is now fixed, and no more distortion when volume is turned up
+* **Fixed multi-keyframe reset transform**: after selecting multiple keyframes and clicking reset transform, only the primary selected keyframe is now reset, without scrambling the other selected ones
+* **Fixed Premiere button not refreshing**: after toggling the Premiere export feature, the button now shows/hides immediately without needing to restart the game
 
 #### 3.5.2 (Pose PBR Panel + BBS FS 2.7 Adaptation)
 * **Pose editor PBR panel**: the pose page gains a collapsible PBR panel with five values—smoothness, metalness, subsurface scattering, emission, and normal/height (collapsed by default); the pose track and limb track in the movie editor also get a PBR panel
@@ -197,10 +205,9 @@
 * **Track localization**: added Chinese translations for 2.6 material property tracks (smoothness, metalness, subsurface scattering, emission, etc.), IK tracks (target, pole, weight, chain length, etc.), physics tracks (damping, wind strength, collision radius, etc.), and bone constraint tracks; now supports both `/` and `.` track ID separator formats
 * **Fixed hidden disguise form**: after the 2.6 rendering chain change, the Mixin target migrated from BaseFilmController to FilmEntityRenderer, restoring the "hide disguise form" feature
 * **Removed conflicting features**: structure disguise, video disguise, per-bone PBR, pose material panel, follow track camera mode, and other features conflicting with 2.6 vanilla have been removed
-* **Cleaned up dead code**: removed TextureThumbnailManager, UIGridFileLinkList, PBR UI, and other deprecated modules; removed Gizmo rework settings
 * **Texture tween enhancements**: pixel dissolve mode gains flash and PBR emission support; 3D spread origin picker adapted to the 2.6 drag system
 
-#### 3.3
+#### 3.3.3
 - **Edit models in Blockbench**: right-click a user model in the disguise panel to open it directly in Blockbench. First set the Blockbench.exe path in Settings -> UI Enhancements. If a `.bbmodel` project exists in the model folder it is opened preferentially, otherwise the `.geo.json` is opened (toggle in settings). The menu item stays grayed when the path is unset/invalid or the model is not `.geo.json`; built-in BBS models do not show this item.
 - **Movie editor**: `R` now toggles between the current and the previous camera mode. The orbit controller is a persistent member, so camera angle, distance, and bound entity are preserved when switching back.
 - **Keyframe track localization**: filled in missing track names for hotbar item slots, velocity vX/vY/vZ, VFX enhancement, fluid, PBR, camera clip, Mob, and item spray tracks.
@@ -210,7 +217,6 @@
 - **Enchant Glint**: pose editor gains a vanilla-style enchant glint per bone, with custom color/alpha and apply-to-children via right-click (currently hidden under Iris shaders)
 - **AAA particles**: fixed depth-state pollution causing editor preview black screen; added fallback rendering for textureless models; cleaned up dead code
 - **Performance**: optimized model block opening lag — idle Dashboard warm-up, frame-split VAO baking, UI palette caching, Gizmo skip-redraw when idle, configurable render distance, global toggle no longer reloads the world
-- **Build**: supports dual-target builds for 1.20.1 / 1.20.4; updated Fabric API and dependency paths
 - **Configurable hotkeys**: Shift+W (select keyframes at current time) is now integrated into UI keybind settings under the "Keyframe Editor" category, allowing users to remap it
 
 #### 3.2.1
