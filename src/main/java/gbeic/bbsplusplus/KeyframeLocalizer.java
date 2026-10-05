@@ -161,9 +161,9 @@ public class KeyframeLocalizer
         cn("light_intensity", "发光强度");
         cn("structure_light", "结构光照");
         cn("tint_block_entities", "染色方块实体");
-        cn("pivot_x", "枢轴 X");
-        cn("pivot_y", "枢轴 Y");
-        cn("pivot_z", "枢轴 Z");
+        cn("pivot_x", "锚点 X");
+        cn("pivot_y", "锚点 Y");
+        cn("pivot_z", "锚点 Z");
 
         /* 粒子属性 */
         cn("velocity", "速度");
@@ -270,7 +270,7 @@ public class KeyframeLocalizer
         /* ModelFormCMLMixin 注入轨道（CML 动作叠加 / Molang 共享 / PBR 材质） */
         cn("actions_overlay", "动作叠加层");
         cn("molangShared", "Molang 变量共享");
-        cn("pbr_s_r", "PBR 平滑度");
+        cn("pbr_s_r", "PBR 光泽度");
         cn("pbr_s_g", "PBR 金属度");
         cn("pbr_s_b", "PBR 孔隙度");
         cn("pbr_s_a", "PBR 自发光");
