@@ -65,17 +65,7 @@ public class AdditiveProceduralAnimator extends ProceduralAnimator
 
     private boolean isActive(ActionPlayback action)
     {
-        if (action == null || !(action.config instanceof ActionTimelineConfig timeline))
-        {
-            return action != null;
-        }
-
-        if (!timeline.bbspp_cml$isTimelineDriven())
-        {
-            return true;
-        }
-
-        return true;
+        return action != null;
     }
 
     private float getWeight(ActionPlayback action)

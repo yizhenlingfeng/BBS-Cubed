@@ -33,6 +33,7 @@ public abstract class ModelFormCMLMixin implements MolangSharedProvider, Texture
     @Unique
     private static final String[] bbspp_ACTION_SLOTS = {
         "idle", "running", "sprinting", "crouching", "crouching_idle", "dying", "falling",
+        "swimming", "swimming_idle", "riding", "riding_idle", "flying", "flying_idle",
         "swipe", "jump", "jump_alt", "hurt", "land", "shoot", "consume", "base_pre", "base_post"
     };
 

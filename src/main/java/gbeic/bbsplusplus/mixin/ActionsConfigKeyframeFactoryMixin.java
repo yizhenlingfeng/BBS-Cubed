@@ -1,5 +1,6 @@
 package gbeic.bbsplusplus.mixin;
 
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.timeline.ActionTimelineEvaluator;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
 import mchorse.bbs_mod.utils.interps.IInterp;
@@ -16,6 +17,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(value = ActionsConfigKeyframeFactory.class, remap = false)
 public abstract class ActionsConfigKeyframeFactoryMixin
 {
+    private static boolean bbspp_cml$loggedInterpolationFailure;
+
     @Inject(
         method = "interpolate(Lmchorse/bbs_mod/cubic/animation/ActionsConfig;Lmchorse/bbs_mod/cubic/animation/ActionsConfig;Lmchorse/bbs_mod/cubic/animation/ActionsConfig;Lmchorse/bbs_mod/cubic/animation/ActionsConfig;Lmchorse/bbs_mod/utils/interps/IInterp;F)Lmchorse/bbs_mod/cubic/animation/ActionsConfig;",
         at = @At("RETURN"),
@@ -31,7 +34,26 @@ public abstract class ActionsConfigKeyframeFactoryMixin
         float x,
         CallbackInfoReturnable<ActionsConfig> cir)
     {
-        ActionsConfig result = ActionTimelineEvaluator.interpolateTimelineFrames(a, b, interpolation, x);
+        ActionsConfig result;
+
+        try
+        {
+            result = ActionTimelineEvaluator.interpolateTimelineFrames(a, b, interpolation, x);
+        }
+        catch (Exception e)
+        {
+            /* 与 KeyframeSegmentCMLMixin 同理：插值层异常不得传进动画/物理采样管线，
+             * 回退 vanilla 结果（不接管 cir 即保持原 interpolate 返回值）。 */
+            if (!bbspp_cml$loggedInterpolationFailure)
+            {
+                bbspp_cml$loggedInterpolationFailure = true;
+
+                BBSPlusPlusMod.LOGGER.error(
+                    "snow_actions: actions timeline interpolation failed; falling back to vanilla interpolation for this and any future failures", e);
+            }
+
+            return;
+        }
 
         if (result != null)
         {

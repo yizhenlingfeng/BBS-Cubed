@@ -53,7 +53,8 @@ public class AdditiveAnimator extends Animator
 
         this.apply(target, armature, transition, this.basePre, 1F, applied);
 
-        if (!this.isTimelineDriven(this.lastActive)
+        if (this.isSlot(this.lastActive)
+            && !this.isTimelineDriven(this.lastActive)
             && this.lastActive != null
             && this.active != null
             && this.active.isFading())
@@ -61,7 +62,7 @@ public class AdditiveAnimator extends Animator
             this.apply(target, armature, transition, this.lastActive, 1F, applied);
         }
 
-        if (!this.isTimelineDriven(this.active) && this.active != null)
+        if (this.isSlot(this.active) && !this.isTimelineDriven(this.active) && this.active != null)
         {
             float fade = this.active.isFading() ? this.active.getFadeFactor(transition) : 1F;
 
@@ -71,7 +72,9 @@ public class AdditiveAnimator extends Animator
         /* Timeline-driven overlay actions are clips, not entity state slots. */
         for (ActionPlayback action : new ActionPlayback[] {
             this.idle, this.running, this.sprinting, this.crouching, this.crouchingIdle,
-            this.dying, this.falling, this.jump1, this.jump2, this.swipe, this.hurt,
+            this.dying, this.falling, this.swimming, this.swimmingIdle, this.riding,
+            this.ridingIdle, this.flying, this.flyingIdle,
+            this.jump1, this.jump2, this.swipe, this.hurt,
             this.land, this.shoot, this.consume
         })
         {
@@ -98,14 +101,37 @@ public class AdditiveAnimator extends Animator
             && timeline.bbspp_cml$isTimelineDriven();
     }
 
-    private boolean isTimelineActive(ActionPlayback action)
+    /**
+     * active/lastActive 是否仍是本动画器某个槽位/列表里"在册"的 playback。
+     * setup 每次都会重建各槽位字段（动画名变化时 createAction 换新实例），
+     * 旧引用若还挂在 active 上，应用它就是在叠加一个已切走的动作——姿势抖动
+     * 会顺着布娃娃的驱动目标传进物理。替换式 setup 曾靠"整体重建动画器"兜住
+     * 这一点，改为复用式 setup 后由这里把关。
+     */
+    private boolean isSlot(ActionPlayback action)
     {
-        if (!this.isTimelineDriven(action))
+        if (action == null)
         {
             return false;
         }
 
-        return true;
+        return action == this.idle || action == this.running || action == this.sprinting
+            || action == this.crouching || action == this.crouchingIdle || action == this.dying
+            || action == this.falling || action == this.swimming || action == this.swimmingIdle
+            || action == this.riding || action == this.ridingIdle || action == this.flying
+            || action == this.flyingIdle || action == this.jump1 || action == this.jump2
+            || action == this.swipe || action == this.hurt || action == this.land
+            || action == this.shoot || action == this.consume
+            || action == this.basePre || action == this.basePost
+            || this.bbspp_cml$transitionActions.contains(action)
+            || this.actions.contains(action);
+    }
+
+    private boolean isTimelineActive(ActionPlayback action)
+    {
+        /* 只按权重判定：窗口内的活动 clip 权重 > 0，窗口外的动作求值器已输出空名
+         * （playback 为 null）或权重归零，不再无条件应用。 */
+        return this.isTimelineDriven(action) && this.getTimelineWeight(action) > 0F;
     }
 
     private float getTimelineWeight(ActionPlayback action)

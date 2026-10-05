@@ -137,15 +137,20 @@ public final class ActionTimelineMeta
             ActionTimelineConfig other = (ActionTimelineConfig) object;
 
             /*
-             * 只比较结构性配置（clipId / overlay 标记 / 循环相关）。
-             * timelineFrame 与 timelineWeight 是 ActionTimelineEvaluator 逐帧
-             * 写入的播放态数值，一旦纳入 equals，原版 ModelFormRenderer.ensureAnimator()
-             * 的 Objects.equals(configs, lastConfigs) 每帧都会判 false，导致每帧
-             * setup(..., true) 重建全部 ActionPlayback、重置 fade，飞行动画抽搐。
-             * 它们不属于"配置变更"，必须排除在相等性判定之外。
+             * timelineFrame/timelineWeight 必须参与比较：它们是逐帧播放态，同时也是
+             * 帧进度的唯一传播通道——ModelFormRenderer.ensureAnimator 的
+             * Objects.equals 判 false 才会 setup，Animator.createAction 才能把新帧
+             * 写进 playback（ActionPlaybackMixin.getTick 劫持只读 config，不读
+             * playback 自身时钟）。排除它们会让 timeline 动作冻结在最后一次结构性
+             * 变更的帧上，飞行/影片中表现为"冻结-跳变"式鬼畜。
+             * 逐帧 setup 的抖动副作用由下游消化：ActionPlaybackMixin 跳过 timeline
+             * 动作的 vanilla 时钟（防非循环动作 fadeOut 弹跳）、叠加层复用式 setup
+             * + AdditiveAnimator.isSlot 校验（防 playback 从 0 重来与 active 悬空）。
              */
             return Objects.equals(this.clipId, other.bbspp_cml$getClipId())
+                && this.timelineFrame == other.bbspp_cml$getTimelineFrame()
                 && this.overlayTimeline == other.bbspp_cml$isOverlayTimeline()
+                && this.timelineWeight == other.bbspp_cml$getTimelineWeight()
                 && this.loopBeyond == other.bbspp_cml$isLoopBeyond()
                 && this.loopInterval == other.bbspp_cml$getLoopInterval();
         }

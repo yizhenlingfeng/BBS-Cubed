@@ -1,5 +1,6 @@
 package gbeic.bbsplusplus.mixin.client;
 
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.ActionsOverlayProvider;
 import gbeic.bbsplusplus.api.PivotHolder;
@@ -103,6 +104,9 @@ public class ModelFormRendererMixin
      * 为直线流程（resetPose → applyActions → applyPose），该位置恰好等价于
      * “基础动作已跑完、姿势尚未提交”，语义与原先一致且不再冲突。</p>
      */
+    @Unique
+    private boolean bbspp_cml$loggedOverlayFailure;
+
     @Inject(
         method = "evaluateChannels",
         at = @At(
@@ -136,6 +140,19 @@ public class ModelFormRendererMixin
             for (IAnimator overlay : this.bbspp_cml$actionsOverlayAnimators)
             {
                 overlay.applyActions(entity, model, transition);
+            }
+        }
+        catch (Exception e)
+        {
+            /* 附加层异常不得传出 evaluateChannels——这条链同样被影片/物理采样共用，
+             * 一次失败就把该 tick 的骨骼矩阵整个带崩（物理侧记 SILENT，渲染与刚体
+             * 脱钩）。吞掉并只报告一次。 */
+            if (!this.bbspp_cml$loggedOverlayFailure)
+            {
+                this.bbspp_cml$loggedOverlayFailure = true;
+
+                BBSPlusPlusMod.LOGGER.error(
+                    "snow_actions: actions overlay pass failed; skipping overlay for this and any future failures", e);
             }
         }
         finally
@@ -225,12 +242,13 @@ public class ModelFormRendererMixin
 
             if (!Objects.equals(current, this.bbspp_cml$lastActionsOverlayConfigs.get(i)))
             {
-                /* Animator.setup(..., true) leaves Animator.active pointing at
-                 * the removed playback. Replacing the animator clears it. */
-                IAnimator replacement = this.bbspp_cml$createActionsOverlayAnimator(procedural);
-
-                replacement.setup(model, current, false);
-                this.bbspp_cml$actionsOverlayAnimators.set(i, replacement);
+                /* 复用而非整体替换：setup 会经 createAction 复用同名动画的既有 playback
+                 * （进度连续）；整体替换让所有 playback 从 ticks=0 重来，普通 overlay
+                 * 动作被钉在第 0 帧、timeline 动作每 tick 重建。原注释担心的
+                 * "setup 后 active 指向被换掉的 playback"由 AdditiveAnimator 的
+                 * 槽位校验（isSlot）兜住：不在册的 active/lastActive 不再被应用。
+                 * fade 传 true，不在逐帧路径里重置状态机的 active 选择。 */
+                this.bbspp_cml$actionsOverlayAnimators.get(i).setup(model, current, true);
                 this.bbspp_cml$lastActionsOverlayConfigs.set(i, this.bbspp_cml$copyActions(current));
             }
         }

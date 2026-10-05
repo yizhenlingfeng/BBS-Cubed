@@ -148,7 +148,7 @@ public final class ActionTimelineEvaluator
                 x
             );
 
-            output.bbspp_cml$setTimelineFrame(frame);
+            output.bbspp_cml$setTimelineFrame(finite(frame, output.bbspp_cml$getTimelineFrame()));
         }
 
         return result;
@@ -225,8 +225,8 @@ public final class ActionTimelineEvaluator
         ActionTimelineConfig primaryTimeline = (ActionTimelineConfig) primaryConfig;
         float weight = weight(primary, tick);
 
-        primaryTimeline.bbspp_cml$setTimelineFrame(frame(primary, tick));
-        primaryTimeline.bbspp_cml$setTimelineWeight(weight);
+        primaryTimeline.bbspp_cml$setTimelineFrame(finite(frame(primary, tick), primaryTimeline.bbspp_cml$getTimelineFrame()));
+        primaryTimeline.bbspp_cml$setTimelineWeight(finite(weight, 1F));
         result.actions.put(actionKey, primaryConfig);
 
         String transitionKey = ActionTimelineConfig.bbspp_TRANSITION_PREFIX + actionKey;
@@ -259,8 +259,8 @@ public final class ActionTimelineEvaluator
         ActionConfig transition = previous.config.copy();
         ActionTimelineConfig transitionTimeline = (ActionTimelineConfig) transition;
 
-        transitionTimeline.bbspp_cml$setTimelineFrame(frame(previous, tick));
-        transitionTimeline.bbspp_cml$setTimelineWeight(previousWeight);
+        transitionTimeline.bbspp_cml$setTimelineFrame(finite(frame(previous, tick), transitionTimeline.bbspp_cml$getTimelineFrame()));
+        transitionTimeline.bbspp_cml$setTimelineWeight(finite(previousWeight, 1F));
         result.actions.put(transitionKey, transition);
     }
 
@@ -442,9 +442,15 @@ public final class ActionTimelineEvaluator
                 continue;
             }
 
-            /* 结束点之后，同一关键帧轨道上的第一个点就是循环边界。
+            /* 结束点之后、同一条 actions 轨道上还含当前动作（actionKey）的第一个关键帧
+             * 才是循环边界。actions 是"单轨多动作"属性：别的动作（running/swipe/...）的
+             * 关键帧会先于本动作的下一个点出现，若按"轨道上任意下一个关键帧"截断，会
+             * 把还在活动窗口内的 clip 提前剪掉，导致窗口外落到陈旧帧（动画冻结）。
              * 插入或复制关键帧会继承 clip ID，不能因此跳过这个边界。 */
-            return keyframe.getTick();
+            if (keyframe.getValue().actions.get(actionKey) != null)
+            {
+                return keyframe.getTick();
+            }
         }
 
         return Float.POSITIVE_INFINITY;
@@ -459,6 +465,16 @@ public final class ActionTimelineEvaluator
     private static float clamp(float value)
     {
         return Math.max(0F, Math.min(1F, value));
+    }
+
+    /**
+     * 输出防护：NaN/Infinity 不得作为动画帧流出求值器——坏帧经 getTick 进入
+     * 动画矩阵后，会被物理模组采样成不可用目标（bone channel 记 SILENT，
+     * 渲染与刚体脱钩的源头之一）。回退到配置侧的已知有限值。
+     */
+    private static float finite(float value, float fallback)
+    {
+        return Float.isFinite(value) ? value : fallback;
     }
 
     private record Marker(Keyframe<ActionsConfig> keyframe, ActionConfig config)
