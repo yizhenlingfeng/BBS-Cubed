@@ -8,6 +8,8 @@
         "UIDataContextMenuMixin",
         "UIBoneListFormPanelAccessor",
         "UIModelIKFormPanelMixin",
+        "ModelIKRuntimeMixin",
+        "ModelIKCacheMixin",
         "UIModelPhysicsFormPanelMixin",
         "UIModelConstraintsFormPanelMixin",
         "BBSRenderingMixin",

@@ -40,6 +40,7 @@ public class BBSPlusPlusSettings
         BBSAddonsSettings.preventNegativeKeyframes = builder.getBoolean("prevent_negative_keyframes", false);
         BBSAddonsSettings.reverseTimelineScroll = builder.getBoolean("reverse_timeline_scroll", false);
         BBSAddonsSettings.directParentPicking = builder.getBoolean("direct_parent_picking", false);
+        BBSAddonsSettings.ikTargetCycleConstraint = builder.getBoolean("ik_target_cycle_constraint", true);
         BBSAddonsSettings.enableIrisButton = builder.getBoolean("enable_iris_button", false);
         BBSAddonsSettings.enableUiKeyframesLayoutLock = builder.getBoolean("enable_ui_keyframes_layout_lock", false);
         BBSAddonsSettings.worldFilmShaderCurves = builder.getBoolean("world_film_shader_curves", false);

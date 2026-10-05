@@ -28,6 +28,9 @@ public class BBSAddonsSettings
     /** 开启后，按住 Shift 在3D视图中点击模型部位，不再弹出骨骼层级菜单，而是直接选中其父级骨骼 */
     public static ValueBoolean directParentPicking;
 
+    /** 开启后，IK 目标不能选择本 IK 链自身的骨骼（原版行为，防止循环）；关闭后允许选择链上骨骼作为 IK 目标 */
+    public static ValueBoolean ikTargetCycleConstraint;
+
     /** 开启后，伪装界面将使用全新的双栏布局 */
     public static ValueBoolean newMorphingPanel;
 

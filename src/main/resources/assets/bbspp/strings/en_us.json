@@ -121,6 +121,8 @@
   "bbspp.config.bbs_enhancements.film_auto_game_mode-comment": "Automatically switch to spectator mode when opening the film editor, and restore when closing.",
   "bbspp.config.bbs_enhancements.first_person_bobbing": "First Person View Bobbing",
   "bbspp.config.bbs_enhancements.first_person_bobbing-comment": "When enabled, restores vanilla walking view bobbing effect when playing a 'First Person Replay'. This effect is a simulated implementation rather than directly reusing the game's native mechanism. Enabling this option will override and disable the original BBS bobbing implementation.",
+  "bbspp.config.bbs_enhancements.ik_target_cycle_constraint": "IK Target Cycle Constraint",
+  "bbspp.config.bbs_enhancements.ik_target_cycle_constraint-comment": "When enabled, the IK target cannot be set to a bone on the chain itself (vanilla behaviour, prevents a cycle). When disabled, chain bones can be picked as the IK target; the solve may behave unexpectedly, use at your own risk.",
   "bbspp.config.bbs_enhancements.locked_layout_prevents_resizing": "Disable edge dragging while layout is locked",
   "bbspp.config.bbs_enhancements.locked_layout_prevents_resizing-comment": "When enabled, locked film layouts ignore edge dragging; off by default",
   "bbspp.config.bbs_enhancements.new_film_library_ui": "New Film Library UI",

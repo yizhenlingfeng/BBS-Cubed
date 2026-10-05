@@ -121,6 +121,8 @@
   "bbspp.config.bbs_enhancements.film_auto_game_mode-comment": "打开影片编辑器时自动切换旁观模式，关闭时恢复。",
   "bbspp.config.bbs_enhancements.first_person_bobbing": "开启第一人称视角晃动",
   "bbspp.config.bbs_enhancements.first_person_bobbing-comment": "开启后，在播放“第一人称回放”时，会还原原版的行走视角晃动效果。该效果为模拟实现，开启后将会完全屏蔽覆盖BBS原版自带的晃动效果，改用插件算法。",
+  "bbspp.config.bbs_enhancements.ik_target_cycle_constraint": "IK目标约束",
+  "bbspp.config.bbs_enhancements.ik_target_cycle_constraint-comment": "开启后，IK目标不能选择本IK链自身的骨骼（原版行为，防止形成循环）；关闭后允许选择链上骨骼作为IK目标，求解结果可能异常，请自行承担",
   "bbspp.config.bbs_enhancements.locked_layout_prevents_resizing": "锁定布局后禁止拖动边缘",
   "bbspp.config.bbs_enhancements.locked_layout_prevents_resizing-comment": "启用后，影片布局锁定时不会响应边缘拖动；默认关闭",
   "bbspp.config.bbs_enhancements.new_film_library_ui": "全新影片库界面",
