@@ -1,7 +1,6 @@
 package gbeic.bbsplusplus.client;
 
 import mchorse.bbs_mod.BBSMod;
-import mchorse.bbs_mod.BBSModClient;
 import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.BBSPlusPlusSettings;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
@@ -54,7 +53,7 @@ public class BBSPlusPlusModClient implements ClientModInitializer
         // 注册到 BBS 事件总线，接收 @Subscribe 事件
         BBSMod.events.register(this);
 
-// 自动旁观模式异常退出兜底：启动后检测残留状态，关闭前尽量恢复。
+        // 自动旁观模式异常退出兜底：启动后检测残留状态，关闭前尽量恢复。
         ClientTickEvents.END_CLIENT_TICK.register(FilmAutoGameModeRestoreState::tick);
 
         // 自动关闭面剔除：每帧检测开关状态变化，打开时自动生成模型配置
@@ -74,20 +73,17 @@ public class BBSPlusPlusModClient implements ClientModInitializer
         {
             BBSPlusPlusMod.LOGGER.info("未检测到 aaa_particles 前置模组，跳过 AAA 粒子功能注册。");
         }
-
-        // ItemSprayForm 不依赖 aaa_particles，始终注册
+        // ItemSprayForm 不依赖 aaa_particles，始终注册（伪装页条目由 ExtraFormSectionMixin 挂载）
         ClientLifecycleEvents.CLIENT_STARTED.register(client ->
         {
             try
             {
                 FormUtilsClient.register(gbeic.bbsplusplus.forms.ItemSprayForm.class, gbeic.bbsplusplus.client.renderer.ItemSprayFormRenderer::new);
                 UIFormEditor.register(gbeic.bbsplusplus.forms.ItemSprayForm.class, gbeic.bbsplusplus.client.ui.forms.editors.forms.UIItemSprayForm::new);
-
-                addFormToExtraCategory(new gbeic.bbsplusplus.forms.ItemSprayForm(), "ItemSprayForm");
             }
             catch (Exception e)
             {
-                BBSPlusPlusMod.LOGGER.warn("注册物品喷射形态到额外分类失败", e);
+                BBSPlusPlusMod.LOGGER.warn("注册物品喷射形态失败", e);
             }
         });
 
@@ -183,28 +179,17 @@ public class BBSPlusPlusModClient implements ClientModInitializer
             // 确保 effekseer 特效文件夹存在
             try
             {
-                java.io.File effeksDir = new java.io.File(
-                    mchorse.bbs_mod.BBSMod.getAssetsFolder(), "effeks");
+                java.io.File effeksDir = new java.io.File(BBSMod.getAssetsFolder(), "effeks");
+
                 if (!effeksDir.exists())
                 {
                     effeksDir.mkdirs();
-                    BBSPlusPlusMod.LOGGER.info("已创建 effeks 特效文件夹: {}",
-                        effeksDir.getAbsolutePath());
+                    BBSPlusPlusMod.LOGGER.info("已创建 effeks 特效文件夹: {}", effeksDir.getAbsolutePath());
                 }
             }
             catch (Exception e)
             {
                 BBSPlusPlusMod.LOGGER.error("创建 effeks 特效文件夹失败", e);
-            }
-
-            // 将 AAA 粒子表单添加到额外分类
-            try
-            {
-                addFormToExtraCategory(new AAAParticleForm(), "AAAParticleForm");
-            }
-            catch (Exception ex)
-            {
-                BBSPlusPlusMod.LOGGER.warn("无法将 AAA 粒子表单添加到额外分类: {}", ex.getMessage());
             }
         });
     }
@@ -227,49 +212,5 @@ public class BBSPlusPlusModClient implements ClientModInitializer
 
         VFXDestructionWandSelection.register();
         VFXDestructionWandTooltip.register();
-    }
-
-    /**
-     * 把一个表单实例塞进伪装界面的「额外」分类。
-     * <p>
-     * BBS 没有公开的注册入口，只能反射拿到 {@code ExtraFormSection} 里的分类对象再调 {@code addForm}。
-     * </p>
-     */
-    private static void addFormToExtraCategory(mchorse.bbs_mod.forms.forms.Form form, String name) throws Exception
-    {
-        if (BBSModClient.getFormCategories() == null)
-        {
-            return;
-        }
-
-        var categories = BBSModClient.getFormCategories();
-        var sectionsField = categories.getClass().getDeclaredField("sections");
-
-        sectionsField.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        var sections = (java.util.List<Object>) sectionsField.get(categories);
-
-        for (var section : sections)
-        {
-            if (!"ExtraFormSection".equals(section.getClass().getSimpleName()))
-            {
-                continue;
-            }
-
-            var extraField = section.getClass().getDeclaredField("extra");
-
-            extraField.setAccessible(true);
-
-            var extraCategory = extraField.get(section);
-
-            if (extraCategory != null)
-            {
-                var addFormMethod = extraCategory.getClass().getMethod("addForm", mchorse.bbs_mod.forms.forms.Form.class);
-
-                addFormMethod.invoke(extraCategory, form);
-                BBSPlusPlusMod.LOGGER.info("已将 {} 添加到额外分类", name);
-            }
-        }
     }
 }
