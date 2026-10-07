@@ -175,7 +175,9 @@
 
 ### Mod Changelog
 
-#### 3.5.6 (Fix crash on world exit)
+#### 3.5.6 (Keybind conflict indicator + fixes)
+* **New keybind conflict indicator toggle**: adds a "Keybind Conflict Indicator" option under BBS Enhancements (default off). When on, exact-duplicate keybinds on the keybinds settings page are highlighted in yellow with a yellow exclamation badge to the left of the input box; hovering the badge lists every action sharing that key, and clicking the badge jumps to the conflicting row (same-category scroll-to, cross-category auto-switches section then scrolls into place); left/right Shift, Ctrl and Alt are treated as equivalent
+* **Default key for "Toggle previous camera mode" changed to Q**: moved from R to Q to avoid clashing with vanilla R; existing customized keybinds in saved profiles are unaffected
 * **Fix JVM crash when exiting or switching worlds**: on disconnect, BBS released video textures by calling OpenGL functions such as `glDeleteTextures` directly on the Netty client IO thread, which has no current GL context. LWJGL then threw "No context is current" and aborted the JVM. Video texture deletion, film controller shutdown, and camera reset are now deferred to the render thread, so exiting a world no longer crashes
 * **Fix Bedrock bare-number scale animations ignored**: fixes e.g. `"scale": 2` being silently dropped so bone scale animations did nothing; a single number is now applied uniformly to all three axes, and `"position": 0.5`, `"rotation": 90` are supported the same way
 

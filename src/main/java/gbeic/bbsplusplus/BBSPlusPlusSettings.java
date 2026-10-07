@@ -2,6 +2,7 @@ package gbeic.bbsplusplus;
 
 import gbeic.bbsplusplus.BBSPPPSettings;
 import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.util.keybind.KeybindConflictSettings;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
@@ -57,6 +58,9 @@ public class BBSPlusPlusSettings
         CMLSettings.pivotTransform = builder.getBoolean("pivot_transform", true);
         CMLSettings.snowActions = builder.getBoolean("snow_actions", false);
         CMLSettings.lockedLayoutPreventsResizing = builder.getBoolean("locked_layout_prevents_resizing", false);
+
+        /* 快捷键冲突提示 */
+        KeybindConflictSettings.showBadges = builder.getBoolean("keybind_conflict_badges", false);
 
         /* 隐藏设置项（不显示在界面中，仅持久化） */
         BBSAddonsSettings.textureManagerLayout = (ValueInt) builder.getInt("texture_manager_layout", 0).invisible();

@@ -106,6 +106,7 @@
         "UITextboxFilmLibrarySearchMixin",
         "UIFilmPreviewMixin",
         "UIKeybindMixin",
+        "UIKeybindBadgeMixin",
         "KeybindMixin",
         "KeybindSettingsMixin",
         "DiamondKeyframeShapeRendererMixin",

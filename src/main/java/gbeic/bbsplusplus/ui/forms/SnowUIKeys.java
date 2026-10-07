@@ -47,7 +47,7 @@ public class SnowUIKeys
     public static final KeyCombo TOGGLE_PREVIOUS_CAMERA_MODE_KEY = new KeyCombo(
         "toggle_previous_camera_mode",
         TOGGLE_PREVIOUS_CAMERA_MODE,
-        GLFW.GLFW_KEY_R
+        GLFW.GLFW_KEY_Q
     ).categoryKey("film_controller");
 
     /* Film controller: 打开影片面板的可见性菜单（默认 F5，可在按键绑定里改绑） */
