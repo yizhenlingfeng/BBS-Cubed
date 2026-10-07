@@ -70,6 +70,7 @@
         "UIReplaysEditorActionsOverlayMixin",
         "UIReplaysEditorUtilsMixin",
         "UIActionsConfigEditorMixin",
+        "UIListAnimationPreviewAnchorMixin",
         "UIFilmPanelVisibilityMixin",
         "UIDataContextMenuMixin",
         "ParticleManagerVanillaFormMixin",

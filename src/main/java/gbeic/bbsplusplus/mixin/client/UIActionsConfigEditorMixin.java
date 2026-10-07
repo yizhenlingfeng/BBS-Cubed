@@ -1,12 +1,14 @@
 package gbeic.bbsplusplus.mixin.client;
 
 import gbeic.bbsplusplus.api.ActionsTimelineEditorContext;
+import gbeic.bbsplusplus.client.ui.animations.UIAnimationPreviewTooltip;
 import gbeic.bbsplusplus.timeline.ui.ActionsTimelineEditorSupport;
 import mchorse.bbs_mod.cubic.animation.ActionConfig;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
+import mchorse.bbs_mod.ui.framework.elements.input.list.UISearchList;
 import mchorse.bbs_mod.ui.utils.pose.UIActionsConfigEditor;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import org.spongepowered.asm.mixin.Mixin;
@@ -36,6 +38,15 @@ public abstract class UIActionsConfigEditorMixin implements ActionsTimelineEdito
     @Shadow
     private Runnable postCallback;
 
+    @Shadow
+    public UISearchList<String> animations;
+
+    @Unique
+    private ModelForm bbspp$previewForm;
+
+    @Unique
+    private UIAnimationPreviewTooltip bbspp$previewTooltip;
+
     @Unique
     private ActionsTimelineEditorSupport bbspp_cml$support;
 
@@ -64,6 +75,27 @@ public abstract class UIActionsConfigEditorMixin implements ActionsTimelineEdito
     )
     {
         this.bbspp_cml$support().initControls();
+    }
+
+    @Inject(method = "<init>", at = @At("TAIL"), remap = false)
+    private void bbspp$installAnimationPreviewTooltip(
+        Runnable preCallback,
+        Runnable postCallback,
+        CallbackInfo ci
+    )
+    {
+        this.bbspp$previewTooltip = new UIAnimationPreviewTooltip(() -> this.bbspp$previewForm);
+        this.animations.list.tooltip(this.bbspp$previewTooltip);
+    }
+
+    @Inject(
+        method = "setConfigs(Lmchorse/bbs_mod/cubic/animation/ActionsConfig;Lmchorse/bbs_mod/forms/forms/ModelForm;)V",
+        at = @At("TAIL"),
+        remap = false
+    )
+    private void bbspp$rememberPreviewForm(ActionsConfig configs, ModelForm form, CallbackInfo ci)
+    {
+        this.bbspp$previewForm = form;
     }
 
     @Override
