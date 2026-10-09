@@ -157,6 +157,14 @@ public class ActionsTimelineEditorSupport
     {
         this.programmaticSelection -= 1;
         this.refreshLoopControls();
+
+        /* 程序化选中操作全部结束后（计数归零），触发成对端点关键帧的创建/清理。
+         * beginProgrammaticSelection 期间 programmaticSelection > 0，createAnimationEndpoint
+         * 内部会直接 return，因此只在归零时调用一次即可。 */
+        if (this.programmaticSelection <= 0)
+        {
+            this.createAnimationEndpoint();
+        }
     }
 
     /** 动作/动画列表选中变化时创建（或清理）成对的时间线端点关键帧。 */

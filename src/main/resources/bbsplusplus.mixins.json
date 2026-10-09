@@ -135,8 +135,7 @@
         "client.UIModelBlockPanelUndoMixin",
         "ModelConfigLimbCullingMixin",
         "CubicVAORendererLimbCullingMixin",
-        "UIModelConfigEditorLimbCullingMixin",
-        "UIModelConfigEditorTabStripLimbCullingMixin"
+        "UIModelConfigEditorLimbCullingMixin"
             ],
     "injectors": {
         "defaultRequire": 1
