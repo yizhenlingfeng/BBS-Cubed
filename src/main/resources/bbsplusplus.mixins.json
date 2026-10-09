@@ -132,7 +132,11 @@
         "VideoRecorderMixin",
         "ModelBlockEntityRendererDistanceMixin",
         "UIModelBlockPanelGizmoThrottleMixin",
-        "client.UIModelBlockPanelUndoMixin"
+        "client.UIModelBlockPanelUndoMixin",
+        "ModelConfigLimbCullingMixin",
+        "CubicVAORendererLimbCullingMixin",
+        "UIModelConfigEditorLimbCullingMixin",
+        "UIModelConfigEditorTabStripLimbCullingMixin"
             ],
     "injectors": {
         "defaultRequire": 1
