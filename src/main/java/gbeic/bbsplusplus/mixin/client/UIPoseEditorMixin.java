@@ -168,15 +168,11 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             UI.labelRow(UIKeys.FORMS_EDITORS_MATERIAL_RELIEF, this.bbspp_cml$pbrRelief)
         );
 
-        /* PBR 栏与骨骼纹理按钮不追加到面板末尾，而是插入到材质栏正下方。
-         * wide 布局下材质栏在左侧 fields 列内，narrow 布局下是 UIPoseEditor 的直接子元素；
-         * 通过 material.getParent() 统一拿到它的直接父容器，再用 addAfter 插入。 */
+        /* PBR 栏与骨骼纹理按钮插入到材质栏正下方，而非面板末尾。 */
         this.bbspp_cml$attachAfterMaterial();
 
-        /* glint 开关/取色器不在这里 add：由 refreshGlintButton 按设置显隐。
-         * BBS 的 ColumnResizer 布局不跳过不可见元素，setVisible(false) 仍占位，
-         * 隐藏时必须 removeFromParent，否则面板上留一块空白。 */
-
+        /* glint 开关/取色器由 refreshGlintButton 按设置显隐（BBS 布局不跳过不可见元素，
+         * 隐藏时必须 removeFromParent，否则留空白）。 */
         this.bbspp_cml$refreshBoneTextureButton();
         this.bbspp_cml$refreshGlintButton();
     }
@@ -190,14 +186,9 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     }
 
     /**
-     * BBS 2.7 中 {@code UIPoseKeyframeFactory.resize()} 会根据面板宽度调用
-     * {@code poseEditor.buildLayout(wide)}，而 {@code buildLayout} 开头做了
-     * {@code removeAll()} 重建布局——这会把构造函数 TAIL 里挂载的 PBR 栏、
-     * 骨骼纹理按钮和 glint 开关全部清掉。
-     *
-     * <p>每次 buildLayout 返回后重新挂载我们的元素：统一插入到材质栏正下方，
-     * 而非追加到面板末尾。glint/取色器由 refreshGlintButton 按设置显隐。
-     * 构造函数内部首次 buildLayout 时 PBR 栏尚未创建（null），自动跳过。</p>
+     * buildLayout 开头做了 removeAll() 重建布局，会把我们挂载的元素清掉。
+     * 每次布局重建后重新插入到材质栏正下方。构造函数内首次 buildLayout 时
+     * PBR 栏尚未创建（null），自动跳过。
      */
     @Inject(method = "buildLayout", at = @At("RETURN"), remap = false)
     private void bbspp_cml$reattachAfterBuildLayout(boolean wide, CallbackInfo ci)
@@ -214,12 +205,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
 
     /**
      * 把 PBR 折叠栏与骨骼纹理按钮插入到材质栏正下方。
-     * <p>两种布局都适用：</p>
-     * <ul>
-     *   <li>wide：材质栏在左侧 fields 列容器内，getParent() 返回该列；</li>
-     *   <li>narrow：材质栏是 UIPoseEditor 的直接子元素，getParent() 返回 self。</li>
-     * </ul>
-     * 先从旧父容器移除再插入，避免重复挂载。
+     * 通过 material.getParent() 统一拿到直接父容器，wide / narrow 两种布局均适用。
      */
     @Unique
     private void bbspp_cml$attachAfterMaterial()
