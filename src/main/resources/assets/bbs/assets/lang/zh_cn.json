@@ -1,8 +1,6 @@
 {
     "bbs.config.bbspp.iris_button_tooltip": "光影控制",
     "bbs.ui.model_editor.limb_culling.toggle": "启用肢体面剔除",
-    "bbs.ui.model_editor.limb_culling.tab": "肢体面剔除",
-    "bbs.ui.model_editor.limb_culling.tooltip": "为该肢体强制开启背面剔除；关闭时跟随模型级设置",
     "bbs.ui.camera.panels.curves.sun_path_rotation": "日月偏角",
     "bbs.ui.camera.panels.curves.chroma_sky_color": "色度天空颜色",
     "bbs.ui.camera.panels.curves.center_depth": "焦点",
