@@ -10,7 +10,6 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.model_editor.UIModelBoneList;
 import mchorse.bbs_mod.ui.model_editor.UIModelConfigEditor;
-import mchorse.bbs_mod.ui.utils.UIUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -32,26 +31,24 @@ public abstract class UIModelConfigEditorLimbCullingMixin
         if (!(this.data instanceof LimbCullingConfigHolder holder)) return;
 
         String bone = this.bones.getCurrentFirst();
-        if (bone == null) return;
-
         ValueStringKeys value = holder.bbspp$getLimbCullingBonesValue();
-        boolean culled = holder.bbspp$getLimbCullingBones().contains(bone);
+        boolean culled = bone != null && holder.bbspp$getLimbCullingBones().contains(bone);
         IKey label = L10n.lang("bbs.ui.model_editor.limb_culling.toggle");
+        String finalBone = bone;
 
         this.bonePanel.add(new UIToggle(label, culled, t ->
         {
+            if (finalBone == null) return;
             boolean enabled = t.getValue();
             BaseValue.edit(value, (ValueStringKeys v) ->
             {
                 Set<String> set = v.get();
                 if (set != null)
                 {
-                    if (enabled) set.add(bone);
-                    else set.remove(bone);
+                    if (enabled) set.add(finalBone);
+                    else set.remove(finalBone);
                 }
             });
         }));
-
-        UIUtils.setEnabledDeep(this.bonePanel, true);
     }
 }
