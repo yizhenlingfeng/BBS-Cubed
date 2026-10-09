@@ -1,6 +1,6 @@
 {
     "bbs.config.bbspp.iris_button_tooltip": "Shaders Control",
-    "bbs.ui.model_editor.limb_culling.toggle": "Force Face Culling",
+    "bbs.ui.model_editor.limb_culling.toggle": "Enable Limb Face Culling",
     "bbs.ui.model_editor.limb_culling.tab": "Limb Face Culling",
     "bbs.ui.model_editor.limb_culling.tooltip": "Force back-face culling for this limb; off follows the model-level setting",
     "bbs.ui.camera.panels.curves.sun_path_rotation": "Sun Path Rotation",
