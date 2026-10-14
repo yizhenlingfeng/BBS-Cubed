@@ -175,6 +175,12 @@
 
 ### Mod Changelog
 
+#### 3.5.7 (Limb face culling + pose panel layout + step keyframe direction fix)
+* **New limb face culling toggle**: adds a per-bone "limb face culling" switch in the model config editor's bone panel, optimizing distant model render performance
+* **Pose panel layout adjustment**: PBR collapsible section and bone texture button moved from the bottom of the panel to directly below the material tab for a more compact, intuitive layout
+* **Fix Blockbench step keyframe interpolation direction**: Bedrock step keyframes are exported as `{"pre": before, "post": after}` transition pairs; BBS natively only reads `post`, degrading step into linear interpolation. Now per BBS's segment-interpolation rule (uses the first keyframe's interp), CONST is marked on the frame *before* the step frame, while the step frame's own `lerp_mode` (e.g. catmullrom) is preserved. In-game behavior now matches Blockbench
+* **Auto-load animation files in action state editor**: selecting an animation in the action state editor auto-parses `model.animation.json` in the same directory, reads the loop field, and bakes pose tracks
+
 #### 3.5.6 (Keybind conflict indicator + fixes)
 * **New keybind conflict indicator toggle**: adds a "Keybind Conflict Indicator" option under BBS Enhancements (default off). When on, exact-duplicate keybinds on the keybinds settings page are highlighted in yellow with a yellow exclamation badge to the left of the input box; hovering the badge lists every action sharing that key, and clicking the badge jumps to the conflicting row (same-category scroll-to, cross-category auto-switches section then scrolls into place); left/right Shift, Ctrl and Alt are treated as equivalent
 * **Default key for "Toggle previous camera mode" changed to Q**: moved from R to Q to avoid clashing with vanilla R; existing customized keybinds in saved profiles are unaffected

@@ -121,6 +121,15 @@ processResources {
             filter { line -> line.replace('"JAVA_17"', '"JAVA_21"') }
         }
 
+        // 1.21.11 shader 管线已迁移到 RenderPipeline API（#version 330 + moj_import），
+        // 用 resources-shared 下的新版覆盖默认的 1.20.1 版 model.vsh
+        doLast {
+            copy {
+                from "src/main/resources-shared/shaders-1.21.11"
+                into "$buildDir/resources/main"
+            }
+        }
+
         // 1.21.11 的 client 入口替换：
         // - BBSPlusPlusModClient 硬依赖 FilmAutoGameModeRestoreState 等被 excludes 的类，换成 12111 变体；
         // - BBSFSloveCMLClient 在该构建可直接编译（其 1.21.11-exclusive 依赖均为运行时反射检测），
