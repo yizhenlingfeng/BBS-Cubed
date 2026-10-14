@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "better_camera_perspective",
+  "version": "${version}",
+  "name": "Better camera perspective",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/better_camera_perspective/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "perspective.better_camera_perspective.client.BetterCameraPerspectiveClient"
+    ],
+    "main": [
+      "perspective.better_camera_perspective.BetterCameraPerspective"
+    ],
+    "bbs-addon": [
+      "perspective.better_camera_perspective.BBSAddonEntry"
+    ],
+    "bbs-client-addon": [
+      "perspective.better_camera_perspective.client.BBSClientAddonEntry"
+    ]
+  },
+  "mixins": [
+    "better_camera_perspective.mixins.json",
+    {
+      "config": "better_camera_perspective.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}",
+    "bbs": ">=2.7-1.20.1"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "bbs.ui.camera.clips.bbs:multi_tracker": "多样追踪",
+  "bbs.ui.camera.panels.axis_anchor": "锚点",
+  "bbs.ui.camera.panels.xyz.relative": "相对值",
+  "bbs.ui.camera.panels.xyz.absolute": "绝对值",
+  "bbs.ui.camera.panels.xyz.inherit_relative": "将主继承相对值",
+  "bbs.ui.camera.panels.xyz.inherit_absolute": "将主继承绝对值",
+  "bbs.ui.camera.panels.xyz.inherit_tooltip": "点击以设置主继承模式：后续新建关键帧将主继承该模式对应的值",
+  "bbs.ui.camera.panels.anchor_uncategorized": "未分类",
+  "bbs.ui.camera.panels.back": "返回",
+  "bbs.ui.camera.panel.columns": "列数: %s",
+  "bbs.ui.camera.panel.columns.tooltip": "切换剪辑列表的列数（1 / 2 / 3 列）",
+  "bbs.ui.camera.visibility_settings": "可视性设置",
+  "conflict_features.config.title": "摄像机编辑设置",
+  "conflict_features.config.clip_processing.title": "剪辑处理设置",
+  "conflict_features.config.clip_processing.tooltip": "剪辑条显示（名称、边界线、类型配色）等剪辑处理可视化设置",
+  "conflict_features.config.clip_processing.clip_names": "剪辑名称显示",
+  "conflict_features.config.clip_processing.clip_borders": "剪辑边界线",
+  "conflict_features.config.clip_processing.clip_colors": "剪辑类型配色"
+}

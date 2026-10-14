@@ -1,0 +1,20 @@
+{
+  "bbs.ui.camera.clips.bbs:multi_tracker": "Multi Tracker",
+  "bbs.ui.camera.panels.axis_anchor": "Anchor",
+  "bbs.ui.camera.panels.xyz.relative": "Relative",
+  "bbs.ui.camera.panels.xyz.absolute": "Absolute",
+  "bbs.ui.camera.panels.xyz.inherit_relative": "Will inherit relative",
+  "bbs.ui.camera.panels.xyz.inherit_absolute": "Will inherit absolute",
+  "bbs.ui.camera.panels.xyz.inherit_tooltip": "Click to set the primary inherit mode: new keyframes will inherit the value of this mode",
+  "bbs.ui.camera.panels.anchor_uncategorized": "Uncategorized",
+  "bbs.ui.camera.panels.back": "Back",
+  "bbs.ui.camera.panel.columns": "Columns: %s",
+  "bbs.ui.camera.panel.columns.tooltip": "Switch the number of columns (1 / 2 / 3)",
+  "bbs.ui.camera.visibility_settings": "Visibility settings",
+  "conflict_features.config.title": "Camera editing settings",
+  "conflict_features.config.clip_processing.title": "Clip processing settings",
+  "conflict_features.config.clip_processing.tooltip": "Visual settings for clip processing: clip bar display (name, borders, type colors)",
+  "conflict_features.config.clip_processing.clip_names": "Clip name labels",
+  "conflict_features.config.clip_processing.clip_borders": "Clip borders",
+  "conflict_features.config.clip_processing.clip_colors": "Clip type colors"
+}
