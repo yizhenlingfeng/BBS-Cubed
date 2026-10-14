@@ -1,0 +1,9 @@
+{
+    "model": {
+        "type": "minecraft:special",
+        "base": "bbs:item/gun",
+        "model": {
+            "type": "bbs:gun"
+        }
+    }
+}

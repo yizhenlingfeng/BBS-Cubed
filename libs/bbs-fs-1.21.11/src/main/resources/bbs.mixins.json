@@ -1,0 +1,24 @@
+{
+    "required": true,
+    "package": "mchorse.bbs_mod.mixin",
+    "compatibilityLevel": "JAVA_21",
+    "mixins": [
+        "PlayerEntityMixin",
+        "PlayerEntityMorphMixin",
+        "PlayerLikeEntityMixin",
+        "ServerPlayNetworkHandlerMixin",
+        "BlockItemMixin",
+        "ServerWorldMixin",
+        "ItemStackMixin",
+        "WorldChunkMixin",
+        "LivingEntityMixin",
+        "ServerPlayerEntityMixin",
+        "LimbAnimatorAccessor",
+        "LevelPropertiesAccessor",
+        "EntityInvoker",
+        "LivingEntityRollAccessor"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

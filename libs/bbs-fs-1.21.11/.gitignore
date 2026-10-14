@@ -1,0 +1,66 @@
+# gradle
+
+.gradle/
+build/
+out/
+classes/
+
+# eclipse
+
+*.launch
+
+# idea
+
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# vscode
+
+.settings/
+.vscode/
+bin/
+.classpath
+.project
+
+# macos
+
+*.DS_Store
+
+# fabric
+
+run/
+run_2/
+run_server/
+
+# java
+
+logs/
+hs_err_*.log
+replay_*.log
+*.hprof
+*.jfr
+
+ik_test/*
+
+# bbs port scaffolding (migration refs + compiler logs)
+.port/
+
+# bbs port planning / status docs (not part of the mod)
+PORT_PLAN_*.md
+PORT_STATUS_*.md
+PORT_RENDER_AUDIT_*.md
+
+# ai session scratch notes
+memory/
+
+# build / run logs leaked to repo root
+build-*.log
+run-client*.log
+.claude/settings.local.json
+
+# third-party sources kept locally for reference only
+OrthoCamera-1.20.1
+Iris-1.21.11/
+temp_change_log.md

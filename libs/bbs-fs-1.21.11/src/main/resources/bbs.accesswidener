@@ -1,0 +1,70 @@
+accessWidener v2 named
+
+# TODO(1.21.11 port): removed by the 1.21.5 render overhaul — RenderSystem no longer holds shaderLightDirections.
+# Lighting now flows through pipeline uniforms. Re-evaluate the FramebufferFormRenderer consumer during render migration.
+# accessible field com/mojang/blaze3d/systems/RenderSystem shaderLightDirections [Lorg/joml/Vector3f;
+
+# TODO(1.21.11 port): GlStateManager state objects (Texture2DState, TEXTURES, activeTexture) removed by the 1.21.5 GPU abstraction.
+# Texture-unit logic must move onto GpuTexture/sampler APIs during render migration.
+# accessible field com/mojang/blaze3d/platform/GlStateManager TEXTURES [Lcom/mojang/blaze3d/platform/GlStateManager$Texture2DState;
+# accessible field com/mojang/blaze3d/platform/GlStateManager activeTexture I
+# accessible class com/mojang/blaze3d/platform/GlStateManager$Texture2DState
+
+# TODO(1.21.11 render): the cull-state save/restore around the vanilla-particle preview
+# (VanillaParticleScene#renderSheets) came in from 1.21.1 as GlStateManager CULL/CullFaceState/
+# CapabilityTracker. The classes still exist in 1.21.11 but moved to com/mojang/blaze3d/opengl,
+# and there is nothing to widen them for while that preview pass is deferred.
+# accessible field com/mojang/blaze3d/opengl/GlStateManager CULL Lcom/mojang/blaze3d/opengl/GlStateManager$CullFaceState;
+# accessible class com/mojang/blaze3d/opengl/GlStateManager$CullFaceState
+# accessible class com/mojang/blaze3d/opengl/GlStateManager$CapabilityTracker
+# accessible field com/mojang/blaze3d/opengl/GlStateManager$CapabilityTracker state Z
+
+accessible field net/minecraft/client/MinecraftClient framebuffer Lnet/minecraft/client/gl/Framebuffer;
+mutable field net/minecraft/client/MinecraftClient framebuffer Lnet/minecraft/client/gl/Framebuffer;
+
+# Mob form (player variant): the cosmetic model-parts byte — 1.21.9 renamed PlayerEntity.PLAYER_MODEL_PARTS
+# to PlayerLikeEntity.PLAYER_MODE_CUSTOMIZATION_ID and made it protected.
+accessible field net/minecraft/entity/PlayerLikeEntity PLAYER_MODE_CUSTOMIZATION_ID Lnet/minecraft/entity/data/TrackedData;
+
+# Held-item replay in form renderers: the private item queue's custom commands (BBS special-model
+# geometry lands there via submitCustom) have no accessor — ItemFormRenderer.renderItem replays them.
+accessible field net/minecraft/client/render/command/CustomCommandRenderer$Commands customCommands Ljava/util/Map;
+
+# The vanilla item model predicates (a bow bending, a shield blocking, a trident
+# lifting) ask an entity what it is using - a film has no such entity, so a
+# stand-in answers them from the clips
+accessible field net/minecraft/entity/LivingEntity activeItemStack Lnet/minecraft/item/ItemStack;
+accessible field net/minecraft/entity/LivingEntity itemUseTimeLeft I
+# ...and the "using an item" living flag those predicates demand: on the client
+# setCurrentHand never raises it (the isClient branch skips setLivingFlag), so
+# the stand-in raises it by hand
+accessible method net/minecraft/entity/LivingEntity setLivingFlag (IZ)V
+# A recorded riptide spins the body the same way: useRiptide() is the player's
+# own method, and an actor is not a player - it sets the two fields by hand
+accessible field net/minecraft/entity/LivingEntity riptideTicks I
+
+# The layer's own textures, for the picking replay: the pick pass has to cut out against the
+# same Sampler0 the visible draw used, or a mob's UVs sampled against the block atlas punch
+# holes in its silhouette
+accessible field net/minecraft/client/render/RenderLayer renderSetup Lnet/minecraft/client/render/RenderSetup;
+
+# The setup behind a render layer, for the colour overlay: a form's draw needs the layer it would
+# have used with ONE texture swapped (its overlay), and the only way to build that twin is to read
+# what the original was made of
+accessible field net/minecraft/client/render/RenderSetup pipeline Lcom/mojang/blaze3d/pipeline/RenderPipeline;
+accessible field net/minecraft/client/render/RenderSetup textures Ljava/util/Map;
+accessible field net/minecraft/client/render/RenderSetup textureTransform Lnet/minecraft/client/render/TextureTransform;
+accessible field net/minecraft/client/render/RenderSetup outputTarget Lnet/minecraft/client/render/OutputTarget;
+accessible field net/minecraft/client/render/RenderSetup outlineMode Lnet/minecraft/client/render/RenderSetup$OutlineMode;
+accessible field net/minecraft/client/render/RenderSetup useLightmap Z
+accessible field net/minecraft/client/render/RenderSetup useOverlay Z
+accessible field net/minecraft/client/render/RenderSetup hasCrumbling Z
+accessible field net/minecraft/client/render/RenderSetup translucent Z
+accessible field net/minecraft/client/render/RenderSetup expectedBufferSize I
+accessible field net/minecraft/client/render/RenderSetup layeringTransform Lnet/minecraft/client/render/LayeringTransform;
+accessible class net/minecraft/client/render/RenderSetup$TextureSpec
+
+# The frame's single blur mark. Vanilla lets exactly one caller set it and keeps the FIRST one,
+# which hands the frame's only blur to the dashboard's tint rather than to the overlay panel that
+# comes up over it. InterfaceBlur clears the mark so the topmost claimant wins.
+accessible field net/minecraft/client/gui/render/state/GuiRenderState blurLayer I

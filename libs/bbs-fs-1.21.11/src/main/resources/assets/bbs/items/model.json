@@ -1,0 +1,9 @@
+{
+    "model": {
+        "type": "minecraft:special",
+        "base": "bbs:item/model",
+        "model": {
+            "type": "bbs:model_block"
+        }
+    }
+}
