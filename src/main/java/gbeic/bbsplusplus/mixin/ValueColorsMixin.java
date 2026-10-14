@@ -71,17 +71,10 @@ public abstract class ValueColorsMixin
      * 注入目标：{@code ValueColors#addColor(Color)} 结束处。
      * 注入原因：运行期添加颜色后也需要维持安全上限，避免异常旧配置继续占用界面空间。
      * 修改行为：追加后移除超出上限的旧颜色。
+     * 【已移除】BBS 2.7 的 {@code ValueColors} 内建了 {@code limit} / {@code trim()}：
+     * addColor 把最新色插在 index 0 并从尾部裁剪（recent_colors 官方已 limit(33)）；
+     * 原先从 index 0 删的注入反而会把刚加的最新色删掉，属于现行 bug，故删除。
      */
-    @Inject(method = "addColor", at = @At("TAIL"), remap = true)
-    private void bbspp$trimAfterAdd(Color color, CallbackInfo ci)
-    {
-        int limit = this.bbspp$isRecentColors() ? BBSPLUSPLUS_MAX_RECENT_COLORS : BBSPLUSPLUS_MAX_FAVORITE_COLORS;
-
-        while (this.colors.size() > limit)
-        {
-            this.colors.remove(0);
-        }
-    }
 
     @Unique
     private boolean bbspp$isRecentColors()

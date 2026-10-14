@@ -1,5 +1,6 @@
 package gbeic.bbsplusplus.mixin.client.compat;
 
+import gbeic.bbsplusplus.client.compat.TogetherReplaySelectionSnapshot;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.Film;
@@ -25,7 +26,7 @@ import java.util.List;
 @Mixin(targets = "mchorse.bbs_together.network.TogetherClientNetwork", priority = 500, remap = false)
 public abstract class TogetherClientNetworkReplaySelectionMixin
 {
-    private static final ThreadLocal<SelectionSnapshot> bbspp_cml$SELECTION = new ThreadLocal<>();
+    private static final ThreadLocal<TogetherReplaySelectionSnapshot> bbspp_cml$SELECTION = new ThreadLocal<>();
 
     @Inject(method = "lambda$handleFilmDataSyncPacket$47", at = @At("HEAD"), require = 0, remap = false)
     private static void bbspp_cml$captureReplaySelection(String filmId, List<String> path, BaseType data, CallbackInfo ci)
@@ -65,13 +66,13 @@ public abstract class TogetherClientNetworkReplaySelectionMixin
             }
         }
 
-        bbspp_cml$SELECTION.set(new SelectionSnapshot(filmId, selected, signature, ordinal, index));
+        bbspp_cml$SELECTION.set(new TogetherReplaySelectionSnapshot(filmId, selected, signature, ordinal, index));
     }
 
     @Inject(method = "lambda$handleFilmDataSyncPacket$47", at = @At("TAIL"), require = 0, remap = false)
     private static void bbspp_cml$restoreReplaySelection(String filmId, List<String> path, BaseType data, CallbackInfo ci)
     {
-        SelectionSnapshot snapshot = bbspp_cml$SELECTION.get();
+        TogetherReplaySelectionSnapshot snapshot = bbspp_cml$SELECTION.get();
 
         bbspp_cml$SELECTION.remove();
 
@@ -113,7 +114,7 @@ public abstract class TogetherClientNetworkReplaySelectionMixin
         }
     }
 
-    private static Replay bbspp_cml$findReplay(List<Replay> replays, SelectionSnapshot snapshot)
+    private static Replay bbspp_cml$findReplay(List<Replay> replays, TogetherReplaySelectionSnapshot snapshot)
     {
         int identity = bbspp_cml$identityIndex(replays, snapshot.reference);
 
@@ -194,21 +195,4 @@ public abstract class TogetherClientNetworkReplaySelectionMixin
         return replay == null ? "" : replay.toData().toString();
     }
 
-    private static class SelectionSnapshot
-    {
-        public final String filmId;
-        public final Replay reference;
-        public final String signature;
-        public final int ordinal;
-        public final int index;
-
-        public SelectionSnapshot(String filmId, Replay reference, String signature, int ordinal, int index)
-        {
-            this.filmId = filmId;
-            this.reference = reference;
-            this.signature = signature;
-            this.ordinal = ordinal;
-            this.index = index;
-        }
-    }
 }

@@ -44,7 +44,11 @@ public class ColorClip extends CameraClip
 
     public static List<ColorEffect> getEffects(ClipContext context)
     {
-        return context.clipData.get("colorEffects", ArrayList::new);
+        /* bbspp_ 前缀命名空间：不可与 bbslezy 共用 "colorEffects" key —— clipData 是所有模组共享的
+         * 数据桶，泛型擦除下同名 key 会让两个模组拿到同一个裸 ArrayList，本项目未实现
+         * bbslezy.LayeredEffect 的 ColorEffect 混入其列表后，bbslezy 渲染帧时迭代强转即 CCE 崩溃
+         * （2026-10-12 latest.log 崩溃）。命名空间化后两边彻底解耦，可安全共存。 */
+        return context.clipData.get("bbspp_colorEffects", ArrayList::new);
     }
 
     public ColorClip()
