@@ -304,33 +304,72 @@ public class PoseAnimationExporter
         JsonObject position = new JsonObject();
         JsonObject scale = new JsonObject();
 
-        for (Keyframe keyframe : keyframes)
+        for (int i = 0; i < keyframes.size(); i++)
         {
+            Keyframe keyframe = keyframes.get(i);
             Transform transform = getter.apply(keyframe);
 
             String time = time(keyframe.getTick(), minTick);
             IInterp interp = keyframe.getInterpolation().getInterp();
 
+            /* 前一帧被标为 CONST → 当前帧是 Bedrock 步阶目标，
+             * 导出为 {"pre": 前帧值, "post": 本帧值, ...}，与导入端对称 */
+            boolean stepFromPrev = i > 0
+                && keyframes.get(i - 1).getInterpolation().getInterp() == Interpolations.CONST;
+            Transform prevTransform = stepFromPrev ? getter.apply(keyframes.get(i - 1)) : null;
+
             if (hasRotation && sampler == null)
             {
                 Vector3f rotate = effectiveRotate(transform);
+                float rx = -(float) Math.toDegrees(rotate.x);
+                float ry = -(float) Math.toDegrees(rotate.y);
+                float rz = (float) Math.toDegrees(rotate.z);
 
-                rotation.add(time, makeValue(
-                    -(float) Math.toDegrees(rotate.x),
-                    -(float) Math.toDegrees(rotate.y),
-                    (float) Math.toDegrees(rotate.z),
-                    interp
-                ));
+                if (stepFromPrev)
+                {
+                    Vector3f prevRotate = effectiveRotate(prevTransform);
+
+                    rotation.add(time, makeStepValue(
+                        -(float) Math.toDegrees(prevRotate.x),
+                        -(float) Math.toDegrees(prevRotate.y),
+                        (float) Math.toDegrees(prevRotate.z),
+                        rx, ry, rz, interp
+                    ));
+                }
+                else
+                {
+                    rotation.add(time, makeValue(rx, ry, rz, interp));
+                }
             }
 
             if (hasPosition)
             {
-                position.add(time, makeValue(transform.translate.x, transform.translate.y, transform.translate.z, interp));
+                if (stepFromPrev)
+                {
+                    position.add(time, makeStepValue(
+                        prevTransform.translate.x, prevTransform.translate.y, prevTransform.translate.z,
+                        transform.translate.x, transform.translate.y, transform.translate.z, interp
+                    ));
+                }
+                else
+                {
+                    position.add(time, makeValue(transform.translate.x, transform.translate.y, transform.translate.z, interp));
+                }
             }
 
             if (hasScale)
             {
-                scale.add(time, makeValue(transform.scale.x, transform.scale.y, transform.scale.z, interp));
+                if (stepFromPrev)
+                {
+                    scale.add(time, makeStepValue(
+                        prevTransform.scale.x, prevTransform.scale.y, prevTransform.scale.z,
+                        transform.scale.x, transform.scale.y, transform.scale.z, interp
+                    ));
+                }
+                else
+                {
+                    scale.add(time, makeValue(transform.scale.x, transform.scale.y, transform.scale.z, interp));
+                }
             }
         }
 
@@ -606,6 +645,48 @@ public class PoseAnimationExporter
         }
 
         return array;
+    }
+
+    /**
+     * Bedrock 步阶帧：{@code {"pre": 前帧值, "post": 本帧值, ...}}。
+     * 与导入端 {@code GeoAnimationParserMixin} 对称——导入时识别 pre 数组并把
+     * 前一帧标为 CONST，导出时反向把 CONST 后继帧写成 pre/post 对。
+     */
+    static JsonElement makeStepValue(float preX, float preY, float preZ,
+        float postX, float postY, float postZ, IInterp interp)
+    {
+        JsonArray pre = new JsonArray();
+
+        pre.add(num(preX));
+        pre.add(num(preY));
+        pre.add(num(preZ));
+
+        JsonArray post = new JsonArray();
+
+        post.add(num(postX));
+        post.add(num(postY));
+        post.add(num(postZ));
+
+        JsonObject object = new JsonObject();
+
+        object.add("pre", pre);
+        object.add("post", post);
+
+        if (interp == Interpolations.HERMITE)
+        {
+            object.addProperty("lerp_mode", "catmullrom");
+        }
+        else
+        {
+            String easing = interp == null ? null : EASING_NAMES.get(interp);
+
+            if (easing != null)
+            {
+                object.addProperty("easing", easing);
+            }
+        }
+
+        return object;
     }
 
     static String time(float tick, float minTick)
