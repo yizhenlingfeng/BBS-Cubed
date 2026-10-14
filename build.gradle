@@ -128,6 +128,11 @@ processResources {
                 from "src/main/resources-shared/shaders-1.21.11"
                 into "$buildDir/resources/main"
             }
+            // 1.21.5+ 新 RenderPipeline 不再通过 assets/<ns>/shaders/core/*.json 注册管线，
+            // 旧版 model.json 会让 shader 加载器自动声明 Light0_Direction/Light1_Direction/
+            // FogStart/FogEnd/FogShape 等已废弃 uniform，与 light.glsl/fog.glsl 中的声明冲突
+            // （C1038 重复声明 + C1503 undefined fog_distance），必须从产物中剔除。
+            delete file("$buildDir/resources/main/assets/bbs/shaders/core/model.json")
         }
 
         // 1.21.11 的 client 入口替换：
@@ -364,15 +369,15 @@ if (targetMc == "1.21.11") {
     ]
 }
 
-// FluidFormRenderer 正在从旧立即模式 API 移植到 1.21 新 RenderPipeline API：
-// 移植期间只在 1.21.11 构建编译，1.20.1/1.20.4 暂时排除。
-// 运行时缺失时由 IconPlaceholderFormRenderer 兜底（BBSFSloveCMLClient 已做
-// Class.forName 反射注册 + 占位渲染器回退，与 1.21.11 的做法一致）。
-// 移植完成后删除本块。
-if (targetMc != "1.21.11") {
+// FluidFormRenderer 按版本分离：
+// - src/main/java 下是 1.20.1 版本（旧立即模式 API）
+// - src/main/java-1.21.11 下是 1.21 RenderPipeline API 移植版
+// 1.21.11 构建时排除默认版本并添加独立 sourceSet 目录。
+if (targetMc == "1.21.11") {
     sourceSets.main.java.excludes += [
         "gbeic/bbsplusplus/forms/renderers/FluidFormRenderer.java",
     ]
+    sourceSets.main.java.srcDir "src/main/java-1.21.11"
 }
 
 loom {
