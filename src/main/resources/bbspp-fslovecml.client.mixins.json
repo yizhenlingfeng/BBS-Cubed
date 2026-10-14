@@ -17,7 +17,6 @@
         "CubicModelAnimatorMixin",
         "CubicVAORendererMixin",
         "CustomVertexConsumerTextureGradeMixin",
-        "ExtraFormSectionMixin",
         "FormRendererTextureGradeContextMixin",
         "GeoAnimationParserMixin",
         "GizmoPivotMixin",
@@ -74,7 +73,6 @@
         "UIFilmPanelVisibilityMixin",
         "UIDataContextMenuMixin",
         "ParticleManagerVanillaFormMixin",
-        "UISectionMixin",
         "UIScreenMixin",
         "UISoundOverlayPanelMixin",
         "UITransformMixin",
@@ -84,7 +82,7 @@
         "VFXLightsGuideVisibilityMixin"
     ],
     "injectors": {
-        "defaultRequire": 1
+        "defaultRequire": 0
     },
     "refmap": "bbsplusplus-refmap.json"
 }

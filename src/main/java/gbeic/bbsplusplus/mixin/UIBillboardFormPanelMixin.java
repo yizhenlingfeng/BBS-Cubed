@@ -1,6 +1,5 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.api.BillboardFormUVScale;
 import gbeic.bbsplusplus.client.ui.UVScaleEditor;
 import mchorse.bbs_mod.forms.forms.BillboardForm;
 import mchorse.bbs_mod.l10n.L10n;
@@ -42,9 +41,12 @@ public abstract class UIBillboardFormPanelMixin extends UIFormPanel<BillboardFor
     {
         this.bbspp$uvScaleEditor = new UVScaleEditor((value) ->
         {
-            if (this.form instanceof BillboardFormUVScale uvScale)
+            mchorse.bbs_mod.settings.values.misc.ValueVector4f uvScale =
+                gbeic.bbsplusplus.api.BBSPPFormValues.getUvScale(this.form);
+
+            if (uvScale != null)
             {
-                uvScale.bbspp$getUvScale().set(new Vector4f(value));
+                uvScale.set(new Vector4f(value));
             }
         });
 

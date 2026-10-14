@@ -1,6 +1,5 @@
 package gbeic.bbsplusplus.client.screen;
 
-import gbeic.bbsplusplus.api.TextureGradeProvider;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.settings.values.core.ValueColor;
 import mchorse.bbs_mod.settings.values.numeric.ValueFloat;
@@ -49,33 +48,24 @@ public final class TextureGradeRenderContext
 
         State state = states.peek();
 
-        if (state.picking || !(state.form instanceof TextureGradeProvider provider))
+        if (state.picking || gbeic.bbsplusplus.api.BBSPPFormValues.getTextureTint(state.form) == null)
         {
             return original;
         }
 
-        return select(original, provider);
+        return select(original, state.form);
     }
 
     public static ShaderProgram select(ShaderProgram original, Form form)
     {
-        if (!(form instanceof TextureGradeProvider provider))
-        {
-            return original;
-        }
-
         Deque<State> states = STATES.get();
 
-        if (!states.isEmpty() && states.peek().picking)
+        if (gbeic.bbsplusplus.api.BBSPPFormValues.getTextureTint(form) == null
+            || (!states.isEmpty() && states.peek().picking))
         {
             return original;
         }
 
-        return select(original, provider);
-    }
-
-    private static ShaderProgram select(ShaderProgram original, TextureGradeProvider provider)
-    {
         /* 纹理调色/白化需在 Iris 光影的世界渲染（影片播放/世界中放置的 form）下同样生效，
          * 不再因光影跳过 —— 否则修改仅编辑页面（UI 渲染）可见。 */
         if (original == null)
@@ -83,8 +73,8 @@ public final class TextureGradeRenderContext
             return original;
         }
 
-        ValueColor tintProperty = provider.bbspp_cml$getTextureTint();
-        ValueFloat whitenProperty = provider.bbspp_cml$getTextureWhiten();
+        ValueColor tintProperty = gbeic.bbsplusplus.api.BBSPPFormValues.getTextureTint(form);
+        ValueFloat whitenProperty = gbeic.bbsplusplus.api.BBSPPFormValues.getTextureWhiten(form);
         Color tint = tintProperty == null ? null : tintProperty.get();
         float whiten = whitenProperty == null ? 0F : whitenProperty.get();
 

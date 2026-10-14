@@ -1,7 +1,5 @@
 package gbeic.bbsplusplus.client.screen;
 
-import gbeic.bbsplusplus.api.FormColorProvider;
-import gbeic.bbsplusplus.api.TextureGradeProvider;
 import gbeic.bbsplusplus.mixin.client.ParticleColorAccessor;
 import mchorse.bbs_mod.forms.forms.VanillaParticleForm;
 import mchorse.bbs_mod.utils.colors.Color;
@@ -29,22 +27,24 @@ public final class VanillaParticleGradeContext
         Color tint = new Color(1F, 1F, 1F, 0F);
         float whiten = 0F;
 
-        if (form instanceof FormColorProvider provider && provider.bbspp_cml$getColor() != null)
+        mchorse.bbs_mod.settings.values.core.ValueColor colorValue = gbeic.bbsplusplus.api.BBSPPFormValues.getColor(form);
+
+        if (colorValue != null && colorValue.get() != null)
         {
-            color = provider.bbspp_cml$getColor().get().copy();
+            color = colorValue.get().copy();
         }
 
-        if (form instanceof TextureGradeProvider provider)
-        {
-            if (provider.bbspp_cml$getTextureTint() != null)
-            {
-                tint = provider.bbspp_cml$getTextureTint().get().copy();
-            }
+        mchorse.bbs_mod.settings.values.core.ValueColor tintProperty = gbeic.bbsplusplus.api.BBSPPFormValues.getTextureTint(form);
+        mchorse.bbs_mod.settings.values.numeric.ValueFloat whitenProperty = gbeic.bbsplusplus.api.BBSPPFormValues.getTextureWhiten(form);
 
-            if (provider.bbspp_cml$getTextureWhiten() != null)
-            {
-                whiten = provider.bbspp_cml$getTextureWhiten().get();
-            }
+        if (tintProperty != null && tintProperty.get() != null)
+        {
+            tint = tintProperty.get().copy();
+        }
+
+        if (whitenProperty != null)
+        {
+            whiten = whitenProperty.get();
         }
 
         STATES.get().push(new State(color, tint, clamp(whiten)));

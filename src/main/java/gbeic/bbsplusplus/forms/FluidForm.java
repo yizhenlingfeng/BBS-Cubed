@@ -1,6 +1,5 @@
 package gbeic.bbsplusplus.forms;
 
-import gbeic.bbsplusplus.api.TextureGradeProvider;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.settings.values.core.ValueColor;
 import mchorse.bbs_mod.settings.values.core.ValueLink;
@@ -11,7 +10,7 @@ import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.resources.LinkUtils;
 
-public class FluidForm extends Form implements TextureGradeProvider
+public class FluidForm extends Form
 {
     public enum FluidMode
     {
@@ -88,15 +87,4 @@ public class FluidForm extends Form implements TextureGradeProvider
         this.mode.set(mode.ordinal());
     }
 
-    @Override
-    public ValueColor bbspp_cml$getTextureTint()
-    {
-        return this.textureTint;
-    }
-
-    @Override
-    public ValueFloat bbspp_cml$getTextureWhiten()
-    {
-        return this.textureWhiten;
-    }
 }

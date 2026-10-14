@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import gbeic.bbsplusplus.api.ExtrudedFormUVTransform;
+import gbeic.bbsplusplus.api.BBSPPFormValues;
 import gbeic.bbsplusplus.api.ModelVAODataAccess;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSShaders;
@@ -57,9 +57,12 @@ public abstract class ExtrudedFormRendererMixin extends FormRenderer<ExtrudedFor
     )
     private void bbspp$renderWithUvTransform(ShaderProgram shader, IModelVAO modelVao, MatrixStack matrices, float r, float g, float b, float a, int light, int overlay)
     {
-        if (!(this.form instanceof ExtrudedFormUVTransform uv)
+        mchorse.bbs_mod.settings.values.misc.ValueVector4f uvTransform = BBSPPFormValues.getUvTransform(this.form);
+        mchorse.bbs_mod.settings.values.numeric.ValueFloat uvRotation = BBSPPFormValues.getUvRotation(this.form);
+
+        if (uvTransform == null
             || !(modelVao instanceof ModelVAODataAccess access)
-            || !bbspp$isUvTransformActive(uv))
+            || !bbspp$isUvTransformActive(uvTransform, uvRotation))
         {
             ModelVAORenderer.render(shader, modelVao, matrices, r, g, b, a, light, overlay);
 
@@ -75,10 +78,10 @@ public abstract class ExtrudedFormRendererMixin extends FormRenderer<ExtrudedFor
             return;
         }
 
-        this.bbspp$renderCpu(shader, data, matrices, r, g, b, a, light, overlay, uv);
+        this.bbspp$renderCpu(shader, data, matrices, r, g, b, a, light, overlay, uvTransform, uvRotation);
     }
 
-    private void bbspp$renderCpu(ShaderProgram shader, ModelVAOData data, MatrixStack matrices, float r, float g, float b, float a, int light, int overlay, ExtrudedFormUVTransform uv)
+    private void bbspp$renderCpu(ShaderProgram shader, ModelVAOData data, MatrixStack matrices, float r, float g, float b, float a, int light, int overlay, mchorse.bbs_mod.settings.values.misc.ValueVector4f uv, mchorse.bbs_mod.settings.values.numeric.ValueFloat uvRotationValue)
     {
         VertexFormat format = shader.getFormat();
         boolean simpleFormat = format == VertexFormats.POSITION_TEXTURE_LIGHT_COLOR;
@@ -88,8 +91,8 @@ public abstract class ExtrudedFormRendererMixin extends FormRenderer<ExtrudedFor
         float[] vertices = data.vertices();
         float[] normals = data.normals();
         float[] textureCoordinates = data.texCoords();
-        Vector4f transform = uv.bbspp$getUvTransformValue();
-        float rotation = uv.bbspp$getUvRotation().get();
+        Vector4f transform = uv.get() == null ? new Vector4f(0F, 0F, 1F, 1F) : uv.get();
+        float rotation = uvRotationValue.get();
         Link link = this.form.texture.get();
         Texture texture = link == null ? null : BBSModClient.getTextures().getTexture(link);
         float width = texture == null ? 1F : Math.max(1F, texture.width);
@@ -135,15 +138,15 @@ public abstract class ExtrudedFormRendererMixin extends FormRenderer<ExtrudedFor
         BufferRenderer.drawWithGlobalProgram(builder.end());
     }
 
-    private static boolean bbspp$isUvTransformActive(ExtrudedFormUVTransform uv)
+    private static boolean bbspp$isUvTransformActive(mchorse.bbs_mod.settings.values.misc.ValueVector4f uv, mchorse.bbs_mod.settings.values.numeric.ValueFloat uvRotationValue)
     {
-        Vector4f value = uv.bbspp$getUvTransformValue();
+        Vector4f value = uv.get() == null ? new Vector4f(0F, 0F, 1F, 1F) : uv.get();
 
         return Math.abs(value.x) > 1.0E-6F
             || Math.abs(value.y) > 1.0E-6F
             || Math.abs(value.z - 1F) > 1.0E-6F
             || Math.abs(value.w - 1F) > 1.0E-6F
-            || Math.abs(uv.bbspp$getUvRotation().get()) > 1.0E-6F;
+            || Math.abs(uvRotationValue.get()) > 1.0E-6F;
     }
 
     private static void bbspp$prepareCpuShader(ShaderProgram shader)

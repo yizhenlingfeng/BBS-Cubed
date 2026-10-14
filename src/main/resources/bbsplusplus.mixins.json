@@ -3,7 +3,6 @@
     "package": "gbeic.bbsplusplus.mixin",
     "compatibilityLevel": "JAVA_17",
     "client": [
-        "BBSModMixin",
         "MotionPathMixin",
         "UIDataContextMenuMixin",
         "UIContextMenuBarAccessor",
@@ -14,14 +13,12 @@
         "UIModelPhysicsFormPanelMixin",
         "UIModelConstraintsFormPanelMixin",
         "BBSRenderingMixin",
-        "BBSSettingsMixin",
         "UISettingsVideoPresetMixin",
         "WindowClipboardMixin",
         "UIUndoListMixin",
         "UIOverlayUndoHistoryMixin",
         "UIDataPathListFilmLibraryMixin",
         "UIFilmPanelLoopIconMixin",
-        "L10nMixin",
         "UIAnimationToPoseOverlayPanelMixin",
         "UIPoseFactoryEditorMixin",
         "UIPoseTransformsBoneSkipMixin",
@@ -39,7 +36,6 @@
         "UIKeyframeSheetMixin",
         "UIFilmPanelGameModeMixin",
         "UIFilmControllerGameModeMixin",
-        "UIPromptOverlayPanelEnterMixin",
         "UIClipsDoubleClickMixin",
         "ClipsMixin",
         "UIReplaysEditorClickMixin",
@@ -56,9 +52,6 @@
         "KeyframeMixin",
         "ReplayKeyframesMixin",
         "ActionPlayerMixin",
-        "BillboardFormMixin",
-        "ExtrudedFormMixin",
-        "ModelFormMixin",
         "ModelInstanceMixin",
         "ModelFormRendererMixin",
         "BillboardFormRendererMixin",
@@ -72,7 +65,6 @@
         "UIExtrudedFormPanelMixin",
         "UIItemStackKeyframeFactoryMixin",
         "UIReplaysEditorUtilsMixin",
-        "UIValueMapMixin",
         "TextureManagerMixin",
         "TextureMixin",
         "EffekAssetLoaderMixin",
@@ -108,10 +100,8 @@
         "UIKeybindMixin",
         "UIKeybindBadgeMixin",
         "KeybindMixin",
-        "KeybindSettingsMixin",
         "DiamondKeyframeShapeRendererMixin",
         "UIFilmKeyframesMixin",
-        "UIAnimationStateKeyframesMixin",
         "IModelLoaderMixin",
         "IrisUtilsMixin",
         "UIKeyframeDopeSheetTrackHeightScrollMixin",
@@ -138,6 +128,6 @@
         "UIModelConfigEditorLimbCullingMixin"
             ],
     "injectors": {
-        "defaultRequire": 1
+        "defaultRequire": 0
     }
 }

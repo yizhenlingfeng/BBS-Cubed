@@ -1,6 +1,5 @@
 package gbeic.bbsplusplus.utils;
 
-import gbeic.bbsplusplus.api.MolangSharedProvider;
 import mchorse.bbs_mod.cubic.IModelInstance;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.model.Model;
@@ -115,11 +114,12 @@ public class MolangVariableScopes
     private static boolean isShared(IModelInstance armature)
     {
         if (armature instanceof ModelInstance model
-            && model.form instanceof ModelForm form
-            && form instanceof MolangSharedProvider provider
-            && provider.bbspp_cml$getMolangShared() != null)
+            && model.form instanceof ModelForm form)
         {
-            return provider.bbspp_cml$getMolangShared().get();
+            mchorse.bbs_mod.settings.values.numeric.ValueBoolean shared =
+                gbeic.bbsplusplus.api.BBSPPFormValues.getMolangShared(form);
+
+            return shared != null && shared.get();
         }
 
         return false;

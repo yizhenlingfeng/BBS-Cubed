@@ -1,6 +1,5 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.api.BillboardFormUVScale;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.forms.forms.BillboardForm;
 import mchorse.bbs_mod.forms.renderers.BillboardFormRenderer;
@@ -102,8 +101,10 @@ public abstract class BillboardFormRendererMixin extends FormRenderer<BillboardF
         uvQuad.p3.set(u1, v2, 0F);
         uvQuad.p4.set(u2, v2, 0F);
 
-        Vector4f scale = this.form instanceof BillboardFormUVScale uvScale
-            ? uvScale.bbspp$getUvScaleValue()
+        mchorse.bbs_mod.settings.values.misc.ValueVector4f uvScale = gbeic.bbsplusplus.api.BBSPPFormValues.getUvScale(this.form);
+
+        Vector4f scale = uvScale != null && uvScale.get() != null
+            ? uvScale.get()
             : new Vector4f(1F);
         float centerU = (crop.x + width - crop.z) / 2F / width;
         float centerV = (crop.y + height - crop.w) / 2F / height;

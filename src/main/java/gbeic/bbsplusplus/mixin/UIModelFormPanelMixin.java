@@ -1,7 +1,6 @@
 package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.client.ui.UVTransformEditor;
-import gbeic.bbsplusplus.api.ModelFormUVTransform;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIForm;
@@ -43,9 +42,12 @@ public abstract class UIModelFormPanelMixin extends UIFormPanel<ModelForm>
     {
         this.bbspp$uvEditor = new UVTransformEditor((value) ->
         {
-            if (this.form instanceof ModelFormUVTransform uv)
+            mchorse.bbs_mod.settings.values.misc.ValueVector4f uvTransform =
+                gbeic.bbsplusplus.api.BBSPPFormValues.getUvTransform(this.form);
+
+            if (uvTransform != null)
             {
-                uv.bbspp$getUvTransform().set(new Vector4f(value));
+                uvTransform.set(new Vector4f(value));
             }
         });
 
@@ -64,11 +66,14 @@ public abstract class UIModelFormPanelMixin extends UIFormPanel<ModelForm>
     @Inject(method = "startEdit", at = @At("TAIL"))
     private void bbspp$syncUvControls(ModelForm form, CallbackInfo ci)
     {
-        if (!(form instanceof ModelFormUVTransform uv))
+        mchorse.bbs_mod.settings.values.misc.ValueVector4f uvTransform =
+            gbeic.bbsplusplus.api.BBSPPFormValues.getUvTransform(form);
+
+        if (uvTransform == null || uvTransform.get() == null)
         {
             return;
         }
 
-        this.bbspp$uvEditor.setValue(uv.bbspp$getUvTransformValue());
+        this.bbspp$uvEditor.setValue(uvTransform.get());
     }
 }

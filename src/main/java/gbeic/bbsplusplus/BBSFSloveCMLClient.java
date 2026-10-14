@@ -4,11 +4,9 @@ import gbeic.bbsplusplus.clips.HotbarClip;
 import gbeic.bbsplusplus.clips.ReplayClip;
 import gbeic.bbsplusplus.clips.screen.CinematicClip;
 import gbeic.bbsplusplus.forms.FluidForm;
-import gbeic.bbsplusplus.forms.renderers.FluidFormRenderer;
-import gbeic.bbsplusplus.forms.renderers.GradedVanillaParticleFormRenderer;
+// TODO(1.21.11 port): these renderers use the old immediate-mode render API, registered via reflection
 import gbeic.bbsplusplus.forms.renderers.UnknownFormRenderer;
 import mchorse.bbs_mod.forms.forms.UnknownForm;
-import gbeic.bbsplusplus.particles.ParticlePlusClient;
 import gbeic.bbsplusplus.premiere.PremiereExportHandler;
 import gbeic.bbsplusplus.settings.ValueSectionHeader;
 import gbeic.bbsplusplus.ui.film.clips.UICinematicClip;
@@ -53,7 +51,19 @@ public class BBSFSloveCMLClient implements ClientModInitializer {
             return;
         }
 
+        /* BBS++ 自有 namespace 的 UI 文案（bbspp/strings/<lang>.json） */
         l10n.registerOne((lang) -> Link.assets("bbspp/strings/" + lang + ".json"));
+
+        /* BBS 主 namespace 的补充文案（assets/bbs/assets/lang/<lang>.json，原 L10nMixin 注册的那份）。
+         * 文件缺失时返回空列表，安静回落到 BBS 已加载的默认英文。 */
+        l10n.register((lang) -> {
+            Link link = Link.assets("lang/" + lang + ".json");
+
+            return hasLanguageFile(link)
+                ? java.util.Collections.singletonList(link)
+                : java.util.Collections.emptyList();
+        });
+
         registeredL10n = l10n;
 
         try {
@@ -61,6 +71,14 @@ public class BBSFSloveCMLClient implements ClientModInitializer {
             LOGGER.info("[FSloveCML] addon translations registered and loaded");
         } catch (RuntimeException e) {
             LOGGER.error("[FSloveCML] addon translation reload failed", e);
+        }
+    }
+
+    private static boolean hasLanguageFile(Link link) {
+        try (java.io.InputStream ignored = BBSMod.getProvider().getAsset(link)) {
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -79,7 +97,10 @@ public class BBSFSloveCMLClient implements ClientModInitializer {
              * 注册后立即 reload；若此时 BBS 尚未创建 L10n，RegisterL10nEvent 会补注册。 */
             registerTranslations(BBSModClient.getL10n());
 
-            ParticlePlusClient.initialize();
+            // ParticlePlusClient: 1.21.11 上被 excludes，运行时检测
+            try { Class.forName("gbeic.bbsplusplus.particles.ParticlePlusClient")
+                    .getMethod("initialize").invoke(null); }
+            catch (Throwable ignored) {}
             LOGGER.info("[FSloveCML] Particle+ components registered");
 
             /* Client addon 由 BBS 2.5 经 "bbs-client-addon" 入口加载,此处不再手动注册,
@@ -95,10 +116,16 @@ public class BBSFSloveCMLClient implements ClientModInitializer {
 
             /* 流体伪装：编辑器面板 + 渲染器 */
             UIFormEditor.register(FluidForm.class, UIFluidForm::new);
-            FormUtilsClient.register(FluidForm.class, FluidFormRenderer::new);
+            // FluidFormRenderer: 1.21.11 上被 excludes，运行时检测
+            try { registerRenderer("gbeic.bbsplusplus.forms.FluidForm",
+                    "gbeic.bbsplusplus.forms.renderers.FluidFormRenderer"); }
+            catch (Throwable ignored) {}
             LOGGER.info("[FSloveCML] 流体伪装 UI 与渲染器注册成功!");
 
-            FormUtilsClient.register(VanillaParticleForm.class, GradedVanillaParticleFormRenderer::new);
+            // GradedVanillaParticleFormRenderer: 1.21.11 上被 excludes，运行时检测
+            try { registerRenderer("mchorse.bbs_mod.forms.forms.VanillaParticleForm",
+                    "gbeic.bbsplusplus.forms.renderers.GradedVanillaParticleFormRenderer"); }
+            catch (Throwable ignored) {}
             LOGGER.info("[FSloveCML] 原版粒子伪装颜色渲染器注册成功!");
 
             /* 为运行时缺失的 form 类型（UnknownForm，例如回放里残留的 irlite:spotlight
@@ -128,5 +155,31 @@ public class BBSFSloveCMLClient implements ClientModInitializer {
         }
 
         LOGGER.info("[FSloveCML] 客户端初始化完成!");
+    }
+
+    /**
+     * 用反射注册 FormRenderer。1.20.1 上类存在时正常注册；1.21.11 上被 excludes 时跳过。
+     */
+    private static void registerRenderer(String formClassName, String rendererClassName) throws Exception
+    {
+        Class<?> rendererCls;
+        try { rendererCls = Class.forName(rendererClassName); }
+        catch (ClassNotFoundException e) { return; }
+
+        Class<?> formCls = Class.forName(formClassName);
+        Class<?> factoryInterface = Class.forName("mchorse.bbs_mod.forms.FormUtilsClient$IFormRendererFactory");
+        Object factory = java.lang.reflect.Proxy.newProxyInstance(
+            BBSFSloveCMLClient.class.getClassLoader(),
+            new Class<?>[]{factoryInterface},
+            (proxy, method, args) -> {
+                if (method.getName().equals("create")) {
+                    return rendererCls.getConstructor(formCls).newInstance(args[0]);
+                }
+                return null;
+            });
+
+        FormUtilsClient.class.getMethod("register", Class.class,
+                Class.forName("mchorse.bbs_mod.forms.FormUtilsClient$IFormRendererFactory"))
+            .invoke(null, formCls, factory);
     }
 }

@@ -10,6 +10,7 @@ import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.utils.keys.Keybind;
 import mchorse.bbs_mod.ui.utils.keys.KeybindManager;
+import gbeic.bbsplusplus.forms.sections.BBSPPFormSection;
 import gbeic.bbsplusplus.ui.film.FilmVisibilityController;
 import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 
@@ -31,6 +32,32 @@ public class BBSFSloveCMLClientAddon implements BBSAddonMod {
     public void onRegisterL10n(RegisterL10nEvent event) {
         BBSFSloveCML.LOGGER.info("[FSloveCML] 收到 RegisterL10nEvent");
         BBSFSloveCMLClient.registerTranslations(event.l10n);
+    }
+
+    /**
+     * 注册 SnowUIKeys 快捷键类（原 {@code KeybindSettingsMixin} 的官方事件版）。
+     *
+     * <p>事件在 {@code KeybindSettings.registerClasses()}（只加 BBS 自己的 Keys）
+     * 之后、keybinds.json 构建之前派发，{@code event.register(Class)} 与原 Mixin
+     * 往同一个扫描列表追加类，行为 1:1 等价。</p>
+     */
+    @Subscribe
+    public void onRegisterKeybinds(mchorse.bbs_mod.api.client.events.RegisterKeybindsEvent event) {
+        event.register(SnowUIKeys.class);
+    }
+
+    /**
+     * 注册 BBS++ 表单拾取器分区（原 {@code ExtraFormSectionMixin} 的官方事件版）。
+     *
+     * <p>BBS 每次资源重载都会重建整个调色板并重新询问 factory，因此重载安全；
+     * 旧 Mixin 挂在 {@code ExtraFormSection.initiate()} TAIL 上也是为此。
+     * 行为差异：表单从"杂项"分类移入新的"BBS++"顶层分区（分类可见性 ID
+     * {@code bbspp}）——BBS 2.7 的 {@code ExtraFormSection.extra} 是私有的，
+     * 官方事件无法往已有分区里追加。</p>
+     */
+    @Subscribe
+    public void onRegisterFormSections(mchorse.bbs_mod.api.client.events.RegisterFormSectionsEvent event) {
+        event.register(BBSPPFormSection::new);
     }
 
     @Subscribe

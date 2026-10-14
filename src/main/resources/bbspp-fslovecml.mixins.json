@@ -6,17 +6,13 @@
         "ActionConfigMixin",
         "ActionPlaybackMixin",
         "ActionsConfigKeyframeFactoryMixin",
-        "BBSSettingsCMLMixin",
         "KeyframeSegmentCMLMixin",
-        "MiscFormTextureGradeMixin",
-        "ModelFormCMLMixin",
         "ModelGroupMixin",
         "ModelMixin",
         "PoseTransformMixin",
-        "TrailFormColorMixin",
         "TransformMixin"
     ],
     "injectors": {
-        "defaultRequire": 1
+        "defaultRequire": 0
     }
 }

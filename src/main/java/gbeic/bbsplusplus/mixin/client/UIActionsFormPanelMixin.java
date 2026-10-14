@@ -1,6 +1,5 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import gbeic.bbsplusplus.api.MolangSharedProvider;
 import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIForm;
@@ -31,9 +30,12 @@ public abstract class UIActionsFormPanelMixin
     {
         this.bbspp_cml$molangShared = new UIToggle(SnowUIKeys.MOLANG_SHARED, (b) ->
         {
-            if (this.bbspp_cml$form instanceof MolangSharedProvider provider && provider.bbspp_cml$getMolangShared() != null)
+            mchorse.bbs_mod.settings.values.numeric.ValueBoolean shared =
+                gbeic.bbsplusplus.api.BBSPPFormValues.getMolangShared(this.bbspp_cml$form);
+
+            if (shared != null)
             {
-                provider.bbspp_cml$getMolangShared().set(b.getValue());
+                shared.set(b.getValue());
             }
         });
         this.bbspp_cml$molangShared.tooltip(SnowUIKeys.MOLANG_SHARED_TOOLTIP);
@@ -46,9 +48,12 @@ public abstract class UIActionsFormPanelMixin
     {
         this.bbspp_cml$form = form;
 
-        if (form instanceof MolangSharedProvider provider && provider.bbspp_cml$getMolangShared() != null)
+        mchorse.bbs_mod.settings.values.numeric.ValueBoolean shared =
+            gbeic.bbsplusplus.api.BBSPPFormValues.getMolangShared(form);
+
+        if (shared != null)
         {
-            this.bbspp_cml$molangShared.setValue(provider.bbspp_cml$getMolangShared().get());
+            this.bbspp_cml$molangShared.setValue(shared.get());
         }
     }
 }

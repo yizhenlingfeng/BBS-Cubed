@@ -1,6 +1,5 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.api.ExtrudedFormUVTransform;
 import gbeic.bbsplusplus.client.ui.UVTransformEditor;
 import mchorse.bbs_mod.forms.forms.ExtrudedForm;
 import mchorse.bbs_mod.l10n.L10n;
@@ -41,16 +40,22 @@ public abstract class UIExtrudedFormPanelMixin extends UIFormPanel<ExtrudedForm>
     {
         this.bbspp$uvEditor = new UVTransformEditor((value) ->
         {
-            if (this.form instanceof ExtrudedFormUVTransform uv)
+            mchorse.bbs_mod.settings.values.misc.ValueVector4f uvTransform =
+                gbeic.bbsplusplus.api.BBSPPFormValues.getUvTransform(this.form);
+
+            if (uvTransform != null)
             {
-                uv.bbspp$getUvTransform().set(new Vector4f(value));
+                uvTransform.set(new Vector4f(value));
             }
         });
         this.bbspp$uvRotation = new UITrackpad((value) ->
         {
-            if (this.form instanceof ExtrudedFormUVTransform uv)
+            mchorse.bbs_mod.settings.values.numeric.ValueFloat uvRotation =
+                gbeic.bbsplusplus.api.BBSPPFormValues.getUvRotation(this.form);
+
+            if (uvRotation != null)
             {
-                uv.bbspp$getUvRotation().set(value.floatValue());
+                uvRotation.set(value.floatValue());
             }
         }).degrees().onlyNumbers();
         this.bbspp$uvRotation.tooltip(L10n.lang("bbs.ui.forms.editor.extruded.uv_rotation"));

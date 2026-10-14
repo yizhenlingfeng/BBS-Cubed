@@ -2,7 +2,6 @@ package gbeic.bbsplusplus.mixin.client;
 
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.GroupGlintHolder;
-import gbeic.bbsplusplus.api.TextureGradeProvider;
 import gbeic.bbsplusplus.client.screen.ModelTextureGradeShader;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.cubic.ModelInstance;
@@ -64,10 +63,9 @@ public abstract class ModelInstanceTextureGradeMixin
         Color tintValue = new Color(1F, 1F, 1F, 0F);
         float whitenValue = 0F;
 
-        if (form instanceof TextureGradeProvider provider)
         {
-            ValueColor tint = provider.bbspp_cml$getTextureTint();
-            ValueFloat whiten = provider.bbspp_cml$getTextureWhiten();
+            ValueColor tint = gbeic.bbsplusplus.api.BBSPPFormValues.getTextureTint(form);
+            ValueFloat whiten = gbeic.bbsplusplus.api.BBSPPFormValues.getTextureWhiten(form);
 
             if (tint != null && tint.get() != null)
             {

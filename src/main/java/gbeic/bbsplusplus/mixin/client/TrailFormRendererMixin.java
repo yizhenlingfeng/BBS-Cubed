@@ -1,7 +1,6 @@
 package gbeic.bbsplusplus.mixin.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import gbeic.bbsplusplus.api.FormColorProvider;
 import gbeic.bbsplusplus.client.screen.TextureGradeRenderContext;
 import mchorse.bbs_mod.forms.forms.TrailForm;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
@@ -44,9 +43,11 @@ public abstract class TrailFormRendererMixin
         Color color = Color.white();
 
         color.set(context.color);
+        mchorse.bbs_mod.settings.values.core.ValueColor colorValue = gbeic.bbsplusplus.api.BBSPPFormValues.getColor(form);
+
         FormColorBlend.blend(
             color,
-            ((FormColorProvider) form).bbspp_cml$getColor().get()
+            colorValue != null && colorValue.get() != null ? colorValue.get() : Color.white()
         );
 
         RenderSystem.setShaderColor(color.r, color.g, color.b, color.a);

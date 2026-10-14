@@ -1,6 +1,5 @@
 package gbeic.bbsplusplus.client.renderer;
 
-import gbeic.bbsplusplus.api.ModelFormUVTransform;
 import mchorse.bbs_mod.cubic.IModel;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.model.Model;
@@ -73,12 +72,14 @@ public class ModelUVTransformRuntime
 
     private static Transform from(ModelForm form, ModelInstance model)
     {
-        if (!(form instanceof ModelFormUVTransform uv))
+        mchorse.bbs_mod.settings.values.misc.ValueVector4f uv = gbeic.bbsplusplus.api.BBSPPFormValues.getUvTransform(form);
+
+        if (uv == null)
         {
             return DEFAULT;
         }
 
-        Vector4f value = uv.bbspp$getUvTransformValue();
+        Vector4f value = uv.get();
         float offsetU = value.x;
         float offsetV = value.y;
         float scaleU = value.z;

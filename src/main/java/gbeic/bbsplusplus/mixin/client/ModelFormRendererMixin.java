@@ -2,7 +2,7 @@ package gbeic.bbsplusplus.mixin.client;
 
 import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.api.BoneTextureHolder;
-import gbeic.bbsplusplus.api.ActionsOverlayProvider;
+import gbeic.bbsplusplus.api.BBSPPFormValues;
 import gbeic.bbsplusplus.api.PivotHolder;
 import gbeic.bbsplusplus.cubic.animation.AdditiveAnimator;
 import gbeic.bbsplusplus.cubic.animation.AdditiveLayerContext;
@@ -193,17 +193,12 @@ public class ModelFormRendererMixin
 
         ModelFormRenderer renderer = (ModelFormRenderer) (Object) this;
         ModelInstance model = renderer.getModel();
-        ActionsOverlayProvider provider = (ActionsOverlayProvider) renderer.getForm();
-        List<ValueActionsConfig> values = new ArrayList<>();
+        List<ValueActionsConfig> values = new ArrayList<>(BBSPPFormValues.getAdditionalActionsOverlays(renderer.getForm()));
+        ValueActionsConfig mainOverlay = BBSPPFormValues.getActionsOverlay(renderer.getForm());
 
-        if (provider.bbspp_cml$getActionsOverlay() != null)
+        if (mainOverlay != null)
         {
-            values.add(provider.bbspp_cml$getActionsOverlay());
-        }
-
-        if (provider.bbspp_cml$getAdditionalActionsOverlays() != null)
-        {
-            values.addAll(provider.bbspp_cml$getAdditionalActionsOverlays());
+            values.add(0, mainOverlay);
         }
 
         if (model == null)
