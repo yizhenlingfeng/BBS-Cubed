@@ -100,6 +100,8 @@
   "bbspp.config.bbs_enhancements.allow_clip_track_expansion-comment": "When enabled, dragging a clip beyond the top of the timeline no longer limits track depth, allowing more tracks like vanilla BBS.",
   "bbspp.config.bbs_enhancements.auto_disable_face_culling": "Auto disable face culling",
   "bbspp.config.bbs_enhancements.auto_disable_face_culling-comment": "When enabled, automatically generates config.json with culling=false for all models that don't have one. Existing config.json files are untouched.",
+  "bbspp.config.bbs_enhancements.auto_load_animation_file": "Auto-load animation file into animation states",
+  "bbspp.config.bbs_enhancements.auto_load_animation_file-comment": "When enabled, opening a model block's animation states manager reads animations/*.animation.json from the model folder: creates a state per animation, sets loop and duration, and bakes keyframes into Pose tracks. Only fills empty states; never overwrites hand edits. On by default",
   "bbspp.config.bbs_enhancements.chinese_keyframe_names": "Chinese keyframe track names",
   "bbspp.config.bbs_enhancements.chinese_keyframe_names-comment": "When enabled, track names in the keyframe editor are displayed in Chinese for easier identification.",
   "bbspp.config.bbs_enhancements.cycle_compact": "Compact Editor Cycle",

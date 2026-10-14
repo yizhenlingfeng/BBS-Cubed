@@ -1,9 +1,11 @@
 package gbeic.bbsplusplus.mixin.client;
 
+import gbeic.bbsplusplus.ui.forms.AnimationFileAutoSyncSupport;
 import gbeic.bbsplusplus.ui.forms.AnimationStateEditorSupport;
 import mchorse.bbs_mod.forms.states.AnimationState;
 import mchorse.bbs_mod.ui.forms.editors.UIFormEditor;
 import mchorse.bbs_mod.ui.forms.editors.states.keyframes.UIAnimationStateEditor;
+import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -35,6 +37,9 @@ public abstract class UIAnimationStateEditorMixin
     private AnimationStateEditorSupport bbspp_cml$support;
 
     @Unique
+    private AnimationFileAutoSyncSupport bbspp_cml$autoSync;
+
+    @Unique
     private AnimationStateEditorSupport bbspp_cml$support()
     {
         if (this.bbspp_cml$support == null)
@@ -50,10 +55,33 @@ public abstract class UIAnimationStateEditorMixin
         return this.bbspp_cml$support;
     }
 
+    @Unique
+    private AnimationFileAutoSyncSupport bbspp_cml$autoSync()
+    {
+        if (this.bbspp_cml$autoSync == null)
+        {
+            this.bbspp_cml$autoSync = new AnimationFileAutoSyncSupport(
+                (UIAnimationStateEditor) (Object) this,
+                this.editor,
+                () -> this.state
+            );
+        }
+
+        return this.bbspp_cml$autoSync;
+    }
+
     @Inject(method = "setState", at = @At("HEAD"), remap = false)
     private void bbspp_cml$beforeSetState(AnimationState nextState, CallbackInfo ci)
     {
         this.bbspp_cml$support().beforeSetState();
+        /* 在轨道构建之前同步：新建状态并把动画烘焙进 pose 轨道，随后原生流程直接展示 */
+        this.bbspp_cml$autoSync().onSetState(nextState);
+    }
+
+    @Inject(method = "render", at = @At("HEAD"), remap = false)
+    private void bbspp_cml$autoSyncTick(UIContext context, CallbackInfo ci)
+    {
+        this.bbspp_cml$autoSync().tick();
     }
 
     @Inject(method = "setState", at = @At("TAIL"), remap = false)

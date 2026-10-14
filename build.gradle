@@ -257,7 +257,6 @@ if (targetMc == "1.21.11") {
         "gbeic/bbsplusplus/client/screen/VanillaParticleGradeContext.java",
         "gbeic/bbsplusplus/client/structure/VFXDestructionWandSelection.java",
         "gbeic/bbsplusplus/compat/vfx/VfxCoreShaderRegistrationGuard.java",
-        "gbeic/bbsplusplus/forms/renderers/FluidFormRenderer.java",
         // 引用被排除类的下游文件
         "gbeic/bbsplusplus/client/renderer/ItemSprayEmitter.java",
         "gbeic/bbsplusplus/client/renderer/SprayedItem.java",
@@ -353,6 +352,17 @@ if (targetMc == "1.21.11") {
         "gbeic/bbsplusplus/util/FilmAutoGameModeRestoreState.java",
         // 运行时 Mixin 目标类已变更
         "gbeic/bbsplusplus/mixin/MotionPathMixin.java",
+    ]
+}
+
+// FluidFormRenderer 正在从旧立即模式 API 移植到 1.21 新 RenderPipeline API：
+// 移植期间只在 1.21.11 构建编译，1.20.1/1.20.4 暂时排除。
+// 运行时缺失时由 IconPlaceholderFormRenderer 兜底（BBSFSloveCMLClient 已做
+// Class.forName 反射注册 + 占位渲染器回退，与 1.21.11 的做法一致）。
+// 移植完成后删除本块。
+if (targetMc != "1.21.11") {
+    sourceSets.main.java.excludes += [
+        "gbeic/bbsplusplus/forms/renderers/FluidFormRenderer.java",
     ]
 }
 

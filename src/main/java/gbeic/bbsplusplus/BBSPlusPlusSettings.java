@@ -59,6 +59,9 @@ public class BBSPlusPlusSettings
         CMLSettings.snowActions = builder.getBoolean("snow_actions", false);
         CMLSettings.lockedLayoutPreventsResizing = builder.getBoolean("locked_layout_prevents_resizing", false);
 
+        /* 动画状态自动读取模型目录的 *.animation.json（默认开启） */
+        CMLSettings.autoLoadAnimationFile = builder.getBoolean("auto_load_animation_file", true);
+
         /* 快捷键冲突提示 */
         KeybindConflictSettings.showBadges = builder.getBoolean("keybind_conflict_badges", false);
 

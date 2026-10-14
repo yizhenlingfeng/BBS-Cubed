@@ -100,6 +100,8 @@
   "bbspp.config.bbs_enhancements.allow_clip_track_expansion-comment": "开启后，将整段剪辑继续拖到时间线顶部之外时不再限制轨道层级，可以像原版 BBS 一样创建更多轨道",
   "bbspp.config.bbs_enhancements.auto_disable_face_culling": "自动关闭面剔除",
   "bbspp.config.bbs_enhancements.auto_disable_face_culling-comment": "开启后，自动为所有没有 config.json 的模型生成配置文件，将 culling 设为 false（关闭面剔除）。已有 config.json 的模型不受影响。",
+  "bbspp.config.bbs_enhancements.auto_load_animation_file": "动画状态自动读取动画文件",
+  "bbspp.config.bbs_enhancements.auto_load_animation_file-comment": "开启后，打开模型方块的动画状态管理器时，自动读取模型目录 animations/*.animation.json：按动画名创建动画状态，设置循环与时长，并把关键帧烘焙为姿势(Pose)关键帧。仅在状态为空时填充，不会覆盖手工编辑；默认开启",
   "bbspp.config.bbs_enhancements.chinese_keyframe_names": "中文关键帧轨道名称",
   "bbspp.config.bbs_enhancements.chinese_keyframe_names-comment": "开启后，关键帧编辑器中的轨道名称将显示为中文，方便识别",
   "bbspp.config.bbs_enhancements.cycle_compact": "精简编辑器循环",

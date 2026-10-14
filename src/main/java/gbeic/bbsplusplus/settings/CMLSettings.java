@@ -34,6 +34,7 @@ public class CMLSettings {
     public static ValueBoolean bonePriorityExpandedLimb;   // 骨骼优先性:优先选择已展开 pose 的肢体轨道
     public static ValueString bonePriorityTrack;           // 骨骼优先性:点击骨骼跳转的优先轨道("" = 跟随原版)
     public static ValueBoolean snowActions;                // snow_actions 时间线功能
+    public static ValueBoolean autoLoadAnimationFile;       // 动画状态自动读取模型目录的 *.animation.json
     public static ValueBoolean lockedLayoutPreventsResizing; // 锁定布局时彻底禁用边缘拖动
     public static ValueString animationStateLayout;        // 动画状态编辑器停靠布局(JSON,隐藏设置)
     public static ValueString animationStateHiddenPanels;  // 动画状态编辑器被用户隐藏的面板 id(JSON,隐藏设置)
@@ -51,5 +52,12 @@ public class CMLSettings {
      */
     public static boolean isSnowActionsEnabled() {
         return snowActions == null || snowActions.get();
+    }
+
+    /**
+     * 动画状态自动读取动画文件开关：设置注册前保持默认开启。
+     */
+    public static boolean isAutoLoadAnimationFileEnabled() {
+        return autoLoadAnimationFile == null || autoLoadAnimationFile.get();
     }
 }

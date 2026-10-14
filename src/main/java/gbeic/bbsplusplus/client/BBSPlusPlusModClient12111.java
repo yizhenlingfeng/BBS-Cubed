@@ -62,6 +62,13 @@ public class BBSPlusPlusModClient12111 implements ClientModInitializer
                     "gbeic.bbsplusplus.client.renderer.ItemSprayFormRenderer",
                     "gbeic.bbsplusplus.client.ui.forms.editors.forms.UIItemSprayForm"); }
             catch (Throwable e) { BBSPlusPlusMod.LOGGER.warn("注册物品喷射形态失败", e); }
+
+            /* 渲染器被 excludes 时用图标占位渲染器兜底：没有渲染器时 BBS 的格子预览整格空白，
+             * 编辑器打开面板还会在 getOrigin() 里对 null 调 collectMatrices() 抛 NPE。 */
+            gbeic.bbsplusplus.forms.renderers.IconPlaceholderFormRenderer.registerIfRendererMissing(
+                gbeic.bbsplusplus.forms.ItemSprayForm.class,
+                "gbeic.bbsplusplus.client.renderer.ItemSprayFormRenderer",
+                mchorse.bbs_mod.resources.Link.assets("textures/itemspray.png"));
         });
 
         this.registerVFXDestructionWand();

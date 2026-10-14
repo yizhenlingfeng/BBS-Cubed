@@ -4,6 +4,7 @@
     "plugin": "gbeic.bbsplusplus.mixin.client.VisibilityMixinConfigPlugin",
     "compatibilityLevel": "JAVA_17",
     "client": [
+        "AnimationMixin",
         "AnimatorMixin",
         "BaseFilmControllerReplayTimeMixin",
         "BaseFilmControllerVisibilityMixin",
@@ -50,6 +51,7 @@
         "UIFilmControllerPrevCameraModeMixin",
         "UIAnchorKeyframeFactoryMixin",
         "UIFormEditorAnimationStateLayoutMixin",
+        "UIFormEditorGetOriginMixin",
         "UIKeyframeEditorSplitMixin",
         "UIKeyframeInspectorEmbedMixin",
         "UIKeyframeSheetActionsMixin",

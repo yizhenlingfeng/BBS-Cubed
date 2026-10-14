@@ -27,6 +27,7 @@ import mchorse.bbs_mod.ui.film.clips.UIClip;
 import mchorse.bbs_mod.ui.forms.editors.UIFormEditor;
 import mchorse.bbs_mod.ui.framework.elements.utils.UILabel;
 import mchorse.bbs_mod.ui.utils.UI;
+import mchorse.bbs_mod.ui.utils.icons.Icons;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import org.slf4j.Logger;
@@ -120,6 +121,10 @@ public class BBSFSloveCMLClient implements ClientModInitializer {
             try { registerRenderer("gbeic.bbsplusplus.forms.FluidForm",
                     "gbeic.bbsplusplus.forms.renderers.FluidFormRenderer"); }
             catch (Throwable ignored) {}
+            /* 真实渲染器缺失时（1.21.11 构建排除了它）也要有一个渲染器：
+             * BBS 的格子预览与编辑器 gizmo 都假定 getRenderer() 非 null。 */
+            gbeic.bbsplusplus.forms.renderers.IconPlaceholderFormRenderer.registerIfRendererMissing(
+                FluidForm.class, "gbeic.bbsplusplus.forms.renderers.FluidFormRenderer", Icons.DROP);
             LOGGER.info("[FSloveCML] 流体伪装 UI 与渲染器注册成功!");
 
             // GradedVanillaParticleFormRenderer: 1.21.11 上被 excludes，运行时检测
@@ -158,7 +163,9 @@ public class BBSFSloveCMLClient implements ClientModInitializer {
     }
 
     /**
-     * 用反射注册 FormRenderer。1.20.1 上类存在时正常注册；1.21.11 上被 excludes 时跳过。
+     * 用反射注册 FormRenderer。1.20.1/1.20.4 上真实渲染器类存在时正常注册；
+     * 1.21.11 上该类被 source-set excludes 时跳过（此时由
+     * {@link gbeic.bbsplusplus.forms.renderers.IconPlaceholderFormRenderer} 兜底）。
      */
     private static void registerRenderer(String formClassName, String rendererClassName) throws Exception
     {
@@ -178,8 +185,7 @@ public class BBSFSloveCMLClient implements ClientModInitializer {
                 return null;
             });
 
-        FormUtilsClient.class.getMethod("register", Class.class,
-                Class.forName("mchorse.bbs_mod.forms.FormUtilsClient$IFormRendererFactory"))
+        FormUtilsClient.class.getMethod("register", Class.class, factoryInterface)
             .invoke(null, formCls, factory);
     }
 }
