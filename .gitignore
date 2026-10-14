@@ -30,3 +30,8 @@ tools/
 
 # WorkBuddy local workspace data (memory, daily logs)
 .workbuddy/
+
+# Local crash reports / run logs (debug artifacts)
+crash-report*/
+crash_report/
+run*.log
