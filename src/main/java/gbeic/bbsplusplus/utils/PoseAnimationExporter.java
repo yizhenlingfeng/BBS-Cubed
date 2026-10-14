@@ -312,64 +312,27 @@ public class PoseAnimationExporter
             String time = time(keyframe.getTick(), minTick);
             IInterp interp = keyframe.getInterpolation().getInterp();
 
-            /* 前一帧被标为 CONST → 当前帧是 Bedrock 步阶目标，
-             * 导出为 {"pre": 前帧值, "post": 本帧值, ...}，与导入端对称 */
-            boolean stepFromPrev = i > 0
+            /* 前一帧被标为 CONST → 当前帧是 Bedrock 步阶目标，导出为 pre/post 对 */
+            boolean step = i > 0
                 && keyframes.get(i - 1).getInterpolation().getInterp() == Interpolations.CONST;
-            Transform prevTransform = stepFromPrev ? getter.apply(keyframes.get(i - 1)) : null;
+            Transform prev = step ? getter.apply(keyframes.get(i - 1)) : null;
 
             if (hasRotation && sampler == null)
             {
-                Vector3f rotate = effectiveRotate(transform);
-                float rx = -(float) Math.toDegrees(rotate.x);
-                float ry = -(float) Math.toDegrees(rotate.y);
-                float rz = (float) Math.toDegrees(rotate.z);
-
-                if (stepFromPrev)
-                {
-                    Vector3f prevRotate = effectiveRotate(prevTransform);
-
-                    rotation.add(time, makeStepValue(
-                        -(float) Math.toDegrees(prevRotate.x),
-                        -(float) Math.toDegrees(prevRotate.y),
-                        (float) Math.toDegrees(prevRotate.z),
-                        rx, ry, rz, interp
-                    ));
-                }
-                else
-                {
-                    rotation.add(time, makeValue(rx, ry, rz, interp));
-                }
+                rotation.add(time, channelValue(step, prev, transform,
+                    PoseAnimationExporter::rotationDegrees, interp));
             }
 
             if (hasPosition)
             {
-                if (stepFromPrev)
-                {
-                    position.add(time, makeStepValue(
-                        prevTransform.translate.x, prevTransform.translate.y, prevTransform.translate.z,
-                        transform.translate.x, transform.translate.y, transform.translate.z, interp
-                    ));
-                }
-                else
-                {
-                    position.add(time, makeValue(transform.translate.x, transform.translate.y, transform.translate.z, interp));
-                }
+                position.add(time, channelValue(step, prev, transform,
+                    t -> new float[]{t.translate.x, t.translate.y, t.translate.z}, interp));
             }
 
             if (hasScale)
             {
-                if (stepFromPrev)
-                {
-                    scale.add(time, makeStepValue(
-                        prevTransform.scale.x, prevTransform.scale.y, prevTransform.scale.z,
-                        transform.scale.x, transform.scale.y, transform.scale.z, interp
-                    ));
-                }
-                else
-                {
-                    scale.add(time, makeValue(transform.scale.x, transform.scale.y, transform.scale.z, interp));
-                }
+                scale.add(time, channelValue(step, prev, transform,
+                    t -> new float[]{t.scale.x, t.scale.y, t.scale.z}, interp));
             }
         }
 
@@ -692,6 +655,34 @@ public class PoseAnimationExporter
     static String time(float tick, float minTick)
     {
         return String.valueOf(round((tick - minTick) / 20F));
+    }
+
+    /** 按通道提取器取值，步阶帧写 pre/post，否则写单值。 */
+    private static JsonElement channelValue(boolean step, Transform prev, Transform curr,
+        Function<Transform, float[]> extractor, IInterp interp)
+    {
+        float[] c = extractor.apply(curr);
+
+        if (!step)
+        {
+            return makeValue(c[0], c[1], c[2], interp);
+        }
+
+        float[] p = extractor.apply(prev);
+
+        return makeStepValue(p[0], p[1], p[2], c[0], c[1], c[2], interp);
+    }
+
+    /** rotation 通道的度数提取器（含 Bedrock 符号换算）。 */
+    private static float[] rotationDegrees(Transform t)
+    {
+        Vector3f r = effectiveRotate(t);
+
+        return new float[]{
+            -(float) Math.toDegrees(r.x),
+            -(float) Math.toDegrees(r.y),
+            (float) Math.toDegrees(r.z)
+        };
     }
 
     static JsonPrimitive num(float value)
