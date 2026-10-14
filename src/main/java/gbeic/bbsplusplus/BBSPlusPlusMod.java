@@ -11,7 +11,8 @@ import gbeic.bbsplusplus.command.BBSPlusPlusCommand;
 /**
  * BBS++ 主入口点。
  * <p>
- * 实际初始化由 {@link gbeic.bbsplusplus.mixin.BBSModMixin} 在 BBS 初始化末尾完成。
+ * 实际的 BBS 注册（表单 / 关键帧工厂）由 {@link BBSFSloveCMLAddon} 订阅
+ * BBS 官方事件完成。
  * </p>
  */
 public class BBSPlusPlusMod implements ModInitializer, BBSAddonMod
@@ -24,17 +25,23 @@ public class BBSPlusPlusMod implements ModInitializer, BBSAddonMod
     {
         LOGGER.info("BBS++ initialized!");
 
-        BBSPlusPlusBlocks.register();
+        // BBSPlusPlusBlocks 依赖 FabricBlockSettings（1.21.11 Fabric API 已移除该包），
+        // 在 1.21.11 构建时被 source-set excludes 排除，此处用反射调用避免编译期依赖。
+        try {
+            Class.forName("gbeic.bbsplusplus.BBSPlusPlusBlocks")
+                 .getMethod("register").invoke(null);
+        } catch (ClassNotFoundException e) {
+            LOGGER.info("BBSPlusPlusBlocks 不可用（当前 MC 版本），跳过发光方块注册。");
+        } catch (Exception e) {
+            LOGGER.warn("BBSPlusPlusBlocks.register() 调用失败", e);
+        }
+
         this.registerKeyframeTrackExtensions();
         CommandRegistrationCallback.EVENT.register(BBSPlusPlusCommand::register);
 
-
-        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("aaa_particles"))
-        {
-            gbeic.bbsplusplus.keyframes.BBSPlusPlusKeyframeFactories.register();
-        }
-        // 注意：AAA 粒子表单由 BBSModMixin 在 BBSMod.onInitialize() TAIL 中注册，
-        // 此处不做注册是因为 BBSMod.getForms() 此时尚未初始化。
+        // aaa_effect 关键帧工厂改由 BBSFSloveCMLAddon 订阅 RegisterKeyframeFactoriesEvent 注册
+        // （原直接 KeyframeFactories.FACTORIES.put 存在"未注册就被读取"的时序隐患）。
+        // 注意：AAA 粒子表单同样由 BBSFSloveCMLAddon 订阅 RegisterFormsEvent 注册。
     }
 
     /**

@@ -39,7 +39,7 @@ import java.util.regex.Pattern;
  *       ({@code assets/objects/&lt;aa&gt;/&lt;hash&gt;})，由 asset index 映射
  *       {@code minecraft/sounds/...ogg}。部分启动器布局下，
  *       {@code ResourceManager.getResource} 可能拿不到流，必须走 index 回退；</li>
- *   <li>BBS 直接 {@code new Identifier("minecraft","sounds/"+raw)} 且不处理命名空间/点号，
+ *   <li>BBS 直接 {@code Identifier.of("minecraft","sounds/"+raw)} 且不处理命名空间/点号，
  *       在 Fabric 1.20 资源链上会静默失败，表现为下载/点赞/试听全无效。</li>
  * </ol>
  */
@@ -193,7 +193,7 @@ public final class VanillaSoundResource
 
         try
         {
-            Identifier logical = new Identifier(parts[0], parts[1]);
+            Identifier logical = Identifier.of(parts[0], parts[1]);
             return Sound.FINDER.toResourcePath(logical);
         }
         catch (Exception e)

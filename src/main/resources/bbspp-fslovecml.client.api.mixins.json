@@ -10,7 +10,7 @@
         "UIFilmPanelLayoutAccess"
     ],
     "injectors": {
-        "defaultRequire": 1
+        "defaultRequire": 0
     },
     "refmap": "bbsplusplus-refmap.json"
 }

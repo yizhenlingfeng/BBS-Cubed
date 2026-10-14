@@ -26,8 +26,8 @@ public class UIHotbarRenderer
     private static final float SCALE_PIVOT_Y = 0.5F;
     private static final int MAX_HEALTH_ROWS = 60;
     private static final float MAX_HEALTH_CONTAINER = MAX_HEALTH_ROWS * 10F * 2F;
-    private static final Identifier GUI_ICONS = new Identifier("minecraft", "textures/gui/icons.png");
-    private static final Identifier WIDGETS_TEXTURE = new Identifier("minecraft", "textures/gui/widgets.png");
+    private static final Identifier GUI_ICONS = Identifier.of("minecraft", "textures/gui/icons.png");
+    private static final Identifier WIDGETS_TEXTURE = Identifier.of("minecraft", "textures/gui/widgets.png");
     private static final int GUI_ICONS_SIZE = 256;
     private static boolean wasHeartRegenerationEnabled;
     private static long heartRegenerationStartTick;

@@ -3,7 +3,9 @@ plugins {
 }
 
 // ---- 目标版本切换 ----
-// 默认构建 1.20.1；使用 ./gradlew build -Pmc_version=1.20.4 构建 1.20.4 版本
+// 默认构建 1.20.1，单 jar 同时兼容 1.20.1 ~ 1.20.4（同一源码双版本编译的产物
+// intermediary 引用已验证零漂移）；-Pmc_version=1.20.4 仅作为编译回归测试目标
+// （runClient1204），不再单独发布 1.20.4 jar。
 def targetMc = providers.gradleProperty("mc_version").orElse("1.20.1").get()
 
 // gradle.properties 中的属性名含小数点，必须用 providers.gradleProperty 读取
@@ -12,7 +14,10 @@ def gprop = { name -> providers.gradleProperty(name).get() }
 def versions = [
         "1.20.1": [
                 minecraft_version : "1.20.1",
-                yarn_mappings    : "1.20.1+build.10",
+                // 发布 jar 后缀：该构建同时兼容 1.20.4
+                release_suffix   : "1.20.1-1.20.4",
+                yarn_mappings    : gprop("yarn_mappings_1.20.1"),
+                loader_version   : gprop("loader_version_1.20.1"),
                 fabric_api       : gprop("fabric_api_version_1.20.1"),
                 iris             : gprop("iris_version_1.20.1"),
                 aaa_particles    : gprop("aaa_particles_version_1.20.1"),
@@ -20,11 +25,14 @@ def versions = [
                 architectury     : gprop("architectury_version_1.20.1"),
                 bbs_jar          : gprop("bbs_jar_1.20.1"),
                 // 1.20.1 下 aaa_particles 以 modImplementation 提供（runClient 需要）
-                aaa_as_compile_only: false
+                aaa_as_compile_only: false,
+                java_release     : 17
         ],
+        // 编译回归测试目标（runClient1204 用），不作为发布产物
         "1.20.4": [
                 minecraft_version : "1.20.4",
-                yarn_mappings    : "1.20.4+build.3",
+                yarn_mappings    : gprop("yarn_mappings_1.20.4"),
+                loader_version   : gprop("loader_version_1.20.4"),
                 fabric_api       : gprop("fabric_api_version_1.20.4"),
                 iris             : gprop("iris_version_1.20.4"),
                 aaa_particles    : gprop("aaa_particles_version_1.20.4"),
@@ -32,7 +40,22 @@ def versions = [
                 architectury     : gprop("architectury_version_1.20.4"),
                 bbs_jar          : gprop("bbs_jar_1.20.4"),
                 // aaa_particles 无 1.20.4 版本，1.20.4 构建仅作编译期依赖
-                aaa_as_compile_only: true
+                aaa_as_compile_only: true,
+                java_release     : 17
+        ],
+        "1.21.11": [
+                minecraft_version : "1.21.11",
+                yarn_mappings    : gprop("yarn_mappings_1.21.11"),
+                loader_version   : gprop("loader_version_1.21.11"),
+                fabric_api       : gprop("fabric_api_version_1.21.11"),
+                iris             : gprop("iris_version_1.21.11"),
+                aaa_particles    : gprop("aaa_particles_version_1.21.11"),
+                forgeconfigapiport: gprop("forgeconfigapiport_version_1.21.11"),
+                architectury     : gprop("architectury_version_1.21.11"),
+                bbs_jar          : gprop("bbs_jar_1.21.11"),
+                // aaa_particles 暂无 1.21.11 版本：仅编译期，运行时功能自动禁用
+                aaa_as_compile_only: true,
+                java_release     : 21
         ]
 ]
 
@@ -42,9 +65,20 @@ if (mcVer == null) {
 }
 
 def minecraftVersion = mcVer.minecraft_version
-def minecraftVersionRange = "${minecraft_version_range}"
-def javaVersionRange = "${java_version_range}"
-def loaderVersionRange = "${loader_version_range}"
+
+// 按目标 MC 版本覆盖 fabric.mod.json 中声明的兼容范围（BBS 自身 1.21.11 用 ~1.21.11）
+def versionRanges = [
+        "1.20.1" : [mc: ">=1.20.1 <=1.20.4", loader: ">=0.15.0", java: ">=17 <22"],
+        "1.20.4" : [mc: ">=1.20.1 <=1.20.4", loader: ">=0.15.0", java: ">=17 <22"],
+        "1.21.11": [mc: "~1.21.11",          loader: ">=0.19.3", java: ">=21"]
+]
+def ranges = versionRanges[targetMc]
+if (ranges == null) {
+    throw new GradleException("未配置 ${targetMc} 的 version_range")
+}
+def minecraftVersionRange = ranges.mc
+def javaVersionRange = ranges.java
+def loaderVersionRange = ranges.loader
 
 // 按版本隔离构建输出目录，防止 1.20.1 / 1.20.4 编译产物交叉污染
 layout.buildDirectory = layout.projectDirectory.dir("build/${targetMc}")
@@ -53,12 +87,14 @@ base {
     archivesName = archives_base_name
 }
 
-version = "${mod_version}+${minecraftVersion}"
+// 无 release_suffix 的目标（测试构建 / 1.21.11）沿用 MC 版本号作后缀
+version = "${mod_version}+${mcVer.release_suffix ?: minecraftVersion}"
 group = mod_group_id
 
 processResources {
+    // version 用项目版本（含发布后缀），保证 jar 内元数据与文件名一致
     inputs.properties(
-        version: mod_version,
+        version: version,
         mod_id: mod_id,
         mod_name: mod_name,
         mod_license: mod_license,
@@ -69,7 +105,7 @@ processResources {
 
     filesMatching("fabric.mod.json") {
         expand(
-            version: mod_version,
+            version: version,
             mod_id: mod_id,
             mod_name: mod_name,
             mod_license: mod_license,
@@ -78,9 +114,52 @@ processResources {
             java_version_range: javaVersionRange
         )
     }
+
+    // 1.21.11 需要 Mixin Java 21 字节码，主线保持 JAVA_17
+    if (targetMc == "1.21.11") {
+        filesMatching("*.mixins.json") {
+            filter { line -> line.replace('"JAVA_17"', '"JAVA_21"') }
+        }
+
+        // 1.21.11 的 client 入口替换：
+        // - BBSPlusPlusModClient 硬依赖 FilmAutoGameModeRestoreState 等被 excludes 的类，换成 12111 变体；
+        // - BBSFSloveCMLClient 在该构建可直接编译（其 1.21.11-exclusive 依赖均为运行时反射检测），
+        //   不再替换，避免维护一份 BBSFSloveCMLClient12111 双份代码。
+        filesMatching("fabric.mod.json") {
+            filter { line ->
+                line.replace(
+                    '"gbeic.bbsplusplus.client.BBSPlusPlusModClient"',
+                    '"gbeic.bbsplusplus.client.BBSPlusPlusModClient12111"')
+            }
+        }
+
+        // 从所有 mixins.json 里移除被 excludes 的 Mixin（目标类已变更/不存在）
+        doLast {
+            int totalRemoved = 0
+            fileTree("build/1.21.11/resources/main/").matching { include "*.mixins.json" }.each { f ->
+                def text = f.text
+                sourceSets.main.java.excludes.each { excl ->
+                    if (excl.contains("/mixin/") && excl.endsWith(".java")) {
+                        def simpleName = excl.substring(excl.lastIndexOf('/') + 1).replace(".java", "")
+                        def before = text.length()
+                        // 匹配 "Name", 或 "Name"（最后一个元素）
+                        text = text.replaceAll("\"${simpleName}\",?\\s*", "")
+                        if (text.length() < before) totalRemoved++
+                    }
+                }
+                f.text = text
+            }
+            println "Removed ${totalRemoved} excluded mixins from all mixins.json files"
+        }
+    }
 }
 
 repositories {
+    // 国内镜像优先（加速 mavenCentral 等国外仓库）
+    maven { url = "https://maven.aliyun.com/repository/public" }
+    maven { url = "https://maven.aliyun.com/repository/gradle-plugin" }
+    maven { url = "https://repo.huaweicloud.com/repository/maven/" }
+
     mavenCentral()
     maven {
         name = "Modrinth"
@@ -94,6 +173,12 @@ repositories {
         name = "Gegy"
         url = "https://maven.gegy.dev/"
     }
+    // Fuzs modresources 托管在 raw.githubusercontent.com，JVM TLS 握手在国内偶发 Connection reset。
+    // 前置 ghproxy.net 镜像，失败时自动 fallback 到原仓库。
+    maven {
+        name = "Fuzs Mod Repository (ghproxy mirror)"
+        url = "https://ghproxy.net/https://raw.githubusercontent.com/Fuzss/modresources/main/maven/"
+    }
     maven {
         name = "Fuzs Mod Repository"
         url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/"
@@ -103,7 +188,7 @@ repositories {
 dependencies {
     minecraft "com.mojang:minecraft:${minecraftVersion}"
     mappings "net.fabricmc:yarn:${mcVer.yarn_mappings}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${loader_version}"
+    modImplementation "net.fabricmc:fabric-loader:${mcVer.loader_version}"
 
     // Fabric API（提供 ClientTickEvents、ClientLifecycleEvents 等）
     modImplementation "net.fabricmc.fabric-api:fabric-api:${mcVer.fabric_api}"
@@ -114,7 +199,7 @@ dependencies {
     // Iris 光影（仅编译期）：光影曲线相关 Mixin 需要引用 Iris 的类，运行时没装 Iris 也不会加载这些注入
     modCompileOnly "maven.modrinth:iris:${mcVer.iris}"
 
-    // AAA Particles 依赖（1.20.4 无对应版本：仅编译期，运行时功能自动禁用）
+    // AAA Particles 依赖（1.20.4 / 1.21.11 无对应版本：仅编译期，运行时功能自动禁用）
     if (mcVer.aaa_as_compile_only) {
         modCompileOnly "maven.modrinth:aaa-particles:${mcVer.aaa_particles}"
     } else {
@@ -128,7 +213,8 @@ dependencies {
     modImplementation "dev.architectury:architectury-fabric:${mcVer.architectury}"
 
     // BBS VFX 与 VFX Lights（仅编译期）：轨道关键帧汉化需要引用其 Form 类做上下文判断，
-    // 运行时由用户自行安装这两个插件
+    // 运行时由用户自行安装这两个插件。1.21.11 上这两个 jar 仍是 1.20.1 版，
+    // 对应 Mixin 由 VfxMixinPlugin 在运行期守卫；编译期若类签名漂移再按需摘除。
     modCompileOnly files("libs/BBS-VFX-build-1.3-1.20.1-zh_cn-hardcoded.jar")
     modCompileOnly files("libs/VFX-LIGHTS-1.0-1.20.1-zh_cn-hardcoded.jar")
 }
@@ -137,11 +223,137 @@ tasks.withType(JavaCompile).configureEach {
     it.options.encoding = 'UTF-8'
     /* ParticlePlusClient 有意使用 sun.misc.Unsafe 注入枚举常量。
      * --release 17 下无法压制内部专用 API 警告，且 add-exports 与 --release 互斥，
-     * 故改用等价的 -source/-target 17 + -XDignore.symbol.file（与 FSloveCML 原构建一致）。
-     * 目标字节码为 Java 17，可在 Java 17~21 上运行。 */
-    it.sourceCompatibility = "17"
-    it.targetCompatibility = "17"
-    it.options.compilerArgs += ["-XDignore.symbol.file", "-Xlint:-options"]
+     * 故 1.20.x 改用等价的 -source/-target 17 + -XDignore.symbol.file（与 FSloveCML 原构建一致）。
+     * 1.21.5+ MC 强制 Java 21，直接走 --release 21。 */
+    if (mcVer.java_release == 21) {
+        it.options.release = 21
+    } else {
+        it.sourceCompatibility = "17"
+        it.targetCompatibility = "17"
+        it.options.compilerArgs += ["-XDignore.symbol.file", "-Xlint:-options"]
+    }
+}
+
+// 1.21.5+ GPU 渲染管线大修：以下文件引用了被移除/重写的立即模式 API
+//（RenderSystem.enableBlend、Tessellator.getBuffer、ShaderProgram、GlUniform、
+// AbstractTexture、BufferRenderer、WorldRenderEvents 等），在 1.21.11 构建时
+// 暂时排除，待后续按新 RenderPipeline/RenderLayer API 逐文件重写。
+// 1.20.1/1.20.4 构建不受影响。
+if (targetMc == "1.21.11") {
+    sourceSets.main.java.excludes += [
+        // 渲染大修文件本体
+        "gbeic/bbsplusplus/client/compat/iris/ShaderCurveState.java",
+        "gbeic/bbsplusplus/client/renderer/ItemSprayFormRenderer.java",
+        "gbeic/bbsplusplus/client/renderer/ItemSprayGlobalSystem.java",
+        "gbeic/bbsplusplus/client/renderer/ItemSprayIRLiteBridge.java",
+        "gbeic/bbsplusplus/client/renderer/ItemSprayWorldItemRenderer.java",
+        "gbeic/bbsplusplus/client/renderer/ItemSpraySimulator.java",
+        "gbeic/bbsplusplus/client/renderer/ItemSprayPhysics.java",
+        "gbeic/bbsplusplus/client/renderer/SprayGuideRenderer.java",
+        "gbeic/bbsplusplus/client/renderer/ModelUVTransformRuntime.java",
+        "gbeic/bbsplusplus/client/renderer/AAAParticleFormRenderer.java",
+        "gbeic/bbsplusplus/client/screen/ModelTextureGradeShader.java",
+        "gbeic/bbsplusplus/client/screen/ColorGradeRenderer.java",
+        "gbeic/bbsplusplus/client/screen/VanillaParticleGradeContext.java",
+        "gbeic/bbsplusplus/client/structure/VFXDestructionWandSelection.java",
+        "gbeic/bbsplusplus/compat/vfx/VfxCoreShaderRegistrationGuard.java",
+        "gbeic/bbsplusplus/forms/renderers/FluidFormRenderer.java",
+        // 引用被排除类的下游文件
+        "gbeic/bbsplusplus/client/renderer/ItemSprayEmitter.java",
+        "gbeic/bbsplusplus/client/renderer/SprayedItem.java",
+        "gbeic/bbsplusplus/client/renderer/BBSEffectLoader.java",
+        "gbeic/bbsplusplus/client/ui/curves/UIShaderCurvePickerOverlayPanel.java",
+        "gbeic/bbsplusplus/forms/renderers/GradedVanillaParticleFormRenderer.java",
+        "gbeic/bbsplusplus/client/screen/ScreenEffectRenderer.java",
+        "gbeic/bbsplusplus/client/screen/TextureGradeRenderContext.java",
+        "gbeic/bbsplusplus/client/structure/VFXDestructionWandTooltip.java",
+        "gbeic/bbsplusplus/client/ui/animations/UIAnimationPreview.java",
+        "gbeic/bbsplusplus/client/ui/keyframes/UITextureTweenOrigin3DPicker.java",
+        "gbeic/bbsplusplus/client/ui/pose/PoseBoneMarkerRenderer.java",
+        // Mixin 引用被排除类或使用旧渲染 API
+        "gbeic/bbsplusplus/mixin/BaseFilmControllerMixin.java",
+        "gbeic/bbsplusplus/mixin/BillboardFormRendererMixin.java",
+        "gbeic/bbsplusplus/mixin/client/CubicVAORendererMixin.java",
+        "gbeic/bbsplusplus/mixin/client/ParticleComponentAppearanceBillboardMixin.java",
+        "gbeic/bbsplusplus/mixin/client/ParticleEmitterMixin.java",
+        "gbeic/bbsplusplus/mixin/client/WorldFilmControllerReplayTimeMixin.java",
+        "gbeic/bbsplusplus/mixin/CubicVAORendererLimbCullingMixin.java",
+        "gbeic/bbsplusplus/mixin/ExtrudedFormRendererMixin.java",
+        "gbeic/bbsplusplus/mixin/ModelFormRendererMixin.java",
+        "gbeic/bbsplusplus/mixin/ModelInstanceMixin.java",
+        "gbeic/bbsplusplus/mixin/ModelVAORendererMixin.java",
+        "gbeic/bbsplusplus/mixin/MotionPathMixin.java",
+        "gbeic/bbsplusplus/mixin/vfx/BbsVfxClientMixin.java",
+        "gbeic/bbsplusplus/mixin/vfx/VfxLightsClientMixin.java",
+        "gbeic/bbsplusplus/mixin/xavin/XavinClientMixin.java",
+        "gbeic/bbsplusplus/mixin/BOBJModelVAOMixin.java",
+        "gbeic/bbsplusplus/mixin/ModelVAOMixin.java",
+        "gbeic/bbsplusplus/mixin/CubicCubeRendererMixin.java",
+        "gbeic/bbsplusplus/mixin/GameRendererMixin.java",
+        "gbeic/bbsplusplus/mixin/irlite/IRLiteBbsCasterSourceMixin.java",
+        "gbeic/bbsplusplus/mixin/irlite/LegacyIRLiteBbsCasterSourceMixin.java",
+        "gbeic/bbsplusplus/mixin/MinecraftClientMixin.java",
+        "gbeic/bbsplusplus/mixin/shadercurves/CenterDepthSamplerMixin.java",
+        "gbeic/bbsplusplus/mixin/shadercurves/IrisRenderingPipelineMixin.java",
+        "gbeic/bbsplusplus/mixin/shadercurves/ShadowRendererMixin.java",
+        "gbeic/bbsplusplus/mixin/UICurveClipMixin.java",
+        "gbeic/bbsplusplus/mixin/client/BBSShadersTextureGradeMixin.java",
+        "gbeic/bbsplusplus/mixin/client/ModelInstanceTextureGradeMixin.java",
+        "gbeic/bbsplusplus/mixin/client/ParticleManagerVanillaFormMixin.java",
+        "gbeic/bbsplusplus/mixin/client/CustomVertexConsumerTextureGradeMixin.java",
+        "gbeic/bbsplusplus/mixin/client/TrailFormRendererMixin.java",
+        "gbeic/bbsplusplus/mixin/client/BBSRenderingMixin.java",
+        // Particle 字段在 1.21.11 重命名
+        "gbeic/bbsplusplus/mixin/client/ParticleColorAccessor.java",
+        // 粒子组件
+        "gbeic/bbsplusplus/particles/components/ParticleComponentCollisionAppearance.java",
+        "gbeic/bbsplusplus/particles/components/ParticleComponentCollisionTinting.java",
+        "gbeic/bbsplusplus/particles/components/ParticleComponentParticleMorph.java",
+        "gbeic/bbsplusplus/particles/ParticlePlusClient.java",
+        "gbeic/bbsplusplus/ui/particles/UIParticleSchemeCollisionAppearanceSection.java",
+        "gbeic/bbsplusplus/ui/particles/UIParticleSchemeCollisionTintingSection.java",
+        "gbeic/bbsplusplus/ui/particles/UIParticleSchemeMorphSection.java",
+        // 第二批连锁引用
+        "gbeic/bbsplusplus/client/ui/animations/UIAnimationPreviewTooltip.java",
+        "gbeic/bbsplusplus/client/ui/forms/editors/panels/UIAAAParticleFormPanel.java",
+        "gbeic/bbsplusplus/client/ui/utils/UIEffectPicker.java",
+        "gbeic/bbsplusplus/mixin/client/FormRendererTextureGradeContextMixin.java",
+        "gbeic/bbsplusplus/mixin/client/UIParticleSchemeGeneralSectionMixin.java",
+        "gbeic/bbsplusplus/mixin/client/UIParticleSchemePanelMixin.java",
+        "gbeic/bbsplusplus/mixin/EffekAssetLoaderMixin.java",
+        "gbeic/bbsplusplus/mixin/UILinkKeyframeFactoryMixin.java",
+        "gbeic/bbsplusplus/mixin/UIListPoseParameterBrushMixin.java",
+        "gbeic/bbsplusplus/mixin/EffectDefinitionMixin.java",
+        "gbeic/bbsplusplus/mixin/UIAnimationStateKeyframesMixin.java",
+        "gbeic/bbsplusplus/mixin/UIFilmKeyframesMixin.java",
+        "gbeic/bbsplusplus/ui/morphing/UIBBSPPCategoryHome.java",
+        "gbeic/bbsplusplus/ui/film/UIHotbarRenderer.java",
+        // sendCommand renamed in 1.21.11
+        "gbeic/bbsplusplus/mixin/UIFilmControllerGameModeMixin.java",
+        "gbeic/bbsplusplus/mixin/UIFilmPanelGameModeMixin.java",
+        // 第三批连锁
+        "gbeic/bbsplusplus/client/ui/forms/editors/forms/UIAAAParticleForm.java",
+        "gbeic/bbsplusplus/client/ui/keyframes/UIAAAParticleLinkKeyframeFactory.java",
+        "gbeic/bbsplusplus/mixin/client/UIActionsConfigEditorMixin.java",
+        "gbeic/bbsplusplus/mixin/client/UIListAnimationPreviewAnchorMixin.java",
+        "gbeic/bbsplusplus/ui/morphing/UIBBSPPFormList.java",
+        // 第四批：morphing UI 系统连锁
+        "gbeic/bbsplusplus/ui/morphing/UIBBSPPFormEditorList.java",
+        "gbeic/bbsplusplus/ui/morphing/UIBBSPPCategorySidebar.java",
+        "gbeic/bbsplusplus/mixin/UIFormListMixin.java",
+        "gbeic/bbsplusplus/mixin/UIFormPaletteMixin.java",
+        "gbeic/bbsplusplus/mixin/UIFormEditorMixin.java",
+        // FabricBlockSettings 包在 1.21.11 Fabric API 中移除
+        "gbeic/bbsplusplus/BBSPlusPlusBlocks.java",
+        // 入口类（1.21.11 用简化版 entrypoint，见 fabric.mod.json processResources 替换）
+        "gbeic/bbsplusplus/client/BBSPlusPlusModClient.java",
+        // KeyBinding.Category type changed in 1.21.11
+        "gbeic/bbsplusplus/events/ClientEventHandler.java",
+        // GameMode API changed in 1.21.11
+        "gbeic/bbsplusplus/util/FilmAutoGameModeRestoreState.java",
+        // 运行时 Mixin 目标类已变更
+        "gbeic/bbsplusplus/mixin/MotionPathMixin.java",
+    ]
 }
 
 loom {
@@ -227,7 +439,8 @@ def registerVersionTask = { name, version, taskList, description ->
     }
 }
 
-registerVersionTask("build1201", "1.20.1", ["build"], "以 Minecraft 1.20.1 为目标构建（默认）。")
-registerVersionTask("build1204", "1.20.4", ["build"], "以 Minecraft 1.20.4 为目标构建。")
+registerVersionTask("build1201", "1.20.1", ["build"], "构建发布 jar（单 jar 兼容 1.20.1 ~ 1.20.4）。")
+registerVersionTask("build12111", "1.21.11", ["build"], "以 Minecraft 1.21.11 为目标构建。")
 registerVersionTask("runClient1201", "1.20.1", ["runClient"], "以 Minecraft 1.20.1 启动开发客户端（运行目录 run/1.20.1）。")
-registerVersionTask("runClient1204", "1.20.4", ["runClient"], "以 Minecraft 1.20.4 启动开发客户端（运行目录 run/1.20.4）。")
+registerVersionTask("runClient1204", "1.20.4", ["runClient"], "以 Minecraft 1.20.4 启动开发客户端（编译回归测试用，运行目录 run/1.20.4）。")
+registerVersionTask("runClient12111", "1.21.11", ["runClient"], "以 Minecraft 1.21.11 启动开发客户端（运行目录 run/1.21.11）。")

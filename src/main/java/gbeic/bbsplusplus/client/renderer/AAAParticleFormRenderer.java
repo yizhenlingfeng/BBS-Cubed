@@ -186,7 +186,7 @@ public class AAAParticleFormRenderer extends FormRenderer<AAAParticleForm> imple
     {
         super(form);
 
-        this.emitterName = new Identifier(BBSMod.MOD_ID, "form_" + UUID.randomUUID().toString().replace("-", ""));
+        this.emitterName = Identifier.of(BBSMod.MOD_ID, "form_" + UUID.randomUUID().toString().replace("-", ""));
         activeRenderers.add(this);
     }
 
@@ -429,7 +429,7 @@ public class AAAParticleFormRenderer extends FormRenderer<AAAParticleForm> imple
 
         try
         {
-            this.cachedEffectId = new Identifier(effect.source, path);
+            this.cachedEffectId = Identifier.of(effect.source, path);
             return this.cachedEffectId;
         }
         catch (RuntimeException e)

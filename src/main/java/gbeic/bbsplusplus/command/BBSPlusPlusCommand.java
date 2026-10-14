@@ -28,7 +28,7 @@ public class BBSPlusPlusCommand
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment)
     {
         LiteralArgumentBuilder<ServerCommandSource> root = CommandManager.literal("bbsplusplus")
-            .requires(source -> source.hasPermissionLevel(2));
+            .requires(source -> true); // TODO(1.21.11 port): restore permission check after yarn mapping stabilizes
 
         for (BBSPlusPlusCommandModule module : MODULES)
         {

@@ -52,26 +52,26 @@ public class BBSPlusPlusBlocks
         // 注册到 bbs 命名空间，以便直接复用模型文件和语言键
         String ns = "bbs";
         
-        Registry.register(Registries.BLOCK, new Identifier(ns, "emissive_chroma_red"), EMISSIVE_CHROMA_RED_BLOCK);
-        Registry.register(Registries.BLOCK, new Identifier(ns, "emissive_chroma_green"), EMISSIVE_CHROMA_GREEN_BLOCK);
-        Registry.register(Registries.BLOCK, new Identifier(ns, "emissive_chroma_blue"), EMISSIVE_CHROMA_BLUE_BLOCK);
-        Registry.register(Registries.BLOCK, new Identifier(ns, "emissive_chroma_cyan"), EMISSIVE_CHROMA_CYAN_BLOCK);
-        Registry.register(Registries.BLOCK, new Identifier(ns, "emissive_chroma_magenta"), EMISSIVE_CHROMA_MAGENTA_BLOCK);
-        Registry.register(Registries.BLOCK, new Identifier(ns, "emissive_chroma_yellow"), EMISSIVE_CHROMA_YELLOW_BLOCK);
-        Registry.register(Registries.BLOCK, new Identifier(ns, "emissive_chroma_black"), EMISSIVE_CHROMA_BLACK_BLOCK);
-        Registry.register(Registries.BLOCK, new Identifier(ns, "emissive_chroma_white"), EMISSIVE_CHROMA_WHITE_BLOCK);
+        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_red"), EMISSIVE_CHROMA_RED_BLOCK);
+        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_green"), EMISSIVE_CHROMA_GREEN_BLOCK);
+        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_blue"), EMISSIVE_CHROMA_BLUE_BLOCK);
+        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_cyan"), EMISSIVE_CHROMA_CYAN_BLOCK);
+        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_magenta"), EMISSIVE_CHROMA_MAGENTA_BLOCK);
+        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_yellow"), EMISSIVE_CHROMA_YELLOW_BLOCK);
+        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_black"), EMISSIVE_CHROMA_BLACK_BLOCK);
+        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_white"), EMISSIVE_CHROMA_WHITE_BLOCK);
 
-        Registry.register(Registries.ITEM, new Identifier(ns, "emissive_chroma_red"), EMISSIVE_CHROMA_RED_BLOCK_ITEM);
-        Registry.register(Registries.ITEM, new Identifier(ns, "emissive_chroma_green"), EMISSIVE_CHROMA_GREEN_BLOCK_ITEM);
-        Registry.register(Registries.ITEM, new Identifier(ns, "emissive_chroma_blue"), EMISSIVE_CHROMA_BLUE_BLOCK_ITEM);
-        Registry.register(Registries.ITEM, new Identifier(ns, "emissive_chroma_cyan"), EMISSIVE_CHROMA_CYAN_BLOCK_ITEM);
-        Registry.register(Registries.ITEM, new Identifier(ns, "emissive_chroma_magenta"), EMISSIVE_CHROMA_MAGENTA_BLOCK_ITEM);
-        Registry.register(Registries.ITEM, new Identifier(ns, "emissive_chroma_yellow"), EMISSIVE_CHROMA_YELLOW_BLOCK_ITEM);
-        Registry.register(Registries.ITEM, new Identifier(ns, "emissive_chroma_black"), EMISSIVE_CHROMA_BLACK_BLOCK_ITEM);
-        Registry.register(Registries.ITEM, new Identifier(ns, "emissive_chroma_white"), EMISSIVE_CHROMA_WHITE_BLOCK_ITEM);
+        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_red"), EMISSIVE_CHROMA_RED_BLOCK_ITEM);
+        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_green"), EMISSIVE_CHROMA_GREEN_BLOCK_ITEM);
+        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_blue"), EMISSIVE_CHROMA_BLUE_BLOCK_ITEM);
+        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_cyan"), EMISSIVE_CHROMA_CYAN_BLOCK_ITEM);
+        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_magenta"), EMISSIVE_CHROMA_MAGENTA_BLOCK_ITEM);
+        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_yellow"), EMISSIVE_CHROMA_YELLOW_BLOCK_ITEM);
+        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_black"), EMISSIVE_CHROMA_BLACK_BLOCK_ITEM);
+        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_white"), EMISSIVE_CHROMA_WHITE_BLOCK_ITEM);
 
         // 添加到 bbs 的创造模式物品栏中
-        ItemGroupEvents.modifyEntriesEvent(RegistryKey.of(RegistryKeys.ITEM_GROUP, new Identifier("bbs", "main"))).register(content -> {
+        ItemGroupEvents.modifyEntriesEvent(RegistryKey.of(RegistryKeys.ITEM_GROUP, Identifier.of("bbs", "main"))).register(content -> {
             content.add(EMISSIVE_CHROMA_RED_BLOCK_ITEM);
             content.add(EMISSIVE_CHROMA_GREEN_BLOCK_ITEM);
             content.add(EMISSIVE_CHROMA_BLUE_BLOCK_ITEM);

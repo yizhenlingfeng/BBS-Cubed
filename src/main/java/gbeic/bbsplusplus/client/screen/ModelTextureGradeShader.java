@@ -346,7 +346,7 @@ public final class ModelTextureGradeShader
         {
             if (id.getPath().contains("/core/"))
             {
-                return this.manager.getResource(new Identifier(BBSFSloveCML.MOD_ID, id.getPath()));
+                return this.manager.getResource(Identifier.of(BBSFSloveCML.MOD_ID, id.getPath()));
             }
 
             return this.manager.getResource(id);

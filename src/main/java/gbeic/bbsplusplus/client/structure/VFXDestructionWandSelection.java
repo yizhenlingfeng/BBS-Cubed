@@ -46,8 +46,8 @@ import java.util.List;
  */
 public final class VFXDestructionWandSelection
 {
-    private static final Identifier BBSVFX_DESTRUCTION_WAND = new Identifier("bbsvfx", "destruction_wand");
-    private static final Identifier XAVIN_DESTRUCTION_WAND = new Identifier("xavin", "destruction_wand");
+    private static final Identifier BBSVFX_DESTRUCTION_WAND = Identifier.of("bbsvfx", "destruction_wand");
+    private static final Identifier XAVIN_DESTRUCTION_WAND = Identifier.of("xavin", "destruction_wand");
     private static final String[] VFX_SELECTION_CLASSES = {
         "com.bbsvfx.bbsvfx.DestructionSelection",
         "org.xavin.xavin.DestructionSelection"
@@ -72,7 +72,7 @@ public final class VFXDestructionWandSelection
     private static final float LINE_WIDTH = 3.0F;
 
     /** 拖拽选区提示音（沿用原结构棒音效资源，结构棒移除后在此自持 SoundEvent）。 */
-    private static final SoundEvent DRAG_SOUND = SoundEvent.of(new Identifier("bbspp", "structure_stick_drag"));
+    private static final SoundEvent DRAG_SOUND = SoundEvent.of(Identifier.of("bbspp", "structure_stick_drag"));
 
     private static BlockPos start;
     private static BlockPos end;
