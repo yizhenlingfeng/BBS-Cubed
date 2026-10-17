@@ -2,6 +2,7 @@ package gbeic.bbsplusplus.mixin;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import gbeic.bbsplusplus.util.XRayManager;
+import mchorse.bbs_mod.client.BBSRendering;
 import mod.chloeprime.aaaparticles.api.client.EffectDefinition;
 import mod.chloeprime.aaaparticles.api.client.effekseer.EffekseerManager;
 import mod.chloeprime.aaaparticles.api.client.effekseer.ParticleEmitter;
@@ -31,6 +32,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 「当前绑定」Framebuffer 的深度缓冲；而 BBS 的编辑器预览（模型方块页、影片页）正是把世界
  * 渲染进自己的离屏 Framebuffer（{@code BBSRendering} 的 custom-size 目标），
  * 两者冲突会把预览画面整个抹黑，且不抛任何异常。故无穿透粒子时直接返回，不碰 GL 状态。</p>
+ *
+ * <p><b>自定义尺寸语境（影片预览 / 导出）的穿墙处理：</b>{@code BBSRendering.isCustomSize()} 为 true 时，
+ * 世界被渲染进 BBS 的离屏 Framebuffer。独立 X-Ray 管理器不会像全局管理器那样在 draw 中绑定
+ * 背景色/深度附件，若直接绘制会落到默认 framebuffer 而抹黑画面。因此该语境下显式复刻全局管理器的
+ * {@code SetBackground/SetDepth} 绑定（使用与全局相同的 background 帧缓冲），并跳过
+ * {@code CAPTURED_WORLD_DEPTH_BUFFER} 的深度 blit（其尺寸按原生主 FBO 建立，与自定义尺寸错配），
+ * 从而在预览/导出中同样实现穿透方块渲染且不污染画面。</p>
  *
  * <p><b>GL 状态按原值恢复：</b>深度写入与深度测试必须在进入前记录、退出时还原。
  * 若写死恢复成 {@code glDepthMask(true)} + {@code enableDepthTest()}，当进入前
@@ -72,12 +80,33 @@ public class EffectDefinitionMixin
         boolean prevDepthTest = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
         boolean prevDepthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
 
-        // 深度测试覆盖：由于 Effekseer C++ 底层会强制重设 GL_DEPTH_TEST 和 GL_DEPTH_FUNC，
-        // 我们使用 glDepthRange(0.0, 0.0) 将深度强制压缩到 0.0（最近处），使得 GL_LEQUAL 测试必然通过！
-        // 同时，因为 C++ 底层可能会强行开启 glDepthMask(true)，导致这个 0.0 被写死在深度缓冲中，
-        // 进而导致随后的第一人称手臂在做深度测试时被这个 0.0 错误地遮挡（即发生粒子穿透右手的 Bug）。
-        // 为了彻底解决这个问题，我们在粒子渲染前先备份当前的深度缓冲，然后在渲染后原样恢复！
-        RenderUtil.copyCurrentDepthTo(RenderStateCapture.CAPTURED_WORLD_DEPTH_BUFFER);
+        boolean customSize = BBSRendering.isCustomSize();
+
+        // 独立 X-Ray 管理器不像全局管理器那样在 draw 里绑定背景色/深度附件。世界原生用 CAPTURED
+        // 深度缓冲备份/恢复；影片预览/导出（customSize）改为复刻全局管理器的 SetBackground/SetDepth
+        // 绑定（用与全局相同的 background 帧缓冲），避免 C++ 落到默认 framebuffer 而抹黑/画错目标，
+        // 同时跳过 CAPTURE 深度 blit（非原生尺寸会错配污染）。
+        if (customSize)
+        {
+            if (background != null)
+            {
+                xrayManager.getImpl().SetBackground(background.getColorAttachment(), false);
+                xrayManager.getImpl().SetDepth(background.getDepthAttachment(), false);
+            }
+            else
+            {
+                xrayManager.getImpl().UnsetBackground();
+                xrayManager.getImpl().UnsetDepth();
+            }
+        }
+        else
+        {
+            // 深度测试覆盖：由于 Effekseer C++ 底层会强制重设 GL_DEPTH_TEST 和 GL_DEPTH_FUNC，
+            // 我们使用 glDepthRange(0.0, 0.0) 将深度强制压缩到 0.0（最近处），使得 GL_LEQUAL 测试必然通过！
+            // 同时，因为 C++ 底层可能会强行开启 glDepthMask(true)，导致这个 0.0 被写死在深度缓冲中，
+            // 进而导致随后的第一人称手臂在做深度测试时被这个 0.0 错误地遮挡。渲染前先备份深度缓冲，画后恢复。
+            RenderUtil.copyCurrentDepthTo(RenderStateCapture.CAPTURED_WORLD_DEPTH_BUFFER);
+        }
 
         RenderSystem.disableDepthTest();
         GL11.glDepthRange(0.0, 0.0);
@@ -86,8 +115,16 @@ public class EffectDefinitionMixin
         xrayManager.drawBack();
         xrayManager.drawFront();
 
-        // 强行恢复深度缓冲（消除 C++ 底层的任何污染）
-        RenderUtil.pasteToCurrentDepthFrom(RenderStateCapture.CAPTURED_WORLD_DEPTH_BUFFER);
+        // 预览：解绑背景；世界：强行恢复深度缓冲（消除 C++ 底层的任何污染）
+        if (customSize)
+        {
+            xrayManager.getImpl().UnsetBackground();
+            xrayManager.getImpl().UnsetDepth();
+        }
+        else
+        {
+            RenderUtil.pasteToCurrentDepthFrom(RenderStateCapture.CAPTURED_WORLD_DEPTH_BUFFER);
+        }
 
         // 【BBS++ 核心修复】
         // Effekseer 的 C++ 底层不仅更改了深度测试，还会直接调用 OpenGL 原生方法绑定纹理（glActiveTexture 和 glBindTexture）。
