@@ -128,6 +128,12 @@ public class BBSPlusPlusSettings
 
         BBSAddonsSettings.modelBlockRenderDistance = builder.getInt("model_block_render_distance", 256, 0, 1024);
 
+        /* ===== 分类八：Gizmo 改版 ===== */
+        builder.category("gizmo_modifications", Icons.DUPE);
+
+        BBSAddonsSettings.blockbenchGizmo = builder.getBoolean("blockbench_gizmo", false);
+        BBSAddonsSettings.gizmoKeepOriginal = builder.getBoolean("gizmo_keep_original", false);
+
         /* ===== 分类八：未完成（WIP） ===== */
         builder.category("wip", Icons.DUPE);
 

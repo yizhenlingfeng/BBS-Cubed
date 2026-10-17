@@ -123,6 +123,7 @@
         "ModelBlockEntityRendererDistanceMixin",
         "UIModelBlockPanelGizmoThrottleMixin",
         "client.UIModelBlockPanelUndoMixin",
+        "client.TransformGestureBlockbenchMixin",
         "ModelConfigLimbCullingMixin",
         "CubicVAORendererLimbCullingMixin",
         "UIModelConfigEditorLimbCullingMixin"

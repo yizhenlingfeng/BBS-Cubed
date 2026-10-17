@@ -82,7 +82,12 @@ public class BBSAddonsSettings
     /** IR Lights 阴影烘焙中最多让多少个物品喷射粒子参与投影，0 表示禁用 */
     public static ValueInt itemSprayIRLiteShadowMaxItems;
 
-    /* Gizmo 修改 — 2.6 适配时已删除 GizmoModeController / GizmoBlockbenchMixin，设置项同步移除 */
+    /* Gizmo 修改 — T 键循环（BBS 2.7 重新实现） */
+    /** 开启后，Gizmo 默认平移模式，G/S/R 按一次切换再按一次恢复，T 键循环切换平移/缩放/旋转 */
+    public static ValueBoolean blockbenchGizmo;
+
+    /** 仅在 blockbenchGizmo 开启时生效。开启后第 2 次按 G/S/R 不恢复上一模式，而是保持原版 BBS 的直接切换行为 */
+    public static ValueBoolean gizmoKeepOriginal;
 
     /**
      * 获取影片编辑器关键帧视图中 Alt+滚轮的语义模式。

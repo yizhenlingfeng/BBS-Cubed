@@ -41,6 +41,9 @@
 | IRL shadow max item count    | 1024    | Maximum item spray particles participating in IRLights light shadows; 0 disables item spray shadow                                                                                                                              |
 | **Performance Optimization** |         |                                                                                                                                                                                                                                |
 | Model block render distance  | 0       | Vanilla defaults to 512 blocks. Lowering this reduces rendering and picking overhead for distant model blocks; 0 uses the vanilla default                                                                                     |
+| **Gizmo Modifications**      |         |                                                                                                                                                                                                                                |
+| T-key Cycle                  | Off     | When enabled, Gizmo defaults to translate mode. Press G/S/R to switch to that mode, press again to restore the previous mode. Press T to cycle translate → scale → rotate                                                  |
+| Keep Original G/S/R          | Off     | When enabled, pressing G/S/R a second time does not restore the previous mode, keeping vanilla BBS direct-switch behavior                                                                                                    |
 
 ### AAA Particles
 
