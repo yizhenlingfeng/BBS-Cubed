@@ -57,4 +57,12 @@ public class SnowUIKeys
         FILM_VISIBILITY_MENU,
         GLFW.GLFW_KEY_F5
     ).categoryKey("film_controller");
+
+    /* Transformations: 按住时忽略骨骼选取覆盖，直接选中点击的肢体（默认 E，纯被动检测不占用按键） */
+    public static final IKey IGNORE_PICKING_OVERRIDE = L10n.lang("bbspp.ui.transforms.ignore_picking_override");
+    public static final KeyCombo IGNORE_PICKING_OVERRIDE_KEY = new KeyCombo(
+        "ignore_picking_override",
+        IGNORE_PICKING_OVERRIDE,
+        GLFW.GLFW_KEY_E
+    ).categoryKey("transformations");
 }

@@ -149,6 +149,7 @@
 | ItemStack track improvements       | Adds transform support                                                                                                                            |
 | Auto-save presets                  | Model block presets gain an "auto-save" toggle. When enabled via the preset right-click menu on IK chains, physics bones, constraints, and pose pages, parameter changes are written to the current preset with 500ms debounce |
 | Configurable custom hotkeys        | Custom hotkeys such as Shift+W (select all keyframes at the current time) are integrated into BBS UI keybindings under the "Keyframe Editor" category and can be remapped |
+| Ignore picking override hotkey     | In the model editor, holding E (remappable under the "Transformations" keybind category) while clicking a limb skips the bone picking-override redirection and selects the actual clicked bone; this key is passively detected and does not consume input |
 
 ### Vanilla Fixes
 
@@ -178,9 +179,10 @@
 
 ### Mod Changelog
 
-#### 3.5.8 (Gizmo T-key cycle + G/S/R toggle & restore)
+#### 3.5.8 (Gizmo T-key cycle + ignore picking override hotkey)
 * **New Gizmo T-key cycle**: adds a "T-key Cycle" toggle under Settings → Gizmo Modifications (default off). When enabled, the model block editor's Gizmo defaults to translate mode; pressing G/S/R switches to the corresponding operation mode, pressing again restores the previous mode; pressing T cycles through translate → scale → rotate
 * **New "Keep Original G/S/R" toggle**: when enabled, pressing G/S/R a second time does not restore the previous mode, keeping vanilla BBS direct-switch behavior
+* **New ignore picking override hotkey**: in the model editor, holding E (remappable under the "Transformations" keybind category) while clicking a limb skips the bone picking-override redirection and selects the actual clicked bone; this key is passively detected and does not consume input events, so it can trigger alongside other bound functions
 
 #### 3.5.7 (Limb face culling + pose panel layout + step keyframe direction fix)
 * **New limb face culling toggle**: adds a per-bone "limb face culling" switch in the model config editor's bone panel, optimizing distant model render performance

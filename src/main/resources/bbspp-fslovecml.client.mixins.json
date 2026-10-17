@@ -26,6 +26,7 @@
         "ModelFormRendererMixin",
         "ModelFormTrackNameMixin",
         "ModelInstanceTextureGradeMixin",
+        "ModelInstancePickingOverrideMixin",
         "ParticleComponentAppearanceBillboardMixin",
         "ParticleComponentMotionCollisionMixin",
         "ParticleEmitterMixin",
