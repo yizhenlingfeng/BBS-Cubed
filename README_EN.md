@@ -178,6 +178,10 @@
 
 ### Mod Changelog
 
+#### 3.5.8 (Gizmo T-key cycle + G/S/R toggle & restore)
+* **New Gizmo T-key cycle**: adds a "T-key Cycle" toggle under Settings → Gizmo Modifications (default off). When enabled, the model block editor's Gizmo defaults to translate mode; pressing G/S/R switches to the corresponding operation mode, pressing again restores the previous mode; pressing T cycles through translate → scale → rotate
+* **New "Keep Original G/S/R" toggle**: when enabled, pressing G/S/R a second time does not restore the previous mode, keeping vanilla BBS direct-switch behavior
+
 #### 3.5.7 (Limb face culling + pose panel layout + step keyframe direction fix)
 * **New limb face culling toggle**: adds a per-bone "limb face culling" switch in the model config editor's bone panel, optimizing distant model render performance
 * **Pose panel layout adjustment**: PBR collapsible section and bone texture button moved from the bottom of the panel to directly below the material tab for a more compact, intuitive layout
