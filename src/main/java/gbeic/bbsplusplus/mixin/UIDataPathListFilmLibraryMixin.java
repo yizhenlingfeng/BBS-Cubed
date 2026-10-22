@@ -24,10 +24,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 /**
- * 影片库的路径列表扩展：完整路径搜索、名称排序、双击打开与拖拽启动。
- * <p>
- * 默认不改变 {@link UIDataPathList} 的行为，仅在影片库模式下生效。
- * </p>
+ * 影片库路径列表的数据层扩展：层级查询、排序、搜索与打开影片。
  */
 @Mixin(UIDataPathList.class)
 public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> implements IFilmLibraryPathList
@@ -40,13 +37,10 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
     @Unique private boolean bbspp$applyDefaultWhenFilled;
     @Unique private boolean bbspp$showFullPaths;
     @Unique private boolean bbspp$sortDescending;
-    @Unique private boolean bbspp$showAllFilms = true;
     @Unique private final DataPath bbspp$currentFolder = new DataPath(true);
     @Unique private final Set<DataPath> bbspp$knownFolders = new HashSet<>();
     @Unique private String bbspp$selectAfterRefresh = "";
-    @Unique private long bbspp$lastClickTime;
-    @Unique private DataPath bbspp$lastClickPath;
-    @Unique private boolean bbspp$doubleClick;
+    @Unique private int bbspp$filmLibraryRevision;
 
     public UIDataPathListFilmLibraryMixin(Consumer<java.util.List<DataPath>> callback)
     {
@@ -88,7 +82,7 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
 
         String normalized = query == null ? "" : query.trim().toLowerCase();
 
-        this.bbspp$showFullPaths = !normalized.isEmpty() && this.bbspp$showAllFilms;
+        this.bbspp$showFullPaths = !normalized.isEmpty();
         this.list.clear();
 
         if (normalized.isEmpty())
@@ -100,11 +94,6 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
             for (DataPath dataPath : this.hierarchy)
             {
                 if (dataPath.folder)
-                {
-                    continue;
-                }
-
-                if (!this.bbspp$showAllFilms && !dataPath.startsWith(this.bbspp$currentFolder, 1))
                 {
                     continue;
                 }
@@ -125,17 +114,8 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
     }
 
     @Override
-    public void bbspp$showAllFilmLibraryFilms()
-    {
-        this.bbspp$showAllFilms = true;
-        this.bbspp$currentFolder.copy(DataPath.EMPTY);
-        this.bbspp$fillCurrentFilmLibraryView();
-    }
-
-    @Override
     public void bbspp$showFilmLibraryFolder(DataPath folder)
     {
-        this.bbspp$showAllFilms = false;
         this.bbspp$currentFolder.copy(folder == null ? DataPath.EMPTY : folder);
         this.bbspp$currentFolder.folder = true;
         this.bbspp$fillCurrentFilmLibraryView();
@@ -167,9 +147,71 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
     }
 
     @Override
-    public boolean bbspp$isShowingAllFilmLibraryFilms()
+    public Collection<DataPath> bbspp$getFilmLibraryFilms(DataPath folder)
     {
-        return this.bbspp$showAllFilms;
+        List<DataPath> films = new ArrayList<>();
+
+        if (folder == null)
+        {
+            return films;
+        }
+
+        for (DataPath dataPath : this.hierarchy)
+        {
+            if (dataPath.folder || dataPath.strings.size() != folder.strings.size() + 1)
+            {
+                continue;
+            }
+
+            boolean child = true;
+
+            for (int i = 0; i < folder.strings.size(); i++)
+            {
+                if (!folder.strings.get(i).equals(dataPath.strings.get(i)))
+                {
+                    child = false;
+                    break;
+                }
+            }
+
+            if (child)
+            {
+                films.add(dataPath);
+            }
+        }
+
+        return films;
+    }
+
+    @Override
+    public Collection<DataPath> bbspp$getFilmLibraryAllFilms()
+    {
+        List<DataPath> films = new ArrayList<>();
+
+        for (DataPath dataPath : this.hierarchy)
+        {
+            if (!dataPath.folder)
+            {
+                films.add(dataPath);
+            }
+        }
+
+        return films;
+    }
+
+    @Override
+    public void bbspp$openFilmLibraryFilm(DataPath film)
+    {
+        if (film != null && !film.folder)
+        {
+            ((UIDataPathListOpenAccessor) (Object) this).bbspp$open(film);
+        }
+    }
+
+    @Override
+    public int bbspp$getFilmLibraryRevision()
+    {
+        return this.bbspp$filmLibraryRevision;
     }
 
     @Override
@@ -290,20 +332,6 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
         return super.subKeyPressed(context);
     }
 
-    /**
-     * 注入目标：{@link UIDataPathList#subMouseClicked(UIContext)} 开始处。
-     * 注入原因：新版影片库中右侧空白区域应取消影片选择，避免旧选中项误导后续操作。
-     * 修改后的行为：影片库模式下，点击右侧列表空白处会清空选择；条目点击仍交给原版逻辑处理。
-     */
-    @Inject(method = "subMouseClicked", at = @At("HEAD"), remap = true)
-    private void bbspp$deselectOnFilmLibraryEmptyClick(UIContext context, CallbackInfoReturnable<Boolean> cir)
-    {
-        if (this.bbspp$filmLibraryMode && this.area.isInside(context) && this.getIndexAtCursor(context) < 0)
-        {
-            this.bbspp$clearFilmLibrarySelection();
-        }
-    }
-
     @Unique
     private void bbspp$clearFilmLibrarySelection()
     {
@@ -311,105 +339,21 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
         this.previousPath = null;
     }
 
-    /**
-     * 注入目标：{@link UIDataPathList#subMouseClicked(UIContext)} 开始处。
-     * 注入原因：原版对已选中的条目再次点击即打开；且条目点击不会经过 {@code UIItems.pressItem}，
-     * 无法生成拖拽 payload。
-     * 修改行为：单击仅选中并启动拖拽；同一行 300ms 内再次点击视为双击，由打开注入处理。
-     */
-    @Inject(method = "subMouseClicked", at = @At("HEAD"), remap = true)
-    private void bbspp$trackFilmLibraryClick(UIContext context, CallbackInfoReturnable<Boolean> cir)
-    {
-        if (!this.bbspp$filmLibraryMode || context.mouseButton != 0 || !this.area.isInside(context))
-        {
-            return;
-        }
-
-        int index = this.getIndexAtCursor(context);
-
-        if (!this.exists(index))
-        {
-            this.bbspp$doubleClick = false;
-
-            return;
-        }
-
-        DataPath item = this.list.get(index);
-        long now = System.currentTimeMillis();
-
-        this.bbspp$doubleClick = item.equals(this.bbspp$lastClickPath) && now - this.bbspp$lastClickTime <= 300;
-        this.bbspp$lastClickTime = now;
-        this.bbspp$lastClickPath = item.copy();
-
-        /* 双击的第二次按下会走 open，不再启动拖拽，避免打开影片后残留拖拽状态。 */
-        if (this.bbspp$doubleClick || item.folder)
-        {
-            return;
-        }
-
-        List<DataPath> payload = new ArrayList<>();
-
-        if (this.selection.isGroup() && this.selection.contains(item))
-        {
-            payload.addAll(this.selection.getItems());
-        }
-        else
-        {
-            payload.add(item);
-        }
-
-        this.drag.start(payload, context.mouseX, context.mouseY);
-    }
-
-    /**
-     * 影片库模式下只允许双击打开影片，单击仅保留选中。
-     */
-    @Inject(method = "open", at = @At("HEAD"), cancellable = true, remap = true)
-    private void bbspp$openFilmLibraryFilmOnDoubleClick(DataPath path, CallbackInfo ci)
-    {
-        if (!this.bbspp$filmLibraryMode)
-        {
-            return;
-        }
-
-        if (!this.bbspp$doubleClick)
-        {
-            ci.cancel();
-
-            return;
-        }
-
-        this.bbspp$doubleClick = false;
-    }
-
     @Unique
     private void bbspp$fillCurrentFilmLibraryView()
     {
         this.list.clear();
 
-        if (this.bbspp$showAllFilms)
+        for (DataPath dataPath : this.hierarchy)
         {
-            for (DataPath dataPath : this.hierarchy)
+            if (!dataPath.folder && dataPath.startsWith(this.bbspp$currentFolder, 1))
             {
-                if (!dataPath.folder)
-                {
-                    this.list.add(dataPath);
-                }
-            }
-        }
-        else
-        {
-            for (DataPath dataPath : this.hierarchy)
-            {
-                if (!dataPath.folder && dataPath.startsWith(this.bbspp$currentFolder, 1))
-                {
-                    this.list.add(dataPath);
-                }
+                this.list.add(dataPath);
             }
         }
 
         this.path.copy(this.bbspp$currentFolder);
-        this.bbspp$showFullPaths = this.bbspp$showAllFilms;
+        this.bbspp$showFullPaths = false;
         this.bbspp$clearFilmLibrarySelection();
         this.sort();
 
@@ -463,6 +407,7 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
             }
 
             this.bbspp$fillCurrentFilmLibraryView();
+            this.bbspp$filmLibraryRevision++;
         }
     }
 
@@ -489,16 +434,13 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
     {
         DataPath folder = FilmLibraryDefaultLocation.getFolder();
 
-        if (FilmLibraryDefaultLocation.isAllFilms() || folder == null
-            || (!folder.strings.isEmpty() && !this.bbspp$getFilmLibraryFolders().contains(folder)))
+        if (folder == null || (!folder.strings.isEmpty() && !this.bbspp$getFilmLibraryFolders().contains(folder)))
         {
-            this.bbspp$showAllFilms = true;
             this.bbspp$currentFolder.copy(DataPath.EMPTY);
 
             return;
         }
 
-        this.bbspp$showAllFilms = false;
         this.bbspp$currentFolder.copy(folder);
         this.bbspp$currentFolder.folder = true;
     }

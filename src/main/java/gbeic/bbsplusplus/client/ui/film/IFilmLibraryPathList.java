@@ -37,20 +37,26 @@ public interface IFilmLibraryPathList
     /** @return 当前是否按名称降序排列。 */
     boolean bbspp$isFilmLibrarySortDescending();
 
-    /** 显示全部影片，右侧列表不显示文件夹。 */
-    void bbspp$showAllFilmLibraryFilms();
-
-    /** 显示指定文件夹直属影片，子文件夹只在左侧树中呈现。 */
+    /** 显示指定文件夹的直属影片。 */
     void bbspp$showFilmLibraryFolder(DataPath folder);
 
     /** @return 影片仓库中的所有文件夹路径。 */
     Collection<DataPath> bbspp$getFilmLibraryFolders();
 
-    /** @return 当前右侧列表是否处于全部影片视图。 */
-    boolean bbspp$isShowingAllFilmLibraryFilms();
-
-    /** @return 当前右侧列表对应的文件夹。 */
+    /** @return 当前列表对应的文件夹。 */
     DataPath bbspp$getFilmLibraryFolder();
+
+    /** @return 指定文件夹的直属影片。 */
+    Collection<DataPath> bbspp$getFilmLibraryFilms(DataPath folder);
+
+    /** @return 影片仓库中的全部影片。 */
+    Collection<DataPath> bbspp$getFilmLibraryAllFilms();
+
+    /** 打开指定影片。 */
+    void bbspp$openFilmLibraryFilm(DataPath film);
+
+    /** @return 影片层级版本号，用于列视图判断是否需要重建。 */
+    int bbspp$getFilmLibraryRevision();
 
     /** 设置刷新后需要自动选中的影片 ID。 */
     void bbspp$selectFilmLibraryAfterRefresh(String id);

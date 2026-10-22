@@ -13,17 +13,18 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.utils.DataPath;
+import mchorse.bbs_mod.utils.NaturalOrderComparator;
 import mchorse.bbs_mod.utils.repos.IRepository;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * 影片库的仓库操作集合。
  * <p>
- * 影片库现在有两个宿主：BBS 2.7 的影片列表浮窗和影片面板的 Landing 主页。两者的数据和
- * 右键菜单都基于同一个 {@link UIDataPathList}，所以把「新建/重命名/复制/删除影片」和
- * 「新建/重命名/删除文件夹」等仓库操作集中在这里，避免两套 UI 各写一份。
+ * 列视图只负责展示与交互，新建、重命名、删除、移动影片和文件夹等操作集中在这里，
+ * 通过隐藏的 {@link UIDataPathList} 访问 BBS 的影片层级与仓库。
  * </p>
  */
 public class FilmLibrarySupport
@@ -78,20 +79,104 @@ public class FilmLibrarySupport
         }
     }
 
-    public void showAll()
-    {
-        if (this.list instanceof IFilmLibraryPathList pathList)
-        {
-            pathList.bbspp$showAllFilmLibraryFilms();
-        }
-    }
-
     public void showFolder(DataPath folder)
     {
         if (this.list instanceof IFilmLibraryPathList pathList)
         {
             pathList.bbspp$showFilmLibraryFolder(folder == null ? DataPath.EMPTY : folder);
         }
+    }
+
+    public List<DataPath> getFolders(DataPath parent)
+    {
+        List<DataPath> folders = new ArrayList<>();
+
+        if (!(this.list instanceof IFilmLibraryPathList pathList) || parent == null)
+        {
+            return folders;
+        }
+
+        for (DataPath folder : pathList.bbspp$getFilmLibraryFolders())
+        {
+            if (folder.strings.size() == parent.strings.size() + 1 && isChildOf(folder, parent))
+            {
+                folders.add(folder);
+            }
+        }
+
+        folders.sort(this::compareNames);
+
+        return folders;
+    }
+
+    public List<DataPath> getFilms(DataPath folder)
+    {
+        List<DataPath> films = new ArrayList<>();
+
+        if (this.list instanceof IFilmLibraryPathList pathList && folder != null)
+        {
+            films.addAll(pathList.bbspp$getFilmLibraryFilms(folder));
+            films.sort(this::compareNames);
+        }
+
+        return films;
+    }
+
+    public void openFilm(DataPath film)
+    {
+        if (this.list instanceof IFilmLibraryPathList pathList)
+        {
+            pathList.bbspp$openFilmLibraryFilm(film);
+        }
+    }
+
+    public List<DataPath> searchFilms(String query)
+    {
+        List<DataPath> films = new ArrayList<>();
+
+        if (query == null || query.trim().isEmpty() || !(this.list instanceof IFilmLibraryPathList pathList))
+        {
+            return films;
+        }
+
+        String needle = query.trim().toLowerCase();
+
+        for (DataPath film : pathList.bbspp$getFilmLibraryAllFilms())
+        {
+            if (film.toString().toLowerCase().contains(needle) || film.getLast().toLowerCase().contains(needle))
+            {
+                films.add(film);
+            }
+        }
+
+        films.sort(this::compareNames);
+
+        return films;
+    }
+
+    public int getRevision()
+    {
+        return this.list instanceof IFilmLibraryPathList pathList ? pathList.bbspp$getFilmLibraryRevision() : 0;
+    }
+
+    private int compareNames(DataPath a, DataPath b)
+    {
+        int result = NaturalOrderComparator.compare(true, a.getLast(), b.getLast());
+
+        return this.isSortDescending() ? -result : result;
+    }
+
+    private static boolean isChildOf(DataPath path, DataPath parent)
+    {
+        for (int i = 0; i < parent.strings.size(); i++)
+        {
+            if (!parent.strings.get(i).equals(path.strings.get(i)))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public DataPath getCurrentFolder()
@@ -164,7 +249,7 @@ public class FilmLibrarySupport
     }
 
     /**
-     * 把影片移动到目标文件夹（右侧列表拖到左侧文件夹树时使用）。
+     * 把影片移动到目标文件夹（拖到文件夹行或列时使用）。
      * 已经是目标文件夹的影片、或目标位置已有同名影片时跳过。
      */
     public void moveFilms(List<DataPath> films, DataPath folder)
@@ -309,8 +394,7 @@ public class FilmLibrarySupport
 
         this.panel.onDataRemoved(id);
 
-        /* 「全部影片」视图下列表 path 为根，removeFile 只接受当前文件夹直属的文件名，
-         * 嵌套文件夹里的影片删不掉列表项，这里统一重新请求名称以重建影片库视图。 */
+        /* removeFile 只处理当前文件夹直属文件；统一重新请求名称，让所有列同步刷新。 */
         this.panel.requestNames();
     }
 
@@ -438,7 +522,7 @@ public class FilmLibrarySupport
 
                 DataPath current = pathList.bbspp$getFilmLibraryFolder();
 
-                if (!pathList.bbspp$isShowingAllFilmLibraryFilms() && current.startsWith(folder))
+                if (current.startsWith(folder))
                 {
                     String suffix = current.toString().substring(from.length());
 
@@ -500,7 +584,7 @@ public class FilmLibrarySupport
 
                 DataPath current = pathList.bbspp$getFilmLibraryFolder();
 
-                if (!pathList.bbspp$isShowingAllFilmLibraryFilms() && current.startsWith(folder))
+                if (current.startsWith(folder))
                 {
                     pathList.bbspp$showFilmLibraryFolder(folder.getParent());
                 }

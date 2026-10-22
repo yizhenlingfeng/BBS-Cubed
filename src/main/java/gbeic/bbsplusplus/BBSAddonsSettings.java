@@ -142,8 +142,11 @@ public class BBSAddonsSettings
     /** 影片库排序模式：0=名称升序，1=名称降序 */
     public static ValueInt filmLibrarySortMode;
 
-    /** 影片库默认打开位置：all 或 folder:路径 */
+    /** 影片库默认打开位置：folder:路径（根目录为 folder:） */
     public static ValueString filmLibraryDefaultLocation;
+
+    /** 影片库快捷栏中固定的文件夹路径，每行一个 */
+    public static ValueString filmLibraryShortcuts;
 
     /** 新版伪装界面默认打开分类：home 或分类可见性 ID */
     public static ValueString morphingDefaultCategory;

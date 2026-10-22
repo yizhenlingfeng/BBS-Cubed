@@ -22,7 +22,7 @@
 | Pose bone tree list          | Off     | Indents the pose editor bone list by parent-child hierarchy with tree connector lines; search results remain flat                                                                                                             |
 | First-person view sway       | Off     | Restores the vanilla walking view sway while playing first-person replay                                                                                                                                                        |
 | New disguise interface layout | Off    | Uses the new two-column disguise layout; when off, the original vertical layout is used                                                                                                                                        |
-| New movie library interface  | Off     | Replaces the movie panel home with a library workspace: folder tree, double-click to open, drag to move, sorting and default location                                                 |
+| New movie library interface  | Off     | Replaces the movie panel home with shortcuts + root column + expanding child columns; supports double-click, drag to move, search, and sorting |
 | Reverse timeline scroll direction | Off | Reverses scroll-wheel timeline direction in the movie editor, including Ctrl+scroll (playhead), Alt+scroll (selected keyframes/clips), and Alt+horizontal-scroll                                                                 |
 | Shader control button        | Off     | Adds a button in the movie editor: left-click toggles shaders, right-click opens the shader picker                                                                                                                            |
 | New shader curve selection UI | Off    | When adding shader curves in curve clips, uses a categorized UI based on shader settings; when off, uses the vanilla flat list                                                                                                |
@@ -49,9 +49,11 @@
 
 When "New movie library interface" is enabled, the movie panel home is replaced by a library workspace:
 
-- **Left**: All Films and the folder tree. Right-click a folder to create, rename, or delete it, or set it as the default location; the default item is marked with a star
-- **Right**: Movie list. Single-click selects, double-click opens. The search box matches both movie names and full paths, and the sort button toggles ascending/descending name order
-- **Drag and drop**: Drag a movie row onto a folder (including the root) to move it; the target folder is highlighted while dragging, and multi-selection moves the whole group
+- **Shortcuts**: the leftmost column pins frequently used folders. Right-click a folder and choose "Pin to Shortcuts"; click a shortcut to jump to it
+- **Root column**: the column next to the shortcuts is always the root folder, where movies can be created directly
+- **Expand to the right**: clicking a folder adds a child column to the right, and this can continue indefinitely; when columns exceed the available width they all shrink proportionally, and horizontal scrolling starts only after reaching the minimum width
+- **Column contents**: subfolders on top, direct movies below, with a "+ Create Film" footer. Drag a movie onto any folder row or column to move it
+- **Interaction**: single-click selects, double-click opens; the context menu supports create, rename, delete, and pin; search and name sorting stay at the top
 - Disabling the option restores BBS's original movie selection interface
 
 ### AAA Particles
@@ -187,6 +189,16 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 - This project is an extension plugin for [BBSFS](https://github.com/Wemppy4/bbs-fs), implemented via Mixin
 
 ### Mod Changelog
+
+#### 3.6.0 (Horizontal folder columns + shortcuts)
+* **Removed the right movie list**: movies and subfolders now live entirely inside their columns
+* **Removed "All Films"**: the root column is the only entry point, and movies can be created directly in the root
+* **Expand to the right**: clicking a folder adds a child column, recursively; when columns exceed the available width they all shrink proportionally, with horizontal scrolling only after the minimum width
+* **Right-click empty folder space**: create a movie or subfolder in that folder
+* **Files inside columns**: subfolders on top, direct movies below, with a "+ Create Film" footer
+* **Shortcuts**: a leftmost shortcut column pins folders via right-click for quick access
+* **Animations**: column expansion, horizontal scrolling, and shortcut changes use ease-in-out transitions with BBSFS-native colors and row heights
+* **1.21.11 support**: all of the above is available on Minecraft 1.21.11
 
 #### 3.5.9 (New movie library rework)
 * **Movie library home**: When "New movie library interface" is enabled, the movie panel's Landing home is replaced by a library workspace with All Films and the folder tree on the left and the movie list on the right. Search, sorting, and the default location share state with the original movie list overlay

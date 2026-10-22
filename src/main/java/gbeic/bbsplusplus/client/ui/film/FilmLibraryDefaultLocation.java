@@ -5,25 +5,19 @@ import mchorse.bbs_mod.settings.Settings;
 import mchorse.bbs_mod.utils.DataPath;
 
 /**
- * 管理新版影片库的默认打开位置。
+ * 管理影片库的默认打开位置。
  * <p>
- * “全部影片”和“根目录”在路径表达上都可能是空值，因此不能直接用空字符串区分。
- * 这里把设置值编码为 {@code all} 或 {@code folder:路径}，让 UI 只关心语义，
- * 避免左侧导航和布局 Mixin 各自拼接魔法字符串。
+ * 设置值编码为 {@code folder:路径}；根目录对应 {@code folder:}。旧版本的 {@code all}
+ * 会按根目录处理。
  * </p>
  */
 public final class FilmLibraryDefaultLocation
 {
-    private static final String ALL = "all";
+    private static final String LEGACY_ALL = "all";
     private static final String FOLDER_PREFIX = "folder:";
 
     private FilmLibraryDefaultLocation()
-    {}
-
-    /** 判断默认入口是否为“全部影片”。 */
-    public static boolean isAllFilms()
     {
-        return ALL.equals(get());
     }
 
     /** 判断指定文件夹是否为默认入口。 */
@@ -32,33 +26,22 @@ public final class FilmLibraryDefaultLocation
         return get().equals(encodeFolder(folder));
     }
 
-    /** 把默认入口设为“全部影片”。 */
-    public static void setAllFilms()
-    {
-        set(ALL);
-    }
-
     /** 把默认入口设为指定文件夹。 */
     public static void setFolder(DataPath folder)
     {
         set(encodeFolder(folder));
     }
 
-    /** 返回默认入口的文件夹路径；如果默认入口是“全部影片”，则返回 {@code null}。 */
+    /** @return 默认入口的文件夹路径；根目录返回空路径。 */
     public static DataPath getFolder()
     {
         String value = get();
+        String path = value.startsWith(FOLDER_PREFIX) ? value.substring(FOLDER_PREFIX.length()) : "";
+        DataPath folder = new DataPath(path);
 
-        if (!value.startsWith(FOLDER_PREFIX))
-        {
-            return null;
-        }
+        folder.folder = true;
 
-        DataPath path = new DataPath(value.substring(FOLDER_PREFIX.length()));
-
-        path.folder = true;
-
-        return path;
+        return folder;
     }
 
     private static String encodeFolder(DataPath folder)
@@ -70,12 +53,17 @@ public final class FilmLibraryDefaultLocation
     {
         if (BBSAddonsSettings.filmLibraryDefaultLocation == null)
         {
-            return ALL;
+            return FOLDER_PREFIX;
         }
 
         String value = BBSAddonsSettings.filmLibraryDefaultLocation.get();
 
-        return value == null || value.isEmpty() ? ALL : value;
+        if (value == null || value.isEmpty() || LEGACY_ALL.equals(value))
+        {
+            return FOLDER_PREFIX;
+        }
+
+        return value;
     }
 
     private static void set(String value)
