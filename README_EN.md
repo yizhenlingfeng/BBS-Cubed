@@ -196,6 +196,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 * **Reuse BBS copy/paste**: Removed the custom "Copy" menu entry from the movie list; the original BBS clipboard is used directly
 * **Fix list context-menu crash**: When the BBS-specific clipboard is unavailable, the system clipboard is used instead, preventing a crash caused by class-loading failure when opening the list context menu
 * **Fix visibility button**: On the movie library home and other states without an open movie, the visibility button is disabled and F5 no longer opens the visibility menu
+* **1.21.11 support**: The movie library rework is also available on Minecraft 1.21.11; builds pass for 1.20.1, 1.20.4, and 1.21.11
 
 #### 3.5.8 (Gizmo T-key cycle + ignore picking override hotkey)
 * **New Gizmo T-key cycle**: adds a "T-key Cycle" toggle under Settings → Gizmo Modifications (default off). When enabled, the model block editor's Gizmo defaults to translate mode; pressing G/S/R switches to the corresponding operation mode, pressing again restores the previous mode; pressing T cycles through translate → scale → rotate
