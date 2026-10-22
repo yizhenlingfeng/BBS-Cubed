@@ -16,6 +16,15 @@ public interface IFilmLibraryPathList
     /** 标记该列表由影片库使用，启用完整路径显示、路径搜索和排序偏好。 */
     void bbspp$setFilmLibraryMode(boolean enabled);
 
+    /**
+     * 请求在影片层级首次填充完成后应用「默认打开位置」。
+     * <p>
+     * 影片库列表在仪表盘创建时就已存在，此时影片层级仍为空，直接读取默认文件夹会被误判为
+     * 「文件夹不存在」而回退到全部影片。把应用时机推迟到第一次 fill 之后即可避免。
+     * </p>
+     */
+    void bbspp$applyFilmLibraryDefaultWhenFilled();
+
     /** @return 当前列表是否启用了新版影片库模式。 */
     boolean bbspp$isFilmLibraryMode();
 

@@ -22,7 +22,7 @@
 | Pose bone tree list          | Off     | Indents the pose editor bone list by parent-child hierarchy with tree connector lines; search results remain flat                                                                                                             |
 | First-person view sway       | Off     | Restores the vanilla walking view sway while playing first-person replay                                                                                                                                                        |
 | New disguise interface layout | Off    | Uses the new two-column disguise layout; when off, the original vertical layout is used                                                                                                                                        |
-| New movie library interface  | Off     | Uses the new movie library layout and interactions for the movie selection screen                                                                                                                                              |
+| New movie library interface  | Off     | Replaces the movie panel home with a library workspace: folder tree, double-click to open, drag to move, sorting and default location                                                 |
 | Reverse timeline scroll direction | Off | Reverses scroll-wheel timeline direction in the movie editor, including Ctrl+scroll (playhead), Alt+scroll (selected keyframes/clips), and Alt+horizontal-scroll                                                                 |
 | Shader control button        | Off     | Adds a button in the movie editor: left-click toggles shaders, right-click opens the shader picker                                                                                                                            |
 | New shader curve selection UI | Off    | When adding shader curves in curve clips, uses a categorized UI based on shader settings; when off, uses the vanilla flat list                                                                                                |
@@ -44,6 +44,15 @@
 | **Gizmo Modifications**      |         |                                                                                                                                                                                                                                |
 | T-key Cycle                  | Off     | When enabled, Gizmo defaults to translate mode. Press G/S/R to switch to that mode, press again to restore the previous mode. Press T to cycle translate → scale → rotate                                                  |
 | Keep Original G/S/R          | Off     | When enabled, pressing G/S/R a second time does not restore the previous mode, keeping vanilla BBS direct-switch behavior                                                                                                    |
+
+### New Movie Library
+
+When "New movie library interface" is enabled, the movie panel home is replaced by a library workspace:
+
+- **Left**: All Films and the folder tree. Right-click a folder to create, rename, or delete it, or set it as the default location; the default item is marked with a star
+- **Right**: Movie list. Single-click selects, double-click opens. The search box matches both movie names and full paths, and the sort button toggles ascending/descending name order
+- **Drag and drop**: Drag a movie row onto a folder (including the root) to move it; the target folder is highlighted while dragging, and multi-selection moves the whole group
+- Disabling the option restores BBS's original movie selection interface
 
 ### AAA Particles
 
@@ -178,6 +187,15 @@
 - This project is an extension plugin for [BBSFS](https://github.com/Wemppy4/bbs-fs), implemented via Mixin
 
 ### Mod Changelog
+
+#### 3.5.9 (New movie library rework)
+* **Movie library home**: When "New movie library interface" is enabled, the movie panel's Landing home is replaced by a library workspace with All Films and the folder tree on the left and the movie list on the right. Search, sorting, and the default location share state with the original movie list overlay
+* **Double-click to open**: The movie list now uses single-click to select and double-click to open, preventing accidental opens
+* **Drag to move**: Drag movie rows onto a folder (including the root) to move them; the target folder is highlighted while dragging. Multi-selection moves the whole group, and existing names in the target folder are skipped
+* **Folder management**: Create, rename, and delete folders, or create a movie inside a specific folder. Both folders and All Films can be set as the default location via right-click, marked with a star
+* **Reuse BBS copy/paste**: Removed the custom "Copy" menu entry from the movie list; the original BBS clipboard is used directly
+* **Fix list context-menu crash**: When the BBS-specific clipboard is unavailable, the system clipboard is used instead, preventing a crash caused by class-loading failure when opening the list context menu
+* **Fix visibility button**: On the movie library home and other states without an open movie, the visibility button is disabled and F5 no longer opens the visibility menu
 
 #### 3.5.8 (Gizmo T-key cycle + ignore picking override hotkey)
 * **New Gizmo T-key cycle**: adds a "T-key Cycle" toggle under Settings → Gizmo Modifications (default off). When enabled, the model block editor's Gizmo defaults to translate mode; pressing G/S/R switches to the corresponding operation mode, pressing again restores the previous mode; pressing T cycles through translate → scale → rotate

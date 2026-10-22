@@ -77,11 +77,13 @@ public class BBSFSloveCMLClientAddon implements BBSAddonMod {
          * combo.getMainKey() 为准。所以一旦用户把本键改绑到非 F5 的按键，它就不再匹配 F5，
          * 影片面板下按 F5 自动落回原生的切换调试——无需额外 if，置顶只在双方都按同一键时才抢前。 */
         Keybind visibility = keys.register(SnowUIKeys.FILM_VISIBILITY_MENU_KEY, () -> {
-            if (dashboard.getPanels().panel instanceof UIFilmPanel panel) {
+            if (dashboard.getPanels().panel instanceof UIFilmPanel panel && panel.getData() != null) {
                 FilmVisibilityController.openMenu(panel.getContext());
             }
         });
-        visibility.active(() -> dashboard.getPanels().panel instanceof UIFilmPanel);
+        /* 可见性菜单只对已打开的影片有意义：Landing 影片库主页（data == null）不激活，
+         * 避免主页面按 F5 弹出操作不到任何影片的菜单。 */
+        visibility.active(() -> dashboard.getPanels().panel instanceof UIFilmPanel panel && panel.getData() != null);
         visibility.category(UIKeys.FILM_CONTROLLER_KEYS_CATEGORY);
 
         keys.keybinds.remove(visibility);

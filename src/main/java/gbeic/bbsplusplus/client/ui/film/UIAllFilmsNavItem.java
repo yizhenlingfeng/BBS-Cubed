@@ -40,7 +40,7 @@ public class UIAllFilmsNavItem extends UIElement
 
             if (!FilmLibraryDefaultLocation.isAllFilms())
             {
-                menu.action(Icons.BOOKMARK, L10n.lang("bbspp.ui.film.library.set_default_open"), FilmLibraryDefaultLocation::setAllFilms);
+                menu.action(Icons.FAVORITE, L10n.lang("bbspp.ui.film.library.set_default_open"), FilmLibraryDefaultLocation::setAllFilms);
             }
         });
     }
@@ -69,6 +69,7 @@ public class UIAllFilmsNavItem extends UIElement
     public void render(UIContext context)
     {
         boolean active = this.list instanceof IFilmLibraryPathList pathList && pathList.bbspp$isShowingAllFilmLibraryFilms();
+        boolean defaultItem = FilmLibraryDefaultLocation.isAllFilms();
 
         if (active)
         {
@@ -77,10 +78,16 @@ public class UIAllFilmsNavItem extends UIElement
 
         FontRenderer font = context.batcher.getFont();
         int color = active ? Colors.WHITE : Colors.GRAY;
-        String text = font.limitToWidth(this.label.get(), this.area.w - 28);
+        int rightPadding = defaultItem ? 42 : 28;
+        String text = font.limitToWidth(this.label.get(), this.area.w - rightPadding);
 
         context.batcher.icon(Icons.FILM, color, this.area.x + 10, this.area.my(), 0.5F, 0.5F);
         context.batcher.textShadow(text, this.area.x + 24, this.area.my(font.getHeight()), color);
+
+        if (defaultItem)
+        {
+            context.batcher.icon(Icons.FAVORITE, Colors.A100 | BBSSettings.primaryColor.get(), this.area.ex() - 12, this.area.my(), 0.5F, 0.5F);
+        }
 
         super.render(context);
     }

@@ -1,11 +1,13 @@
 package gbeic.bbsplusplus.mixin;
 
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.client.BBSPrivateClipboard;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.graphics.window.Window;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -18,10 +20,46 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 这里仅在 BBS++ 私有剪贴板开关开启时拦截这些结构化数据，让回放、
  * 关键帧、形态、变换等复制内容留在游戏内部；普通字符串复制仍走系统剪贴板。
  * </p>
+ * <p>
+ * 私有剪贴板是可选功能：如果 {@link BBSPrivateClipboard} 因构建/安装不完整而无法加载，
+ * 这里捕获并永久回退到系统剪贴板，避免右键菜单（原版复制/粘贴会查询剪贴板）直接把游戏打崩。
+ * </p>
  */
 @Mixin(value = Window.class, remap = true)
 public class WindowClipboardMixin
 {
+    @Unique private static boolean bbspp$privateClipboardFailed;
+
+    @Unique
+    private static boolean bbspp$usePrivateClipboard()
+    {
+        if (bbspp$privateClipboardFailed)
+        {
+            return false;
+        }
+
+        try
+        {
+            return BBSPrivateClipboard.isEnabled();
+        }
+        catch (Throwable t)
+        {
+            bbspp$failPrivateClipboard(t);
+
+            return false;
+        }
+    }
+
+    @Unique
+    private static void bbspp$failPrivateClipboard(Throwable t)
+    {
+        if (!bbspp$privateClipboardFailed)
+        {
+            bbspp$privateClipboardFailed = true;
+            BBSPlusPlusMod.LOGGER.warn("[私有剪贴板] 不可用，已回退到系统剪贴板", t);
+        }
+    }
+
     /**
      * 注入目标：写入字符串到系统剪贴板之前。
      * 注入原因：普通文本复制代表系统剪贴板的当前内容已经变化。
@@ -30,9 +68,18 @@ public class WindowClipboardMixin
     @Inject(method = "setClipboard(Ljava/lang/String;)V", at = @At("HEAD"))
     private static void bbspp$clearPrivateClipboardOnStringCopy(String string, CallbackInfo ci)
     {
-        if (BBSPrivateClipboard.isEnabled())
+        if (!bbspp$usePrivateClipboard())
+        {
+            return;
+        }
+
+        try
         {
             BBSPrivateClipboard.clear();
+        }
+        catch (Throwable t)
+        {
+            bbspp$failPrivateClipboard(t);
         }
     }
 
@@ -44,10 +91,19 @@ public class WindowClipboardMixin
     @Inject(method = "setClipboard(Lmchorse/bbs_mod/data/types/BaseType;)V", at = @At("HEAD"), cancellable = true)
     private static void bbspp$copyDataToPrivateClipboard(BaseType data, CallbackInfo ci)
     {
-        if (BBSPrivateClipboard.isEnabled() && data != null)
+        if (data == null || !bbspp$usePrivateClipboard())
+        {
+            return;
+        }
+
+        try
         {
             BBSPrivateClipboard.copy(data);
             ci.cancel();
+        }
+        catch (Throwable t)
+        {
+            bbspp$failPrivateClipboard(t);
         }
     }
 
@@ -59,10 +115,19 @@ public class WindowClipboardMixin
     @Inject(method = "setClipboard(Lmchorse/bbs_mod/data/types/MapType;Ljava/lang/String;)V", at = @At("HEAD"), cancellable = true)
     private static void bbspp$copyVerifiedMapToPrivateClipboard(MapType data, String verificationKey, CallbackInfo ci)
     {
-        if (BBSPrivateClipboard.isEnabled() && data != null)
+        if (data == null || !bbspp$usePrivateClipboard())
+        {
+            return;
+        }
+
+        try
         {
             BBSPrivateClipboard.copy(data, verificationKey);
             ci.cancel();
+        }
+        catch (Throwable t)
+        {
+            bbspp$failPrivateClipboard(t);
         }
     }
 
@@ -74,9 +139,21 @@ public class WindowClipboardMixin
     @Inject(method = "getClipboardMap()Lmchorse/bbs_mod/data/types/MapType;", at = @At("HEAD"), cancellable = true)
     private static void bbspp$getPrivateClipboardMap(CallbackInfoReturnable<MapType> cir)
     {
-        if (BBSPrivateClipboard.isEnabled() && BBSPrivateClipboard.hasCurrentData())
+        if (!bbspp$usePrivateClipboard())
         {
-            cir.setReturnValue(BBSPrivateClipboard.getMap());
+            return;
+        }
+
+        try
+        {
+            if (BBSPrivateClipboard.hasCurrentData())
+            {
+                cir.setReturnValue(BBSPrivateClipboard.getMap());
+            }
+        }
+        catch (Throwable t)
+        {
+            bbspp$failPrivateClipboard(t);
         }
     }
 
@@ -88,9 +165,21 @@ public class WindowClipboardMixin
     @Inject(method = "getClipboardMap(Ljava/lang/String;)Lmchorse/bbs_mod/data/types/MapType;", at = @At("HEAD"), cancellable = true)
     private static void bbspp$getPrivateClipboardMapWithKey(String verificationKey, CallbackInfoReturnable<MapType> cir)
     {
-        if (BBSPrivateClipboard.isEnabled() && BBSPrivateClipboard.hasCurrentData())
+        if (!bbspp$usePrivateClipboard())
         {
-            cir.setReturnValue(BBSPrivateClipboard.getMap(verificationKey));
+            return;
+        }
+
+        try
+        {
+            if (BBSPrivateClipboard.hasCurrentData())
+            {
+                cir.setReturnValue(BBSPrivateClipboard.getMap(verificationKey));
+            }
+        }
+        catch (Throwable t)
+        {
+            bbspp$failPrivateClipboard(t);
         }
     }
 
@@ -102,9 +191,21 @@ public class WindowClipboardMixin
     @Inject(method = "getClipboardList()Lmchorse/bbs_mod/data/types/ListType;", at = @At("HEAD"), cancellable = true)
     private static void bbspp$getPrivateClipboardList(CallbackInfoReturnable<ListType> cir)
     {
-        if (BBSPrivateClipboard.isEnabled() && BBSPrivateClipboard.hasCurrentData())
+        if (!bbspp$usePrivateClipboard())
         {
-            cir.setReturnValue(BBSPrivateClipboard.getList());
+            return;
+        }
+
+        try
+        {
+            if (BBSPrivateClipboard.hasCurrentData())
+            {
+                cir.setReturnValue(BBSPrivateClipboard.getList());
+            }
+        }
+        catch (Throwable t)
+        {
+            bbspp$failPrivateClipboard(t);
         }
     }
 }

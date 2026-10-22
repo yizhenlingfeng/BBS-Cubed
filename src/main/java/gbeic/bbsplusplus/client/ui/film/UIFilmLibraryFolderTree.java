@@ -79,7 +79,7 @@ public class UIFilmLibraryFolderTree extends UIElement
 
             if (!FilmLibraryDefaultLocation.isFolder(row.path))
             {
-                menu.action(Icons.BOOKMARK, L10n.lang("bbspp.ui.film.library.set_default_open"), () -> FilmLibraryDefaultLocation.setFolder(row.path));
+                menu.action(Icons.FAVORITE, L10n.lang("bbspp.ui.film.library.set_default_open"), () -> FilmLibraryDefaultLocation.setFolder(row.path));
             }
 
             menu.action(Icons.REFRESH, L10n.lang("bbspp.ui.film.library.refresh"), this.actions::refresh);
@@ -163,6 +163,27 @@ public class UIFilmLibraryFolderTree extends UIElement
         return super.subMouseReleased(context);
     }
 
+    /**
+     * 返回鼠标位置下的文件夹行；根行返回空路径，不在树内或没有行时返回 {@code null}。
+     */
+    public DataPath bbspp$getDropFolder(UIContext context)
+    {
+        if (!(this.list instanceof IFilmLibraryPathList pathList) || !this.area.isInside(context))
+        {
+            return null;
+        }
+
+        List<FolderRow> rows = this.buildRows(pathList.bbspp$getFilmLibraryFolders());
+        int index = (int) ((context.mouseY - this.area.y + this.scroll.getScroll()) / ROW_HEIGHT);
+
+        if (index < 0 || index >= rows.size())
+        {
+            return null;
+        }
+
+        return rows.get(index).path;
+    }
+
     @Override
     public void render(UIContext context)
     {
@@ -175,6 +196,7 @@ public class UIFilmLibraryFolderTree extends UIElement
 
         List<FolderRow> rows = this.buildRows(pathList.bbspp$getFilmLibraryFolders());
         DataPath current = pathList.bbspp$getFilmLibraryFolder();
+        DataPath dropFolder = FilmLibraryDragDrop.isDragging(this.list) ? this.bbspp$getDropFolder(context) : null;
         FontRenderer font = context.batcher.getFont();
 
         this.scroll.setSize(rows.size());
@@ -204,11 +226,20 @@ public class UIFilmLibraryFolderTree extends UIElement
                 context.batcher.box(this.area.x, y, this.area.ex(), y + ROW_HEIGHT, Colors.A25 | BBSSettings.primaryColor.get());
             }
 
+            if (dropFolder != null && row.path.equals(dropFolder))
+            {
+                context.batcher.box(this.area.x, y, this.area.ex(), y + ROW_HEIGHT, Colors.A50 | BBSSettings.primaryColor.get());
+                context.batcher.outline(this.area.x, y, this.area.ex(), y + ROW_HEIGHT, Colors.A100 | BBSSettings.primaryColor.get());
+            }
+
             int indent = row.depth * INDENT;
             int iconX = this.area.x + indent + 10;
             int textX = this.area.x + indent + 24;
             int arrowX = this.area.ex() - 18;
             int centerY = y + ROW_HEIGHT / 2;
+            boolean defaultFolder = FilmLibraryDefaultLocation.isFolder(row.path);
+            Icon rowIcon = defaultFolder ? Icons.FAVORITE : Icons.FOLDER;
+            int iconColor = defaultFolder ? (Colors.A100 | BBSSettings.primaryColor.get()) : color;
 
             for (int depth = 0; depth < row.depth; depth++)
             {
@@ -224,7 +255,7 @@ public class UIFilmLibraryFolderTree extends UIElement
                 context.batcher.icon(arrow, color, arrowX, centerY, 0F, 0.5F);
             }
 
-            context.batcher.icon(Icons.FOLDER, color, iconX, centerY, 0.5F, 0.5F);
+            context.batcher.icon(rowIcon, iconColor, iconX, centerY, 0.5F, 0.5F);
 
             String label = row.root ? L10n.lang("bbspp.ui.film.library.root_folder").get() : row.path.getLast();
             int rightPadding = row.hasChildren || this.scroll.hasScrollbar() ? 22 : 4;

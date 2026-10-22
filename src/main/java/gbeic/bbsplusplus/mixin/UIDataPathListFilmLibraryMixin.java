@@ -1,5 +1,6 @@
 package gbeic.bbsplusplus.mixin;
 
+import gbeic.bbsplusplus.client.ui.film.FilmLibraryDefaultLocation;
 import gbeic.bbsplusplus.client.ui.film.IFilmLibraryPathList;
 import mchorse.bbs_mod.ui.dashboard.list.UIDataPathList;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -23,9 +24,9 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 /**
- * 为影片库中的路径列表补充完整路径搜索与名称降序排序。
+ * 影片库的路径列表扩展：完整路径搜索、名称排序、双击打开与拖拽启动。
  * <p>
- * 默认不改变 {@link UIDataPathList} 的行为，只有影片库显式开启模式后才生效，避免影响其它资源选择器。
+ * 默认不改变 {@link UIDataPathList} 的行为，仅在影片库模式下生效。
  * </p>
  */
 @Mixin(UIDataPathList.class)
@@ -36,12 +37,16 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
     @Shadow private DataPath previousPath;
 
     @Unique private boolean bbspp$filmLibraryMode;
+    @Unique private boolean bbspp$applyDefaultWhenFilled;
     @Unique private boolean bbspp$showFullPaths;
     @Unique private boolean bbspp$sortDescending;
     @Unique private boolean bbspp$showAllFilms = true;
     @Unique private final DataPath bbspp$currentFolder = new DataPath(true);
     @Unique private final Set<DataPath> bbspp$knownFolders = new HashSet<>();
     @Unique private String bbspp$selectAfterRefresh = "";
+    @Unique private long bbspp$lastClickTime;
+    @Unique private DataPath bbspp$lastClickPath;
+    @Unique private boolean bbspp$doubleClick;
 
     public UIDataPathListFilmLibraryMixin(Consumer<java.util.List<DataPath>> callback)
     {
@@ -52,6 +57,17 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
     public void bbspp$setFilmLibraryMode(boolean enabled)
     {
         this.bbspp$filmLibraryMode = enabled;
+
+        if (!enabled)
+        {
+            this.bbspp$applyDefaultWhenFilled = false;
+        }
+    }
+
+    @Override
+    public void bbspp$applyFilmLibraryDefaultWhenFilled()
+    {
+        this.bbspp$applyDefaultWhenFilled = true;
     }
 
     @Override
@@ -295,6 +311,77 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
         this.previousPath = null;
     }
 
+    /**
+     * 注入目标：{@link UIDataPathList#subMouseClicked(UIContext)} 开始处。
+     * 注入原因：原版对已选中的条目再次点击即打开；且条目点击不会经过 {@code UIItems.pressItem}，
+     * 无法生成拖拽 payload。
+     * 修改行为：单击仅选中并启动拖拽；同一行 300ms 内再次点击视为双击，由打开注入处理。
+     */
+    @Inject(method = "subMouseClicked", at = @At("HEAD"), remap = true)
+    private void bbspp$trackFilmLibraryClick(UIContext context, CallbackInfoReturnable<Boolean> cir)
+    {
+        if (!this.bbspp$filmLibraryMode || context.mouseButton != 0 || !this.area.isInside(context))
+        {
+            return;
+        }
+
+        int index = this.getIndexAtCursor(context);
+
+        if (!this.exists(index))
+        {
+            this.bbspp$doubleClick = false;
+
+            return;
+        }
+
+        DataPath item = this.list.get(index);
+        long now = System.currentTimeMillis();
+
+        this.bbspp$doubleClick = item.equals(this.bbspp$lastClickPath) && now - this.bbspp$lastClickTime <= 300;
+        this.bbspp$lastClickTime = now;
+        this.bbspp$lastClickPath = item.copy();
+
+        /* 双击的第二次按下会走 open，不再启动拖拽，避免打开影片后残留拖拽状态。 */
+        if (this.bbspp$doubleClick || item.folder)
+        {
+            return;
+        }
+
+        List<DataPath> payload = new ArrayList<>();
+
+        if (this.selection.isGroup() && this.selection.contains(item))
+        {
+            payload.addAll(this.selection.getItems());
+        }
+        else
+        {
+            payload.add(item);
+        }
+
+        this.drag.start(payload, context.mouseX, context.mouseY);
+    }
+
+    /**
+     * 影片库模式下只允许双击打开影片，单击仅保留选中。
+     */
+    @Inject(method = "open", at = @At("HEAD"), cancellable = true, remap = true)
+    private void bbspp$openFilmLibraryFilmOnDoubleClick(DataPath path, CallbackInfo ci)
+    {
+        if (!this.bbspp$filmLibraryMode)
+        {
+            return;
+        }
+
+        if (!this.bbspp$doubleClick)
+        {
+            ci.cancel();
+
+            return;
+        }
+
+        this.bbspp$doubleClick = false;
+    }
+
     @Unique
     private void bbspp$fillCurrentFilmLibraryView()
     {
@@ -368,8 +455,52 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
         if (this.bbspp$filmLibraryMode)
         {
             this.bbspp$captureKnownFilmLibraryFolders();
+
+            if (this.bbspp$applyDefaultWhenFilled)
+            {
+                this.bbspp$applyDefaultWhenFilled = false;
+                this.bbspp$applyDefaultFilmLibraryLocation();
+            }
+
             this.bbspp$fillCurrentFilmLibraryView();
         }
+    }
+
+    /**
+     * 注入目标：{@link UIDataPathList#setCurrentFile(String)} 返回后。
+     * 注入原因：打开/创建影片时原版会先 goTo 到该影片所在文件夹，并用文件夹视图重建列表，
+     * 这会冲掉影片库的「全部影片」或其他文件夹视图。
+     * 修改后的行为：影片库模式下重新套用当前影片库视图，并选中刚打开或创建的影片。
+     */
+    @Inject(method = "setCurrentFile", at = @At("TAIL"), remap = true)
+    private void bbspp$keepFilmLibraryViewAfterNavigation(String name, CallbackInfo ci)
+    {
+        if (!this.bbspp$filmLibraryMode || name == null)
+        {
+            return;
+        }
+
+        this.bbspp$selectAfterRefresh = name;
+        this.bbspp$fillCurrentFilmLibraryView();
+    }
+
+    @Unique
+    private void bbspp$applyDefaultFilmLibraryLocation()
+    {
+        DataPath folder = FilmLibraryDefaultLocation.getFolder();
+
+        if (FilmLibraryDefaultLocation.isAllFilms() || folder == null
+            || (!folder.strings.isEmpty() && !this.bbspp$getFilmLibraryFolders().contains(folder)))
+        {
+            this.bbspp$showAllFilms = true;
+            this.bbspp$currentFolder.copy(DataPath.EMPTY);
+
+            return;
+        }
+
+        this.bbspp$showAllFilms = false;
+        this.bbspp$currentFolder.copy(folder);
+        this.bbspp$currentFolder.folder = true;
     }
 
     /**
