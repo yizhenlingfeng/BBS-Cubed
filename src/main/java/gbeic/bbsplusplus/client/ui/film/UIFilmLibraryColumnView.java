@@ -82,11 +82,6 @@ public class UIFilmLibraryColumnView extends UIElement
         return this.support;
     }
 
-    public String getQuery()
-    {
-        return this.query;
-    }
-
     public void openRoot()
     {
         List<DataPath> paths = new ArrayList<>();

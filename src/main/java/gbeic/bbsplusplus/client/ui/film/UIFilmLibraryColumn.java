@@ -32,7 +32,6 @@ public class UIFilmLibraryColumn extends UIElement
     private final Area listArea = new Area();
     private final List<DataPath> folders = new ArrayList<>();
     private final List<DataPath> films = new ArrayList<>();
-    private final long born = System.currentTimeMillis();
     private final boolean searchMode;
     private final String query;
 
@@ -112,11 +111,6 @@ public class UIFilmLibraryColumn extends UIElement
     public boolean isSearchMode()
     {
         return this.searchMode;
-    }
-
-    public float getAppear()
-    {
-        return UIEase.inOutCubic(Math.min(1F, (System.currentTimeMillis() - this.born) / 180F));
     }
 
     public void rebuild()

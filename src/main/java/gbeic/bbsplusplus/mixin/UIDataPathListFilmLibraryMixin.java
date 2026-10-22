@@ -3,11 +3,9 @@ package gbeic.bbsplusplus.mixin;
 import gbeic.bbsplusplus.client.ui.film.FilmLibraryDefaultLocation;
 import gbeic.bbsplusplus.client.ui.film.IFilmLibraryPathList;
 import mchorse.bbs_mod.ui.dashboard.list.UIDataPathList;
-import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIList;
 import mchorse.bbs_mod.utils.DataPath;
 import mchorse.bbs_mod.utils.NaturalOrderComparator;
-import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -35,11 +33,9 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
 
     @Unique private boolean bbspp$filmLibraryMode;
     @Unique private boolean bbspp$applyDefaultWhenFilled;
-    @Unique private boolean bbspp$showFullPaths;
     @Unique private boolean bbspp$sortDescending;
     @Unique private final DataPath bbspp$currentFolder = new DataPath(true);
     @Unique private final Set<DataPath> bbspp$knownFolders = new HashSet<>();
-    @Unique private String bbspp$selectAfterRefresh = "";
     @Unique private int bbspp$filmLibraryRevision;
 
     public UIDataPathListFilmLibraryMixin(Consumer<java.util.List<DataPath>> callback)
@@ -68,49 +64,6 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
     public boolean bbspp$isFilmLibraryMode()
     {
         return this.bbspp$filmLibraryMode;
-    }
-
-    @Override
-    public void bbspp$filterFilmLibrary(String query)
-    {
-        if (!this.bbspp$filmLibraryMode)
-        {
-            this.filter(query);
-
-            return;
-        }
-
-        String normalized = query == null ? "" : query.trim().toLowerCase();
-
-        this.bbspp$showFullPaths = !normalized.isEmpty();
-        this.list.clear();
-
-        if (normalized.isEmpty())
-        {
-            this.bbspp$fillCurrentFilmLibraryView();
-        }
-        else
-        {
-            for (DataPath dataPath : this.hierarchy)
-            {
-                if (dataPath.folder)
-                {
-                    continue;
-                }
-
-                String full = dataPath.toString().toLowerCase();
-                String last = dataPath.getLast().toLowerCase();
-
-                if (full.contains(normalized) || last.contains(normalized))
-                {
-                    this.list.add(dataPath);
-                }
-            }
-        }
-
-        this.bbspp$clearFilmLibrarySelection();
-        this.sort();
-        this.update();
     }
 
     @Override
@@ -221,12 +174,6 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
     }
 
     @Override
-    public void bbspp$selectFilmLibraryAfterRefresh(String id)
-    {
-        this.bbspp$selectAfterRefresh = id == null ? "" : id;
-    }
-
-    @Override
     public boolean bbspp$isFilmLibraryFolderEmpty(DataPath folder)
     {
         if (folder == null)
@@ -313,25 +260,6 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
         this.update();
     }
 
-    @Override
-    public boolean bbspp$isFilmLibrarySortDescending()
-    {
-        return this.bbspp$sortDescending;
-    }
-
-    @Override
-    protected boolean subKeyPressed(UIContext context)
-    {
-        if (this.bbspp$filmLibraryMode && context.isPressed(GLFW.GLFW_KEY_ESCAPE) && this.isSelected())
-        {
-            this.bbspp$clearFilmLibrarySelection();
-
-            return true;
-        }
-
-        return super.subKeyPressed(context);
-    }
-
     @Unique
     private void bbspp$clearFilmLibrarySelection()
     {
@@ -353,21 +281,8 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
         }
 
         this.path.copy(this.bbspp$currentFolder);
-        this.bbspp$showFullPaths = false;
         this.bbspp$clearFilmLibrarySelection();
         this.sort();
-
-        if (!this.bbspp$selectAfterRefresh.isEmpty())
-        {
-            DataPath selected = new DataPath(this.bbspp$selectAfterRefresh);
-
-            if (this.list.contains(selected))
-            {
-                this.setCurrentScroll(selected);
-                this.bbspp$selectAfterRefresh = "";
-            }
-        }
-
         this.update();
     }
 
@@ -390,8 +305,8 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
 
     /**
      * 注入目标：{@link UIDataPathList#fill(Collection)} 返回后。
-     * 注入原因：原版填充后会回到根目录并把文件夹混入右侧列表；影片库需要由左侧树承担文件夹导航。
-     * 修改后的行为：影片库模式下刷新当前影片库视图，并隐藏右侧文件夹项。
+     * 注入原因：原版填充后会回到根目录；影片库只需要层级数据，列视图自行按文件夹分列。
+     * 修改后的行为：影片库模式下刷新隐藏列表，并递增列视图使用的版本号。
      */
     @Inject(method = "fill", at = @At("RETURN"), remap = true)
     private void bbspp$showFilmsAfterFill(Collection<String> hierarchy, CallbackInfo ci)
@@ -409,24 +324,6 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
             this.bbspp$fillCurrentFilmLibraryView();
             this.bbspp$filmLibraryRevision++;
         }
-    }
-
-    /**
-     * 注入目标：{@link UIDataPathList#setCurrentFile(String)} 返回后。
-     * 注入原因：打开/创建影片时原版会先 goTo 到该影片所在文件夹，并用文件夹视图重建列表，
-     * 这会冲掉影片库的「全部影片」或其他文件夹视图。
-     * 修改后的行为：影片库模式下重新套用当前影片库视图，并选中刚打开或创建的影片。
-     */
-    @Inject(method = "setCurrentFile", at = @At("TAIL"), remap = true)
-    private void bbspp$keepFilmLibraryViewAfterNavigation(String name, CallbackInfo ci)
-    {
-        if (!this.bbspp$filmLibraryMode || name == null)
-        {
-            return;
-        }
-
-        this.bbspp$selectAfterRefresh = name;
-        this.bbspp$fillCurrentFilmLibraryView();
     }
 
     @Unique
@@ -470,19 +367,5 @@ public abstract class UIDataPathListFilmLibraryMixin extends UIList<DataPath> im
 
             return this.bbspp$sortDescending ? -result : result;
         });
-    }
-
-    /**
-     * 注入目标：{@link UIDataPathList#elementToString(UIContext, int, DataPath)} 开始处。
-     * 注入原因：完整路径搜索结果只显示末端文件名会丢失目录语境。
-     * 修改后的行为：影片库路径搜索时显示完整路径，普通浏览仍显示当前文件夹内名称。
-     */
-    @Inject(method = "elementToString", at = @At("HEAD"), cancellable = true, remap = true)
-    private void bbspp$showFullPathWhenSearching(UIContext context, int i, DataPath element, CallbackInfoReturnable<String> cir)
-    {
-        if (this.bbspp$filmLibraryMode && this.bbspp$showFullPaths)
-        {
-            cir.setReturnValue(element.toString() + (element.folder ? "/" : ""));
-        }
     }
 }

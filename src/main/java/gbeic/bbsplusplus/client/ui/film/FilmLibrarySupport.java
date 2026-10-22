@@ -38,11 +38,6 @@ public class FilmLibrarySupport
         this.list = list;
     }
 
-    public UIDataDashboardPanel<?> getPanel()
-    {
-        return this.panel;
-    }
-
     public UIDataPathList getList()
     {
         return this.list;
@@ -177,16 +172,6 @@ public class FilmLibrarySupport
         }
 
         return true;
-    }
-
-    public DataPath getCurrentFolder()
-    {
-        if (this.list instanceof IFilmLibraryPathList pathList)
-        {
-            return pathList.bbspp$getFilmLibraryFolder();
-        }
-
-        return DataPath.EMPTY.copy();
     }
 
     public void rememberPhysicalFolders()
@@ -602,11 +587,5 @@ public class FilmLibrarySupport
         {
             UIUtils.openFolder(new File(root, folder == null ? "" : folder.toString()));
         }
-    }
-
-    public void refresh()
-    {
-        this.rememberPhysicalFolders();
-        this.panel.requestNames();
     }
 }

@@ -197,7 +197,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 * **Right-click empty folder space**: create a movie or subfolder in that folder
 * **Files inside columns**: subfolders on top, direct movies below, with a "+ Create Film" footer
 * **Shortcuts**: a leftmost shortcut column pins folders via right-click for quick access
-* **Animations**: column expansion, horizontal scrolling, and shortcut changes use ease-in-out transitions with BBSFS-native colors and row heights
+* **Animations**: column width scaling and horizontal scrolling use smooth transitions with BBSFS-native colors and row heights
 * **1.21.11 support**: all of the above is available on Minecraft 1.21.11
 
 #### 3.5.9 (New movie library rework)
