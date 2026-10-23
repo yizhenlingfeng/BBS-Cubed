@@ -90,6 +90,7 @@
 - 开关下方提供"光效颜色"取色器，可自定义流光颜色；默认白色为原版观感，透明度可同时调淡光效
 - 右键开关或取色器可选择"应用到子骨骼"，将状态扩散到该骨骼的全部子骨骼（含未编辑过的子骨骼）
 - 已知限制：Iris 光影包启用时流光暂不显示（关闭光影或仅在编辑器预览时正常）。原因是 Iris 对模组自定义核心 shader 存在原理性兼容限制，详见 Iris 文档 `docs/development/compatibility/core-shaders.md`
+- 兼容说明：若已安装注册 `bbs:cinematic` 的第三方模组（如 BBS Lezy / Better Camera Perspective），本模组不覆盖该剪辑，电影效果由对方提供。
 
 ### 结构与破坏魔杖增强
 

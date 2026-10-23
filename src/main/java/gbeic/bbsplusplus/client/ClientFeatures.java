@@ -122,8 +122,16 @@ public final class ClientFeatures {
             UIClip.register(HotbarClip.class, UIHotbarClip::new);
             LOGGER.info("[FSloveCML] UIHotbarClip 注册成功!");
 
-            UIClip.register(CinematicClip.class, UICinematicClip::new);
-            LOGGER.info("[FSloveCML] UICinematicClip 注册成功!");
+            if (BBSMod.getFactoryCameraClips() != null
+                && BBSMod.getFactoryCameraClips().getTypeClass(Link.bbs("cinematic")) == CinematicClip.class)
+            {
+                UIClip.register(CinematicClip.class, UICinematicClip::new);
+                LOGGER.info("[FSloveCML] UICinematicClip 注册成功!");
+            }
+            else
+            {
+                LOGGER.info("[FSloveCML] bbs:cinematic 由其它模组提供，跳过 UICinematicClip，避免覆盖");
+            }
 
             UIClip.register(ReplayClip.class, UIReplayClip::new);
             LOGGER.info("[FSloveCML] UIReplayClip 注册成功!");

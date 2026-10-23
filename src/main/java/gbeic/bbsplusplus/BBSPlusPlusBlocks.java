@@ -11,6 +11,9 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.util.Identifier;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * BBSPlusPlusBlocks
  *
@@ -47,39 +50,41 @@ public class BBSPlusPlusBlocks
     public static final BlockItem EMISSIVE_CHROMA_BLACK_BLOCK_ITEM = new BlockItem(EMISSIVE_CHROMA_BLACK_BLOCK, new Item.Settings());
     public static final BlockItem EMISSIVE_CHROMA_WHITE_BLOCK_ITEM = new BlockItem(EMISSIVE_CHROMA_WHITE_BLOCK, new Item.Settings());
 
+    private static final String NS = "bbs";
+
     public static void register()
     {
-        // 注册到 bbs 命名空间，以便直接复用模型文件和语言键
-        String ns = "bbs";
-        
-        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_red"), EMISSIVE_CHROMA_RED_BLOCK);
-        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_green"), EMISSIVE_CHROMA_GREEN_BLOCK);
-        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_blue"), EMISSIVE_CHROMA_BLUE_BLOCK);
-        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_cyan"), EMISSIVE_CHROMA_CYAN_BLOCK);
-        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_magenta"), EMISSIVE_CHROMA_MAGENTA_BLOCK);
-        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_yellow"), EMISSIVE_CHROMA_YELLOW_BLOCK);
-        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_black"), EMISSIVE_CHROMA_BLACK_BLOCK);
-        Registry.register(Registries.BLOCK, Identifier.of(ns, "emissive_chroma_white"), EMISSIVE_CHROMA_WHITE_BLOCK);
+        List<BlockItem> registered = new ArrayList<>();
 
-        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_red"), EMISSIVE_CHROMA_RED_BLOCK_ITEM);
-        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_green"), EMISSIVE_CHROMA_GREEN_BLOCK_ITEM);
-        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_blue"), EMISSIVE_CHROMA_BLUE_BLOCK_ITEM);
-        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_cyan"), EMISSIVE_CHROMA_CYAN_BLOCK_ITEM);
-        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_magenta"), EMISSIVE_CHROMA_MAGENTA_BLOCK_ITEM);
-        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_yellow"), EMISSIVE_CHROMA_YELLOW_BLOCK_ITEM);
-        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_black"), EMISSIVE_CHROMA_BLACK_BLOCK_ITEM);
-        Registry.register(Registries.ITEM, Identifier.of(ns, "emissive_chroma_white"), EMISSIVE_CHROMA_WHITE_BLOCK_ITEM);
+        registerChroma(registered, "red", EMISSIVE_CHROMA_RED_BLOCK, EMISSIVE_CHROMA_RED_BLOCK_ITEM);
+        registerChroma(registered, "green", EMISSIVE_CHROMA_GREEN_BLOCK, EMISSIVE_CHROMA_GREEN_BLOCK_ITEM);
+        registerChroma(registered, "blue", EMISSIVE_CHROMA_BLUE_BLOCK, EMISSIVE_CHROMA_BLUE_BLOCK_ITEM);
+        registerChroma(registered, "cyan", EMISSIVE_CHROMA_CYAN_BLOCK, EMISSIVE_CHROMA_CYAN_BLOCK_ITEM);
+        registerChroma(registered, "magenta", EMISSIVE_CHROMA_MAGENTA_BLOCK, EMISSIVE_CHROMA_MAGENTA_BLOCK_ITEM);
+        registerChroma(registered, "yellow", EMISSIVE_CHROMA_YELLOW_BLOCK, EMISSIVE_CHROMA_YELLOW_BLOCK_ITEM);
+        registerChroma(registered, "black", EMISSIVE_CHROMA_BLACK_BLOCK, EMISSIVE_CHROMA_BLACK_BLOCK_ITEM);
+        registerChroma(registered, "white", EMISSIVE_CHROMA_WHITE_BLOCK, EMISSIVE_CHROMA_WHITE_BLOCK_ITEM);
 
         // 添加到 bbs 的创造模式物品栏中
-        ItemGroupEvents.modifyEntriesEvent(RegistryKey.of(RegistryKeys.ITEM_GROUP, Identifier.of("bbs", "main"))).register(content -> {
-            content.add(EMISSIVE_CHROMA_RED_BLOCK_ITEM);
-            content.add(EMISSIVE_CHROMA_GREEN_BLOCK_ITEM);
-            content.add(EMISSIVE_CHROMA_BLUE_BLOCK_ITEM);
-            content.add(EMISSIVE_CHROMA_CYAN_BLOCK_ITEM);
-            content.add(EMISSIVE_CHROMA_MAGENTA_BLOCK_ITEM);
-            content.add(EMISSIVE_CHROMA_YELLOW_BLOCK_ITEM);
-            content.add(EMISSIVE_CHROMA_BLACK_BLOCK_ITEM);
-            content.add(EMISSIVE_CHROMA_WHITE_BLOCK_ITEM);
-        });
+        ItemGroupEvents.modifyEntriesEvent(RegistryKey.of(RegistryKeys.ITEM_GROUP, Identifier.of("bbs", "main"))).register(content -> registered.forEach(content::add));
+    }
+
+    /**
+     * 注册一组发光方块与物品，并在注册前检查 ID 是否已被 BBS 或其它模组占用。
+     * 若冲突则整组跳过，避免 Registry 重复键崩溃或物品栏引用未注册物品。
+     */
+    private static void registerChroma(List<BlockItem> registered, String name, Block block, BlockItem item)
+    {
+        Identifier id = Identifier.of(NS, "emissive_chroma_" + name);
+
+        if (Registries.BLOCK.containsId(id) || Registries.ITEM.containsId(id))
+        {
+            BBSPlusPlusMod.LOGGER.warn("[BBS Cubed] 方块/物品 {} 已存在，跳过发光色块注册", id);
+            return;
+        }
+
+        Registry.register(Registries.BLOCK, id, block);
+        Registry.register(Registries.ITEM, id, item);
+        registered.add(item);
     }
 }

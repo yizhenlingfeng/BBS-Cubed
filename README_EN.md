@@ -90,6 +90,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 - A "Glint color" picker below the toggle customizes the glow color; white matches vanilla, and the alpha slider dims the effect
 - Right-click the toggle or picker to choose "Apply to children", propagating the state to all descendant bones (including unedited ones)
 - Known limitation: the glint does not render while an Iris shader pack is active (it works with shaders off and in the editor preview). This is a fundamental compatibility limitation of Iris regarding mod-provided core shaders; see `docs/development/compatibility/core-shaders.md`
+- Compatibility: if another mod already registers `bbs:cinematic` (e.g. BBS Lezy / Better Camera Perspective), this mod does not override that clip and the cinematic effect is provided by the other mod.
 
 ### Structure & Destruction Wand Enhancements
 

@@ -1161,6 +1161,42 @@ BBS 2.7 的官方 addon API 已有 **11 个通用事件 + 30 个客户端事件*
 - 核心 `bbsplusplus.mixins.json`（129 条）的 `defaultRequire` 仍为 0，需按目标稳定性分批收紧。
 - AAA 多人服务器同步：当前仅集成服务器本地触发，远程服务器无本模组。
 
+### D.7 注册 ID 守卫与命名空间结论（完成）
+
+**1. 注册前冲突检查**
+
+- 剪辑：`registerClip` 先查 `MapFactory#getTypeClass(Link)`，已存在则 warn + 跳过。
+- 表单：`registerForm` 先查 `FormArchitect#getTypeClass(Link)`，覆盖 Fluid / AAA / ItemSpray。
+- 方块/物品：`registerChroma` 先查 `Registries.BLOCK/ITEM.containsId`，冲突时整组跳过，
+  物品栏只添加真正注册成功的条目。
+- 客户端 UI：`bbs:cinematic` 若被其它模组占用，同时跳过 `UICinematicClip`，避免"类未注册但 UI 仍注册"的半状态。
+
+**2. 实测发现的真实冲突**
+
+1.20.1 dev 环境同时安装了注册 `bbs:cinematic` 的第三方模组
+（`bbslezy.camera.clips.screen.CinematicClip`，来自 BBS Lezy / Better Camera Perspective）。
+旧代码会静默覆盖对方；现在让位并输出明确 WARN，README 增加兼容说明。
+这是本轮守卫最有价值的实际收益。
+
+**3. `bbs/` namespace 结论**
+
+保留现有 `bbs` 命名空间（影片剪辑类型、模型方块、结构资源均依赖它）；不做批量迁移，
+以免破坏已保存影片/结构。冲突改由注册前检查解决；仅新增资源优先使用 `bbsplusplus`。
+
+**4. require 收紧范围**
+
+`bbspp-fslovecml.mixins.json`（8 条，全部核心目标）已设为 `defaultRequire: 1`；
+`bbsplusplus.mixins.json` 的 129 条包含大量可选/版本相关目标，仍保持 0，按 D.7.1 分批处理。
+
+**验证**：三套 clean 构建通过；1.20.1 启动正常，日志显示 Hotbar/Replay/Fluid/AAA/ItemSpray
+注册成功、`bbs:cinematic` 冲突明确警告并跳过、无 `bbsplusplus` ERROR；1.21.11 构建通过且此前 smoke 正常。
+
+#### D.7.1 待办
+
+- 核心 `bbsplusplus.mixins.json`（129 条）的 `defaultRequire` 按目标分批收紧。
+- AAA 多人服务器同步（当前仅集成服务器本地触发）。
+- `FluidFormRenderer` 双版本合并（P6 版本隔离阶段）。
+
 <!-- 后续阶段完成后在此继续追加 D.2.x / D.3 … -->
 
 ---
