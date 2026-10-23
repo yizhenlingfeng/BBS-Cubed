@@ -33,8 +33,10 @@ public final class ModelTextureGradeShader
     private static final Variant[] VARIANTS = {
         new Variant("model_texture_grade", VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL),
         new Variant("block_texture_grade", VertexFormats.POSITION_COLOR_TEXTURE_LIGHT_NORMAL),
+        /* text_texture_grade 的 POSITION_COLOR_TEXTURE_LIGHT 与 unshaded 的
+         * POSITION_TEXTURE_LIGHT_COLOR 在 VertexFormat.equals 下相等，且两份 vsh 仅声明顺序不同；
+         * 共用 unshaded 变体即可，避免 HashMap 键合并导致少一个条目。 */
         new Variant("unshaded_texture_grade", VertexFormats.POSITION_TEXTURE_LIGHT_COLOR),
-        new Variant("text_texture_grade", VertexFormats.POSITION_COLOR_TEXTURE_LIGHT),
         new Variant("trail_texture_grade", VertexFormats.POSITION_TEXTURE)
     };
     private static boolean attempted;
@@ -129,7 +131,7 @@ public final class ModelTextureGradeShader
             }
             catch (IOException | RuntimeException e)
             {
-                BBSPlusPlusMod.LOGGER.error("[FSloveCML] 无法创建纹理调色 shader: " + variant.name, e);
+                BBSPlusPlusMod.LOGGER.error("[FSloveCML] texture grade shader failed: " + variant.name, e);
             }
         }
 
@@ -346,7 +348,15 @@ public final class ModelTextureGradeShader
         {
             if (id.getPath().contains("/core/"))
             {
-                return this.manager.getResource(Identifier.of(BBSPlusPlusMod.MOD_ID, id.getPath()));
+                Optional<Resource> resource = this.manager.getResource(Identifier.of(BBSPlusPlusMod.MOD_ID, id.getPath()));
+
+                if (resource.isEmpty())
+                {
+                    /* 历史资源仍在 assets/bbspp 下；MOD_ID 为 bbsplusplus，两者都要兼容。 */
+                    resource = this.manager.getResource(Identifier.of("bbspp", id.getPath()));
+                }
+
+                return resource;
             }
 
             return this.manager.getResource(id);

@@ -1221,6 +1221,30 @@ Dashboard 的 `morphing / film / model blocks / particles / model editor / textu
 **教训**：只验证到主菜单不会触发 `film` 面板的 `UIReplayList` 类加载；后续 smoke 必须包含
 "进入世界 → Dashboard film 面板构建" 这一路径。
 
+### D.9 纹理调色 shader 资源修复（完成）
+
+**症状**：进入世界后物品栏渲染模型方块时，5 个 `shaders/core/*_texture_grade.json` 全部
+`FileNotFoundException`，`纹理材质 shader 变体加载完成: 0/5`。
+
+**根因**：
+
+1. `AddonResourceFactory` 只查 `bbsplusplus:shaders/core/...`，而 shader 资源实际在
+   `assets/bbspp/shaders/core/...`（历史 namespace 仍保留），所以全部找不到。
+2. 修复 namespace 回退后为 4/5：`text_texture_grade`（`POSITION_COLOR_TEXTURE_LIGHT`）与
+   `unshaded_texture_grade`（`POSITION_TEXTURE_LIGHT_COLOR`）在 `VertexFormat.equals` 下相等，
+   `HashMap` 把两个 shader 合并成一个键，并非加载失败。
+
+**修复**：
+
+- `getResource` 先查 `bbsplusplus`，空则回退 `bbspp`。
+- 删除冗余的 `text_texture_grade` 变体与资源；`unshaded` 的 vsh 与 text 版仅属性声明顺序不同，
+  且按属性名绑定，可共用。
+- 变体数 5 → 4，日志改为真实的 `4/4`；失败日志统一为英文，避免编码乱码。
+
+**验证**：三套 clean 构建通过；1.20.1 `--quickPlaySingleplayer` 进入实际世界，
+`纹理材质 shader 变体加载完成: 4/4`，无 `FileNotFoundException` / `无法创建纹理调色 shader`；
+jar 内 shader 资源确认位于 `assets/bbspp/shaders/core/`。
+
 <!-- 后续阶段完成后在此继续追加 D.2.x / D.3 … -->
 
 ---
