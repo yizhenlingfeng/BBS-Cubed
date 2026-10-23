@@ -75,7 +75,6 @@ public class UIFilmLibraryColumn extends UIElement
                 {
                     menu.action(Icons.EDIT, UIKeys.PANELS_MODALS_RENAME_FOLDER_TITLE, () -> this.view.support().renameFolder(this.contextPath));
 
-                    /* 不再套二级菜单：移除动作直接出现在文件夹右键菜单里。 */
                     menu.action(Icons.REMOVE, L10n.lang("bbspp.ui.film.library.remove_from_library"), () -> this.view.support().removeFolder(this.contextPath));
 
                     if (this.view.support().getList() instanceof IFilmLibraryPathList pathList
