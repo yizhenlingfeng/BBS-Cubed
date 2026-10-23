@@ -151,6 +151,10 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 | Improved texture manager           | Adds grid mode and thumbnails                                                                                                                     |
 | vfx plugin localization & enhancements | Localization and enhancements for the vfx plugin                                                                                             |
 | Replay category operations         | Multi-select drag and category renaming                                                                                                           |
+| Replay editor track order unlock   | The track list gains a lock button above it: unlock to drag track rows into a new order (within the same level and group, parent rows carry their subtree); the order is saved automatically; right-click the button to restore the default order |
+| Preview toolbar tool overflow      | A hamburger overflow button is fixed at the right end of the toolbar below the preview window: hovering expands the stowed tools upward (with a slide animation), left-click pins/unpins (pinned shows a selection marker), right-click chooses which tools to stow (one-click restore all); stowed tools are hidden from the bar and their mirror buttons behave exactly like the originals; the state is saved automatically |
+| Movie library interface rework     | The library column view now matches the BBSFS native card style: card-like columns (drop shadow, raised panel and divider outline, accent bar on the active column), sunken top/bottom bars, unified row hover/selection/drop styling, horizontal scrollbar and drag-follow card colors, and a dark fade at the bottom of lists |
+| Movie library remove menu          | Right-click "Remove folder" now opens a submenu: "Remove from library" only hides the folder from the library view (files untouched); empty folders additionally offer "Remove this folder" for physical deletion (with confirmation); after either removal the columns expanded into that folder collapse automatically |
 | Undo history panel improvement     | More readable operation summaries; wider history popup                                                                                            |
 | Shader curve selection UI          | Improved interaction and layout of the shader curve picker                                                                                        |
 | Disable Ctrl+B screen reader       | Blocks the vanilla Ctrl+B screen-recap shortcut                                                                                                   |
@@ -190,13 +194,13 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 
 ### Mod Changelog
 
-#### 3.6.0 (Horizontal folder columns + shortcuts)
+#### 3.6.0 (Horizontal folder columns + shortcuts + track order unlock + tool overflow)
+* **Preview toolbar tool overflow**: a hamburger "tool overflow" button is fixed at the right end of the toolbar below the preview window. Hovering expands the stowed tools upward (with a slide animation that retracts when the mouse leaves); left-click pins/unpins, and a pinned button shows a selection marker; right-click opens a checklist of which tools to stow, with one-click restore of all. Stowed tools are hidden from the bar, which re-centers automatically; the mirror buttons in the expanded bar match the originals exactly in icons (including dynamic ones like play/pause), left-click actions, and right-click menus. With "auto-hide" enabled, hovering the expanded bar also counts as the toolbar; the stow state is saved automatically and restored when the film editor reopens
+* **Replay editor track order unlock**: the track list's bottom-left button column (above "Expand/collapse all groups") gains a lock button whose icon shows the lock state in real time. Once unlocked, track rows can be dragged in the name column to reorder — an insertion indicator is shown while dragging and the order is saved on release, surviving category/replay switches and game restarts. Rows are limited to moving within the same level and group, and dragging a parent row carries the whole subtree; right-clicking the button offers "Restore default order"; normal clicks on track rows (insert keyframe, fold toggle) are unaffected
 * **Removed the right movie list**: movies and subfolders now live entirely inside their columns
-* **Removed "All Films"**: the root column is the only entry point, and movies can be created directly in the root
 * **Expand to the right**: clicking a folder adds a child column, recursively; when columns exceed the available width they all shrink proportionally, with horizontal scrolling only after the minimum width
-* **Right-click empty folder space**: create a movie or subfolder in that folder
-* **Files inside columns**: subfolders on top, direct movies below, with a "+ Create Film" footer
 * **Shortcuts**: a leftmost shortcut column pins folders via right-click for quick access
+* **Movie library interface rework**: the column view now matches the BBSFS native card style — card-like columns (drop shadow, raised panel and divider outline, accent bar on the active column), sunken top/bottom bars, unified row hover/selection/drop styling, horizontal scrollbar and drag-follow card colors, and a dark fade at the bottom of lists
 * **Animations**: column width scaling and horizontal scrolling use smooth transitions with BBSFS-native colors and row heights
 * **1.21.11 support**: all of the above is available on Minecraft 1.21.11
 
