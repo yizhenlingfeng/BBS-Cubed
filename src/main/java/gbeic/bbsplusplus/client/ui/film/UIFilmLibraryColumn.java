@@ -336,6 +336,7 @@ public class UIFilmLibraryColumn extends UIElement
 
         if (this.isFolder(path))
         {
+            this.selected = path;
             this.view.openFolder(this, path);
         }
         else
