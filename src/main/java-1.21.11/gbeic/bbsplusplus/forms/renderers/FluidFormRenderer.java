@@ -2,12 +2,11 @@ package gbeic.bbsplusplus.forms.renderers;
 
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.film.BaseFilmController;
 import mchorse.bbs_mod.film.FilmMatrices;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.renderers.FormRenderer;
-import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.forms.ITickable;
 import mchorse.bbs_mod.forms.entities.IEntity;
@@ -26,7 +25,6 @@ import mchorse.bbs_mod.utils.colors.Colors;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gl.UniformType;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
@@ -43,7 +41,6 @@ import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
 public class FluidFormRenderer extends FormRenderer<FluidForm> implements ITickable
 {
@@ -52,45 +49,16 @@ public class FluidFormRenderer extends FormRenderer<FluidForm> implements ITicka
     /* ----------------------------------------------------------------------------------------
      * 1.21.11 render: RenderSystem.setShader + BufferRenderer.drawWithGlobalProgram were removed.
      * Immediate-mode geometry is now built into a BufferBuilder, finished into a BuiltBuffer and
-     * submitted through a RenderLayer carrying a RenderPipeline. This BBS-owned pipeline uses the
-     * same bbs:core/model shader as ModelForm, but with TRIANGLES draw mode and no cull (the old
-     * code called RenderSystem.disableCull()).
+     * submitted through a RenderLayer carrying a RenderPipeline.
+     *
+     * 关键：不要自己手搓 RenderPipeline。BBS 2.7 已经把“模型着色器 + 采样器 + Lighting UBO”
+     * 封装进 BBSShaders，getBoundModelLayer() 返回使用“当前已 bind 的纹理”的那一层，
+     * 因此沿用 1.20.x 的 bindTexture 流程即可；手搓 pipeline 会因为 Sampler0 未绑定、
+     * Lighting UBO 为 0 而把模型画成全黑（光照点乘后颜色被清零）。
      * ---------------------------------------------------------------------------------------- */
-    private static final RenderPipeline FLUID_PIPELINE = RenderPipelines.register(
-        RenderPipeline.builder()
-            .withLocation(Identifier.of(BBSMod.MOD_ID, "pipeline/fluid"))
-            .withVertexShader(Identifier.of(BBSMod.MOD_ID, "core/model"))
-            .withFragmentShader(Identifier.of(BBSMod.MOD_ID, "core/model"))
-            .withVertexFormat(VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL, VertexFormat.DrawMode.TRIANGLES)
-            .withBlend(BlendFunction.TRANSLUCENT)
-            .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
-            .withDepthWrite(true)
-            .withCull(false)
-            .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
-            .withUniform("Projection", UniformType.UNIFORM_BUFFER)
-            .withUniform("Fog", UniformType.UNIFORM_BUFFER)
-            .withUniform("Lighting", UniformType.UNIFORM_BUFFER)
-            .withSampler("Sampler0")
-            .withSampler("Sampler1")
-            .withSampler("Sampler2")
-            .build()
-    );
-
-    private static RenderLayer fluidLayer;
-
     private static RenderLayer getFluidLayer()
     {
-        if (fluidLayer == null)
-        {
-            RenderSetup.Builder setup = RenderSetup.builder(FLUID_PIPELINE)
-                .translucent()
-                .useLightmap()
-                .useOverlay();
-
-            fluidLayer = RenderLayer.of(BBSMod.MOD_ID + "_fluid", setup.build());
-        }
-
-        return fluidLayer;
+        return BBSShaders.getBoundModelLayer();
     }
 
     /* Debug lines pipeline: simple POSITION_COLOR / LINES, no depth test */

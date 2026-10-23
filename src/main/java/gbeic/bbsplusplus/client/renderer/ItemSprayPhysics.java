@@ -227,7 +227,7 @@ final class ItemSprayPhysics
             return null;
         }
 
-        net.minecraft.entity.Entity cameraEntity = MinecraftClient.getInstance().cameraEntity;
+        net.minecraft.entity.Entity cameraEntity = MinecraftClient.getInstance().getCameraEntity();
 
         if (cameraEntity == null)
         {
