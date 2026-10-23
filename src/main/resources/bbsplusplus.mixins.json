@@ -128,8 +128,10 @@
         "client.TransformGestureBlockbenchMixin",
         "ModelConfigLimbCullingMixin",
         "CubicVAORendererLimbCullingMixin",
-        "UIModelConfigEditorLimbCullingMixin"
-            ],
+        "UIModelConfigEditorLimbCullingMixin",
+        "client.UIKeyframeDopeSheetAccessor",
+        "client.UIKeyframeDopeSheetMixin"
+    ],
     "injectors": {
         "defaultRequire": 0
     }

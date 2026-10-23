@@ -157,4 +157,7 @@ public class BBSAddonsSettings
     /** 伪装界面图标缩放百分比：20~200，默认100 */
     public static ValueInt morphingIconScale;
 
+    /** 回放编辑器自定义轨道顺序：filterKey 有序列表（逗号分隔），空 = 目录默认顺序 */
+    public static ValueString replayTrackOrder;
+
 }
