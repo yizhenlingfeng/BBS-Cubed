@@ -1,5 +1,6 @@
-package gbeic.bbsplusplus;
+package gbeic.bbsplusplus.client;
 
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.clips.HotbarClip;
 import gbeic.bbsplusplus.clips.ReplayClip;
 import gbeic.bbsplusplus.clips.screen.CinematicClip;
@@ -28,7 +29,6 @@ import mchorse.bbs_mod.ui.forms.editors.UIFormEditor;
 import mchorse.bbs_mod.ui.framework.elements.utils.UILabel;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
-import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,14 +36,17 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 
 /**
- * BBS FSloveCML Client - 注册客户端 UI 组件与 addon 翻译/源包。
+ * BBS Cubed 客户端功能注册器（非 entrypoint）。
  *
- * <p>BBS(2.5) 的 BBSModClient 通过 Fabric "bbs-client-addon" 入口加载 client addon
- * （即 BBSPlusPlusClientAddon，见 fabric.mod.json），无需再手动 events.register。
- * 本类保留翻译/源包的双保险注册：早于 MC 的 LanguageManager.reload 直接注册，
- * 无论 addon 何时加载都不会错过 l10n 重载。</p>
+ * <p>由唯一客户端入口 {@link BBSPlusPlusModClient#onInitializeClient()} 调用，负责
+ * 自有 assets 包、addon 翻译、剪辑 UI、流体表单、原版粒子配色、Value 工厂与 Premiere tick。
+ * 翻译注册同时服务 {@code BBSPlusPlusClientAddon} 的 {@code RegisterL10nEvent}：事件可能
+ * 早于资源包注册，此时延迟，待 {@link #initialize()} 后再次加载。</p>
  */
-public class BBSPlusPlusClient implements ClientModInitializer {
+public final class ClientFeatures {
+    private ClientFeatures()
+    {}
+
     public static final Logger LOGGER = LoggerFactory.getLogger(BBSPlusPlusMod.MOD_ID + "_client");
     private static L10n registeredL10n;
 
@@ -52,8 +55,8 @@ public class BBSPlusPlusClient implements ClientModInitializer {
             return;
         }
 
-        /* BBS 的 RegisterL10nEvent 可能早于本模组的 client 入口执行；此时自有 assets 包尚未注册，
-         * 直接 reload 只会打印一堆 FileNotFoundException。等 onInitializeClient 注册资源包后会再次调用。 */
+        /* BBS 的 RegisterL10nEvent 可能早于本模组的客户端初始化；此时自有 assets 包尚未注册，
+         * 直接 reload 只会打印一堆 FileNotFoundException。等 initialize() 注册资源包后会再次调用。 */
         if (!hasLanguageFile(Link.assets("bbspp/strings/en_us.json"))) {
             LOGGER.debug("[FSloveCML] 自有资源包尚未注册，延迟加载 addon 翻译");
             return;
@@ -94,8 +97,7 @@ public class BBSPlusPlusClient implements ClientModInitializer {
         }
     }
 
-    @Override
-    public void onInitializeClient() {
+    public static void initialize() {
         LOGGER.info("[FSloveCML] 客户端初始化开始...");
 
         try {
@@ -103,7 +105,7 @@ public class BBSPlusPlusClient implements ClientModInitializer {
              * 用本类 classloader 读 jar内 assets/bbspp/strings/<lang>.json，
              * 避免主 InternalAssetsSourcePack 用主 mod classloader 读 assets/bbs/assets/... 时
              * 与主 jar 同路径 zh_cn.json 先命中、盖掉本 addon 新增翻译键。 */
-            BBSMod.getProvider().register(new InternalAssetsSourcePack(Link.ASSETS, "assets", BBSPlusPlusClient.class));
+            BBSMod.getProvider().register(new InternalAssetsSourcePack(Link.ASSETS, "assets", ClientFeatures.class));
 
             /* 注册 addon 自有 namespace 的翻译提供者（path 与主 bbs strings 不重叠）。
              * 注册后立即 reload；若此时 BBS 尚未创建 L10n，RegisterL10nEvent 会补注册。 */
@@ -187,7 +189,7 @@ public class BBSPlusPlusClient implements ClientModInitializer {
         Class<?> formCls = Class.forName(formClassName);
         Class<?> factoryInterface = Class.forName("mchorse.bbs_mod.forms.FormUtilsClient$IFormRendererFactory");
         Object factory = java.lang.reflect.Proxy.newProxyInstance(
-            BBSPlusPlusClient.class.getClassLoader(),
+            ClientFeatures.class.getClassLoader(),
             new Class<?>[]{factoryInterface},
             (proxy, method, args) -> {
                 if (method.getName().equals("create")) {

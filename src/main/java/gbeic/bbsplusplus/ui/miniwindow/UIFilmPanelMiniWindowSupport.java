@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.ui.miniwindow;
 
-import gbeic.bbsplusplus.BBSPlusPlusClient;
+import gbeic.bbsplusplus.client.ClientFeatures;
 import gbeic.bbsplusplus.api.UIClipsPanelAccessor;
 import gbeic.bbsplusplus.api.UIFilmPanelLayoutAccessor;
 import gbeic.bbsplusplus.api.UIDockLayoutAccessor;
@@ -198,7 +198,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
                 }
                 catch (Throwable t)
                 {
-                    BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 面板 {} 转小窗失败", panelId, t);
+                    ClientFeatures.LOGGER.warn("[MiniWindow] 面板 {} 转小窗失败", panelId, t);
                 }
             });
         });
@@ -235,7 +235,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         }
         catch (Throwable t)
         {
-            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] showPanel 后同步浮动小窗失败", t);
+            ClientFeatures.LOGGER.warn("[MiniWindow] showPanel 后同步浮动小窗失败", t);
         }
     }
 
@@ -594,12 +594,12 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
             catch (Throwable t)
             {
                 /* 预期内:控制器可能尚未就绪,只记录调试日志 */
-                BBSPlusPlusClient.LOGGER.debug("[MiniWindow] 同步停止 filmController.orbit 失败", t);
+                ClientFeatures.LOGGER.debug("[MiniWindow] 同步停止 filmController.orbit 失败", t);
             }
         }
         catch (Throwable t)
         {
-            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 监视器小窗释放事件转发 orbitUI 失败", t);
+            ClientFeatures.LOGGER.warn("[MiniWindow] 监视器小窗释放事件转发 orbitUI 失败", t);
         }
     }
 
@@ -624,7 +624,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         }
         catch (Throwable t)
         {
-            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 监视器小窗点击转发 orbitUI 失败", t);
+            ClientFeatures.LOGGER.warn("[MiniWindow] 监视器小窗点击转发 orbitUI 失败", t);
         }
 
         return false;
@@ -643,7 +643,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         }
         catch (Throwable t)
         {
-            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 监视器小窗滚轮转发 orbitUI 失败", t);
+            ClientFeatures.LOGGER.warn("[MiniWindow] 监视器小窗滚轮转发 orbitUI 失败", t);
             return false;
         }
     }
@@ -724,7 +724,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         }
         catch (Throwable t)
         {
-            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 维持浮动时间线可见性失败", t);
+            ClientFeatures.LOGGER.warn("[MiniWindow] 维持浮动时间线可见性失败", t);
         }
     }
 
@@ -779,7 +779,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         }
         catch (Throwable t)
         {
-            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 设置检查器互斥可见性失败", t);
+            ClientFeatures.LOGGER.warn("[MiniWindow] 设置检查器互斥可见性失败", t);
         }
     }
 
@@ -860,7 +860,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         }
         catch (Throwable t)
         {
-            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 重挂回放关键帧检查器到 editArea 失败", t);
+            ClientFeatures.LOGGER.warn("[MiniWindow] 重挂回放关键帧检查器到 editArea 失败", t);
         }
     }
 
@@ -894,7 +894,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         }
         catch (Throwable t)
         {
-            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 重挂片段检查器到 editArea 失败", t);
+            ClientFeatures.LOGGER.warn("[MiniWindow] 重挂片段检查器到 editArea 失败", t);
         }
     }
 
@@ -922,7 +922,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         }
         catch (Throwable t)
         {
-            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 嵌入回放关键帧检查器到 editArea 失败", t);
+            ClientFeatures.LOGGER.warn("[MiniWindow] 嵌入回放关键帧检查器到 editArea 失败", t);
         }
     }
 
@@ -951,7 +951,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         }
         catch (Throwable t)
         {
-            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 移动片段检查器到 editArea 失败", t);
+            ClientFeatures.LOGGER.warn("[MiniWindow] 移动片段检查器到 editArea 失败", t);
         }
     }
 
@@ -977,7 +977,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         }
         catch (Throwable t)
         {
-            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 归位回放关键帧检查器失败", t);
+            ClientFeatures.LOGGER.warn("[MiniWindow] 归位回放关键帧检查器失败", t);
         }
 
         try
@@ -990,7 +990,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         catch (Throwable t)
         {
             /* 预期内:回放编辑器可能处于重建中,只记录调试日志 */
-            BBSPlusPlusClient.LOGGER.debug("[MiniWindow] 刷新回放编辑器布局失败", t);
+            ClientFeatures.LOGGER.debug("[MiniWindow] 刷新回放编辑器布局失败", t);
         }
     }
 
@@ -1018,7 +1018,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         }
         catch (Throwable t)
         {
-            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 归位片段检查器失败", t);
+            ClientFeatures.LOGGER.warn("[MiniWindow] 归位片段检查器失败", t);
         }
     }
 
@@ -1072,7 +1072,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
             catch (Throwable t)
             {
                 /* 预期内:回放编辑器状态未就绪时按普通回放处理,只记录调试日志 */
-                BBSPlusPlusClient.LOGGER.debug("[MiniWindow] 查询回放动作模式失败", t);
+                ClientFeatures.LOGGER.debug("[MiniWindow] 查询回放动作模式失败", t);
             }
         }
 
@@ -1100,7 +1100,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         }
         catch (Throwable t)
         {
-            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 刷新编辑面板布局失败", t);
+            ClientFeatures.LOGGER.warn("[MiniWindow] 刷新编辑面板布局失败", t);
         }
     }
 

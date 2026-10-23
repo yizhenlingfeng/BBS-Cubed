@@ -1095,7 +1095,6 @@ BBS 2.7 的官方 addon API 已有 **11 个通用事件 + 30 个客户端事件*
 #### D.3.1 待办
 
 - `FluidFormRenderer` 双版本抽公共基类（两版渲染 API 差异大，需与 P6 版本隔离一并设计）。
-- 入口 5→4：把 `BBSPlusPlusClient` 的 l10n/源包职责并入 `BBSPlusPlusModClient`（需保持 l10n 事件时序）。
 
 ### D.4 设置与工具包合并（完成）
 
@@ -1112,6 +1111,20 @@ BBS 2.7 的官方 addon API 已有 **11 个通用事件 + 30 个客户端事件*
 - `gbeic.bbsplusplus.utils` 的 11 个类整体迁入 `gbeic.bbsplusplus.util`，删除空包。
 - 同步 17 个文件的 import/包名；全库已无 `gbeic.bbsplusplus.utils` 引用。
 - 验证：三套 clean 构建通过；1.20.1 客户端启动到主菜单，无 `ClassNotFoundException`/`NoClassDefFoundError`。
+
+### D.5 客户端入口 5→4（完成）
+
+- `BBSPlusPlusClient`（原第二个 `ClientModInitializer`）改为普通注册器 `client/ClientFeatures`，
+  不再出现在 `fabric.mod.json` 的 entrypoints 中。
+- `BBSPlusPlusModClient.onInitializeClient()` 在原有注册之后调用 `ClientFeatures.initialize()`，
+  保持原有执行顺序；l10n 资源包就绪检测与延迟加载逻辑保留。
+- 40+ 处 `BBSPlusPlusClient.LOGGER` 引用改为 `ClientFeatures.LOGGER`；`BBSPlusPlusClientAddon`
+  的 `RegisterL10nEvent` 改调 `ClientFeatures.registerTranslations`。
+- 结果：entrypoint 类 5 → **4**，`client` 入口 2 → **1**。
+
+**验证**：三套 clean 构建通过；1.20.1 与 1.21.11 dev client 均启动到主菜单；
+`客户端初始化开始/完成`、剪辑 UI、Particle+、`addon translations registered and loaded` 日志齐全；
+无 entrypoint `ClassNotFoundException`、无 `bbsplusplus` ERROR。
 
 <!-- 后续阶段完成后在此继续追加 D.2.x / D.3 … -->
 

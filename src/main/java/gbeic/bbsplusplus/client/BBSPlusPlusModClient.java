@@ -65,6 +65,7 @@ public class BBSPlusPlusModClient implements ClientModInitializer
         });
 
         this.registerVFXDestructionWand();
+        ClientFeatures.initialize();
     }
 
     private static boolean classExists(String name)

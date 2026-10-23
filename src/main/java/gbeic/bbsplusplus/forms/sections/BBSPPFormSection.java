@@ -1,5 +1,7 @@
 package gbeic.bbsplusplus.forms.sections;
 
+
+import gbeic.bbsplusplus.client.ClientFeatures;
 import gbeic.bbsplusplus.forms.AAAParticleForm;
 import gbeic.bbsplusplus.forms.FluidForm;
 import gbeic.bbsplusplus.forms.ItemSprayForm;

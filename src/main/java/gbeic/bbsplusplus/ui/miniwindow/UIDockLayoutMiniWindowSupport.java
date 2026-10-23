@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.ui.miniwindow;
 
-import gbeic.bbsplusplus.BBSPlusPlusClient;
+import gbeic.bbsplusplus.client.ClientFeatures;
 import gbeic.bbsplusplus.api.UIDockLayoutAccessor;
 import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import mchorse.bbs_mod.settings.values.ui.EditorLayoutNode;
@@ -228,7 +228,7 @@ public class UIDockLayoutMiniWindowSupport implements MiniWindowDockHostSupport.
             }
             catch (Throwable t)
             {
-                BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 还原按钮快捷还原第一个小窗失败", t);
+                ClientFeatures.LOGGER.warn("[MiniWindow] 还原按钮快捷还原第一个小窗失败", t);
             }
         });
 

@@ -1,5 +1,7 @@
 package gbeic.bbsplusplus;
 
+
+import gbeic.bbsplusplus.client.ClientFeatures;
 import mchorse.bbs_mod.api.BBSAddonMod;
 import mchorse.bbs_mod.api.Subscribe;
 import mchorse.bbs_mod.api.client.events.RegisterClientSettingsEvent;
@@ -18,7 +20,7 @@ import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
  * BBS FSloveCML Client Addon - 客户端事件订阅占位。
  *
  * <p>BBS(2.5) 经 Fabric "bbs-client-addon" 入口加载本类（见 fabric.mod.json）。
- * 翻译/源包在 {@link BBSPlusPlusClient#onInitializeClient()} 另有双保险注册，
+ * 翻译/源包在 {@link ClientFeatures#initialize()} 另有双保险注册，
  * 与这里的 RegisterL10nEvent 订阅互不冲突。</p>
  */
 public class BBSPlusPlusClientAddon implements BBSAddonMod {
@@ -31,7 +33,7 @@ public class BBSPlusPlusClientAddon implements BBSAddonMod {
     @Subscribe
     public void onRegisterL10n(RegisterL10nEvent event) {
         BBSPlusPlusMod.LOGGER.info("[FSloveCML] 收到 RegisterL10nEvent");
-        BBSPlusPlusClient.registerTranslations(event.l10n);
+        ClientFeatures.registerTranslations(event.l10n);
     }
 
     /**

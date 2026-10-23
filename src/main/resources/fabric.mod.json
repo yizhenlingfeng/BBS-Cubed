@@ -14,8 +14,7 @@
             "gbeic.bbsplusplus.BBSPlusPlusMod"
         ],
         "client": [
-            "gbeic.bbsplusplus.client.BBSPlusPlusModClient",
-            "gbeic.bbsplusplus.BBSPlusPlusClient"
+            "gbeic.bbsplusplus.client.BBSPlusPlusModClient"
         ],
         "bbs-addon": [
             "gbeic.bbsplusplus.BBSPlusPlusAddon"
