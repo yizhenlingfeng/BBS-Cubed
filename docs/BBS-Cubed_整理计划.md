@@ -1245,6 +1245,13 @@ Dashboard 的 `morphing / film / model blocks / particles / model editor / textu
 `纹理材质 shader 变体加载完成: 4/4`，无 `FileNotFoundException` / `无法创建纹理调色 shader`；
 jar 内 shader 资源确认位于 `assets/bbspp/shaders/core/`。
 
+### D.10 影片库文件夹移除菜单扁平化（完成）
+
+- 原右键文件夹的「移除文件夹」会 `replaceContextMenu` 打开二级菜单（从影片库移除 / 移除此文件夹）。
+- 改为在文件夹一级右键菜单直接提供「从影片库移除」，空文件夹再额外提供「移除此文件夹」；
+  删除 `openRemoveFolderMenu()`、`bbspp.ui.film.library.remove_folder` 中英文键。
+- 三套 clean 构建通过；菜单项直接可见，不再出现返回箭头二级页。
+
 <!-- 后续阶段完成后在此继续追加 D.2.x / D.3 … -->
 
 ---

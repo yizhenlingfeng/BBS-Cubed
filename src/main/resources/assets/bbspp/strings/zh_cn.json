@@ -941,7 +941,6 @@
   "bbspp.ui.film.library.new_film": "新建影片",
   "bbspp.ui.film.library.new_film_button": "+ 创建影片",
   "bbspp.ui.film.library.refresh": "刷新",
-  "bbspp.ui.film.library.remove_folder": "移除文件夹",
   "bbspp.ui.film.library.remove_from_library": "从影片库移除",
   "bbspp.ui.film.library.remove": "删除",
   "bbspp.ui.film.library.rename": "重命名",

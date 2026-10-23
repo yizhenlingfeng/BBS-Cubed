@@ -75,7 +75,14 @@ public class UIFilmLibraryColumn extends UIElement
                 {
                     menu.action(Icons.EDIT, UIKeys.PANELS_MODALS_RENAME_FOLDER_TITLE, () -> this.view.support().renameFolder(this.contextPath));
 
-                    menu.action(Icons.REMOVE, L10n.lang("bbspp.ui.film.library.remove_folder"), () -> this.openRemoveFolderMenu());
+                    /* 不再套二级菜单：移除动作直接出现在文件夹右键菜单里。 */
+                    menu.action(Icons.REMOVE, L10n.lang("bbspp.ui.film.library.remove_from_library"), () -> this.view.support().removeFolder(this.contextPath));
+
+                    if (this.view.support().getList() instanceof IFilmLibraryPathList pathList
+                        && pathList.bbspp$isFilmLibraryFolderEmpty(this.contextPath))
+                    {
+                        menu.action(Icons.TRASH, UIKeys.PANELS_MODALS_REMOVE_FOLDER_TITLE, () -> this.view.support().deleteFolder(this.contextPath));
+                    }
                 }
 
                 if (this.contextPath.strings.isEmpty())
@@ -380,32 +387,6 @@ public class UIFilmLibraryColumn extends UIElement
         this.updateContextTarget(context);
 
         return super.mouseClickedContextMenu(context);
-    }
-
-    /**
-     * 「移除文件夹」二级菜单：替换当前菜单展示两种移除方式——「从影片库移除」
-     * 只把文件夹从库视图收起（不动磁盘文件）；空文件夹额外提供「移除此文件夹」
-     * 物理删除（沿用原确认弹窗）。点返回或 Esc 可回到原菜单。
-     */
-    private void openRemoveFolderMenu()
-    {
-        UIContext context = this.getContext();
-
-        if (context == null || this.contextPath == null)
-        {
-            return;
-        }
-
-        context.replaceContextMenu((menu) ->
-        {
-            menu.action(Icons.REMOVE, L10n.lang("bbspp.ui.film.library.remove_from_library"), () -> this.view.support().removeFolder(this.contextPath));
-
-            if (this.view.support().getList() instanceof IFilmLibraryPathList pathList
-                && pathList.bbspp$isFilmLibraryFolderEmpty(this.contextPath))
-            {
-                menu.action(Icons.TRASH, UIKeys.PANELS_MODALS_REMOVE_FOLDER_TITLE, () -> this.view.support().deleteFolder(this.contextPath));
-            }
-        });
     }
 
     private void updateContextTarget(UIContext context)
