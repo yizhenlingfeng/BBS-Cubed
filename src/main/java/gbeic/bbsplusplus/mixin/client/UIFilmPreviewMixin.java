@@ -4,6 +4,7 @@ import gbeic.bbsplusplus.premiere.IPremiereExportButton;
 import gbeic.bbsplusplus.premiere.PremiereExportActions;
 import gbeic.bbsplusplus.premiere.PremiereUIKeys;
 import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.ui.film.FilmToolbarOverflow;
 import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import gbeic.bbsplusplus.utils.BonePriority;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
@@ -56,6 +57,10 @@ public abstract class UIFilmPreviewMixin implements IPremiereExportButton
 
         this.bbspp_cml$lastPremiereVisible = !CMLSettings.premiereExportEnabled.get();
         this.bbspp_cml$updatePremiereButtonVisibility();
+
+        /* 注册进「工具收纳」按钮的收纳清单（order 20 起，排在内置工具之后） */
+        FilmToolbarOverflow.register(self, "bone_priority", this.bbspp_cml$bonePriority, SnowUIKeys.BONE_PRIORITY, 20);
+        FilmToolbarOverflow.register(self, "premiere_export", this.bbspp_cml$premiereExport, PremiereUIKeys.EXPORT, 21);
     }
 
     /**

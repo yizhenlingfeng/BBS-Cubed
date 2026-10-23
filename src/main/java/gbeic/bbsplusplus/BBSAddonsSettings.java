@@ -160,4 +160,7 @@ public class BBSAddonsSettings
     /** 回放编辑器自定义轨道顺序：filterKey 有序列表（逗号分隔），空 = 目录默认顺序 */
     public static ValueString replayTrackOrder;
 
+    /** 预览工具栏收纳进「工具收纳」按钮的工具 ID（逗号分隔），空 = 全部显示在横条 */
+    public static ValueString filmToolbarOverflow;
+
 }

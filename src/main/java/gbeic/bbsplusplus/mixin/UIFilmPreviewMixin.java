@@ -9,6 +9,7 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import gbeic.bbsplusplus.BBSAddonsSettings;
+import gbeic.bbsplusplus.ui.film.FilmToolbarOverflow;
 import gbeic.bbsplusplus.util.IrisHelper;
 import net.fabricmc.loader.api.FabricLoader;
 import org.spongepowered.asm.mixin.Final;
@@ -78,6 +79,10 @@ public abstract class UIFilmPreviewMixin {
             };
             irisButton.tooltip(L10n.lang("bbs.config.bbspp.iris_button_tooltip"));
             this.icons.add(irisButton);
+
+            FilmToolbarOverflow.register(
+                (UIFilmPreview) (Object) this, "iris_shader", irisButton,
+                L10n.lang("bbs.config.bbspp.iris_button_tooltip"), 22);
         }
     }
 }

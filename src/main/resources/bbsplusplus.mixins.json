@@ -130,7 +130,8 @@
         "CubicVAORendererLimbCullingMixin",
         "UIModelConfigEditorLimbCullingMixin",
         "client.UIKeyframeDopeSheetAccessor",
-        "client.UIKeyframeDopeSheetMixin"
+        "client.UIKeyframeDopeSheetMixin",
+        "client.UIFilmPreviewOverflowMixin"
     ],
     "injectors": {
         "defaultRequire": 0

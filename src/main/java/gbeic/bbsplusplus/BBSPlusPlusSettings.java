@@ -76,6 +76,7 @@ public class BBSPlusPlusSettings
         BBSAddonsSettings.morphingLayoutMode = (ValueInt) builder.getInt("morphing_layout_mode", 0, 0, 1).invisible();
         BBSAddonsSettings.morphingIconScale = (ValueInt) builder.getInt("morphing_icon_scale", 100, 20, 200).invisible();
         BBSAddonsSettings.replayTrackOrder = (ValueString) builder.getString("replay_track_order", "").invisible();
+        BBSAddonsSettings.filmToolbarOverflow = (ValueString) builder.getString("film_toolbar_overflow", "").invisible();
 
         /* CML 隐藏设置项 */
         CMLSettings.bonePriorityExpandedLimb = builder.getBoolean("bone_priority_expanded_limb", false);
