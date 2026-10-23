@@ -5,25 +5,24 @@ import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.BBSPlusPlusSettings;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import gbeic.bbsplusplus.client.audio.AudioOutputDeviceWatcher;
-import mchorse.bbs_mod.resources.packs.InternalAssetsSourcePack;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import gbeic.bbsplusplus.util.FilmAutoGameModeRestoreState;
 import gbeic.bbsplusplus.util.ModelCullingConfigManager;
 import net.fabricmc.loader.api.FabricLoader;
 
 /**
- * BBS++ 客户端入口点。
+ * BBS++ 客户端入口点（1.20.x 与 1.21.11 共用）。
  * <p>
- * 对 AAAParticleFormRenderer / ItemSprayFormRenderer / VFXDestructionWandSelection 等
- * 使用旧立即模式渲染 API 的类的注册，改为运行时 Class.forName 检测。这些类在 1.21.11
- * 构建中被 source-set excludes 排除（GPU 渲染管线大修），运行时检测可避免编译期硬依赖。
- * 1.20.1 上这些类存在，注册正常执行。
+ * 版本差异通过运行时类检测收敛，不再维护 {@code BBSPlusPlusModClient12111} 副本：
+ * 被 1.21.11 source-set excludes 的类（AAA/物品喷射渲染器、VFX 破坏魔杖、
+ * {@code FilmAutoGameModeRestoreState} 等）全部以可选方式注册。
  * </p>
  */
 public class BBSPlusPlusModClient implements ClientModInitializer
 {
+    private static boolean autoGameModeErrorLogged;
+
     @Override
     public void onInitializeClient()
     {
@@ -34,11 +33,8 @@ public class BBSPlusPlusModClient implements ClientModInitializer
             ModelCullingConfigManager.onClientStarted();
         });
 
-        BBSMod.events.register(this);
-
-        ClientTickEvents.END_CLIENT_TICK.register(FilmAutoGameModeRestoreState::tick);
+        registerAutoGameModeHooks();
         ClientTickEvents.END_CLIENT_TICK.register(client -> ModelCullingConfigManager.tick());
-        ClientLifecycleEvents.CLIENT_STOPPING.register(FilmAutoGameModeRestoreState::tryRestoreBeforeShutdown);
         ClientTickEvents.END_CLIENT_TICK.register(AudioOutputDeviceWatcher::tick);
 
         boolean hasAAAParticles = FabricLoader.getInstance().isModLoaded("aaa_particles");
@@ -69,24 +65,56 @@ public class BBSPlusPlusModClient implements ClientModInitializer
         });
 
         this.registerVFXDestructionWand();
-
-        ClientLifecycleEvents.CLIENT_STARTED.register(client ->
-        {
-            try
-            {
-                BBSMod.getProvider().register(new InternalAssetsSourcePack("bbsplusplus", "assets/bbsplusplus", BBSPlusPlusModClient.class));
-            }
-            catch (Exception e)
-            {
-                BBSPlusPlusMod.LOGGER.warn("注册内置资源包失败", e);
-            }
-        });
     }
 
     private static boolean classExists(String name)
     {
         try { Class.forName(name); return true; }
         catch (ClassNotFoundException e) { return false; }
+    }
+
+    /**
+     * 自动旁观模式的 tick/restore 钩子。
+     * <p>
+     * {@code FilmAutoGameModeRestoreState} 在 1.21.11 构建中被 excludes 排除，
+     * 因此这里用一次性反射注册；类缺失时只打一条 info，不影响其余客户端初始化。
+     * </p>
+     */
+    private static void registerAutoGameModeHooks()
+    {
+        try
+        {
+            Class<?> type = Class.forName("gbeic.bbsplusplus.util.FilmAutoGameModeRestoreState");
+            java.lang.reflect.Method tick = type.getMethod("tick", net.minecraft.client.MinecraftClient.class);
+            java.lang.reflect.Method restore = type.getMethod("tryRestoreBeforeShutdown", net.minecraft.client.MinecraftClient.class);
+
+            ClientTickEvents.END_CLIENT_TICK.register(client -> invokeAutoGameMode(tick, client, "tick"));
+            ClientLifecycleEvents.CLIENT_STOPPING.register(client -> invokeAutoGameMode(restore, client, "restore"));
+        }
+        catch (ClassNotFoundException e)
+        {
+            BBSPlusPlusMod.LOGGER.info("自动旁观模式在当前构建不可用（FilmAutoGameModeRestoreState 未编译），跳过钩子。");
+        }
+        catch (NoSuchMethodException e)
+        {
+            BBSPlusPlusMod.LOGGER.warn("自动旁观模式钩子签名不匹配，跳过。", e);
+        }
+    }
+
+    private static void invokeAutoGameMode(java.lang.reflect.Method method, net.minecraft.client.MinecraftClient client, String phase)
+    {
+        try
+        {
+            method.invoke(null, client);
+        }
+        catch (ReflectiveOperationException e)
+        {
+            if (!autoGameModeErrorLogged)
+            {
+                autoGameModeErrorLogged = true;
+                BBSPlusPlusMod.LOGGER.warn("自动旁观模式 {} 调用失败，后续同类错误不再重复输出。", phase, e);
+            }
+        }
     }
 
     /**

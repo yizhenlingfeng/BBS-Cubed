@@ -1033,7 +1033,7 @@ BBS 2.7 的官方 addon API 已有 **11 个通用事件 + 30 个客户端事件*
 | `build -Pmc_version=1.20.4`（clean） | ✅ BUILD SUCCESSFUL |
 | `build -Pmc_version=1.21.11`（clean） | ✅ BUILD SUCCESSFUL |
 | 三个 jar 内已删类/资源残留 | ✅ 0 |
-| `fabric.mod.json` main/client 入口 | ✅ 正确（1.21.11 仍替换为 12111 client 入口） |
+| `fabric.mod.json` main/client 入口 | ✅ 正确（P2.1 起 1.20.x 与 1.21.11 共用 `BBSPlusPlusModClient`，不再替换） |
 | 230 条 mixin 声明 ↔ 文件 | ✅ 全部可解析；无未声明 Mixin（仅剩 `VisibilityMixinConfigPlugin`，非 Mixin） |
 | 1.21.11 产物 mixin JSON | ✅ 7/7 严格合法 |
 | 源码中已删类型引用 | ✅ 0 |
@@ -1043,7 +1043,25 @@ BBS 2.7 的官方 addon API 已有 **11 个通用事件 + 30 个客户端事件*
 
 > P1 以删除"零引用/未加载"内容为主，附带修复了实机 smoke 发现的 l10n 时序缺陷；核心玩法逻辑未改动。P2/P3 将有行为改动，届时继续跑实机 smoke。
 
-<!-- 后续阶段完成后在此继续追加 D.2 / D.3 … -->
+### D.2 P2 去重（进行中）
+
+#### D.2.1 客户端入口合并（完成）
+
+- 删除 `client/BBSPlusPlusModClient12111.java`（259 行），1.20.x 与 1.21.11 共用 `BBSPlusPlusModClient`。
+- `FilmAutoGameModeRestoreState` 的 tick/restore 改为一次性反射注册；1.21.11 上类不存在时只打一条 info，不再需要第二份入口类。
+- 删除空调用 `BBSMod.events.register(this)`（该类无 `@Subscribe`）与指向不存在目录的 `InternalAssetsSourcePack("bbsplusplus", "assets/bbsplusplus", ...)` 死注册。
+- `build.gradle` 删除 1.21.11 的 `fabric.mod.json` 入口替换逻辑与 `BBSPlusPlusModClient` 的 exclude。
+
+**验证**：三套 clean 构建通过；1.20.1 与 1.21.11 dev client 均启动到主菜单；1.21.11 日志确认
+`自动旁观模式在当前构建不可用 ... 跳过钩子`、AAA/物品喷射/流体渲染器按预期降级，无 `bbsplusplus` ERROR。
+
+#### D.2.2 待办
+
+- `FluidFormRenderer` 双版本抽公共基类。
+- 9 组同名 Mixin 合并到 `mixin/client` 并删除 root 副本。
+- 设置持有类合并、入口类改名（`BBSFSloveCML*` → `BBSPlusPlus*`）、`util`/`utils` 合并。
+
+<!-- 后续阶段完成后在此继续追加 D.2.x / D.3 … -->
 
 ---
 

@@ -135,17 +135,8 @@ processResources {
             delete file("$buildDir/resources/main/assets/bbs/shaders/core/model.json")
         }
 
-        // 1.21.11 的 client 入口替换：
-        // - BBSPlusPlusModClient 硬依赖 FilmAutoGameModeRestoreState 等被 excludes 的类，换成 12111 变体；
-        // - BBSFSloveCMLClient 在该构建可直接编译（其 1.21.11-exclusive 依赖均为运行时反射检测），
-        //   不再替换，避免维护一份 BBSFSloveCMLClient12111 双份代码。
-        filesMatching("fabric.mod.json") {
-            filter { line ->
-                line.replace(
-                    '"gbeic.bbsplusplus.client.BBSPlusPlusModClient"',
-                    '"gbeic.bbsplusplus.client.BBSPlusPlusModClient12111"')
-            }
-        }
+        // 1.21.11 的 client 入口与 1.20.x 共用 BBSPlusPlusModClient；
+        // 版本差异（FilmAutoGameModeRestoreState 等）由运行时类检测收敛。
 
         // 从所有 mixins.json 里移除被 excludes 的 Mixin（目标类已变更/不存在）
         doLast {
@@ -364,8 +355,6 @@ if (targetMc == "1.21.11") {
         "gbeic/bbsplusplus/mixin/UIFormEditorMixin.java",
         // FabricBlockSettings 包在 1.21.11 Fabric API 中移除
         "gbeic/bbsplusplus/BBSPlusPlusBlocks.java",
-        // 入口类（1.21.11 用简化版 entrypoint，见 fabric.mod.json processResources 替换）
-        "gbeic/bbsplusplus/client/BBSPlusPlusModClient.java",
         // GameMode API changed in 1.21.11
         "gbeic/bbsplusplus/util/FilmAutoGameModeRestoreState.java",
     ]
