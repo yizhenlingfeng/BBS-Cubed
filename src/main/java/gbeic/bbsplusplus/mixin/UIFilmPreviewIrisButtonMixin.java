@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(UIFilmPreview.class)
-public abstract class UIFilmPreviewMixin {
+public abstract class UIFilmPreviewIrisButtonMixin {
 
     @Shadow @Final public UIElement icons;
 

@@ -24,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * </p>
  */
 @Mixin(value = UIPoseEditor.class, remap = true)
-public abstract class UIPoseEditorMixin
+public abstract class UIPoseEditorAutoSaveMixin
 {
     @Shadow private String group;
     @Shadow private Pose pose;

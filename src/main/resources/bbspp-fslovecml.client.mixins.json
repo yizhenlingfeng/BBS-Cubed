@@ -77,7 +77,7 @@
         "UIDataContextMenuMixin",
         "ParticleManagerVanillaFormMixin",
         "UIScreenMixin",
-        "UISoundOverlayPanelMixin",
+        "UISoundOverlayPanelDownloadMixin",
         "UITransformMixin",
         "UIVanillaSoundListMixin",
         "WorldFilmControllerReplayTimeMixin",

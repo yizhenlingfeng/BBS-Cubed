@@ -25,7 +25,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.List;
 
 @Mixin(UIReplaysEditorUtils.class)
-public class UIReplaysEditorUtilsMixin
+public class UIReplaysEditorUtilsPoseBrushMixin
 {
     /**
      * 注入目标：模型视图拾取骨骼并准备切换对应关键帧之前。

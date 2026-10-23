@@ -38,7 +38,7 @@ import java.util.function.Supplier;
  * </p>
  */
 @Mixin(value = UIDataContextMenu.class, remap = true)
-public abstract class UIDataContextMenuMixin extends UIElement
+public abstract class UIDataContextMenuAutoSaveMixin extends UIElement
 {
     @Shadow public UISearchList entries;
     @Shadow public UIContextMenuBar bar;

@@ -32,7 +32,7 @@ import java.util.function.Supplier;
  * 把装备/手持物品关键帧里的附加变换应用到模型渲染。
  */
 @Mixin(value = ModelFormRenderer.class, remap = true)
-public class ModelFormRendererMixin
+public class ModelFormRendererEquipmentMixin
 {
     /**
      * 注入目标：{@code ModelFormRenderer#renderModel} 调用 {@code ModelInstance#render} 的位置。

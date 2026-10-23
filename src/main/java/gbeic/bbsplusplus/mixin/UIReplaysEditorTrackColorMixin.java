@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = UIReplaysEditor.class, remap = true)
-public class UIReplaysEditorMixin
+public class UIReplaysEditorTrackColorMixin
 {
 
     @Inject(method = "getColor", at = @At("HEAD"), cancellable = true)

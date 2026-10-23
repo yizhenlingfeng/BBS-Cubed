@@ -1065,10 +1065,36 @@ BBS 2.7 的官方 addon API 已有 **11 个通用事件 + 30 个客户端事件*
 **验证**：三套 clean 构建通过；1.20.1 与 1.21.11 dev client 均启动到主菜单；BBS addon / client-addon 回调正常，
 `addon translations registered and loaded` 与各表单/剪辑/关键帧注册日志齐全，无 entrypoint `ClassNotFoundException`。
 
-#### D.2.3 待办
+### D.3 同名 Mixin 去碰撞（完成）
+
+9 组同名类逐组代码比对后确认**不是重复实现**，而是同一目标类上的互补职责（例如 root 的自动保存 vs client 的纹理/PBR 按钮）。
+直接合并会产生 600–700 行的 god mixin，违反 5.1「Mixin 薄层」原则，因此本轮采用「唯一命名 + 职责后缀」，保留两个类、消除误配风险。
+
+| 原 root 类 | 新 root 类 | 职责 |
+|---|---|---|
+| `BBSRenderingMixin` | `BBSRenderingWorldFilmShaderMixin` | 世界播放时补光影曲线时间/天气/天空色 |
+| `CubicCubeRendererMixin` | `CubicCubeRendererUvEmitMixin` | CPU 顶点路径的 UV 变换 |
+| `ModelFormRendererMixin` | `ModelFormRendererEquipmentMixin` | 装备/手持物品关键帧变换 |
+| `UIDataContextMenuMixin` | `UIDataContextMenuAutoSaveMixin` | 预设右键"自动保存" |
+| `UIFilmPreviewMixin` | `UIFilmPreviewIrisButtonMixin` | 预览栏 Iris 按钮 |
+| `UIPoseEditorMixin` | `UIPoseEditorAutoSaveMixin` | 姿势编辑器自动保存 |
+| `UIReplaysEditorMixin` | `UIReplaysEditorTrackColorMixin` | 轨道颜色/图标 |
+| `UIReplaysEditorUtilsMixin` | `UIReplaysEditorUtilsPoseBrushMixin` | 姿势参数刷 pickForm |
+| `UISoundOverlayPanelMixin` | `UISoundOverlayPanelTreeMixin` | 音效树形列表 |
+| `client/UISoundOverlayPanelMixin` | `client/UISoundOverlayPanelDownloadMixin` | 原版音效下载路径解析 |
+
+同步修改：两个 mixin config 的条目；`build.gradle` 1.21.11 excludes 中两个改名文件
+（`ModelFormRendererEquipmentMixin`、`CubicCubeRendererUvEmitMixin`）。
+
+**验证**：
+- `mixin/` 与 `mixin/client/` 下已无同名类。
+- 230 条 mixin 声明全部可解析，无未声明 Mixin。
+- 三套 clean 构建通过；1.20.1 与 1.21.11 dev client 均启动到主菜单。
+- 两端日志均无 `Mixin apply failed` / `InjectionError` / `ClassNotFoundException`。
+
+#### D.3.1 待办
 
 - `FluidFormRenderer` 双版本抽公共基类（两版渲染 API 差异大，需与 P6 版本隔离一并设计）。
-- 9 组同名 Mixin 合并到 `mixin/client` 并删除 root 副本。
 - 设置持有类合并、`util`/`utils` 合并。
 - 入口 5→4：把 `BBSPlusPlusClient` 的 l10n/源包职责并入 `BBSPlusPlusModClient`（需保持 l10n 事件时序）。
 

@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * </p>
  */
 @Mixin(BBSRendering.class)
-public class BBSRenderingMixin
+public class BBSRenderingWorldFilmShaderMixin
 {
     /**
      * 注入目标：{@code BBSRendering#getTimeOfDay()} 返回处。

@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * </p>
  */
 @Mixin(targets = "mchorse.bbs_mod.cubic.render.CubicCubeRenderer", remap = true)
-public class CubicCubeRendererMixin
+public class CubicCubeRendererUvEmitMixin
 {
     @Shadow protected float r;
     @Shadow protected float g;

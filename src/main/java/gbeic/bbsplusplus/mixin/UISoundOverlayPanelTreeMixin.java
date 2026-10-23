@@ -24,7 +24,7 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UISoundOverlayPanel;
  * Mixin — 将 {@link UISoundOverlayPanel} 中的普通列表替换为 {@link UIAudioTreeList} 树形列表。
  */
 @Mixin(UISoundOverlayPanel.class)
-public abstract class UISoundOverlayPanelMixin
+public abstract class UISoundOverlayPanelTreeMixin
 {
     @Shadow(remap = true)
     private String selectedSound;

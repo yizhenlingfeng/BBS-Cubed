@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 原实现只剥离 {@code Music:/Sound:} 前缀，而列表实际使用 {@code [Category]: }。
  */
 @Mixin(value = UISoundOverlayPanel.class, remap = false)
-public abstract class UISoundOverlayPanelMixin
+public abstract class UISoundOverlayPanelDownloadMixin
 {
     @Inject(method = "findDownloadedSoundInAddMode", at = @At("HEAD"), cancellable = true, remap = false)
     private void bbspp_cml$findDownloadedSoundInAddMode(String displayName, CallbackInfoReturnable<String> cir)
