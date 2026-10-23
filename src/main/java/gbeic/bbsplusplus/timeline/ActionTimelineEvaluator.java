@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.timeline;
 
 import gbeic.bbsplusplus.api.ActionTimelineConfig;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.cubic.animation.ActionConfig;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
@@ -101,7 +101,7 @@ public final class ActionTimelineEvaluator
      */
     public static ActionsConfig interpolateTimelineFrames(ActionsConfig a, ActionsConfig b, IInterp interpolation, float x)
     {
-        if (!CMLSettings.isSnowActionsEnabled())
+        if (!ModSettings.isSnowActionsEnabled())
         {
             return null;
         }
@@ -156,7 +156,7 @@ public final class ActionTimelineEvaluator
 
     public static ActionsConfig evaluate(KeyframeSegment<ActionsConfig> segment, ActionsConfig result)
     {
-        if (!CMLSettings.isSnowActionsEnabled())
+        if (!ModSettings.isSnowActionsEnabled())
         {
             return result;
         }

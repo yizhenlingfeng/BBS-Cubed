@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.client.ui.film;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.settings.Settings;
 import mchorse.bbs_mod.utils.DataPath;
 
@@ -51,12 +52,12 @@ public final class FilmLibraryDefaultLocation
 
     private static String get()
     {
-        if (BBSAddonsSettings.filmLibraryDefaultLocation == null)
+        if (ModSettings.filmLibraryDefaultLocation == null)
         {
             return FOLDER_PREFIX;
         }
 
-        String value = BBSAddonsSettings.filmLibraryDefaultLocation.get();
+        String value = ModSettings.filmLibraryDefaultLocation.get();
 
         if (value == null || value.isEmpty() || LEGACY_ALL.equals(value))
         {
@@ -68,21 +69,21 @@ public final class FilmLibraryDefaultLocation
 
     private static void set(String value)
     {
-        if (BBSAddonsSettings.filmLibraryDefaultLocation != null)
+        if (ModSettings.filmLibraryDefaultLocation != null)
         {
             if (value.equals(get()))
             {
                 return;
             }
 
-            BBSAddonsSettings.filmLibraryDefaultLocation.set(value);
+            ModSettings.filmLibraryDefaultLocation.set(value);
             saveNow();
         }
     }
 
     private static void saveNow()
     {
-        if (BBSAddonsSettings.filmLibraryDefaultLocation.getRoot() instanceof Settings settings)
+        if (ModSettings.filmLibraryDefaultLocation.getRoot() instanceof Settings settings)
         {
             settings.save();
         }

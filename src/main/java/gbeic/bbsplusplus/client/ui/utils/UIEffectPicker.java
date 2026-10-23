@@ -1,5 +1,7 @@
 package gbeic.bbsplusplus.client.ui.utils;
 
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.l10n.L10n;
@@ -13,7 +15,6 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
-import gbeic.bbsplusplus.BBSAddonsSettings;
 import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.client.renderer.BBSEffectLoader;
 import gbeic.bbsplusplus.client.ui.forms.editors.panels.UIEffectTreeList;
@@ -242,15 +243,15 @@ public class UIEffectPicker
 
         public static int getSavedWidth()
         {
-            return BBSAddonsSettings.aaaEffectPickerWidth != null
-                ? BBSAddonsSettings.aaaEffectPickerWidth.get()
+            return ModSettings.aaaEffectPickerWidth != null
+                ? ModSettings.aaaEffectPickerWidth.get()
                 : savedWidth;
         }
 
         public static int getSavedHeight()
         {
-            return BBSAddonsSettings.aaaEffectPickerHeight != null
-                ? BBSAddonsSettings.aaaEffectPickerHeight.get()
+            return ModSettings.aaaEffectPickerHeight != null
+                ? ModSettings.aaaEffectPickerHeight.get()
                 : savedHeight;
         }
 
@@ -433,14 +434,14 @@ public class UIEffectPicker
 
         private void persistSize()
         {
-            if (BBSAddonsSettings.aaaEffectPickerWidth != null)
+            if (ModSettings.aaaEffectPickerWidth != null)
             {
-                BBSAddonsSettings.aaaEffectPickerWidth.set(savedWidth);
+                ModSettings.aaaEffectPickerWidth.set(savedWidth);
             }
 
-            if (BBSAddonsSettings.aaaEffectPickerHeight != null)
+            if (ModSettings.aaaEffectPickerHeight != null)
             {
-                BBSAddonsSettings.aaaEffectPickerHeight.set(savedHeight);
+                ModSettings.aaaEffectPickerHeight.set(savedHeight);
             }
         }
     }

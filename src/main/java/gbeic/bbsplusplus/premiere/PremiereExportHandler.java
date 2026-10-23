@@ -3,7 +3,7 @@ package gbeic.bbsplusplus.premiere;
 import gbeic.bbsplusplus.premiere.audio.IndividualAudioExporter;
 import gbeic.bbsplusplus.premiere.xml.SrtGenerator;
 import gbeic.bbsplusplus.premiere.xml.XmemlGenerator;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.clips.misc.AudioClip;
@@ -60,7 +60,7 @@ public class PremiereExportHandler
     public void startPremiereExport(Film film, File packageDir, String previousExportPath,
                                     boolean openFolderAfter, boolean playSoundAfter)
     {
-        if (CMLSettings.premiereExportEnabled == null || !CMLSettings.premiereExportEnabled.get())
+        if (ModSettings.premiereExportEnabled == null || !ModSettings.premiereExportEnabled.get())
         {
             return;
         }
@@ -242,8 +242,8 @@ public class PremiereExportHandler
 
         List<IndividualAudioExporter.ExportedClip> exported = new ArrayList<>();
 
-        boolean wantAudio = CMLSettings.premiereExportIndividualAudio == null
-            || CMLSettings.premiereExportIndividualAudio.get();
+        boolean wantAudio = ModSettings.premiereExportIndividualAudio == null
+            || ModSettings.premiereExportIndividualAudio.get();
         /* 仅音频模式(无视频)强制导出独立音频 */
         if (videoFile == null)
         {
@@ -276,7 +276,7 @@ public class PremiereExportHandler
             }
         }
 
-        if (CMLSettings.premiereExportSrt != null && CMLSettings.premiereExportSrt.get())
+        if (ModSettings.premiereExportSrt != null && ModSettings.premiereExportSrt.get())
         {
             File srtFile = new File(packageDir, baseName + ".srt");
             LOGGER.info("[premiere] generating SRT: {}", srtFile.getAbsolutePath());

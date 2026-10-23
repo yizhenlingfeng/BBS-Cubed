@@ -1,5 +1,7 @@
 package gbeic.bbsplusplus;
 
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.api.KeyframeTrackExtensionRegistry;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.l10n.L10n;
@@ -14,7 +16,7 @@ import java.util.Set;
  * 关键帧轨道名称本地化工具。
  * <p>
  * 将硬编码的英文轨道名称映射为中文显示名。
- * 通过 {@link BBSAddonsSettings#chineseKeyframeNames} 开关控制。
+ * 通过 {@link ModSettings#chineseKeyframeNames} 开关控制。
  * </p>
  * <p>
  * 轨道映射按形态/插件隔离：
@@ -1024,8 +1026,8 @@ public class KeyframeLocalizer
             return null;
         }
 
-        if (BBSAddonsSettings.chineseKeyframeNames != null
-            && BBSAddonsSettings.chineseKeyframeNames.get())
+        if (ModSettings.chineseKeyframeNames != null
+            && ModSettings.chineseKeyframeNames.get())
         {
             /* 同时支持两种 id 分隔格式：
              * - 旧版 BBS 2.5：path/to/bone.property（/ 分隔）
@@ -1148,8 +1150,8 @@ public class KeyframeLocalizer
             return null;
         }
 
-        if (BBSAddonsSettings.chineseKeyframeNames != null
-            && BBSAddonsSettings.chineseKeyframeNames.get())
+        if (ModSettings.chineseKeyframeNames != null
+            && ModSettings.chineseKeyframeNames.get())
         {
             /* 同时支持 / 和 . 两种 id 分隔格式（旧版 / 分隔，新版 2.6 . 分隔） */
             String prefix = "";

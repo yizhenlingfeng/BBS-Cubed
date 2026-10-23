@@ -1,5 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.IUIKeyframeGraph;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import org.spongepowered.asm.mixin.Mixin;
@@ -51,7 +53,7 @@ public interface IUIKeyframeGraphMixin
         org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Keyframe<?>> cir
     )
     {
-        if (tick < 0 && gbeic.bbsplusplus.BBSAddonsSettings.preventNegativeKeyframes != null && gbeic.bbsplusplus.BBSAddonsSettings.preventNegativeKeyframes.get())
+        if (tick < 0 && gbeic.bbsplusplus.settings.ModSettings.preventNegativeKeyframes != null && gbeic.bbsplusplus.settings.ModSettings.preventNegativeKeyframes.get())
         {
             cir.setReturnValue(null);
         }
@@ -66,7 +68,7 @@ public interface IUIKeyframeGraphMixin
     )
     private float bbspp$capNegativeTickDrag(float tick)
     {
-        if (gbeic.bbsplusplus.BBSAddonsSettings.preventNegativeKeyframes != null && gbeic.bbsplusplus.BBSAddonsSettings.preventNegativeKeyframes.get())
+        if (gbeic.bbsplusplus.settings.ModSettings.preventNegativeKeyframes != null && gbeic.bbsplusplus.settings.ModSettings.preventNegativeKeyframes.get())
         {
             IUIKeyframeGraph self = (IUIKeyframeGraph) this;
             Keyframe<?> selected = self.getSelected();

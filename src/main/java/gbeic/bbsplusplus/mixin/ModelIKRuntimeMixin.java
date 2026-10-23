@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.cubic.IModel;
 import mchorse.bbs_mod.cubic.ik.ModelIKRuntime;
 import org.spongepowered.asm.mixin.Mixin;
@@ -29,8 +30,8 @@ public abstract class ModelIKRuntimeMixin
             IModel model, String tip, int chainLength, String target,
             CallbackInfoReturnable<Boolean> cir)
     {
-        if (BBSAddonsSettings.ikTargetCycleConstraint != null
-                && !BBSAddonsSettings.ikTargetCycleConstraint.get())
+        if (ModSettings.ikTargetCycleConstraint != null
+                && !ModSettings.ikTargetCycleConstraint.get())
         {
             cir.setReturnValue(false);
         }

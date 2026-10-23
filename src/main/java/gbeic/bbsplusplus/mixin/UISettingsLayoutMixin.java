@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.ui.morphing.UIBlockbenchPathRow;
 import mchorse.bbs_mod.settings.ui.UISettingsLayout;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
@@ -18,7 +19,7 @@ import java.util.Map;
  *
  * <p>BBS 在 {@link UISettingsLayout#build()} 里把特殊行按 Value 实例登记到 rows 表；
  * 本 Mixin 在该方法 TAIL 追加我们自己的那一行。rows 是懒加载、且在设置注册完成后才首次访问，
- * 因此 {@link BBSAddonsSettings#blockbenchPath} 此时必然已存在。</p>
+ * 因此 {@link ModSettings#blockbenchPath} 此时必然已存在。</p>
  */
 @Mixin(value = UISettingsLayout.class, remap = false)
 public abstract class UISettingsLayoutMixin
@@ -29,10 +30,10 @@ public abstract class UISettingsLayoutMixin
     @Inject(method = "build", at = @At("TAIL"), remap = false)
     private static void bbspp$registerBlockbenchPathRow(CallbackInfo ci)
     {
-        if (BBSAddonsSettings.blockbenchPath != null)
+        if (ModSettings.blockbenchPath != null)
         {
-            rows.put(BBSAddonsSettings.blockbenchPath,
-                new UIBlockbenchPathRow(BBSAddonsSettings.blockbenchPath));
+            rows.put(ModSettings.blockbenchPath,
+                new UIBlockbenchPathRow(ModSettings.blockbenchPath));
         }
     }
 }

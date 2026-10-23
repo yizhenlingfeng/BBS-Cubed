@@ -3,7 +3,7 @@ package gbeic.bbsplusplus.mixin.client;
 import gbeic.bbsplusplus.api.GizmoPivotTarget;
 import gbeic.bbsplusplus.api.PivotHolder;
 import gbeic.bbsplusplus.api.TransformPivotEditor;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.utils.Gizmo;
@@ -40,7 +40,7 @@ public abstract class UIPropTransformMixin implements TransformPivotEditor
     @Inject(method = "setTransform(Lmchorse/bbs_mod/utils/pose/Transform;)V", at = @At("TAIL"), remap = false)
     private void bbspp_cml$fillPivot(Transform transform, CallbackInfo ci)
     {
-        if (transform == null || (CMLSettings.pivotTransform != null && !CMLSettings.pivotTransform.get()))
+        if (transform == null || (ModSettings.pivotTransform != null && !ModSettings.pivotTransform.get()))
         {
             return;
         }

@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformGesture;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformOp;
@@ -39,8 +40,8 @@ public abstract class TransformGestureBlockbenchMixin
     @Inject(method = "getOp", at = @At("TAIL"), cancellable = true, remap = false)
     private void bbspp$defaultTranslate(CallbackInfoReturnable<TransformOp> cir)
     {
-        if (BBSAddonsSettings.blockbenchGizmo == null
-            || !BBSAddonsSettings.blockbenchGizmo.get())
+        if (ModSettings.blockbenchGizmo == null
+            || !ModSettings.blockbenchGizmo.get())
         {
             return;
         }
@@ -55,7 +56,7 @@ public abstract class TransformGestureBlockbenchMixin
             at = @At("HEAD"), cancellable = true, remap = false)
     private void bbspp$toggleOrRestore(TransformOp mode, CallbackInfo ci)
     {
-        if (BBSAddonsSettings.blockbenchGizmo == null || !BBSAddonsSettings.blockbenchGizmo.get())
+        if (ModSettings.blockbenchGizmo == null || !ModSettings.blockbenchGizmo.get())
         {
             return;
         }
@@ -68,8 +69,8 @@ public abstract class TransformGestureBlockbenchMixin
         }
 
         // gizmoKeepOriginal 开启时，第 2 次按 G/S/R 不恢复，保持原版直接切换行为
-        boolean keepOriginal = BBSAddonsSettings.gizmoKeepOriginal != null
-            && BBSAddonsSettings.gizmoKeepOriginal.get();
+        boolean keepOriginal = ModSettings.gizmoKeepOriginal != null
+            && ModSettings.gizmoKeepOriginal.get();
 
         TransformOp current = self.getOp();
 
@@ -93,7 +94,7 @@ public abstract class TransformGestureBlockbenchMixin
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true, remap = false)
     private void bbspp$cycleWithT(UIContext context, CallbackInfoReturnable<Boolean> cir)
     {
-        if (BBSAddonsSettings.blockbenchGizmo == null || !BBSAddonsSettings.blockbenchGizmo.get())
+        if (ModSettings.blockbenchGizmo == null || !ModSettings.blockbenchGizmo.get())
         {
             return;
         }

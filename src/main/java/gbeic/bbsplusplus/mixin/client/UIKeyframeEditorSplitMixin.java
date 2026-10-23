@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
@@ -63,9 +63,9 @@ public abstract class UIKeyframeEditorSplitMixin
             float split = (context.mouseX - self.area.x) / (float) self.area.w;
             split = Math.max(0.2F, Math.min(0.8F, split));
 
-            if (CMLSettings.keyframeEditorTimelineRatio != null)
+            if (ModSettings.keyframeEditorTimelineRatio != null)
             {
-                CMLSettings.keyframeEditorTimelineRatio.set(split);
+                ModSettings.keyframeEditorTimelineRatio.set(split);
             }
 
             this.bbspp_cml$applySplitLayout();
@@ -140,9 +140,9 @@ public abstract class UIKeyframeEditorSplitMixin
     @Unique
     private float bbspp_cml$getTimelineRatio()
     {
-        float ratio = CMLSettings.keyframeEditorTimelineRatio == null
+        float ratio = ModSettings.keyframeEditorTimelineRatio == null
             ? 0.65F
-            : CMLSettings.keyframeEditorTimelineRatio.get();
+            : ModSettings.keyframeEditorTimelineRatio.get();
 
         return Math.max(0.2F, Math.min(0.8F, ratio));
     }

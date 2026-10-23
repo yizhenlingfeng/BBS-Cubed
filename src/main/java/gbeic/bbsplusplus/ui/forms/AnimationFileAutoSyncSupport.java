@@ -2,7 +2,7 @@ package gbeic.bbsplusplus.ui.forms;
 
 import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.api.IBbsppAnimation;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.AnimationPart;
@@ -78,7 +78,7 @@ public class AnimationFileAutoSyncSupport
 
     private void trySync(AnimationState selected)
     {
-        if (!CMLSettings.isAutoLoadAnimationFileEnabled())
+        if (!ModSettings.isAutoLoadAnimationFileEnabled())
         {
             this.pending = false;
             return;

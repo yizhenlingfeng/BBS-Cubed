@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.util;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.BBSPlusPlusMod;
 import mchorse.bbs_mod.BBSMod;
 
@@ -227,7 +228,7 @@ public class ModelCullingConfigManager
      */
     private static boolean isEnabled()
     {
-        return BBSAddonsSettings.autoDisableFaceCulling != null
-            && BBSAddonsSettings.autoDisableFaceCulling.get();
+        return ModSettings.autoDisableFaceCulling != null
+            && ModSettings.autoDisableFaceCulling.get();
     }
 }

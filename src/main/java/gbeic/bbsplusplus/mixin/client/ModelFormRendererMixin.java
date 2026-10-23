@@ -7,7 +7,7 @@ import gbeic.bbsplusplus.api.PivotHolder;
 import gbeic.bbsplusplus.cubic.animation.AdditiveAnimator;
 import gbeic.bbsplusplus.cubic.animation.AdditiveLayerContext;
 import gbeic.bbsplusplus.cubic.animation.AdditiveProceduralAnimator;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.utils.MolangVariableScopes;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
@@ -184,7 +184,7 @@ public class ModelFormRendererMixin
     @Unique
     private void bbspp_cml$ensureActionsOverlayAnimators(IAnimator primaryAnimator)
     {
-        if (!CMLSettings.isSnowActionsEnabled())
+        if (!ModSettings.isSnowActionsEnabled())
         {
             this.bbspp_cml$clearActionsOverlayAnimators();
 

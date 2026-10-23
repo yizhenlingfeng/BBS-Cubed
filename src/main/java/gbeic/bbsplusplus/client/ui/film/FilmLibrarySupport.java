@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.client.ui.film;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.settings.values.core.ValueGroup;
@@ -66,7 +67,7 @@ public class FilmLibrarySupport
 
     public boolean isSortDescending()
     {
-        return BBSAddonsSettings.filmLibrarySortMode != null && BBSAddonsSettings.filmLibrarySortMode.get() == 1;
+        return ModSettings.filmLibrarySortMode != null && ModSettings.filmLibrarySortMode.get() == 1;
     }
 
     public IKey getSortLabel()
@@ -80,9 +81,9 @@ public class FilmLibrarySupport
     {
         boolean descending = !this.isSortDescending();
 
-        if (BBSAddonsSettings.filmLibrarySortMode != null)
+        if (ModSettings.filmLibrarySortMode != null)
         {
-            BBSAddonsSettings.filmLibrarySortMode.set(descending ? 1 : 0);
+            ModSettings.filmLibrarySortMode.set(descending ? 1 : 0);
         }
 
         if (this.list instanceof IFilmLibraryPathList pathList)

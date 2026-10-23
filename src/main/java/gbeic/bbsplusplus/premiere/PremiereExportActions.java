@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.premiere;
 
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
@@ -35,8 +35,8 @@ public final class PremiereExportActions
             return;
         }
 
-        boolean audioOnly = CMLSettings.premiereExportAudioOnly != null
-            && CMLSettings.premiereExportAudioOnly.get();
+        boolean audioOnly = ModSettings.premiereExportAudioOnly != null
+            && ModSettings.premiereExportAudioOnly.get();
 
         /* 仅音频模式不需要 FFmpeg/视频录制 */
         if (!audioOnly && !FFMpegUtils.checkFFMPEG())
@@ -46,7 +46,7 @@ public final class PremiereExportActions
             return;
         }
 
-        if (CMLSettings.premiereExportEnabled == null || !CMLSettings.premiereExportEnabled.get())
+        if (ModSettings.premiereExportEnabled == null || !ModSettings.premiereExportEnabled.get())
         {
             UIOverlay.addOverlay(filmPanel.getContext(),
                 new UIMessageOverlayPanel(PremiereUIKeys.EXPORT, PremiereUIKeys.DISABLED));

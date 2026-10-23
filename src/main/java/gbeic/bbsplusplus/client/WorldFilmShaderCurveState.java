@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.client;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.camera.clips.CameraClipContext;
 import mchorse.bbs_mod.camera.clips.misc.CurveClip;
 import mchorse.bbs_mod.camera.data.Position;
@@ -81,8 +82,8 @@ public class WorldFilmShaderCurveState
 
     private static boolean isEnabled()
     {
-        return BBSAddonsSettings.worldFilmShaderCurves != null
-            && BBSAddonsSettings.worldFilmShaderCurves.get();
+        return ModSettings.worldFilmShaderCurves != null
+            && ModSettings.worldFilmShaderCurves.get();
     }
 
     private static void applyShaderVariables()

@@ -4,7 +4,7 @@ import gbeic.bbsplusplus.api.BonePbrHolder;
 import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.PickTextureButtonHolder;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.cubic.IBoneHierarchy;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.resources.Link;
@@ -43,10 +43,10 @@ import java.util.function.Consumer;
  *
  * <p><b>骨骼纹理</b> —— 点开按钮弹出 {@link UITexturePicker}，选择纹理后写回当前选中骨骼对应
  * {@link PoseTransform} 的 texture 字段（经 {@link BoneTextureHolder} 接口）。
- * 默认无选中骨骼则 no-op；受 {@code CMLSettings.pickLimbTexture} 开关控制（与 CML 行为一致）。</p>
+ * 默认无选中骨骼则 no-op；受 {@code ModSettings.pickLimbTexture} 开关控制（与 CML 行为一致）。</p>
  *
  * <p><b>附魔光效</b> —— 点击切换当前选中骨骼的原版风格附魔流光（经 {@link GlintHolder} 接口），
- * 受 {@code CMLSettings.enchantGlint} 开关控制，按钮文字会反映当前骨骼的开/关状态。
+ * 受 {@code ModSettings.enchantGlint} 开关控制，按钮文字会反映当前骨骼的开/关状态。
  * 两个按钮共用同一套写入分派（{@link #bbspp_cml$writeToSelection}）。</p>
  *
  * <p>纹理数据流：UI → {@code BoneTextureHolder#bbspp_cml$setTexture} →
@@ -537,7 +537,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         }
 
         UIPoseEditor self = (UIPoseEditor) (Object) this;
-        boolean enabled = CMLSettings.enchantGlint != null && CMLSettings.enchantGlint.get();
+        boolean enabled = ModSettings.enchantGlint != null && ModSettings.enchantGlint.get();
 
         /* BBS ColumnResizer 布局不跳过不可见元素：隐藏时必须真的从父容器移除，
          * 否则即使 setVisible(false) 也会在面板上留一块空白。 */
@@ -583,7 +583,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             return;
         }
 
-        boolean enabled = CMLSettings.pickLimbTexture != null && CMLSettings.pickLimbTexture.get();
+        boolean enabled = ModSettings.pickLimbTexture != null && ModSettings.pickLimbTexture.get();
 
         this.bbspp_cml$pickTexture.setVisible(enabled);
     }

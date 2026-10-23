@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.client.compat.iris.SafeShaderLanguageMap;
 import gbeic.bbsplusplus.client.compat.iris.ShaderCurveState;
 import gbeic.bbsplusplus.client.ui.curves.UIShaderCurvePickerOverlayPanel;
@@ -55,7 +56,7 @@ public abstract class UICurveClipMixin
     @Inject(method = "offerCurveKeys", at = @At("HEAD"), cancellable = true, remap = true)
     private static void bbspp$openShaderCurvePicker(UIContext context, List<String> existing, Consumer<String> callback, CallbackInfo ci)
     {
-        if (BBSAddonsSettings.shaderCurvePicker == null || !BBSAddonsSettings.shaderCurvePicker.get())
+        if (ModSettings.shaderCurvePicker == null || !ModSettings.shaderCurvePicker.get())
         {
             return;
         }

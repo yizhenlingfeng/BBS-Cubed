@@ -1,12 +1,13 @@
 package gbeic.bbsplusplus.mixin;
 
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.ui.forms.editors.UIFormEditor;
-import gbeic.bbsplusplus.BBSAddonsSettings;
 import mchorse.bbs_mod.utils.Pair;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -38,7 +39,7 @@ public abstract class UIFormEditorMixin
     @Inject(method = "openFormList", at = @At("HEAD"), cancellable = true, remap = true)
     private void openBBSPPFormList(Form current, java.util.function.Consumer<Form> callback, CallbackInfo ci)
     {
-        if (BBSAddonsSettings.newMorphingPanel == null || !BBSAddonsSettings.newMorphingPanel.get())
+        if (ModSettings.newMorphingPanel == null || !ModSettings.newMorphingPanel.get())
         {
             return;
         }
@@ -68,7 +69,7 @@ public abstract class UIFormEditorMixin
     @Inject(method = "pickFormFromRenderer", at = @At("HEAD"), cancellable = true, remap = true)
     private void onPickFormFromRenderer(Pair<Form, String> pair, CallbackInfo ci)
     {
-        if (Window.isShiftPressed() && !Window.isCtrlPressed() && BBSAddonsSettings.directParentPicking != null && BBSAddonsSettings.directParentPicking.get())
+        if (Window.isShiftPressed() && !Window.isCtrlPressed() && ModSettings.directParentPicking != null && ModSettings.directParentPicking.get())
         {
             if (pair.a instanceof ModelForm modelForm)
             {

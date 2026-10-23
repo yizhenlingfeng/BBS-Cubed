@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.film.UIClipsPanel;
@@ -54,13 +55,13 @@ public abstract class UIKeyframeDopeSheetTrackHeightScrollMixin
             return;
         }
 
-        BBSAddonsSettings.AltWheelTimelineMode mode = BBSAddonsSettings.getFilmAltWheelTimelineMode();
+        ModSettings.AltWheelTimelineMode mode = ModSettings.getFilmAltWheelTimelineMode();
 
-        if (mode == BBSAddonsSettings.AltWheelTimelineMode.DISABLED)
+        if (mode == ModSettings.AltWheelTimelineMode.DISABLED)
         {
             ci.cancel();
         }
-        else if (mode == BBSAddonsSettings.AltWheelTimelineMode.HORIZONTAL_SCROLL)
+        else if (mode == ModSettings.AltWheelTimelineMode.HORIZONTAL_SCROLL)
         {
             this.bbspp$scrollTimelineHorizontally(context);
             ci.cancel();
@@ -95,7 +96,7 @@ public abstract class UIKeyframeDopeSheetTrackHeightScrollMixin
     {
         double offsetX = (25F * BBSSettings.scrollingSensitivityHorizontal.get() * context.mouseWheel) / this.keyframes.getXAxis().getZoom();
 
-        return BBSAddonsSettings.reverseTimelineScroll != null && BBSAddonsSettings.reverseTimelineScroll.get()
+        return ModSettings.reverseTimelineScroll != null && ModSettings.reverseTimelineScroll.get()
             ? -offsetX
             : offsetX;
     }
@@ -126,6 +127,6 @@ public abstract class UIKeyframeDopeSheetTrackHeightScrollMixin
 
     private boolean bbspp$shouldReverseTimelineScroll()
     {
-        return BBSAddonsSettings.reverseTimelineScroll != null && BBSAddonsSettings.reverseTimelineScroll.get();
+        return ModSettings.reverseTimelineScroll != null && ModSettings.reverseTimelineScroll.get();
     }
 }

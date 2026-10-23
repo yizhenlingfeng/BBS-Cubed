@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.client.ui.film;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 
 import java.util.ArrayList;
@@ -47,9 +48,9 @@ public class TrackOrderStore
     {
         List<String> keys = new ArrayList<>();
 
-        if (BBSAddonsSettings.replayTrackOrder != null)
+        if (ModSettings.replayTrackOrder != null)
         {
-            String raw = BBSAddonsSettings.replayTrackOrder.get();
+            String raw = ModSettings.replayTrackOrder.get();
 
             if (raw != null && !raw.isEmpty())
             {
@@ -69,9 +70,9 @@ public class TrackOrderStore
     /** 清空自定义顺序，恢复目录默认排序并持久化。 */
     public static void reset()
     {
-        if (BBSAddonsSettings.replayTrackOrder != null)
+        if (ModSettings.replayTrackOrder != null)
         {
-            BBSAddonsSettings.replayTrackOrder.set("");
+            ModSettings.replayTrackOrder.set("");
         }
     }
 
@@ -81,7 +82,7 @@ public class TrackOrderStore
      */
     public static void saveOrder(List<UIKeyframeSheet> sheets)
     {
-        if (BBSAddonsSettings.replayTrackOrder == null)
+        if (ModSettings.replayTrackOrder == null)
         {
             return;
         }
@@ -95,7 +96,7 @@ public class TrackOrderStore
 
         merged.addAll(getOrder());
 
-        BBSAddonsSettings.replayTrackOrder.set(String.join(SEPARATOR, merged));
+        ModSettings.replayTrackOrder.set(String.join(SEPARATOR, merged));
     }
 
     /**

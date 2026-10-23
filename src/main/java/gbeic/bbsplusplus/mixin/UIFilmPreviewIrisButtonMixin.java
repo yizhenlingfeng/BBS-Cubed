@@ -1,5 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.l10n.L10n;
 import gbeic.bbsplusplus.util.PanelHighlight;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
@@ -8,7 +10,6 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
-import gbeic.bbsplusplus.BBSAddonsSettings;
 import gbeic.bbsplusplus.ui.film.FilmToolbarOverflow;
 import gbeic.bbsplusplus.util.IrisHelper;
 import net.fabricmc.loader.api.FabricLoader;
@@ -30,7 +31,7 @@ public abstract class UIFilmPreviewIrisButtonMixin {
             UIIcon irisButton = new UIIcon(Icons.SUN, null) {
                 @Override
                 protected boolean isAllowed(int mouseButton) {
-                    if (BBSAddonsSettings.enableIrisButton != null && !BBSAddonsSettings.enableIrisButton.get()) return false;
+                    if (ModSettings.enableIrisButton != null && !ModSettings.enableIrisButton.get()) return false;
                     return mouseButton == 0 || mouseButton == 1;
                 }
 
@@ -57,7 +58,7 @@ public abstract class UIFilmPreviewIrisButtonMixin {
 
                 @Override
                 public void render(UIContext context) {
-                    boolean enabled = BBSAddonsSettings.enableIrisButton != null && BBSAddonsSettings.enableIrisButton.get();
+                    boolean enabled = ModSettings.enableIrisButton != null && ModSettings.enableIrisButton.get();
 
                     /* 只在开关真正发生变化时调整宽度并重排一次，避免每帧重排。 */
                     if (this.bbspp$appliedEnabled == null || this.bbspp$appliedEnabled != enabled) {

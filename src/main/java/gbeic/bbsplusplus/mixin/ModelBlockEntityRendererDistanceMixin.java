@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -20,9 +21,9 @@ public class ModelBlockEntityRendererDistanceMixin
     @Inject(method = "getRenderDistance", at = @At("HEAD"), cancellable = true, remap = true)
     private void bbspp$overrideRenderDistance(CallbackInfoReturnable<Integer> cir)
     {
-        if (BBSAddonsSettings.modelBlockRenderDistance != null)
+        if (ModSettings.modelBlockRenderDistance != null)
         {
-            int distance = BBSAddonsSettings.modelBlockRenderDistance.get();
+            int distance = ModSettings.modelBlockRenderDistance.get();
             if (distance > 0)
             {
                 cir.setReturnValue(distance);

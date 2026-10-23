@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -24,7 +25,7 @@ public class UIFilmPanelScrollMixin {
         remap = true
     )
     private double redirectCopySign(double magnitude, double sign) {
-        if (BBSAddonsSettings.reverseTimelineScroll != null && BBSAddonsSettings.reverseTimelineScroll.get()) {
+        if (ModSettings.reverseTimelineScroll != null && ModSettings.reverseTimelineScroll.get()) {
             return Math.copySign(magnitude, -sign);
         }
         return Math.copySign(magnitude, sign);

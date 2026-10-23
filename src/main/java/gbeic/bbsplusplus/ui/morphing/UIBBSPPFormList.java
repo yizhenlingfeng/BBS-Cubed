@@ -1,5 +1,7 @@
 package gbeic.bbsplusplus.ui.morphing;
 
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.forms.FormCategories;
@@ -19,7 +21,6 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
-import gbeic.bbsplusplus.BBSAddonsSettings;
 import gbeic.bbsplusplus.mixin.UIFormListAccessor;
 
 import java.io.File;
@@ -130,14 +131,14 @@ public class UIBBSPPFormList extends UIFormList
 
     private boolean isListMode()
     {
-        return BBSAddonsSettings.morphingLayoutMode != null
-            && BBSAddonsSettings.morphingLayoutMode.get() == 0;
+        return ModSettings.morphingLayoutMode != null
+            && ModSettings.morphingLayoutMode.get() == 0;
     }
 
     private int getIconScale()
     {
-        return BBSAddonsSettings.morphingIconScale != null
-            ? BBSAddonsSettings.morphingIconScale.get() : 100;
+        return ModSettings.morphingIconScale != null
+            ? ModSettings.morphingIconScale.get() : 100;
     }
 
     /**
@@ -160,9 +161,9 @@ public class UIBBSPPFormList extends UIFormList
 
     private void setLayoutMode(int mode)
     {
-        if (BBSAddonsSettings.morphingLayoutMode != null)
+        if (ModSettings.morphingLayoutMode != null)
         {
-            BBSAddonsSettings.morphingLayoutMode.set(mode);
+            ModSettings.morphingLayoutMode.set(mode);
         }
 
         this.layoutToggleBtn.both(this.getCurrentLayoutIcon());
@@ -339,9 +340,9 @@ public class UIBBSPPFormList extends UIFormList
             int delta = context.mouseWheel > 0 ? 10 : -10;
             int newScale = Math.max(20, Math.min(200, currentScale + delta));
 
-            if (BBSAddonsSettings.morphingIconScale != null)
+            if (ModSettings.morphingIconScale != null)
             {
-                BBSAddonsSettings.morphingIconScale.set(newScale);
+                ModSettings.morphingIconScale.set(newScale);
             }
 
             this.updateCategoryLayout();

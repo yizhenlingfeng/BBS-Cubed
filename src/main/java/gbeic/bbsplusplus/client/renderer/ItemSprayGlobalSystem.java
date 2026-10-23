@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.client.renderer;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.client.debug.ItemSprayDebug;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.api.events.ModelBlockEntityUpdateCallback;
@@ -159,26 +160,26 @@ final class ItemSprayGlobalSystem
 
     private static boolean isFrustumCullingEnabled()
     {
-        return BBSAddonsSettings.itemSprayFrustumCulling == null || BBSAddonsSettings.itemSprayFrustumCulling.get();
+        return ModSettings.itemSprayFrustumCulling == null || ModSettings.itemSprayFrustumCulling.get();
     }
 
     static int getMaxRenderedItems()
     {
-        if (BBSAddonsSettings.itemSprayMaxRenderedItems == null)
+        if (ModSettings.itemSprayMaxRenderedItems == null)
         {
             return DEFAULT_MAX_RENDERED_ITEMS;
         }
 
-        return Math.max(0, BBSAddonsSettings.itemSprayMaxRenderedItems.get());
+        return Math.max(0, ModSettings.itemSprayMaxRenderedItems.get());
     }
 
     static double getMaxRenderDistanceSquared()
     {
         int distance = DEFAULT_MAX_RENDER_DISTANCE;
 
-        if (BBSAddonsSettings.itemSprayMaxRenderDistance != null)
+        if (ModSettings.itemSprayMaxRenderDistance != null)
         {
-            distance = Math.max(0, BBSAddonsSettings.itemSprayMaxRenderDistance.get());
+            distance = Math.max(0, ModSettings.itemSprayMaxRenderDistance.get());
         }
 
         if (distance <= 0)

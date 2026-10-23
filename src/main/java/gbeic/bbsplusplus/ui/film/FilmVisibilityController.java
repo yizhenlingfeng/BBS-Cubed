@@ -1,5 +1,7 @@
 package gbeic.bbsplusplus.ui.film;
 
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
@@ -250,16 +252,16 @@ public final class FilmVisibilityController
     public static boolean preventsLockedLayoutResizing(UIFilmPanel panel)
     {
         return panel != null && panel.dock != null && panel.dock.isLocked()
-            && gbeic.bbsplusplus.settings.CMLSettings.lockedLayoutPreventsResizing != null
-            && gbeic.bbsplusplus.settings.CMLSettings.lockedLayoutPreventsResizing.get();
+            && gbeic.bbsplusplus.settings.ModSettings.lockedLayoutPreventsResizing != null
+            && gbeic.bbsplusplus.settings.ModSettings.lockedLayoutPreventsResizing.get();
     }
 
     /** Same guard for a dock: applies when the dock belongs to a film panel (2.5 shared UIDockLayout). */
     public static boolean preventsLockedLayoutResizing(mchorse.bbs_mod.ui.framework.elements.layout.UIDockLayout dock)
     {
         if (dock == null
-            || gbeic.bbsplusplus.settings.CMLSettings.lockedLayoutPreventsResizing == null
-            || !gbeic.bbsplusplus.settings.CMLSettings.lockedLayoutPreventsResizing.get())
+            || gbeic.bbsplusplus.settings.ModSettings.lockedLayoutPreventsResizing == null
+            || !gbeic.bbsplusplus.settings.ModSettings.lockedLayoutPreventsResizing.get())
         {
             return false;
         }

@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.api.ActionTimelineConfig;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.timeline.ActionTimelineEvaluator;
 import mchorse.bbs_mod.cubic.animation.ActionConfig;
 import mchorse.bbs_mod.cubic.animation.ActionPlayback;
@@ -35,7 +35,7 @@ public abstract class ActionPlaybackMixin
     @Inject(method = "getTick", at = @At("HEAD"), cancellable = true, remap = false)
     private void bbspp_cml$seekFromTimeline(float transition, CallbackInfoReturnable<Float> cir)
     {
-        if (!CMLSettings.isSnowActionsEnabled())
+        if (!ModSettings.isSnowActionsEnabled())
         {
             return;
         }
@@ -62,7 +62,7 @@ public abstract class ActionPlaybackMixin
     @Inject(method = "update", at = @At("HEAD"), cancellable = true, remap = false)
     private void bbspp_cml$timelineSkipsPlaybackClock(CallbackInfo ci)
     {
-        if (!CMLSettings.isSnowActionsEnabled()
+        if (!ModSettings.isSnowActionsEnabled()
             || !((ActionTimelineConfig) this.config).bbspp_cml$isTimelineDriven())
         {
             return;

@@ -1,7 +1,8 @@
 package gbeic.bbsplusplus.mixin;
 
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
-import gbeic.bbsplusplus.BBSAddonsSettings;
 import gbeic.bbsplusplus.util.FilmAutoGameModeRestoreState;
 import gbeic.bbsplusplus.util.GameModeMessageSuppressor;
 
@@ -39,8 +40,8 @@ public abstract class UIFilmPanelGameModeMixin
     )
     private void onFilmPanelAppear(CallbackInfo ci)
     {
-        if (BBSAddonsSettings.filmAutoGameMode != null
-            && !BBSAddonsSettings.filmAutoGameMode.get())
+        if (ModSettings.filmAutoGameMode != null
+            && !ModSettings.filmAutoGameMode.get())
         {
             return; /* 设置关闭，不自动切换 */
         }

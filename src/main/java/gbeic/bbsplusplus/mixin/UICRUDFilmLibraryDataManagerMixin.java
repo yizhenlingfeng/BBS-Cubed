@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.client.ui.film.IFilmLibraryLayoutToggle;
 import mchorse.bbs_mod.ui.dashboard.panels.UICRUDDashboardPanel;
 import mchorse.bbs_mod.ui.dashboard.panels.UIEditorDashboardPanel;
@@ -38,7 +39,7 @@ public abstract class UICRUDFilmLibraryDataManagerMixin
 
             /* 只有 Landing 侧确实接管了影片库（Mixin 已应用）时才停用浮窗；
              * 否则保留原版数据管理器作为降级入口。 */
-            if (BBSAddonsSettings.newFilmLibraryUi != null && BBSAddonsSettings.newFilmLibraryUi.get())
+            if (ModSettings.newFilmLibraryUi != null && ModSettings.newFilmLibraryUi.get())
             {
                 ci.cancel();
             }

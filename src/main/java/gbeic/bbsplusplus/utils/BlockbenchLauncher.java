@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.utils;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import org.slf4j.Logger;
@@ -32,7 +33,7 @@ public final class BlockbenchLauncher
     /** 当前配置的 Blockbench.exe 是否可用（路径非空且指向真实文件）。 */
     public static boolean isExeValid()
     {
-        String path = BBSAddonsSettings.blockbenchPath == null ? "" : BBSAddonsSettings.blockbenchPath.get();
+        String path = ModSettings.blockbenchPath == null ? "" : ModSettings.blockbenchPath.get();
 
         return path != null && !path.trim().isEmpty() && new File(path.trim()).isFile();
     }
@@ -71,8 +72,8 @@ public final class BlockbenchLauncher
             return null;
         }
 
-        boolean preferBbmodel = BBSAddonsSettings.blockbenchPreferBbmodel != null
-            && BBSAddonsSettings.blockbenchPreferBbmodel.get();
+        boolean preferBbmodel = ModSettings.blockbenchPreferBbmodel != null
+            && ModSettings.blockbenchPreferBbmodel.get();
 
         if (preferBbmodel)
         {
@@ -116,7 +117,7 @@ public final class BlockbenchLauncher
 
         if (!isExeValid())
         {
-            LOGGER.warn("[blockbench] exe 路径无效: {}", BBSAddonsSettings.blockbenchPath == null ? "(null)" : BBSAddonsSettings.blockbenchPath.get());
+            LOGGER.warn("[blockbench] exe 路径无效: {}", ModSettings.blockbenchPath == null ? "(null)" : ModSettings.blockbenchPath.get());
             return false;
         }
 
@@ -128,7 +129,7 @@ public final class BlockbenchLauncher
             return false;
         }
 
-        String exe = BBSAddonsSettings.blockbenchPath.get().trim();
+        String exe = ModSettings.blockbenchPath.get().trim();
 
         try
         {

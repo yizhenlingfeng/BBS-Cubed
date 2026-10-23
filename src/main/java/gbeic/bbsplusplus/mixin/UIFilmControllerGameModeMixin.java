@@ -1,7 +1,8 @@
 package gbeic.bbsplusplus.mixin;
 
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.ui.film.controller.UIFilmController;
-import gbeic.bbsplusplus.BBSAddonsSettings;
 import gbeic.bbsplusplus.util.GameModeMessageSuppressor;
 import mchorse.bbs_mod.settings.values.numeric.ValueBoolean;
 import net.minecraft.client.MinecraftClient;
@@ -57,8 +58,8 @@ public abstract class UIFilmControllerGameModeMixin
     )
     private void onToggleControlTail(CallbackInfo ci)
     {
-        if (BBSAddonsSettings.filmAutoGameMode != null
-            && !BBSAddonsSettings.filmAutoGameMode.get())
+        if (ModSettings.filmAutoGameMode != null
+            && !ModSettings.filmAutoGameMode.get())
         {
             return; /* 设置关闭，不做干预 */
         }

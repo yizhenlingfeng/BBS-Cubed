@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.ui.forms;
 
 import gbeic.bbsplusplus.BBSPlusPlusClient;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.settings.values.ui.EditorLayoutNode;
@@ -53,7 +53,7 @@ public class AnimationStateLayoutSource implements ILayoutSource
 
     private EditorLayoutNode loadRoot()
     {
-        String value = CMLSettings.animationStateLayout == null ? null : CMLSettings.animationStateLayout.get();
+        String value = ModSettings.animationStateLayout == null ? null : ModSettings.animationStateLayout.get();
 
         if (value == null || value.isBlank())
         {
@@ -77,7 +77,7 @@ public class AnimationStateLayoutSource implements ILayoutSource
 
     private Set<String> loadHidden()
     {
-        String value = CMLSettings.animationStateHiddenPanels == null ? null : CMLSettings.animationStateHiddenPanels.get();
+        String value = ModSettings.animationStateHiddenPanels == null ? null : ModSettings.animationStateHiddenPanels.get();
 
         if (value == null || value.isBlank())
         {
@@ -114,22 +114,22 @@ public class AnimationStateLayoutSource implements ILayoutSource
 
     private void saveRoot()
     {
-        if (CMLSettings.animationStateLayout == null || this.root == null)
+        if (ModSettings.animationStateLayout == null || this.root == null)
         {
             return;
         }
 
         String serialized = DataToString.toString(this.root.toData(), false);
 
-        if (!serialized.equals(CMLSettings.animationStateLayout.get()))
+        if (!serialized.equals(ModSettings.animationStateLayout.get()))
         {
-            CMLSettings.animationStateLayout.set(serialized);
+            ModSettings.animationStateLayout.set(serialized);
         }
     }
 
     private void saveHidden()
     {
-        if (CMLSettings.animationStateHiddenPanels == null)
+        if (ModSettings.animationStateHiddenPanels == null)
         {
             return;
         }
@@ -148,9 +148,9 @@ public class AnimationStateLayoutSource implements ILayoutSource
             serialized = DataToString.toString(list, false);
         }
 
-        if (!serialized.equals(CMLSettings.animationStateHiddenPanels.get()))
+        if (!serialized.equals(ModSettings.animationStateHiddenPanels.get()))
         {
-            CMLSettings.animationStateHiddenPanels.set(serialized);
+            ModSettings.animationStateHiddenPanels.set(serialized);
         }
     }
 

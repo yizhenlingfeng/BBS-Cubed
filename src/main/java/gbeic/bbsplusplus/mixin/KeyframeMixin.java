@@ -1,11 +1,12 @@
 package gbeic.bbsplusplus.mixin;
 
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.keyframes.EquipmentKeyframeTransformHolder;
 import gbeic.bbsplusplus.keyframes.EquipmentKeyframeTransforms;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
-import gbeic.bbsplusplus.BBSAddonsSettings;
 import mchorse.bbs_mod.utils.pose.Transform;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -59,7 +60,7 @@ public class KeyframeMixin implements EquipmentKeyframeTransformHolder
 
     private static float clampNegativeTick(float tick)
     {
-        if (tick < 0 && BBSAddonsSettings.preventNegativeKeyframes != null && BBSAddonsSettings.preventNegativeKeyframes.get())
+        if (tick < 0 && ModSettings.preventNegativeKeyframes != null && ModSettings.preventNegativeKeyframes.get())
         {
             return 0F;
         }

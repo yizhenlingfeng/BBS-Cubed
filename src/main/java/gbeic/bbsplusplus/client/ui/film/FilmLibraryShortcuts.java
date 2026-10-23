@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.client.ui.film;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.utils.DataPath;
 
 import java.util.ArrayList;
@@ -19,12 +20,12 @@ public final class FilmLibraryShortcuts
     {
         List<DataPath> shortcuts = new ArrayList<>();
 
-        if (BBSAddonsSettings.filmLibraryShortcuts == null)
+        if (ModSettings.filmLibraryShortcuts == null)
         {
             return shortcuts;
         }
 
-        String raw = BBSAddonsSettings.filmLibraryShortcuts.get();
+        String raw = ModSettings.filmLibraryShortcuts.get();
 
         if (raw == null || raw.isEmpty())
         {
@@ -51,7 +52,7 @@ public final class FilmLibraryShortcuts
 
     public static void save(List<DataPath> shortcuts)
     {
-        if (BBSAddonsSettings.filmLibraryShortcuts == null)
+        if (ModSettings.filmLibraryShortcuts == null)
         {
             return;
         }
@@ -68,7 +69,7 @@ public final class FilmLibraryShortcuts
             builder.append(shortcut.toString());
         }
 
-        BBSAddonsSettings.filmLibraryShortcuts.set(builder.toString());
+        ModSettings.filmLibraryShortcuts.set(builder.toString());
     }
 
     public static boolean isPinned(DataPath folder)

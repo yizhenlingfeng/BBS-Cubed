@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -35,8 +36,8 @@ public abstract class ModelIKCacheMixin
     )
     private static boolean bbspp$allowCyclicTarget(List<String> chainIds, Object target)
     {
-        if (BBSAddonsSettings.ikTargetCycleConstraint != null
-                && !BBSAddonsSettings.ikTargetCycleConstraint.get())
+        if (ModSettings.ikTargetCycleConstraint != null
+                && !ModSettings.ikTargetCycleConstraint.get())
         {
             return false;
         }

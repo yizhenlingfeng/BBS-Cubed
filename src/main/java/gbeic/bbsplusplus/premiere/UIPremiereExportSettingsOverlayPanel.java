@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.premiere;
 
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
@@ -29,9 +29,9 @@ public class UIPremiereExportSettingsOverlayPanel extends UIOverlayPanel
 
         this.enabled = new UIToggle(L10n.lang("bbs.config.bbs_snow.premiere_export_enabled"), (b) ->
         {
-            if (CMLSettings.premiereExportEnabled != null)
+            if (ModSettings.premiereExportEnabled != null)
             {
-                CMLSettings.premiereExportEnabled.set(b.getValue());
+                ModSettings.premiereExportEnabled.set(b.getValue());
                 this.bbspp_cml$updateButtonVisibility();
             }
         });
@@ -39,36 +39,36 @@ public class UIPremiereExportSettingsOverlayPanel extends UIOverlayPanel
 
         this.individualAudio = new UIToggle(L10n.lang("bbs.config.bbs_snow.premiere_export_individual_audio"), (b) ->
         {
-            if (CMLSettings.premiereExportIndividualAudio != null)
+            if (ModSettings.premiereExportIndividualAudio != null)
             {
-                CMLSettings.premiereExportIndividualAudio.set(b.getValue());
+                ModSettings.premiereExportIndividualAudio.set(b.getValue());
             }
         });
         this.individualAudio.tooltip(L10n.lang("bbs.config.bbs_snow.premiere_export_individual_audio-comment"));
 
         this.audioOnly = new UIToggle(L10n.lang("bbs.config.bbs_snow.premiere_export_audio_only"), (b) ->
         {
-            if (CMLSettings.premiereExportAudioOnly != null)
+            if (ModSettings.premiereExportAudioOnly != null)
             {
-                CMLSettings.premiereExportAudioOnly.set(b.getValue());
+                ModSettings.premiereExportAudioOnly.set(b.getValue());
             }
         });
         this.audioOnly.tooltip(L10n.lang("bbs.config.bbs_snow.premiere_export_audio_only-comment"));
 
         this.ntscFlag = new UIToggle(L10n.lang("bbs.config.bbs_snow.premiere_export_ntsc_flag"), (b) ->
         {
-            if (CMLSettings.premiereExportNtscFlag != null)
+            if (ModSettings.premiereExportNtscFlag != null)
             {
-                CMLSettings.premiereExportNtscFlag.set(b.getValue());
+                ModSettings.premiereExportNtscFlag.set(b.getValue());
             }
         });
         this.ntscFlag.tooltip(L10n.lang("bbs.config.bbs_snow.premiere_export_ntsc_flag-comment"));
 
         this.exportSrt = new UIToggle(L10n.lang("bbs.config.bbs_snow.premiere_export_srt"), (b) ->
         {
-            if (CMLSettings.premiereExportSrt != null)
+            if (ModSettings.premiereExportSrt != null)
             {
-                CMLSettings.premiereExportSrt.set(b.getValue());
+                ModSettings.premiereExportSrt.set(b.getValue());
             }
         });
         this.exportSrt.tooltip(L10n.lang("bbs.config.bbs_snow.premiere_export_srt-comment"));
@@ -98,25 +98,25 @@ public class UIPremiereExportSettingsOverlayPanel extends UIOverlayPanel
 
     private void fill()
     {
-        if (CMLSettings.premiereExportEnabled != null)
+        if (ModSettings.premiereExportEnabled != null)
         {
-            this.enabled.setValue(CMLSettings.premiereExportEnabled.get());
+            this.enabled.setValue(ModSettings.premiereExportEnabled.get());
         }
-        if (CMLSettings.premiereExportIndividualAudio != null)
+        if (ModSettings.premiereExportIndividualAudio != null)
         {
-            this.individualAudio.setValue(CMLSettings.premiereExportIndividualAudio.get());
+            this.individualAudio.setValue(ModSettings.premiereExportIndividualAudio.get());
         }
-        if (CMLSettings.premiereExportAudioOnly != null)
+        if (ModSettings.premiereExportAudioOnly != null)
         {
-            this.audioOnly.setValue(CMLSettings.premiereExportAudioOnly.get());
+            this.audioOnly.setValue(ModSettings.premiereExportAudioOnly.get());
         }
-        if (CMLSettings.premiereExportNtscFlag != null)
+        if (ModSettings.premiereExportNtscFlag != null)
         {
-            this.ntscFlag.setValue(CMLSettings.premiereExportNtscFlag.get());
+            this.ntscFlag.setValue(ModSettings.premiereExportNtscFlag.get());
         }
-        if (CMLSettings.premiereExportSrt != null)
+        if (ModSettings.premiereExportSrt != null)
         {
-            this.exportSrt.setValue(CMLSettings.premiereExportSrt.get());
+            this.exportSrt.setValue(ModSettings.premiereExportSrt.get());
         }
     }
 }

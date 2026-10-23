@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.ui.morphing;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.settings.Settings;
 
 /**
@@ -20,12 +21,12 @@ public final class MorphingDefaultCategory
     /** 获取默认打开的入口 ID。 */
     public static String get()
     {
-        if (BBSAddonsSettings.morphingDefaultCategory == null)
+        if (ModSettings.morphingDefaultCategory == null)
         {
             return HOME;
         }
 
-        String value = BBSAddonsSettings.morphingDefaultCategory.get();
+        String value = ModSettings.morphingDefaultCategory.get();
 
         return value == null || value.isEmpty() ? HOME : value;
     }
@@ -39,7 +40,7 @@ public final class MorphingDefaultCategory
     /** 设置默认打开入口。 */
     public static void set(String id)
     {
-        if (BBSAddonsSettings.morphingDefaultCategory != null)
+        if (ModSettings.morphingDefaultCategory != null)
         {
             String value = id == null || id.isEmpty() ? HOME : id;
 
@@ -48,14 +49,14 @@ public final class MorphingDefaultCategory
                 return;
             }
 
-            BBSAddonsSettings.morphingDefaultCategory.set(value);
+            ModSettings.morphingDefaultCategory.set(value);
             saveNow();
         }
     }
 
     private static void saveNow()
     {
-        if (BBSAddonsSettings.morphingDefaultCategory.getRoot() instanceof Settings settings)
+        if (ModSettings.morphingDefaultCategory.getRoot() instanceof Settings settings)
         {
             settings.save();
         }

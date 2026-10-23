@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.mixin.client;
 
 import gbeic.bbsplusplus.api.TransformPivotEditor;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
@@ -24,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *
  * <p>写回经 {@link TransformPivotEditor#bbspp_cml$setP}（本类给默认空实现，
  * {@code UIPropTransformMixin} 在子类覆盖为写 transform.pivot + 回调通知）。
- * 受 BBS_snow 设置的 {@code CMLSettings.pivotTransform} 开关控制。</p>
+ * 受 BBS_snow 设置的 {@code ModSettings.pivotTransform} 开关控制。</p>
  */
 @Mixin(value = UITransform.class, remap = false)
 public abstract class UITransformMixin extends UIElement implements TransformPivotEditor
@@ -41,7 +41,7 @@ public abstract class UITransformMixin extends UIElement implements TransformPiv
     @Inject(method = "<init>", at = @At("TAIL"), remap = false)
     private void bbspp_cml$createPivotRow(CallbackInfo ci)
     {
-        if (CMLSettings.pivotTransform != null && !CMLSettings.pivotTransform.get())
+        if (ModSettings.pivotTransform != null && !ModSettings.pivotTransform.get())
         {
             return;
         }

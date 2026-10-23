@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.client.ui.film.FilmLibrarySupport;
 import gbeic.bbsplusplus.client.ui.film.IFilmLibraryLayoutToggle;
 import gbeic.bbsplusplus.client.ui.film.IFilmLibraryPathList;
@@ -57,7 +58,7 @@ public abstract class UIFilmLibraryLandingMixin extends UIElement implements IFi
             return;
         }
 
-        boolean enabled = BBSAddonsSettings.newFilmLibraryUi != null && BBSAddonsSettings.newFilmLibraryUi.get();
+        boolean enabled = ModSettings.newFilmLibraryUi != null && ModSettings.newFilmLibraryUi.get();
 
         if (enabled)
         {

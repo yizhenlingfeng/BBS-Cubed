@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.timeline.ui;
 
 import gbeic.bbsplusplus.api.ActionTimelineConfig;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.timeline.ActionTimelineEvaluator;
 import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import mchorse.bbs_mod.cubic.ModelInstance;
@@ -109,7 +109,7 @@ public class ActionsTimelineEditorSupport
 
     public void setTimelineContext(Keyframe<ActionsConfig> keyframe, UIKeyframes editor, ModelForm form, boolean overlay)
     {
-        if (!CMLSettings.isSnowActionsEnabled())
+        if (!ModSettings.isSnowActionsEnabled())
         {
             this.keyframe = null;
             this.timelineEditor = null;
@@ -170,7 +170,7 @@ public class ActionsTimelineEditorSupport
     /** 动作/动画列表选中变化时创建（或清理）成对的时间线端点关键帧。 */
     public void createAnimationEndpoint()
     {
-        if (!CMLSettings.isSnowActionsEnabled()
+        if (!ModSettings.isSnowActionsEnabled()
             || this.programmaticSelection > 0
             || this.keyframe == null
             || this.timelineEditor == null
@@ -276,7 +276,7 @@ public class ActionsTimelineEditorSupport
     {
         ActionConfig config = this.config.get();
 
-        if (!CMLSettings.isSnowActionsEnabled()
+        if (!ModSettings.isSnowActionsEnabled()
             || this.keyframe == null
             || config == null)
         {
@@ -317,7 +317,7 @@ public class ActionsTimelineEditorSupport
     {
         ActionConfig config = this.config.get();
 
-        return CMLSettings.isSnowActionsEnabled()
+        return ModSettings.isSnowActionsEnabled()
             && config != null
             && ((ActionTimelineConfig) config).bbspp_cml$isTimelineDriven();
     }

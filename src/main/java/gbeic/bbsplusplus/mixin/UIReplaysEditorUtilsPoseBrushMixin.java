@@ -1,5 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.client.ui.pose.IPoseParameterBrush;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -10,7 +12,6 @@ import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.ui.film.ICursor;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditorUtils;
 import mchorse.bbs_mod.ui.framework.UIContext;
-import gbeic.bbsplusplus.BBSAddonsSettings;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory;
@@ -81,7 +82,7 @@ public class UIReplaysEditorUtilsPoseBrushMixin
             return;
         }
 
-        if (Window.isShiftPressed() && !Window.isCtrlPressed() && BBSAddonsSettings.directParentPicking != null && BBSAddonsSettings.directParentPicking.get())
+        if (Window.isShiftPressed() && !Window.isCtrlPressed() && ModSettings.directParentPicking != null && ModSettings.directParentPicking.get())
         {
             if (pair.a instanceof ModelForm modelForm)
             {

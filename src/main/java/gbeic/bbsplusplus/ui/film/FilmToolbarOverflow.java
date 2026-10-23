@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.ui.film;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.film.UIFilmPreview;
@@ -92,9 +93,9 @@ public class FilmToolbarOverflow
     {
         Set<String> hidden = new LinkedHashSet<>();
 
-        if (BBSAddonsSettings.filmToolbarOverflow != null)
+        if (ModSettings.filmToolbarOverflow != null)
         {
-            String raw = BBSAddonsSettings.filmToolbarOverflow.get();
+            String raw = ModSettings.filmToolbarOverflow.get();
 
             if (raw != null && !raw.isEmpty())
             {
@@ -118,7 +119,7 @@ public class FilmToolbarOverflow
 
     public static void setHidden(String id, boolean hidden)
     {
-        if (BBSAddonsSettings.filmToolbarOverflow == null)
+        if (ModSettings.filmToolbarOverflow == null)
         {
             return;
         }
@@ -134,15 +135,15 @@ public class FilmToolbarOverflow
             ids.remove(id);
         }
 
-        BBSAddonsSettings.filmToolbarOverflow.set(String.join(SEPARATOR, ids));
+        ModSettings.filmToolbarOverflow.set(String.join(SEPARATOR, ids));
     }
 
     /** 清空收纳清单，全部工具还原到横条并持久化。 */
     public static void resetAll()
     {
-        if (BBSAddonsSettings.filmToolbarOverflow != null)
+        if (ModSettings.filmToolbarOverflow != null)
         {
-            BBSAddonsSettings.filmToolbarOverflow.set("");
+            ModSettings.filmToolbarOverflow.set("");
         }
     }
 

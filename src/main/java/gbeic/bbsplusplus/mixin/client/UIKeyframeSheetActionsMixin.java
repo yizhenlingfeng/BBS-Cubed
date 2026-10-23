@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.mixin.client;
 
 import gbeic.bbsplusplus.api.ActionTimelineConfig;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.cubic.animation.ActionConfig;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
 import mchorse.bbs_mod.settings.values.base.BaseValueBasic;
@@ -38,7 +38,7 @@ public abstract class UIKeyframeSheetActionsMixin
     @Inject(method = "remove", at = @At("HEAD"), remap = false)
     private void bbspp_cml$removeWholeTimelineSegment(Keyframe<?> keyframe, CallbackInfo ci)
     {
-        if (!CMLSettings.isSnowActionsEnabled()
+        if (!ModSettings.isSnowActionsEnabled()
             || this.bbspp_cml$removingTimelineSegment
             || !(keyframe.getValue() instanceof ActionsConfig selected))
         {

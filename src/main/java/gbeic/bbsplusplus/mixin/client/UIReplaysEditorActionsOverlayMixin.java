@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.utils.StringUtils;
@@ -18,7 +18,7 @@ public abstract class UIReplaysEditorActionsOverlayMixin
         CallbackInfoReturnable<Integer> cir
     )
     {
-        if (CMLSettings.isSnowActionsEnabled() && StringUtils.fileName(key).startsWith("actions_overlay"))
+        if (ModSettings.isSnowActionsEnabled() && StringUtils.fileName(key).startsWith("actions_overlay"))
         {
             cir.setReturnValue(UIReplaysEditor.getColor("actions"));
         }
@@ -30,7 +30,7 @@ public abstract class UIReplaysEditorActionsOverlayMixin
         CallbackInfoReturnable<Icon> cir
     )
     {
-        if (CMLSettings.isSnowActionsEnabled() && StringUtils.fileName(key).startsWith("actions_overlay"))
+        if (ModSettings.isSnowActionsEnabled() && StringUtils.fileName(key).startsWith("actions_overlay"))
         {
             cir.setReturnValue(UIReplaysEditor.getIcon("actions"));
         }

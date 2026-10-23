@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.timeline;
 
 import gbeic.bbsplusplus.api.ActionTimelineConfig;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.cubic.animation.ActionConfig;
 import mchorse.bbs_mod.data.types.MapType;
 
@@ -132,7 +132,7 @@ public final class ActionTimelineMeta
      */
     public Boolean refineEquals(boolean baseEquals, Object object)
     {
-        if (CMLSettings.isSnowActionsEnabled() && baseEquals && object instanceof ActionConfig)
+        if (ModSettings.isSnowActionsEnabled() && baseEquals && object instanceof ActionConfig)
         {
             ActionTimelineConfig other = (ActionTimelineConfig) object;
 

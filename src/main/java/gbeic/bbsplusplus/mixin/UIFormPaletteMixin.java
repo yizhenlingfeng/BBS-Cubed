@@ -1,8 +1,9 @@
 package gbeic.bbsplusplus.mixin;
 
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.ui.forms.UIFormPalette;
-import gbeic.bbsplusplus.BBSAddonsSettings;
 import gbeic.bbsplusplus.ui.morphing.UIBBSPPFormList;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -37,7 +38,7 @@ public class UIFormPaletteMixin
     private void bbspp$checkLayout()
     {
         UIFormPalette self = (UIFormPalette) (Object) this;
-        boolean isNewLayout = BBSAddonsSettings.newMorphingPanel != null && BBSAddonsSettings.newMorphingPanel.get();
+        boolean isNewLayout = ModSettings.newMorphingPanel != null && ModSettings.newMorphingPanel.get();
         boolean currentlyNewLayout = self.list instanceof UIBBSPPFormList;
 
         if (isNewLayout != currentlyNewLayout)

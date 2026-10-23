@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.export;
 
-import gbeic.bbsplusplus.BBSPPPSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.camera.clips.misc.AudioClip;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.utils.clips.Clip;
@@ -31,7 +32,7 @@ public class AudioSubtitleExporter
 
     public static void export()
     {
-        if (!BBSPPPSettings.shouldExportAudioSubtitle())
+        if (!ModSettings.shouldExportAudioSubtitle())
         {
             reset();
 

@@ -3,7 +3,7 @@ package gbeic.bbsplusplus.mixin.client;
 import gbeic.bbsplusplus.premiere.IPremiereExportButton;
 import gbeic.bbsplusplus.premiere.PremiereExportActions;
 import gbeic.bbsplusplus.premiere.PremiereUIKeys;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.ui.film.FilmToolbarOverflow;
 import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import gbeic.bbsplusplus.utils.BonePriority;
@@ -55,7 +55,7 @@ public abstract class UIFilmPreviewMixin implements IPremiereExportButton
         });
         self.icons.add(this.bbspp_cml$premiereExport);
 
-        this.bbspp_cml$lastPremiereVisible = !CMLSettings.premiereExportEnabled.get();
+        this.bbspp_cml$lastPremiereVisible = !ModSettings.premiereExportEnabled.get();
         this.bbspp_cml$updatePremiereButtonVisibility();
 
         /* 注册进「工具收纳」按钮的收纳清单（order 20 起，排在内置工具之后） */
@@ -69,7 +69,7 @@ public abstract class UIFilmPreviewMixin implements IPremiereExportButton
     @Override
     public void bbspp_cml$updatePremiereButtonVisibility()
     {
-        boolean visible = CMLSettings.premiereExportEnabled != null && CMLSettings.premiereExportEnabled.get();
+        boolean visible = ModSettings.premiereExportEnabled != null && ModSettings.premiereExportEnabled.get();
         if (this.bbspp_cml$lastPremiereVisible != visible)
         {
             this.bbspp_cml$lastPremiereVisible = visible;

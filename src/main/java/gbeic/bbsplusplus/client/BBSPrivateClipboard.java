@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.client;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
@@ -25,7 +26,7 @@ public class BBSPrivateClipboard
 
     public static boolean isEnabled()
     {
-        return BBSAddonsSettings.privateBbsClipboard != null && BBSAddonsSettings.privateBbsClipboard.get();
+        return ModSettings.privateBbsClipboard != null && ModSettings.privateBbsClipboard.get();
     }
 
     public static void copy(BaseType data)

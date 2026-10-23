@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.client.renderer.VideoTimelineState;
 import gbeic.bbsplusplus.util.ClipOverlapFixer;
 import mchorse.bbs_mod.BBSSettings;
@@ -254,13 +255,13 @@ public class UIClipsMixin
             return;
         }
 
-        BBSAddonsSettings.AltWheelTimelineMode mode = BBSAddonsSettings.getFilmAltWheelTimelineMode();
+        ModSettings.AltWheelTimelineMode mode = ModSettings.getFilmAltWheelTimelineMode();
 
-        if (mode == BBSAddonsSettings.AltWheelTimelineMode.DISABLED)
+        if (mode == ModSettings.AltWheelTimelineMode.DISABLED)
         {
             cir.setReturnValue(true);
         }
-        else if (mode == BBSAddonsSettings.AltWheelTimelineMode.HORIZONTAL_SCROLL)
+        else if (mode == ModSettings.AltWheelTimelineMode.HORIZONTAL_SCROLL)
         {
             double offsetX = this.bbspp$getAltWheelHorizontalOffset(self, context);
 
@@ -274,7 +275,7 @@ public class UIClipsMixin
     {
         double offsetX = (25F * BBSSettings.scrollingSensitivityHorizontal.get() * context.mouseWheel) / this.bbspp$xAxis().getZoom();
 
-        return BBSAddonsSettings.reverseTimelineScroll != null && BBSAddonsSettings.reverseTimelineScroll.get()
+        return ModSettings.reverseTimelineScroll != null && ModSettings.reverseTimelineScroll.get()
             ? -offsetX
             : offsetX;
     }
@@ -876,15 +877,15 @@ public class UIClipsMixin
     @Unique
     private boolean bbspp$isClipTrackExpansionEnabled()
     {
-        return BBSAddonsSettings.allowClipTrackExpansion != null
-            && BBSAddonsSettings.allowClipTrackExpansion.get();
+        return ModSettings.allowClipTrackExpansion != null
+            && ModSettings.allowClipTrackExpansion.get();
     }
 
     @Unique
     private boolean bbspp$shouldReverseTimelineScroll()
     {
-        return BBSAddonsSettings.reverseTimelineScroll != null
-            && BBSAddonsSettings.reverseTimelineScroll.get();
+        return ModSettings.reverseTimelineScroll != null
+            && ModSettings.reverseTimelineScroll.get();
     }
 
     @Unique

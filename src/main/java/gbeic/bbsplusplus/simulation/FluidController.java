@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.simulation;
 
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.bobj.BOBJArmature;
 import mchorse.bbs_mod.bobj.BOBJBone;
 import mchorse.bbs_mod.cubic.IModel;
@@ -189,7 +189,7 @@ public class FluidController
         }
 
         /* Check for realistic interaction setting */
-        if (!(CMLSettings.fluidRealisticModelInteraction != null && CMLSettings.fluidRealisticModelInteraction.get()))
+        if (!(ModSettings.fluidRealisticModelInteraction != null && ModSettings.fluidRealisticModelInteraction.get()))
         {
             /* Entity-like interaction: Use just the root bone/transform */
             Matrix4f transform = new Matrix4f(entityMatrix);

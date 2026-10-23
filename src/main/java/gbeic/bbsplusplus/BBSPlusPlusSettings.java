@@ -1,7 +1,6 @@
 package gbeic.bbsplusplus;
 
-import gbeic.bbsplusplus.BBSPPPSettings;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.util.keybind.KeybindConflictSettings;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.l10n.L10n;
@@ -36,112 +35,112 @@ public class BBSPlusPlusSettings
         /* ===== 分类一：BBS 增强 ===== */
         builder.category("bbs_enhancements", Icons.DUPE);
 
-        BBSAddonsSettings.chineseKeyframeNames = builder.getBoolean("chinese_keyframe_names", false);
-        BBSAddonsSettings.filmAutoGameMode = builder.getBoolean("film_auto_game_mode", false);
-        BBSAddonsSettings.preventNegativeKeyframes = builder.getBoolean("prevent_negative_keyframes", false);
-        BBSAddonsSettings.reverseTimelineScroll = builder.getBoolean("reverse_timeline_scroll", false);
-        BBSAddonsSettings.directParentPicking = builder.getBoolean("direct_parent_picking", false);
-        BBSAddonsSettings.ikTargetCycleConstraint = builder.getBoolean("ik_target_cycle_constraint", true);
-        BBSAddonsSettings.enableIrisButton = builder.getBoolean("enable_iris_button", false);
-        BBSAddonsSettings.enableUiKeyframesLayoutLock = builder.getBoolean("enable_ui_keyframes_layout_lock", false);
-        BBSAddonsSettings.worldFilmShaderCurves = builder.getBoolean("world_film_shader_curves", false);
-        BBSAddonsSettings.allowClipTrackExpansion = builder.getBoolean("allow_clip_track_expansion", false);
-        BBSAddonsSettings.privateBbsClipboard = builder.getBoolean("private_bbs_clipboard", false);
-        BBSAddonsSettings.autoDisableFaceCulling = builder.getBoolean("auto_disable_face_culling", false);
-        BBSAddonsSettings.filmAltWheelTimelineMode = builder.getInt("film_alt_wheel_timeline_mode", 0, 0, 2).modes(
+        ModSettings.chineseKeyframeNames = builder.getBoolean("chinese_keyframe_names", false);
+        ModSettings.filmAutoGameMode = builder.getBoolean("film_auto_game_mode", false);
+        ModSettings.preventNegativeKeyframes = builder.getBoolean("prevent_negative_keyframes", false);
+        ModSettings.reverseTimelineScroll = builder.getBoolean("reverse_timeline_scroll", false);
+        ModSettings.directParentPicking = builder.getBoolean("direct_parent_picking", false);
+        ModSettings.ikTargetCycleConstraint = builder.getBoolean("ik_target_cycle_constraint", true);
+        ModSettings.enableIrisButton = builder.getBoolean("enable_iris_button", false);
+        ModSettings.enableUiKeyframesLayoutLock = builder.getBoolean("enable_ui_keyframes_layout_lock", false);
+        ModSettings.worldFilmShaderCurves = builder.getBoolean("world_film_shader_curves", false);
+        ModSettings.allowClipTrackExpansion = builder.getBoolean("allow_clip_track_expansion", false);
+        ModSettings.privateBbsClipboard = builder.getBoolean("private_bbs_clipboard", false);
+        ModSettings.autoDisableFaceCulling = builder.getBoolean("auto_disable_face_culling", false);
+        ModSettings.filmAltWheelTimelineMode = builder.getInt("film_alt_wheel_timeline_mode", 0, 0, 2).modes(
             lang("bbspp.config.bbs_enhancements.film_alt_wheel_timeline_mode.default"),
             lang("bbspp.config.bbs_enhancements.film_alt_wheel_timeline_mode.disabled"),
             lang("bbspp.config.bbs_enhancements.film_alt_wheel_timeline_mode.horizontal_scroll")
         );
 
         /* snow 前四项核心开关整合到 BBS 增强 */
-        CMLSettings.pivotTransform = builder.getBoolean("pivot_transform", true);
-        CMLSettings.snowActions = builder.getBoolean("snow_actions", false);
-        CMLSettings.lockedLayoutPreventsResizing = builder.getBoolean("locked_layout_prevents_resizing", false);
+        ModSettings.pivotTransform = builder.getBoolean("pivot_transform", true);
+        ModSettings.snowActions = builder.getBoolean("snow_actions", false);
+        ModSettings.lockedLayoutPreventsResizing = builder.getBoolean("locked_layout_prevents_resizing", false);
 
         /* 动画状态自动读取模型目录的 *.animation.json（默认开启） */
-        CMLSettings.autoLoadAnimationFile = builder.getBoolean("auto_load_animation_file", true);
+        ModSettings.autoLoadAnimationFile = builder.getBoolean("auto_load_animation_file", true);
 
         /* 快捷键冲突提示 */
         KeybindConflictSettings.showBadges = builder.getBoolean("keybind_conflict_badges", false);
 
         /* 隐藏设置项（不显示在界面中，仅持久化） */
-        BBSAddonsSettings.textureManagerLayout = (ValueInt) builder.getInt("texture_manager_layout", 0).invisible();
-        BBSAddonsSettings.aaaEffectPickerWidth = (ValueInt) builder.getInt("aaa_effect_picker_width", 0, 0, 16384).invisible();
-        BBSAddonsSettings.aaaEffectPickerHeight = (ValueInt) builder.getInt("aaa_effect_picker_height", 0, 0, 16384).invisible();
-        BBSAddonsSettings.filmLibrarySortMode = (ValueInt) builder.getInt("film_library_sort_mode", 0, 0, 1).invisible();
-        BBSAddonsSettings.filmLibraryDefaultLocation = (ValueString) builder.getString("film_library_default_location", "folder:").invisible();
-        BBSAddonsSettings.filmLibraryShortcuts = (ValueString) builder.getString("film_library_shortcuts", "").invisible();
-        BBSAddonsSettings.morphingDefaultCategory = (ValueString) builder.getString("morphing_default_category", "home").invisible();
-        BBSAddonsSettings.morphingLayoutMode = (ValueInt) builder.getInt("morphing_layout_mode", 0, 0, 1).invisible();
-        BBSAddonsSettings.morphingIconScale = (ValueInt) builder.getInt("morphing_icon_scale", 100, 20, 200).invisible();
-        BBSAddonsSettings.replayTrackOrder = (ValueString) builder.getString("replay_track_order", "").invisible();
-        BBSAddonsSettings.filmToolbarOverflow = (ValueString) builder.getString("film_toolbar_overflow", "").invisible();
+        ModSettings.textureManagerLayout = (ValueInt) builder.getInt("texture_manager_layout", 0).invisible();
+        ModSettings.aaaEffectPickerWidth = (ValueInt) builder.getInt("aaa_effect_picker_width", 0, 0, 16384).invisible();
+        ModSettings.aaaEffectPickerHeight = (ValueInt) builder.getInt("aaa_effect_picker_height", 0, 0, 16384).invisible();
+        ModSettings.filmLibrarySortMode = (ValueInt) builder.getInt("film_library_sort_mode", 0, 0, 1).invisible();
+        ModSettings.filmLibraryDefaultLocation = (ValueString) builder.getString("film_library_default_location", "folder:").invisible();
+        ModSettings.filmLibraryShortcuts = (ValueString) builder.getString("film_library_shortcuts", "").invisible();
+        ModSettings.morphingDefaultCategory = (ValueString) builder.getString("morphing_default_category", "home").invisible();
+        ModSettings.morphingLayoutMode = (ValueInt) builder.getInt("morphing_layout_mode", 0, 0, 1).invisible();
+        ModSettings.morphingIconScale = (ValueInt) builder.getInt("morphing_icon_scale", 100, 20, 200).invisible();
+        ModSettings.replayTrackOrder = (ValueString) builder.getString("replay_track_order", "").invisible();
+        ModSettings.filmToolbarOverflow = (ValueString) builder.getString("film_toolbar_overflow", "").invisible();
 
         /* CML 隐藏设置项 */
-        CMLSettings.bonePriorityExpandedLimb = builder.getBoolean("bone_priority_expanded_limb", false);
-        CMLSettings.bonePriorityExpandedLimb.invisible();
-        CMLSettings.bonePriorityTrack = builder.getString("bone_priority_track", "");
-        CMLSettings.bonePriorityTrack.invisible();
-        CMLSettings.animationStateLayout = builder.getString("animation_state_layout", "");
-        CMLSettings.animationStateLayout.invisible();
-        CMLSettings.animationStateHiddenPanels = builder.getString("animation_state_hidden_panels", "");
-        CMLSettings.animationStateHiddenPanels.invisible();
-        CMLSettings.keyframeEditorTimelineRatio = builder.getFloat("keyframe_editor_timeline_ratio", 0.65F, 0.2F, 0.8F);
-        CMLSettings.keyframeEditorTimelineRatio.invisible();
+        ModSettings.bonePriorityExpandedLimb = builder.getBoolean("bone_priority_expanded_limb", false);
+        ModSettings.bonePriorityExpandedLimb.invisible();
+        ModSettings.bonePriorityTrack = builder.getString("bone_priority_track", "");
+        ModSettings.bonePriorityTrack.invisible();
+        ModSettings.animationStateLayout = builder.getString("animation_state_layout", "");
+        ModSettings.animationStateLayout.invisible();
+        ModSettings.animationStateHiddenPanels = builder.getString("animation_state_hidden_panels", "");
+        ModSettings.animationStateHiddenPanels.invisible();
+        ModSettings.keyframeEditorTimelineRatio = builder.getFloat("keyframe_editor_timeline_ratio", 0.65F, 0.2F, 0.8F);
+        ModSettings.keyframeEditorTimelineRatio.invisible();
 
         /* ===== 分类二：增强界面 ===== */
         builder.category("ui_enhancements", Icons.DUPE);
 
-        BBSAddonsSettings.newMorphingPanel = builder.getBoolean("new_morphing_panel", false);
-        BBSAddonsSettings.newFilmLibraryUi = builder.getBoolean("new_film_library_ui", false);
-        BBSAddonsSettings.shaderCurvePicker = builder.getBoolean("shader_curve_picker", false);
+        ModSettings.newMorphingPanel = builder.getBoolean("new_morphing_panel", false);
+        ModSettings.newFilmLibraryUi = builder.getBoolean("new_film_library_ui", false);
+        ModSettings.shaderCurvePicker = builder.getBoolean("shader_curve_picker", false);
 
         /* Blockbench 外部编辑：exe 路径 + 是否优先用 .bbmodel 工程文件打开 */
-        BBSAddonsSettings.blockbenchPath = builder.getString("blockbench_path", "");
-        BBSAddonsSettings.blockbenchPreferBbmodel = builder.getBoolean("blockbench_prefer_bbmodel", true);
+        ModSettings.blockbenchPath = builder.getString("blockbench_path", "");
+        ModSettings.blockbenchPreferBbmodel = builder.getBoolean("blockbench_prefer_bbmodel", true);
 
         /* ===== 分类三：物品喷射 ===== */
         builder.category("item_spray", Icons.DUPE);
 
-        BBSAddonsSettings.itemSprayFrustumCulling = builder.getBoolean("item_spray_frustum_culling", true);
-        BBSAddonsSettings.itemSprayMaxRenderDistance = builder.getInt("item_spray_max_render_distance", 0, 0, 512);
-        BBSAddonsSettings.itemSprayMaxRenderedItems = builder.getInt("item_spray_max_rendered_items", 1024, 0, 8192);
-        BBSAddonsSettings.itemSprayIRLiteShadowMaxItems = builder.getInt("item_spray_irlite_shadow_max_items", 1024, 0, 4096);
+        ModSettings.itemSprayFrustumCulling = builder.getBoolean("item_spray_frustum_culling", true);
+        ModSettings.itemSprayMaxRenderDistance = builder.getInt("item_spray_max_render_distance", 0, 0, 512);
+        ModSettings.itemSprayMaxRenderedItems = builder.getInt("item_spray_max_rendered_items", 1024, 0, 8192);
+        ModSettings.itemSprayIRLiteShadowMaxItems = builder.getInt("item_spray_irlite_shadow_max_items", 1024, 0, 4096);
 
         /* ===== 分类四：CML 增强 ===== */
         builder.category("cml_enhancements", Icons.DUPE);
 
-        CMLSettings.replaySprintParticles = builder.getBoolean("replay_sprint_particles", false);
-        CMLSettings.pickLimbTexture = builder.getBoolean("pick_limb_texture", true);
-        CMLSettings.fluidRealisticModelInteraction = builder.getBoolean("fluid_realistic_model_interaction", false);
+        ModSettings.replaySprintParticles = builder.getBoolean("replay_sprint_particles", false);
+        ModSettings.pickLimbTexture = builder.getBoolean("pick_limb_texture", true);
+        ModSettings.fluidRealisticModelInteraction = builder.getBoolean("fluid_realistic_model_interaction", false);
 
         /* ===== 分类六：导出增强 ===== */
         builder.category("export_enhancements", Icons.DUPE);
 
-        BBSPPPSettings.exportAudioSubtitle = builder.getBoolean("export_audio_subtitle", false);
-        CMLSettings.premiereExportEnabled = builder.getBoolean("premiere_export_enabled", false);
-        CMLSettings.premiereExportIndividualAudio = builder.getBoolean("premiere_export_individual_audio", true);
-        CMLSettings.premiereExportAudioOnly = builder.getBoolean("premiere_export_audio_only", false);
-        CMLSettings.premiereExportNtscFlag = builder.getBoolean("premiere_export_ntsc_flag", true);
-        CMLSettings.premiereExportSrt = builder.getBoolean("premiere_export_srt", false);
+        ModSettings.exportAudioSubtitle = builder.getBoolean("export_audio_subtitle", false);
+        ModSettings.premiereExportEnabled = builder.getBoolean("premiere_export_enabled", false);
+        ModSettings.premiereExportIndividualAudio = builder.getBoolean("premiere_export_individual_audio", true);
+        ModSettings.premiereExportAudioOnly = builder.getBoolean("premiere_export_audio_only", false);
+        ModSettings.premiereExportNtscFlag = builder.getBoolean("premiere_export_ntsc_flag", true);
+        ModSettings.premiereExportSrt = builder.getBoolean("premiere_export_srt", false);
 
         /* ===== 分类七：性能优化 ===== */
         builder.category("performance", Icons.DUPE);
 
-        BBSAddonsSettings.modelBlockRenderDistance = builder.getInt("model_block_render_distance", 256, 0, 1024);
+        ModSettings.modelBlockRenderDistance = builder.getInt("model_block_render_distance", 256, 0, 1024);
 
         /* ===== 分类八：Gizmo 改版 ===== */
         builder.category("gizmo_modifications", Icons.DUPE);
 
-        BBSAddonsSettings.blockbenchGizmo = builder.getBoolean("blockbench_gizmo", false);
-        BBSAddonsSettings.gizmoKeepOriginal = builder.getBoolean("gizmo_keep_original", false);
+        ModSettings.blockbenchGizmo = builder.getBoolean("blockbench_gizmo", false);
+        ModSettings.gizmoKeepOriginal = builder.getBoolean("gizmo_keep_original", false);
 
         /* ===== 分类八：未完成（WIP） ===== */
         builder.category("wip", Icons.DUPE);
 
         /* 附魔光效：Iris 光影兼容未完成，默认关闭（不显示姿势编辑器里的按钮）。 */
-        CMLSettings.enchantGlint = builder.getBoolean("enchant_glint", false);
+        ModSettings.enchantGlint = builder.getBoolean("enchant_glint", false);
     }
 
     private static IKey lang(String key)

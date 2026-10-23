@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.client.renderer;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.client.debug.ItemSprayDebug;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.LightmapTextureManager;
@@ -578,12 +579,12 @@ final class ItemSprayIRLiteBridge
 
     private static int getMaxItemShadowItems()
     {
-        if (BBSAddonsSettings.itemSprayIRLiteShadowMaxItems == null)
+        if (ModSettings.itemSprayIRLiteShadowMaxItems == null)
         {
             return DEFAULT_IRLITE_MAX_ITEM_SHADOW_ITEMS;
         }
 
-        return Math.max(0, BBSAddonsSettings.itemSprayIRLiteShadowMaxItems.get());
+        return Math.max(0, ModSettings.itemSprayIRLiteShadowMaxItems.get());
     }
 
     private static double getDistanceSquared(double x, double y, double z, Vec3d cameraPos)

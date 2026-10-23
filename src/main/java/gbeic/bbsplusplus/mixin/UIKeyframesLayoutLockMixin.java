@@ -1,5 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
@@ -29,7 +31,7 @@ public class UIKeyframesLayoutLockMixin
     private void onResizeReturn(CallbackInfo ci)
     {
         if (this.labelResizer == null) return;
-        if (!gbeic.bbsplusplus.BBSAddonsSettings.enableUiKeyframesLayoutLock.get()) return;
+        if (!gbeic.bbsplusplus.settings.ModSettings.enableUiKeyframesLayoutLock.get()) return;
 
         UIElement p = ((UIElement) (Object) this).getParent();
 

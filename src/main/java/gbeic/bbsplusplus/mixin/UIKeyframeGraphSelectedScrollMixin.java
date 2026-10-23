@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.BBSAddonsSettings;
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.ui.film.UIClipsPanel;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
@@ -69,6 +70,6 @@ public abstract class UIKeyframeGraphSelectedScrollMixin
 
     private boolean bbspp$shouldReverseTimelineScroll()
     {
-        return BBSAddonsSettings.reverseTimelineScroll != null && BBSAddonsSettings.reverseTimelineScroll.get();
+        return ModSettings.reverseTimelineScroll != null && ModSettings.reverseTimelineScroll.get();
     }
 }

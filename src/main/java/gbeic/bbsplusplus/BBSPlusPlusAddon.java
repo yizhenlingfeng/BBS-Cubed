@@ -1,5 +1,7 @@
 package gbeic.bbsplusplus;
 
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.api.BBSPPFormValues;
 import gbeic.bbsplusplus.clips.HotbarClip;
 import gbeic.bbsplusplus.clips.ReplayClip;
@@ -143,7 +145,7 @@ public class BBSPlusPlusAddon implements BBSAddonMod {
         if (form instanceof mchorse.bbs_mod.forms.forms.ModelForm modelForm) {
             modelForm.add(new mchorse.bbs_mod.settings.values.misc.ValueVector4f(BBSPPFormValues.UV_TRANSFORM, new org.joml.Vector4f(0F, 0F, 1F, 1F)));
 
-            if (gbeic.bbsplusplus.settings.CMLSettings.isSnowActionsEnabled()) {
+            if (gbeic.bbsplusplus.settings.ModSettings.isSnowActionsEnabled()) {
                 modelForm.add(new mchorse.bbs_mod.forms.values.ValueActionsConfig(
                     BBSPPFormValues.ACTIONS_OVERLAY, bbspp$createEmptyActionsOverlay()));
 

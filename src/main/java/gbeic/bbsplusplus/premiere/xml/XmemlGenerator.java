@@ -4,7 +4,7 @@ import gbeic.bbsplusplus.premiere.audio.IndividualAudioExporter;
 import gbeic.bbsplusplus.premiere.util.AudioTrackPacker;
 import gbeic.bbsplusplus.premiere.util.PremierePathUrl;
 import gbeic.bbsplusplus.premiere.util.TickToFrameConverter;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.camera.clips.misc.AudioClip;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,8 +38,8 @@ public class XmemlGenerator
                          List<IndividualAudioExporter.ExportedClip> exportedAudio,
                          int totalDurationTicks, int frameRate, int width, int height)
     {
-        boolean useNtsc = CMLSettings.premiereExportNtscFlag != null
-            && CMLSettings.premiereExportNtscFlag.get();
+        boolean useNtsc = ModSettings.premiereExportNtscFlag != null
+            && ModSettings.premiereExportNtscFlag.get();
         TickToFrameConverter converter = new TickToFrameConverter(frameRate, useNtsc);
 
         int filmFrames = converter.ticksToFrames(totalDurationTicks);

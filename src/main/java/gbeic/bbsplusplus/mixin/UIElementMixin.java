@@ -1,5 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
+
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.client.ui.film.IFilmLibraryLayoutToggle;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
@@ -66,7 +68,7 @@ public class UIElementMixin
         // 拦截 UIFormCategory（包括 UIUserFormCategory）的右键菜单
         if (menu instanceof UISimpleContextMenu simpleMenu && (Object) this instanceof UIFormCategory)
         {
-            if (!gbeic.bbsplusplus.BBSAddonsSettings.newMorphingPanel.get())
+            if (!gbeic.bbsplusplus.settings.ModSettings.newMorphingPanel.get())
             {
                 return;
             }

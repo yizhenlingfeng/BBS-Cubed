@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.BBSPlusPlusMod;
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.timeline.ActionTimelineEvaluator;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
@@ -18,7 +18,7 @@ public abstract class KeyframeSegmentCMLMixin<T>
     @Inject(method = "createInterpolated", at = @At("RETURN"), cancellable = true, remap = false)
     private void bbspp_cml$evaluateOverlayTimeline(CallbackInfoReturnable<T> cir)
     {
-        if (!CMLSettings.isSnowActionsEnabled()
+        if (!ModSettings.isSnowActionsEnabled()
             || !(cir.getReturnValue() instanceof ActionsConfig actions))
         {
             return;

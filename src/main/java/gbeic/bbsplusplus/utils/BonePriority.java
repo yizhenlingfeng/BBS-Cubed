@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.utils;
 
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.film.replays.tracks.TrackId;
@@ -39,16 +39,16 @@ public class BonePriority
 
         context.replaceContextMenu((menu) ->
         {
-            String current = CMLSettings.bonePriorityTrack.get();
+            String current = ModSettings.bonePriorityTrack.get();
 
-            menu.action(Icons.LIMB, SnowUIKeys.BONE_PRIORITY_EXPANDED_LIMB, CMLSettings.bonePriorityExpandedLimb.get(), () ->
+            menu.action(Icons.LIMB, SnowUIKeys.BONE_PRIORITY_EXPANDED_LIMB, ModSettings.bonePriorityExpandedLimb.get(), () ->
             {
-                CMLSettings.bonePriorityExpandedLimb.set(!CMLSettings.bonePriorityExpandedLimb.get());
+                ModSettings.bonePriorityExpandedLimb.set(!ModSettings.bonePriorityExpandedLimb.get());
             });
 
             menu.action(Icons.REFRESH, SnowUIKeys.BONE_PRIORITY_DEFAULT, current == null || current.isEmpty(), () ->
             {
-                CMLSettings.bonePriorityTrack.set("");
+                ModSettings.bonePriorityTrack.set("");
             });
 
             if (channels == null)
@@ -69,7 +69,7 @@ public class BonePriority
 
                 menu.action(Icons.POSE, IKey.constant(key), key.equals(current), () ->
                 {
-                    CMLSettings.bonePriorityTrack.set(key);
+                    ModSettings.bonePriorityTrack.set(key);
                 });
             }
         });
@@ -77,13 +77,13 @@ public class BonePriority
 
     public static String getPriorityTrack()
     {
-        String track = CMLSettings.bonePriorityTrack == null ? null : CMLSettings.bonePriorityTrack.get();
+        String track = ModSettings.bonePriorityTrack == null ? null : ModSettings.bonePriorityTrack.get();
 
         return track == null || track.isEmpty() ? null : track;
     }
 
     public static boolean isExpandedLimbPriorityEnabled()
     {
-        return CMLSettings.bonePriorityExpandedLimb != null && CMLSettings.bonePriorityExpandedLimb.get();
+        return ModSettings.bonePriorityExpandedLimb != null && ModSettings.bonePriorityExpandedLimb.get();
     }
 }

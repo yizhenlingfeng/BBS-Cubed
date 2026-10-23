@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import gbeic.bbsplusplus.settings.CMLSettings;
+import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.l10n.L10n;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,7 +19,7 @@ public abstract class ModelFormTrackNameMixin
     )
     private void bbspp_cml$nameActionsOverlayTracks(String property, CallbackInfoReturnable<String> cir)
     {
-        if (!CMLSettings.isSnowActionsEnabled())
+        if (!ModSettings.isSnowActionsEnabled())
         {
             return;
         }
