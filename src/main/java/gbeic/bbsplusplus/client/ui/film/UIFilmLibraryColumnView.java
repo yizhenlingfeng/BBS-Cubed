@@ -73,6 +73,7 @@ public class UIFilmLibraryColumnView extends UIElement
             .w(1F, -(SHORTCUT_WIDTH + GAP)).h(1F, -TOP);
 
         this.add(this.search, this.sort, this.shortcuts, this.columnsHost);
+        this.support.setFolderRemovedListener(this::backtrackFromRemovedFolder);
         this.openRoot();
         this.search.callback = (text) -> this.setQuery(text);
     }
@@ -229,6 +230,43 @@ public class UIFilmLibraryColumnView extends UIElement
 
         column.removeFromParent();
         this.columns.remove(column);
+    }
+
+    /**
+     * 文件夹被移除（从库中移除或真实删除）后的回溯：把展开到它或其后代的所有子列
+     * 一并收回，停在删除文件夹的父级列上。
+     */
+    private void backtrackFromRemovedFolder(DataPath removed)
+    {
+        if (removed == null || removed.strings.isEmpty())
+        {
+            return;
+        }
+
+        int keep = -1;
+
+        for (int i = 0; i < this.columns.size(); i++)
+        {
+            if (this.columns.get(i).getFolder().startsWith(removed))
+            {
+                keep = i;
+
+                break;
+            }
+        }
+
+        if (keep < 0)
+        {
+            return;
+        }
+
+        while (this.columns.size() > keep)
+        {
+            this.removeColumn(this.columns.get(this.columns.size() - 1));
+        }
+
+        this.activeIndex = this.columns.size() - 1;
+        this.scrollToEnd();
     }
 
     private void toggleSort()
@@ -391,7 +429,7 @@ public class UIFilmLibraryColumnView extends UIElement
             int barW = Math.max(20, viewport * viewport / content);
             int barX = this.columnsHost.area.x + (int) ((viewport - barW) * (this.scrollX / (content - viewport)));
 
-            context.batcher.box(this.columnsHost.area.x, barY, this.columnsHost.area.x + viewport, barY + 2, Colors.A25 | Colors.WHITE);
+            context.batcher.box(this.columnsHost.area.x, barY, this.columnsHost.area.x + viewport, barY + 2, BBSSettings.color(BBSSettings.dividerColor(), Colors.A50));
             context.batcher.box(barX, barY, barX + barW, barY + 2, Colors.A100 | BBSSettings.primaryColor.get());
         }
 
@@ -400,9 +438,14 @@ public class UIFilmLibraryColumnView extends UIElement
             FontRenderer font = context.batcher.getFont();
             String label = this.dragFilm.getLast();
             int width = font.getWidth(label) + 16;
+            int x = context.mouseX + 4;
+            int y = context.mouseY + 4;
 
-            context.batcher.box(context.mouseX + 4, context.mouseY + 4, context.mouseX + width, context.mouseY + 22, Colors.A75);
-            context.batcher.textShadow(label, context.mouseX + 12, context.mouseY + 8, Colors.WHITE);
+            /* 跟手的小卡片沿用原版面板画法：投影 + 抬升面板 + 细分隔描边 */
+            context.batcher.dropShadow(x, y, x + width, y + 22, 6, Colors.A50, 0);
+            context.batcher.box(x, y, x + width, y + 22, BBSSettings.raisedSurface());
+            context.batcher.outline(x, y, x + width, y + 22, BBSSettings.color(BBSSettings.dividerColor(), Colors.A12));
+            context.batcher.text(label, x + 8, y + 8, Colors.WHITE, false);
         }
     }
 

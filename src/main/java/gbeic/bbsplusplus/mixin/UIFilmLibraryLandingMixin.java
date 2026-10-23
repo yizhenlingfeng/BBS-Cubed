@@ -176,7 +176,9 @@ public abstract class UIFilmLibraryLandingMixin extends UIElement implements IFi
     @Unique
     private void bbspp$renderBackground(UIContext context, mchorse.bbs_mod.ui.utils.Area area)
     {
-        context.batcher.box(area.x, area.y, area.ex(), area.ey(), Colors.A75);
+        /* 原版 Landing 的动态渐变背景（LandingBackdrop）在本层之下照常绘制：
+         * 这里只铺一层由上至下渐轻的暗纱保证前景可读，不再用重色把它盖住。 */
+        context.batcher.gradientVBox(area.x, area.y, area.ex(), area.ey(), Colors.A50, Colors.A25);
     }
 
     @Unique

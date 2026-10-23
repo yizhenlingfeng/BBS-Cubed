@@ -7,6 +7,7 @@ import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
+import mchorse.bbs_mod.ui.framework.elements.utils.RowStyle;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
@@ -25,6 +26,9 @@ public class UIFilmLibraryColumn extends UIElement
     private static final int ROW_HEIGHT = 20;
     private static final int HEADER_HEIGHT = 22;
     private static final int FOOTER_HEIGHT = 22;
+
+    /** 列表底部深色衬底向下渐隐的过渡高度，文件夹列与影片列（搜索列）一致。 */
+    private static final int BOTTOM_FADE = 18;
 
     private final UIFilmLibraryColumnView view;
     private final DataPath folder;
@@ -71,11 +75,7 @@ public class UIFilmLibraryColumn extends UIElement
                 {
                     menu.action(Icons.EDIT, UIKeys.PANELS_MODALS_RENAME_FOLDER_TITLE, () -> this.view.support().renameFolder(this.contextPath));
 
-                    if (this.view.support().getList() instanceof IFilmLibraryPathList pathList
-                        && pathList.bbspp$isFilmLibraryFolderEmpty(this.contextPath))
-                    {
-                        menu.action(Icons.REMOVE, UIKeys.PANELS_MODALS_REMOVE_FOLDER_TITLE, () -> this.view.support().deleteFolder(this.contextPath));
-                    }
+                    menu.action(Icons.REMOVE, L10n.lang("bbspp.ui.film.library.remove_folder"), () -> this.openRemoveFolderMenu());
                 }
 
                 if (this.contextPath.strings.isEmpty())
@@ -152,20 +152,35 @@ public class UIFilmLibraryColumn extends UIElement
         this.listArea.set(this.area.x, this.area.y + HEADER_HEIGHT, this.area.w, this.area.h - HEADER_HEIGHT - FOOTER_HEIGHT);
         this.scroll.setSize(this.rows());
 
-        int primary = BBSSettings.primaryColor.get();
+        int primary = BBSSettings.primaryColor.get() & Colors.RGB;
         FontRenderer font = context.batcher.getFont();
+        boolean active = this.view.isActive(this);
+        int deep = BBSSettings.sunkenSurface();
 
-        context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.y + HEADER_HEIGHT, Colors.A50);
+        /* 原版 FS 的卡片语言（对照 Landing 卡片）：投影 + 抬升面板 + 细分隔描边 */
+        context.batcher.dropShadow(this.area.x, this.area.y, this.area.ex(), this.area.ey(), 10, Colors.A50, 0);
+        context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.ey(), BBSSettings.raisedSurface());
+        context.batcher.outline(this.area.x, this.area.y, this.area.ex(), this.area.ey(), BBSSettings.color(BBSSettings.dividerColor(), Colors.A12));
+
+        if (active)
+        {
+            context.batcher.outline(this.area.x, this.area.y, this.area.ex(), this.area.ey(), BBSSettings.accentOverlay(Colors.A50));
+        }
+
+        /* 顶栏：下沉色带加分隔线，激活列在左缘立一根强调条 */
+        context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.y + HEADER_HEIGHT, deep);
+        context.batcher.box(this.area.x, this.area.y + HEADER_HEIGHT, this.area.ex(), this.area.y + HEADER_HEIGHT + 1, BBSSettings.dividerColor());
+
         String title = this.searchMode
             ? L10n.lang("bbspp.ui.film.library.search_results").get()
             : (this.folder.strings.isEmpty() ? L10n.lang("bbspp.ui.film.library.root_folder").get() : this.folder.getLast());
-        int titleColor = this.view.isActive(this) ? Colors.WHITE : Colors.GRAY;
+        int titleColor = active ? Colors.WHITE : Colors.setA(Colors.WHITE, 0.7F);
 
         context.batcher.textShadow(font.limitToWidth(title, this.area.w - 20), this.area.x + 10, this.area.y + 7, titleColor);
 
-        if (this.view.isActive(this))
+        if (active)
         {
-            context.batcher.outline(this.area.x, this.area.y, this.area.ex(), this.area.ey(), Colors.A50 | primary);
+            context.batcher.box(this.area.x, this.area.y, this.area.x + 2, this.area.y + HEADER_HEIGHT, Colors.A100 | primary);
         }
 
         int y = this.listArea.y - (int) this.scroll.getScroll();
@@ -175,28 +190,29 @@ public class UIFilmLibraryColumn extends UIElement
         {
             if (y >= this.listArea.y && y + ROW_HEIGHT <= this.listArea.ey())
             {
-                boolean hover = drop != null && drop.equals(path);
-                int color = this.selected != null && this.selected.equals(path) ? Colors.WHITE : Colors.GRAY;
+                boolean dropTarget = drop != null && drop.equals(path);
+                boolean picked = this.selected != null && this.selected.equals(path);
+                boolean hovered = !dropTarget && this.isRowHovered(context, y);
 
-                if (hover)
+                if (dropTarget)
                 {
-                    context.batcher.box(this.listArea.x, y, this.listArea.ex(), y + ROW_HEIGHT, Colors.A50 | primary);
-                    context.batcher.outline(this.listArea.x, y, this.listArea.ex(), y + ROW_HEIGHT, Colors.A100 | primary);
+                    RowStyle.dropTarget(context.batcher, this.listArea.x, y, this.listArea.w, ROW_HEIGHT);
                 }
-                else if (this.selected != null && this.selected.equals(path))
+                else
                 {
-                    context.batcher.box(this.listArea.x, y, this.listArea.ex(), y + ROW_HEIGHT, Colors.A25 | primary);
+                    RowStyle.row(context.batcher, this.listArea.x, y, this.listArea.w, ROW_HEIGHT, 0, false, hovered, picked);
                 }
 
+                boolean lit = hovered || picked;
                 boolean defaultFolder = FilmLibraryDefaultLocation.isFolder(path);
                 Icon icon = defaultFolder ? Icons.FAVORITE : Icons.FOLDER;
-                int iconColor = defaultFolder ? (Colors.A100 | primary) : color;
+                int iconColor = defaultFolder ? (Colors.A100 | primary) : RowStyle.iconColor(lit);
                 int center = y + ROW_HEIGHT / 2;
 
                 context.batcher.icon(icon, iconColor, this.listArea.x + 8, center, 0.5F, 0.5F);
-                context.batcher.icon(Icons.ARROW_RIGHT, color, this.listArea.ex() - 10, center, 0.5F, 0.5F);
-                context.batcher.textShadow(font.limitToWidth(path.getLast(), this.listArea.w - 36), this.listArea.x + 22,
-                    y + (ROW_HEIGHT - font.getHeight()) / 2, color);
+                context.batcher.icon(Icons.ARROW_RIGHT, RowStyle.iconColor(hovered), this.listArea.ex() - 10, center, 0.5F, 0.5F);
+                context.batcher.text(font.limitToWidth(path.getLast(), this.listArea.w - 36), this.listArea.x + 22,
+                    y + (ROW_HEIGHT - font.getHeight()) / 2 + 1, RowStyle.textColor(lit), false);
             }
 
             y += ROW_HEIGHT;
@@ -204,7 +220,9 @@ public class UIFilmLibraryColumn extends UIElement
 
         if (!this.folders.isEmpty() && !this.films.isEmpty())
         {
-            context.batcher.box(this.listArea.x + 8, y + 1, this.listArea.ex() - 8, y + 2, Colors.A25 | Colors.WHITE);
+            int divider = y + ROW_HEIGHT / 2;
+
+            context.batcher.box(this.listArea.x + 8, divider, this.listArea.ex() - 8, divider + 1, BBSSettings.dividerColor());
             y += ROW_HEIGHT;
         }
 
@@ -212,22 +230,26 @@ public class UIFilmLibraryColumn extends UIElement
         {
             if (y >= this.listArea.y && y + ROW_HEIGHT <= this.listArea.ey())
             {
-                boolean hover = drop != null && drop.equals(this.folder);
-                int color = this.selected != null && this.selected.equals(path) ? Colors.WHITE : Colors.GRAY;
+                boolean dropTarget = drop != null && drop.equals(this.folder);
+                boolean picked = this.selected != null && this.selected.equals(path);
+                boolean hovered = !dropTarget && this.isRowHovered(context, y);
+
+                /* 拖放到整列时，影片行随列一起亮起，但没有投放目标的强调条 */
+                if (dropTarget)
+                {
+                    RowStyle.carried(context.batcher, this.listArea.x, y, this.listArea.w, ROW_HEIGHT);
+                }
+                else
+                {
+                    RowStyle.row(context.batcher, this.listArea.x, y, this.listArea.w, ROW_HEIGHT, 0, false, hovered, picked);
+                }
+
+                boolean lit = hovered || picked;
                 int center = y + ROW_HEIGHT / 2;
 
-                if (hover)
-                {
-                    context.batcher.box(this.listArea.x, y, this.listArea.ex(), y + ROW_HEIGHT, Colors.A25 | primary);
-                }
-                else if (this.selected != null && this.selected.equals(path))
-                {
-                    context.batcher.box(this.listArea.x, y, this.listArea.ex(), y + ROW_HEIGHT, Colors.A25 | primary);
-                }
-
-                context.batcher.icon(Icons.FILM, color, this.listArea.x + 8, center, 0.5F, 0.5F);
-                context.batcher.textShadow(font.limitToWidth(path.getLast(), this.listArea.w - 30), this.listArea.x + 22,
-                    y + (ROW_HEIGHT - font.getHeight()) / 2, color);
+                context.batcher.icon(Icons.FILM, RowStyle.iconColor(lit), this.listArea.x + 8, center, 0.5F, 0.5F);
+                context.batcher.text(font.limitToWidth(path.getLast(), this.listArea.w - 30), this.listArea.x + 22,
+                    y + (ROW_HEIGHT - font.getHeight()) / 2 + 1, RowStyle.textColor(lit), false);
             }
 
             y += ROW_HEIGHT;
@@ -235,16 +257,31 @@ public class UIFilmLibraryColumn extends UIElement
 
         this.scroll.renderScrollbar(context.batcher);
 
+        /* 列表底部：深色衬底向下渐隐，让滚出去的行沉入暗处 */
+        context.batcher.gradientVBox(this.listArea.x, this.listArea.ey() - BOTTOM_FADE, this.listArea.ex(), this.listArea.ey(),
+            Colors.setA(deep, 0F), Colors.A100 | deep);
+
         int footerY = this.area.ey() - FOOTER_HEIGHT;
 
         if (!this.searchMode)
         {
-            context.batcher.box(this.area.x, footerY, this.area.ex(), this.area.ey(), Colors.A25);
-            context.batcher.textShadow(font.limitToWidth(L10n.lang("bbspp.ui.film.library.new_film_button").get(), this.area.w - 16),
-                this.area.x + 8, footerY + (FOOTER_HEIGHT - font.getHeight()) / 2, Colors.GRAY);
+            boolean hoverFooter = this.area.isInside(context.mouseX, context.mouseY) && context.mouseY >= footerY;
+
+            context.batcher.box(this.area.x, footerY, this.area.ex(), this.area.ey(), deep);
+            context.batcher.box(this.area.x, footerY, this.area.ex(), footerY + 1, BBSSettings.dividerColor());
+            context.batcher.text(font.limitToWidth(L10n.lang("bbspp.ui.film.library.new_film_button").get(), this.area.w - 16),
+                this.area.x + 8, footerY + (FOOTER_HEIGHT - font.getHeight()) / 2 + 1,
+                hoverFooter ? Colors.WHITE : Colors.setA(Colors.WHITE, 0.7F), false);
         }
 
         super.render(context);
+    }
+
+    private boolean isRowHovered(UIContext context, int y)
+    {
+        return this.listArea.isInside(context.mouseX, context.mouseY)
+            && context.mouseY >= y
+            && context.mouseY < y + ROW_HEIGHT;
     }
 
     @Override
@@ -343,6 +380,32 @@ public class UIFilmLibraryColumn extends UIElement
         this.updateContextTarget(context);
 
         return super.mouseClickedContextMenu(context);
+    }
+
+    /**
+     * 「移除文件夹」二级菜单：替换当前菜单展示两种移除方式——「从影片库移除」
+     * 只把文件夹从库视图收起（不动磁盘文件）；空文件夹额外提供「移除此文件夹」
+     * 物理删除（沿用原确认弹窗）。点返回或 Esc 可回到原菜单。
+     */
+    private void openRemoveFolderMenu()
+    {
+        UIContext context = this.getContext();
+
+        if (context == null || this.contextPath == null)
+        {
+            return;
+        }
+
+        context.replaceContextMenu((menu) ->
+        {
+            menu.action(Icons.REMOVE, L10n.lang("bbspp.ui.film.library.remove_from_library"), () -> this.view.support().removeFolder(this.contextPath));
+
+            if (this.view.support().getList() instanceof IFilmLibraryPathList pathList
+                && pathList.bbspp$isFilmLibraryFolderEmpty(this.contextPath))
+            {
+                menu.action(Icons.TRASH, UIKeys.PANELS_MODALS_REMOVE_FOLDER_TITLE, () -> this.view.support().deleteFolder(this.contextPath));
+            }
+        });
     }
 
     private void updateContextTarget(UIContext context)

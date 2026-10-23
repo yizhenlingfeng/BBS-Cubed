@@ -25,8 +25,7 @@ import java.util.ArrayList;
  *
  * <p>展开栏里的按钮是原工具的「镜像」：图标沿用原按钮的 supplier（播放/暂停、
  * 视角等动态图标实时一致），点击通过 {@link UIElement#clickItself} 借用原按钮
- * 的完整点击管线——左键动作与右键菜单都和原按钮一致。原按钮的高亮状态（录制
- * 中、飞行中这类底部小条）暂不镜像。</p>
+ * 的完整点击管线——左键动作、右键菜单与选中状态条都和原按钮一致。</p>
  */
 public class UIToolOverflowPopup extends UIElement
 {
@@ -105,7 +104,7 @@ public class UIToolOverflowPopup extends UIElement
         }
         else if (this.expanded && !this.pinned && !context.hasContextMenu())
         {
-            /* 右键配置菜单开着时冻结收起计时（菜单来自本按钮，收起会很难看） */
+            /* 右键配置菜单开着时冻结收起计时，避免菜单悬空时展开栏先消失 */
             if (this.hideAt == 0L)
             {
                 this.hideAt = System.currentTimeMillis() + LINGER_MS;
@@ -293,8 +292,7 @@ public class UIToolOverflowPopup extends UIElement
                 /* clickItself 会临时把鼠标坐标映射到原按钮区域内，从而触发原按钮的
                  * 左键动作或右键菜单。但原按钮被收纳后 setVisible(false)，而
                  * isEnabled() = enabled && visible，clickItself 第一行就会短路——
-                 * 所以先临时恢复可见再合成点击，同一调用栈内立即还原，不产生
-                 * 渲染帧，也就不会闪烁。 */
+                 * 先临时恢复可见再合成点击，同一调用栈内立即还原，不产生渲染帧。 */
                 this.tool.button.setVisible(true);
 
                 try

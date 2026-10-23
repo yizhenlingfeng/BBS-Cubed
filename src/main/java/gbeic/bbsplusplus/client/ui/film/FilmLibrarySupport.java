@@ -19,6 +19,7 @@ import mchorse.bbs_mod.utils.repos.IRepository;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * 影片库的仓库操作集合。
@@ -32,10 +33,26 @@ public class FilmLibrarySupport
     private final UIDataDashboardPanel<?> panel;
     private final UIDataPathList list;
 
+    /** 文件夹被移除（从库中移除或真实删除）后的回调，列视图用它回收展开的子列。 */
+    private Consumer<DataPath> folderRemovedListener;
+
     public FilmLibrarySupport(UIDataDashboardPanel<?> panel, UIDataPathList list)
     {
         this.panel = panel;
         this.list = list;
+    }
+
+    public void setFolderRemovedListener(Consumer<DataPath> listener)
+    {
+        this.folderRemovedListener = listener;
+    }
+
+    private void notifyFolderRemoved(DataPath folder)
+    {
+        if (this.folderRemovedListener != null)
+        {
+            this.folderRemovedListener.accept(folder);
+        }
     }
 
     public UIDataPathList getList()
@@ -519,6 +536,30 @@ public class FilmLibrarySupport
         });
     }
 
+    /**
+     * 把文件夹从影片库中移除：不再在库视图里显示它和它的子文件夹，
+     * 但不动磁盘上的实际文件，下次打开影片库时会重新被发现。
+     */
+    public void removeFolder(DataPath folder)
+    {
+        if (folder == null || folder.strings.isEmpty() || !(this.list instanceof IFilmLibraryPathList pathList))
+        {
+            return;
+        }
+
+        pathList.bbspp$forgetFilmLibraryFolder(folder);
+
+        DataPath current = pathList.bbspp$getFilmLibraryFolder();
+
+        if (current.startsWith(folder))
+        {
+            pathList.bbspp$showFilmLibraryFolder(folder.getParent());
+        }
+
+        this.notifyFolderRemoved(folder);
+        this.panel.requestNames();
+    }
+
     public void deleteFolder(DataPath folder)
     {
         UIContext context = this.panel.getContext();
@@ -575,6 +616,7 @@ public class FilmLibrarySupport
                 }
             }
 
+            this.notifyFolderRemoved(folder);
             this.panel.requestNames();
         });
     }

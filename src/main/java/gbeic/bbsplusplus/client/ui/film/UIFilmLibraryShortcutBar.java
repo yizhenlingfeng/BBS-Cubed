@@ -5,6 +5,7 @@ import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
+import mchorse.bbs_mod.ui.framework.elements.utils.RowStyle;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
@@ -21,6 +22,9 @@ public class UIFilmLibraryShortcutBar extends UIElement
 {
     private static final int ROW_HEIGHT = 20;
     private static final int HEADER_HEIGHT = 22;
+
+    /** 与影片列一致的底部深色衬底渐隐高度。 */
+    private static final int BOTTOM_FADE = 18;
 
     private final UIFilmLibraryColumnView view;
     private final Area listArea = new Area();
@@ -77,11 +81,17 @@ public class UIFilmLibraryShortcutBar extends UIElement
     {
         this.listArea.set(this.area.x, this.area.y + HEADER_HEIGHT, this.area.w, this.area.h - HEADER_HEIGHT);
 
-        int primary = BBSSettings.primaryColor.get();
+        int primary = BBSSettings.primaryColor.get() & Colors.RGB;
         FontRenderer font = context.batcher.getFont();
 
-        context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.y + HEADER_HEIGHT, Colors.A50);
-        context.batcher.textShadow(L10n.lang("bbspp.ui.film.library.shortcuts").get(), this.area.x + 8, this.area.y + 7, Colors.GRAY);
+        /* 与影片列同款的卡片画法：投影 + 抬升面板 + 细分隔描边 */
+        context.batcher.dropShadow(this.area.x, this.area.y, this.area.ex(), this.area.ey(), 10, Colors.A50, 0);
+        context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.ey(), BBSSettings.raisedSurface());
+        context.batcher.outline(this.area.x, this.area.y, this.area.ex(), this.area.ey(), BBSSettings.color(BBSSettings.dividerColor(), Colors.A12));
+
+        context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.y + HEADER_HEIGHT, BBSSettings.sunkenSurface());
+        context.batcher.box(this.area.x, this.area.y + HEADER_HEIGHT, this.area.ex(), this.area.y + HEADER_HEIGHT + 1, BBSSettings.dividerColor());
+        context.batcher.textShadow(L10n.lang("bbspp.ui.film.library.shortcuts").get(), this.area.x + 8, this.area.y + 7, Colors.setA(Colors.WHITE, 0.7F));
 
         context.batcher.clip(this.listArea, context);
 
@@ -91,11 +101,18 @@ public class UIFilmLibraryShortcutBar extends UIElement
         {
             if (y >= this.listArea.y && y + ROW_HEIGHT <= this.listArea.ey())
             {
-                int color = Colors.GRAY;
+                boolean hovered = this.listArea.isInside(context.mouseX, context.mouseY)
+                    && context.mouseY >= y
+                    && context.mouseY < y + ROW_HEIGHT;
+
+                if (hovered)
+                {
+                    RowStyle.hover(context.batcher, this.listArea.x, y, this.listArea.w, ROW_HEIGHT, 0);
+                }
 
                 context.batcher.icon(Icons.FAVORITE, Colors.A100 | primary, this.listArea.x + 8, y + ROW_HEIGHT / 2, 0.5F, 0.5F);
-                context.batcher.textShadow(font.limitToWidth(path.getLast(), this.listArea.w - 28), this.listArea.x + 22,
-                    y + (ROW_HEIGHT - font.getHeight()) / 2, color);
+                context.batcher.text(font.limitToWidth(path.getLast(), this.listArea.w - 28), this.listArea.x + 22,
+                    y + (ROW_HEIGHT - font.getHeight()) / 2 + 1, RowStyle.textColor(hovered), false);
             }
 
             y += ROW_HEIGHT;
@@ -103,9 +120,15 @@ public class UIFilmLibraryShortcutBar extends UIElement
 
         if (this.shortcuts.isEmpty())
         {
-            context.batcher.textShadow(L10n.lang("bbspp.ui.film.library.shortcuts_empty").get(), this.listArea.x + 8,
-                this.listArea.y + 4, Colors.GRAY);
+            context.batcher.text(L10n.lang("bbspp.ui.film.library.shortcuts_empty").get(), this.listArea.x + 8,
+                this.listArea.y + 4, Colors.setA(Colors.WHITE, 0.5F), false);
         }
+
+        /* 底部与影片列一致：深色衬底向下渐隐 */
+        int deep = BBSSettings.sunkenSurface();
+
+        context.batcher.gradientVBox(this.listArea.x, this.listArea.ey() - BOTTOM_FADE, this.listArea.ex(), this.listArea.ey(),
+            Colors.setA(deep, 0F), Colors.A100 | deep);
 
         this.scroll.renderScrollbar(context.batcher);
         context.batcher.unclip(context);
