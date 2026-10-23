@@ -1,5 +1,6 @@
 package gbeic.bbsplusplus.mixin.client;
 
+import gbeic.bbsplusplus.client.ui.film.replays.IReplayDragSnapshot;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import org.spongepowered.asm.mixin.Mixin;

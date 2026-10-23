@@ -1197,6 +1197,30 @@ BBS 2.7 的官方 addon API 已有 **11 个通用事件 + 30 个客户端事件*
 - AAA 多人服务器同步（当前仅集成服务器本地触发）。
 - `FluidFormRenderer` 双版本合并（P6 版本隔离阶段）。
 
+### D.8 运行期热修：IReplayDragSnapshot 包归属（完成）
+
+**症状**：进入世界后 Dashboard 预热构建 `film` 面板时崩溃：
+
+```
+RuntimeException: Mixin transformation of gbeic.bbsplusplus.mixin.client.IReplayDragSnapshot failed
+Caused by: IllegalClassLoadError: ... is in a defined mixin package ... and cannot be referenced directly
+```
+
+**根因**：`IReplayDragSnapshot` 是普通 Java 接口，却被放在 `gbeic.bbsplusplus.mixin.client`；
+该包由 `bbspp-fslovecml.client.mixins.json` 声明为 Mixin 独占包，Mixin 禁止其他类直接引用包内类。
+`UIElementReplayDragSnapshotMixin` 的 `instanceof IReplayDragSnapshot` 与 `UIReplayListCategoryMixin`
+的 `implements` 都触发该限制。
+
+**修复**：接口移到 `gbeic.bbsplusplus.client.ui.film.replays.IReplayDragSnapshot`，
+更新两个引用文件的 import；不再把普通接口/辅助类放进 `mixin.*` 包。
+
+**验证**：三套 clean 构建通过；1.20.1 使用 `--quickPlaySingleplayer` 进入世界，
+Dashboard 的 `morphing / film / model blocks / particles / model editor / textures / audio / add-ons`
+全部构建成功，无 `Mixin transformation` / `IllegalClassLoadError` / `Game crashed`。
+
+**教训**：只验证到主菜单不会触发 `film` 面板的 `UIReplayList` 类加载；后续 smoke 必须包含
+"进入世界 → Dashboard film 面板构建" 这一路径。
+
 <!-- 后续阶段完成后在此继续追加 D.2.x / D.3 … -->
 
 ---

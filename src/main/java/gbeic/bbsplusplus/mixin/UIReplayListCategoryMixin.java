@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.mixin.client.IReplayDragSnapshot;
+import gbeic.bbsplusplus.client.ui.film.replays.IReplayDragSnapshot;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.forms.Form;

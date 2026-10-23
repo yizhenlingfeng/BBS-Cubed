@@ -1,4 +1,4 @@
-package gbeic.bbsplusplus.mixin.client;
+package gbeic.bbsplusplus.client.ui.film.replays;
 
 import mchorse.bbs_mod.ui.framework.UIContext;
 
