@@ -290,13 +290,22 @@ public class UIToolOverflowPopup extends UIElement
             if (this.isEnabled() && this.area.isInside(context) && this.isAllowed(context.mouseButton))
             {
                 /* clickItself 会临时把鼠标坐标映射到原按钮区域内，从而触发原按钮的
-                 * 左键动作或右键菜单。但原按钮被收纳后 setVisible(false)，而
-                 * isEnabled() = enabled && visible，clickItself 第一行就会短路——
-                 * 先临时恢复可见再合成点击，同一调用栈内立即还原，不产生渲染帧。 */
+                 * 左键动作或右键菜单。但原按钮被收纳后有两道门会短路合成点击：
+                 * isVisible 为 false 使 isEnabled() 为 false，且 RowResizer 会把
+                 * 隐藏子元素的 area 清成 0×0（clickItself 映射进去的鼠标必然不在
+                 * 区域内）。先临时恢复可见并同步重排横条拿回真实 area，再合成
+                 * 点击，最后还原——同一调用栈内完成，不产生渲染帧。 */
+                UIElement row = this.tool.button.getParent();
+
                 this.tool.button.setVisible(true);
 
                 try
                 {
+                    if (row != null)
+                    {
+                        row.resize();
+                    }
+
                     this.tool.button.clickItself(context, context.mouseButton);
                 }
                 finally
