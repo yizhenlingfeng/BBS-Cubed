@@ -55,6 +55,7 @@
         "UIAnchorKeyframeFactoryMixin",
         "UIFormEditorAnimationStateLayoutMixin",
         "UIFormEditorGetOriginMixin",
+        "UIFormEditorGizmoSpaceMixin",
         "UIKeyframeEditorSplitMixin",
         "UIKeyframeInspectorEmbedMixin",
         "UIKeyframeSheetActionsMixin",
