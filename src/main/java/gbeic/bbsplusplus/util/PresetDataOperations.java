@@ -1,4 +1,4 @@
-package gbeic.bbsplusplus.utils;
+package gbeic.bbsplusplus.util;
 
 import gbeic.bbsplusplus.mixin.DataManagerAccessor;
 import mchorse.bbs_mod.BBSMod;

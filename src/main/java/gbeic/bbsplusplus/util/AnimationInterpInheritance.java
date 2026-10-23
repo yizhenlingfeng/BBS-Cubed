@@ -1,4 +1,4 @@
-package gbeic.bbsplusplus.utils;
+package gbeic.bbsplusplus.util;
 
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.AnimationInterpolation;

@@ -13,7 +13,7 @@ import gbeic.bbsplusplus.ui.film.clips.UICinematicClip;
 import gbeic.bbsplusplus.ui.film.clips.UIHotbarClip;
 import gbeic.bbsplusplus.ui.film.clips.UIReplayClip;
 import gbeic.bbsplusplus.ui.forms.UIFluidForm;
-import gbeic.bbsplusplus.utils.AnimationInterpInheritance;
+import gbeic.bbsplusplus.util.AnimationInterpInheritance;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.forms.FormUtilsClient;

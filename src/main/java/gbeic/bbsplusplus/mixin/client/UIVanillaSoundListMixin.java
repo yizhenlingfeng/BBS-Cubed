@@ -2,7 +2,7 @@ package gbeic.bbsplusplus.mixin.client;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import gbeic.bbsplusplus.utils.VanillaSoundResource;
+import gbeic.bbsplusplus.util.VanillaSoundResource;
 import mchorse.bbs_mod.audio.AudioCacheManager;
 import mchorse.bbs_mod.audio.SoundLikeManager;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIVanillaSoundList;
@@ -30,7 +30,7 @@ import java.util.function.Consumer;
  * <p>只注入参数类型为公开类型的方法；私有内部类 {@code VanillaSoundAsset}
  * 不能写在 mixin 方法签名里，否则会 InvalidInjectionException 直接崩溃。</p>
  *
- * @see gbeic.bbsplusplus.utils.VanillaSoundResource
+ * @see gbeic.bbsplusplus.util.VanillaSoundResource
  */
 @Mixin(value = UIVanillaSoundList.class, remap = false)
 public abstract class UIVanillaSoundListMixin

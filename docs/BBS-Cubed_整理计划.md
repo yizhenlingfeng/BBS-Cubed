@@ -1095,8 +1095,23 @@ BBS 2.7 的官方 addon API 已有 **11 个通用事件 + 30 个客户端事件*
 #### D.3.1 待办
 
 - `FluidFormRenderer` 双版本抽公共基类（两版渲染 API 差异大，需与 P6 版本隔离一并设计）。
-- 设置持有类合并、`util`/`utils` 合并。
 - 入口 5→4：把 `BBSPlusPlusClient` 的 l10n/源包职责并入 `BBSPlusPlusModClient`（需保持 l10n 事件时序）。
+
+### D.4 设置与工具包合并（完成）
+
+**设置持有类**
+
+- `BBSAddonsSettings`（36 字段 + 枚举）、`CMLSettings`（18 字段 + 2 方法）、`BBSPPPSettings`（1 字段 + 1 方法）
+  合并为 `gbeic.bbsplusplus.settings.ModSettings`。
+- 逐项校验：迁移后 **55 个 `Value*` 字段、4 个工具方法、1 个枚举** 与原三个类完全一致，无缺漏/多余。
+- 更新 64 个文件的引用与 import；删除三个旧类。
+- 验证：三套 clean 构建通过；1.20.1 客户端启动到主菜单，`config/bbs/settings/bbspp.json` 正常生成并保留既有值，无 NPE/设置相关 ERROR。
+
+**工具包**
+
+- `gbeic.bbsplusplus.utils` 的 11 个类整体迁入 `gbeic.bbsplusplus.util`，删除空包。
+- 同步 17 个文件的 import/包名；全库已无 `gbeic.bbsplusplus.utils` 引用。
+- 验证：三套 clean 构建通过；1.20.1 客户端启动到主菜单，无 `ClassNotFoundException`/`NoClassDefFoundError`。
 
 <!-- 后续阶段完成后在此继续追加 D.2.x / D.3 … -->
 

@@ -2,7 +2,7 @@ package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.ui.morphing.BlockbenchUIKeys;
 import gbeic.bbsplusplus.ui.morphing.DisabledContextAction;
-import gbeic.bbsplusplus.utils.BlockbenchLauncher;
+import gbeic.bbsplusplus.util.BlockbenchLauncher;
 import mchorse.bbs_mod.forms.categories.FormCategory;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ModelForm;

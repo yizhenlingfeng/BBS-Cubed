@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import gbeic.bbsplusplus.utils.VanillaSoundResource;
+import gbeic.bbsplusplus.util.VanillaSoundResource;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UISoundOverlayPanel;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

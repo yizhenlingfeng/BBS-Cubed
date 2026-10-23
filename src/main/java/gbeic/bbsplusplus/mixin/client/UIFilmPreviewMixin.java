@@ -6,7 +6,7 @@ import gbeic.bbsplusplus.premiere.PremiereUIKeys;
 import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.ui.film.FilmToolbarOverflow;
 import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
-import gbeic.bbsplusplus.utils.BonePriority;
+import gbeic.bbsplusplus.util.BonePriority;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.UIFilmPreview;
 import mchorse.bbs_mod.ui.framework.UIContext;

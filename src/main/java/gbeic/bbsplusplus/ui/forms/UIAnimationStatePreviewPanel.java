@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.ui.forms;
 
 import gbeic.bbsplusplus.ui.miniwindow.INonFloatingDockPanel;
-import gbeic.bbsplusplus.utils.BonePriority;
+import gbeic.bbsplusplus.util.BonePriority;
 import mchorse.bbs_mod.forms.states.AnimationState;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;

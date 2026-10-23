@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.mixin.client;
 
 import gbeic.bbsplusplus.api.UIClipsAccessor;
-import gbeic.bbsplusplus.utils.AudioDropImporter;
+import gbeic.bbsplusplus.util.AudioDropImporter;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.ui.film.UIClips;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;

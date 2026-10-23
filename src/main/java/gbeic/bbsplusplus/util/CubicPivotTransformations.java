@@ -1,4 +1,4 @@
-package gbeic.bbsplusplus.utils;
+package gbeic.bbsplusplus.util;
 
 import gbeic.bbsplusplus.api.PivotHolder;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;

@@ -1,4 +1,4 @@
-package gbeic.bbsplusplus.utils;
+package gbeic.bbsplusplus.util;
 
 import com.google.gson.JsonObject;
 import mchorse.bbs_mod.bobj.BOBJBone;

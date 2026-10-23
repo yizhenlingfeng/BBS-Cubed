@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import gbeic.bbsplusplus.utils.AnimationInterpInheritance;
-import gbeic.bbsplusplus.utils.BonePriority;
+import gbeic.bbsplusplus.util.AnimationInterpInheritance;
+import gbeic.bbsplusplus.util.BonePriority;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.film.replays.tracks.TrackId;
