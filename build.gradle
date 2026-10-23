@@ -233,6 +233,17 @@ dependencies {
     modCompileOnly files("libs/VFX-LIGHTS-1.0-1.20.1-zh_cn-hardcoded.jar")
 }
 
+// 1.21.11 目标显式固定 JDK 21 工具链：编译用的 javac 与 Gradle 守护进程的 JVM 解耦，
+// 这样即使 Gradle 跑在别的 JDK 上，javac 也不会报「不支持发行版本 21」。
+// 1.20.x 不设 toolchain，保持“任意 17+ 的 JVM + -source/-target 17”的既有行为。
+if (mcVer.java_release == 21) {
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+}
+
 tasks.withType(JavaCompile).configureEach {
     it.options.encoding = 'UTF-8'
     /* ParticlePlusClient 有意使用 sun.misc.Unsafe 注入枚举常量。
@@ -257,23 +268,13 @@ if (targetMc == "1.21.11") {
     sourceSets.main.java.excludes += [
         // 渲染大修文件本体
         "gbeic/bbsplusplus/client/compat/iris/ShaderCurveState.java",
-        "gbeic/bbsplusplus/client/renderer/ItemSprayFormRenderer.java",
-        "gbeic/bbsplusplus/client/renderer/ItemSprayGlobalSystem.java",
-        "gbeic/bbsplusplus/client/renderer/ItemSprayIRLiteBridge.java",
-        "gbeic/bbsplusplus/client/renderer/ItemSprayWorldItemRenderer.java",
-        "gbeic/bbsplusplus/client/renderer/ItemSpraySimulator.java",
-        "gbeic/bbsplusplus/client/renderer/ItemSprayPhysics.java",
-        "gbeic/bbsplusplus/client/renderer/SprayGuideRenderer.java",
-        "gbeic/bbsplusplus/client/renderer/ModelUVTransformRuntime.java",
         "gbeic/bbsplusplus/client/renderer/AAAParticleFormRenderer.java",
         "gbeic/bbsplusplus/client/screen/ModelTextureGradeShader.java",
         "gbeic/bbsplusplus/client/screen/ColorGradeRenderer.java",
         "gbeic/bbsplusplus/client/screen/VanillaParticleGradeContext.java",
         "gbeic/bbsplusplus/client/structure/VFXDestructionWandSelection.java",
         "gbeic/bbsplusplus/compat/vfx/VfxCoreShaderRegistrationGuard.java",
-        // 引用被排除类的下游文件
-        "gbeic/bbsplusplus/client/renderer/ItemSprayEmitter.java",
-        "gbeic/bbsplusplus/client/renderer/SprayedItem.java",
+        // 引用被排除类的下游文件（BBSEffectLoader 依赖尚未移植的 AAAParticleFormRenderer）
         "gbeic/bbsplusplus/client/renderer/BBSEffectLoader.java",
         "gbeic/bbsplusplus/client/ui/curves/UIShaderCurvePickerOverlayPanel.java",
         "gbeic/bbsplusplus/forms/renderers/GradedVanillaParticleFormRenderer.java",
@@ -360,15 +361,15 @@ if (targetMc == "1.21.11") {
     ]
 }
 
-// FluidFormRenderer 按版本分离：
-// - src/main/java 下是 1.20.1 版本（旧立即模式 API）
+// FluidFormRenderer 按版本分离（同一 FQN，靠 source dir 互斥）：
+// - src/main/java-1.20.x  下是 1.20.1 / 1.20.4 版本（旧立即模式 API）
 // - src/main/java-1.21.11 下是 1.21 RenderPipeline API 移植版
-// 1.21.11 构建时排除默认版本并添加独立 sourceSet 目录。
+// 注意：不能用 sourceSets.excludes 来排除，因为 excludes 是按“相对 srcDir 的路径模式”匹配的，
+// 会把 java-1.21.11 下的同名移植版一起排掉（曾经导致移植版从未被编译、运行期只剩图标占位）。
 if (targetMc == "1.21.11") {
-    sourceSets.main.java.excludes += [
-        "gbeic/bbsplusplus/forms/renderers/FluidFormRenderer.java",
-    ]
     sourceSets.main.java.srcDir "src/main/java-1.21.11"
+} else {
+    sourceSets.main.java.srcDir "src/main/java-1.20.x"
 }
 
 loom {
