@@ -1126,6 +1126,41 @@ BBS 2.7 的官方 addon API 已有 **11 个通用事件 + 30 个客户端事件*
 `客户端初始化开始/完成`、剪辑 UI、Particle+、`addon translations registered and loaded` 日志齐全；
 无 entrypoint `ClassNotFoundException`、无 `bbsplusplus` ERROR。
 
+### D.6 P3 冲突消解（完成）
+
+**1. 8 处失效注入全部修复**
+
+| 原注入点 | 处理 |
+|---|---|
+| `UIFilmPanel#appear/close`（上移到 final 的 `UIDashboardPanel`） | 改为注入 `UIDashboardPanel`，`instanceof UIFilmPanel` 限定；`require=1` |
+| `UIFilmPanel#disappear`（不存在） | 删除；由 `UIDashboardPanelMiniWindowMixin` 统一清理影片/粒子面板 dock 小窗 |
+| `UIList#subMouseClicked`（未声明） | 新增 `UIElementPoseBrushClickMixin` 注入 `UIElement#subMouseClicked`，经 `UIListAccessor` 读取行号 |
+| `UIReplayList#subMouseClicked`（未声明） | 新增 `UIElementReplayDragSnapshotMixin` + `IReplayDragSnapshot`，转发到既有 `UIReplayList` mixin |
+| `BillboardFormRenderer` 旧 7 参 `renderModel` | 删除，只保留 2.7 的 8 参注入并 `require=1` |
+| `ModelBlockEntityRenderer#getRenderDistance`（2.7 jar 未覆写） | 改注入 `BlockEntityRenderer#getRenderDistance` 接口默认方法，`instanceof ModelBlockEntityRenderer` 限定 |
+| `MobFormRendererEnsureEntityMixin` | P1 已删除 |
+
+**2. 同点双 cancel**：`UIReplaysEditorUtils` 的姿势参数刷与轨道优先级逻辑合并到 client 版同一个
+`pickForm` HEAD handler，先参数刷、后优先级，只保留一个 `ci.cancel()`。
+
+**3. 校验与版本门禁**
+
+- 移除 `bbspp-fslovecml.client.mixins.json`、`...client.api.mixins.json` 的无效 `refmap` 字段。
+- `bbspp-fslovecml.mixins.json` 的 `defaultRequire` 0 → **1**；本轮所有修复注入显式 `require=1`。
+- 主入口增加 `BBSApi.requireVersion(MOD_ID, 2)`；`fabric.mod.json` 最低 BBS 版本改为 `>=2.7-1.20.1`。
+- `/bbsplusplus` 限制为单人/局域网主机玩家；AAA trigger 改为在客户端线程触发本地
+  `ModelBlockEntity`，删除空的 `BBSPlusPlusNetwork` 广播 stub；README 同步说明多人服务器不可用。
+
+**验证**：三套 clean 构建通过；1.20.1 与 1.21.11 dev client 启动到主菜单；Loom `Cannot remap`
+警告 **8 → 0**；启动日志无 refmap 读取失败、无 `Critical injection failure`、无 `bbsplusplus` ERROR。
+
+#### D.6.1 待办
+
+- 注册 ID 冲突守卫（表单/剪辑/方块在注册前检查是否已存在）。
+- `bbs/` namespace 资源归属迁移（保留现名，需逐资源评估）。
+- 核心 `bbsplusplus.mixins.json`（129 条）的 `defaultRequire` 仍为 0，需按目标稳定性分批收紧。
+- AAA 多人服务器同步：当前仅集成服务器本地触发，远程服务器无本模组。
+
 <!-- 后续阶段完成后在此继续追加 D.2.x / D.3 … -->
 
 ---

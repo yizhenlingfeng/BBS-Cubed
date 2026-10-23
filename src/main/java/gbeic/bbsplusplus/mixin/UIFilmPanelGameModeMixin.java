@@ -2,6 +2,7 @@ package gbeic.bbsplusplus.mixin;
 
 
 import gbeic.bbsplusplus.settings.ModSettings;
+import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import gbeic.bbsplusplus.util.FilmAutoGameModeRestoreState;
 import gbeic.bbsplusplus.util.GameModeMessageSuppressor;
@@ -19,13 +20,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * Mixin — 相机界面进入时自动切换旁观模式，退出时恢复。
  * <p>
- * 在 {@link UIFilmPanel#appear()} 时保存当前游戏模式并切换到旁观者模式，
- * 在 {@link UIFilmPanel#close()} 时恢复之前保存的游戏模式。
- * 保存状态会同步写入配置文件，用于异常退出后的下次启动兜底恢复。
- * 方便摄像师在编辑影片时自由穿墙移动视角。
+ * BBS 2.6 起 {@code appear/close} 上移到 {@link UIDashboardPanel}（final），
+ * 因此注入父类并用 {@code instanceof UIFilmPanel} 限定只对影片面板生效。
  * </p>
  */
-@Mixin(UIFilmPanel.class)
+@Mixin(value = UIDashboardPanel.class, remap = false)
 public abstract class UIFilmPanelGameModeMixin
 {
     /** 进入相机前保存的游戏模式，退出时恢复 */
@@ -35,11 +34,16 @@ public abstract class UIFilmPanelGameModeMixin
     @Inject(
         method = "appear",
         at = @At("HEAD"),
-        remap = true,
-        require = 0
+        remap = false,
+        require = 1
     )
     private void onFilmPanelAppear(CallbackInfo ci)
     {
+        if (!((Object) this instanceof UIFilmPanel panel))
+        {
+            return;
+        }
+
         if (ModSettings.filmAutoGameMode != null
             && !ModSettings.filmAutoGameMode.get())
         {
@@ -48,7 +52,7 @@ public abstract class UIFilmPanelGameModeMixin
 
         MinecraftClient mc = MinecraftClient.getInstance();
 
-        if (((UIFilmPanel) (Object) this).getContext() == null)
+        if (panel.getContext() == null)
         {
             return; /* 面板懒加载构造时不是真正打开编辑器，不能切换模式 */
         }
@@ -75,11 +79,16 @@ public abstract class UIFilmPanelGameModeMixin
     @Inject(
         method = "close",
         at = @At("HEAD"),
-        remap = true,
-        require = 0
+        remap = false,
+        require = 1
     )
     private void onFilmPanelClose(CallbackInfo ci)
     {
+        if (!((Object) this instanceof UIFilmPanel))
+        {
+            return;
+        }
+
         FilmAutoGameModeRestoreState.restoreFromFilmPanel(
             MinecraftClient.getInstance(),
             this.bbs_savedGameMode

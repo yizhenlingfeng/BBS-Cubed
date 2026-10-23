@@ -63,7 +63,7 @@
 > 前置依赖：需安装 `aaa_particles-2.2.0` + `architectury`，未安装则自动禁用该功能。
 
 - 新增 AAA 粒子伪装，粒子文件需存放至 `assets/effeks/` 目录
-- 触发器：可在表单关键帧中驱动 `trigger0-3`；`/bbsplusplus aaa_particle trigger` 指令仍为实验性（服务端广播尚未实现，暂不会真正触发）
+- 触发器：可在表单关键帧中驱动 `trigger0-3`；`/bbsplusplus aaa_particle trigger <x> <y> <z> <0-3>` 在单人/集成服务器中通过本地客户端触发（远程服务器不加载本模组，指令不可用）
 - 已知限制：
   - 功能已通过基础稳定性测试（无崩溃），非崩溃级问题不再维护
   - 若加载粒子后游戏崩溃，请尝试使用新版 Effekseer 重新导出粒子文件

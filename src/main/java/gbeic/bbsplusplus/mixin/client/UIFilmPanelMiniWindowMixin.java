@@ -73,12 +73,6 @@ public abstract class UIFilmPanelMiniWindowMixin implements IMiniWindowDockHost,
         }
     }
 
-    @Inject(method = "disappear", at = @At("HEAD"), remap = false, require = 0)
-    private void bbspp_cml$clearMiniWindowsOnLeave(CallbackInfo ci)
-    {
-        this.hostClearMiniWindows();
-    }
-
     @Inject(method = "resetFilmLayout", at = @At("HEAD"), remap = false)
     private void bbspp_cml$clearMiniWindowsOnReset(CallbackInfo ci)
     {

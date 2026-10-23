@@ -63,7 +63,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 > Prerequisites: requires `aaa_particles-2.2.x` + `architectury`; the feature auto-disables if they are not installed.
 
 - Adds AAA particle disguise; particle files must be placed under `assets/effeks/`
-- Triggers: drive `trigger0-3` from form keyframes; the `/bbsplusplus aaa_particle trigger` command is still experimental (server broadcast is not implemented yet, so it does not actually fire)
+- Triggers: drive `trigger0-3` from form keyframes; `/bbsplusplus aaa_particle trigger <x> <y> <z> <0-3>` fires through the local client in singleplayer / integrated servers (remote servers do not load this mod, so the command is unavailable)
 - Known limitations:
   - The feature has passed basic stability testing (no crashes); non-crash issues are not maintained further
   - If the game crashes after loading particles, try re-exporting them with a newer version of Effekseer

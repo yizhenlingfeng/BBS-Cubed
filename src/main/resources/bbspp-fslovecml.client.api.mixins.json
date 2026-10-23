@@ -7,10 +7,10 @@
         "UIClipsInvoker",
         "UIClipsPanelAccess",
         "UIDockLayoutAccess",
-        "UIFilmPanelLayoutAccess"
+        "UIFilmPanelLayoutAccess",
+        "UIListAccessor"
     ],
     "injectors": {
         "defaultRequire": 0
-    },
-    "refmap": "bbsplusplus-refmap.json"
+    }
 }

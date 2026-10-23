@@ -5,10 +5,10 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import gbeic.bbsplusplus.forms.AAAParticleForm;
-import gbeic.bbsplusplus.network.BBSPlusPlusNetwork;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -64,9 +64,27 @@ public class AAAParticleCommandModule implements BBSPlusPlusCommandModule
         {
             if (modelBe.getProperties().getForm() instanceof AAAParticleForm)
             {
-                // 发送网络包通知客户端触发
-                BBSPlusPlusNetwork.broadcastTrigger(world, pos, triggerIndex);
-                source.sendFeedback(() -> Text.literal("已成功发送 AAA 粒子触发器信号 (索引: " + triggerIndex + ") 到坐标 " + pos.toShortString()), true);
+                /* 本模组是客户端 addon，服务端命令树只存在于集成服务器（单人/局域网主机）。
+                 * 直接在客户端线程把触发器脉冲写到客户端世界的同一 ModelBlockEntity 上。 */
+                MinecraftClient client = MinecraftClient.getInstance();
+
+                client.execute(() ->
+                {
+                    if (client.world == null)
+                    {
+                        return;
+                    }
+
+                    BlockEntity clientBe = client.world.getBlockEntity(pos);
+
+                    if (clientBe instanceof ModelBlockEntity clientModel
+                        && clientModel.getProperties().getForm() instanceof AAAParticleForm form)
+                    {
+                        form.manualTriggerPulse[triggerIndex] = true;
+                    }
+                });
+
+                source.sendFeedback(() -> Text.literal("已请求本地客户端触发 AAA 粒子 (索引: " + triggerIndex + ")，坐标 " + pos.toShortString()), true);
 
                 return 1;
             }

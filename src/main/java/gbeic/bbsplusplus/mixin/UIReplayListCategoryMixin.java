@@ -1,5 +1,6 @@
 package gbeic.bbsplusplus.mixin;
 
+import gbeic.bbsplusplus.mixin.client.IReplayDragSnapshot;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -37,7 +38,7 @@ import java.util.function.Consumer;
  * 只增强列表交互层。
  */
 @Mixin(value = UIReplayList.class, remap = true)
-public abstract class UIReplayListCategoryMixin
+public abstract class UIReplayListCategoryMixin implements IReplayDragSnapshot
 {
     @Unique
     private static final IKey BBSPP_RENAME_CATEGORY = L10n.lang("bbspp.ui.scene.replays.context.rename_category");
@@ -102,14 +103,13 @@ public abstract class UIReplayListCategoryMixin
     }
 
     /**
-     * 注入目标：{@link UIReplayList#subMouseClicked(UIContext)} 开头。
+     * 在通用 {@code UIElement#subMouseClicked} 上缓存拖拽前的多选快照。
      *
-     * 注入原因：原版点击已多选的回放开始拖拽时，会先把选择缩成当前单项，
-     * 导致释放到类别行时已经拿不到完整多选集合。
-     * 修改后行为：在原版选择逻辑运行前缓存本次拖拽的多选回放，释放时用于批量移动。
+     * <p>原版点击已多选的回放开始拖拽时，会先把选择缩成当前单项，导致释放到类别行时
+     * 已经拿不到完整多选集合。入口由 {@code UIElementReplayDragSnapshotMixin} 转发。</p>
      */
-    @Inject(method = "subMouseClicked", at = @At("HEAD"), require = 0)
-    private void bbspp$captureMultiSelectionBeforeDrag(UIContext context, CallbackInfoReturnable<Boolean> cir)
+    @Override
+    public void bbspp$captureDragSelection(UIContext context)
     {
         this.bbspp$dragSelectionSnapshot = null;
 

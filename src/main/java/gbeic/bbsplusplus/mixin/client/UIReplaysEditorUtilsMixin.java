@@ -2,6 +2,7 @@ package gbeic.bbsplusplus.mixin.client;
 
 import gbeic.bbsplusplus.util.AnimationInterpInheritance;
 import gbeic.bbsplusplus.util.BonePriority;
+import gbeic.bbsplusplus.client.ui.pose.IPoseParameterBrush;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.film.replays.tracks.TrackId;
@@ -39,6 +40,15 @@ public abstract class UIReplaysEditorUtilsMixin
     {
         if (insert || form == null || keyframeEditor == null || bone == null || bone.isEmpty())
         {
+            return;
+        }
+
+        /* 先处理姿势参数刷：命中复制源时保持等待，不再进入轨道优先级选择。
+         * 两段逻辑合并到同一个 HEAD cancellable handler，避免两个 Mixin 的同点 cancel 依赖加载顺序。 */
+        if (bbspp_cml$applyPoseParameterBrush(keyframeEditor, form, bone))
+        {
+            ci.cancel();
+
             return;
         }
 
@@ -139,6 +149,27 @@ public abstract class UIReplaysEditorUtilsMixin
         }
 
         return null;
+    }
+
+    /**
+     * 姿势参数刷的视口拾取：命中复制源时返回 true（调用方 cancel 原逻辑）。
+     */
+    private static boolean bbspp_cml$applyPoseParameterBrush(UIKeyframeEditor keyframeEditor, Form form, String bone)
+    {
+        if (!(keyframeEditor.editor instanceof UIPoseKeyframeFactory poseFactory)
+            || !(poseFactory.poseEditor instanceof IPoseParameterBrush brush))
+        {
+            return false;
+        }
+
+        Keyframe<?> selected = keyframeEditor.view.getGraph().getSelected();
+        UIKeyframeSheet currentSheet = selected == null ? null : keyframeEditor.view.getGraph().getSheet(selected);
+        String formPath = FormUtils.getPath(form);
+        String posePrefix = formPath.isEmpty() ? "" : formPath + FormUtils.PATH_SEPARATOR;
+        boolean matchingPoseSheet = currentSheet != null && currentSheet.id != null
+            && (currentSheet.id.equals(posePrefix + "pose") || currentSheet.id.startsWith(posePrefix + "pose_overlay"));
+
+        return matchingPoseSheet && brush.bbspp$applyParameterBrush(bone) == IPoseParameterBrush.Result.SOURCE;
     }
 
     @Inject(method = "fillAnimationPose", at = @At("TAIL"), remap = false)

@@ -8,6 +8,7 @@ import gbeic.bbsplusplus.command.modules.DebugCommandModule;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.List;
 
@@ -28,7 +29,9 @@ public class BBSPlusPlusCommand
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment)
     {
         LiteralArgumentBuilder<ServerCommandSource> root = CommandManager.literal("bbsplusplus")
-            .requires(source -> true); // TODO(1.21.11 port): restore permission check after yarn mapping stabilizes
+            /* 客户端 addon 只会在集成服务器注册命令；限制为单人/局域网主机的玩家，
+             * 避免在无本模组的远程服务器上暴露空指令。 */
+            .requires(source -> source.getServer().isSingleplayer() && source.getEntity() instanceof ServerPlayerEntity);
 
         for (BBSPlusPlusCommandModule module : MODULES)
         {

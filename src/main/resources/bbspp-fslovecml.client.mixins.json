@@ -47,6 +47,8 @@
         "UIDashboardPanelMiniWindowMixin",
         "UIDataPathListParticleMixin",
         "UIDockLayoutMiniWindowMixin",
+        "UIElementPoseBrushClickMixin",
+        "UIElementReplayDragSnapshotMixin",
         "UIFilmPanelMiniWindowMixin",
         "UIFilmPreviewMixin",
         "UIFilmControllerPrevCameraModeMixin",
@@ -86,6 +88,5 @@
     ],
     "injectors": {
         "defaultRequire": 0
-    },
-    "refmap": "bbsplusplus-refmap.json"
+    }
 }

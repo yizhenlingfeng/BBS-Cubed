@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus;
 
 import mchorse.bbs_mod.api.BBSAddonMod;
+import mchorse.bbs_mod.api.BBSApi;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import org.slf4j.Logger;
@@ -24,6 +25,9 @@ public class BBSPlusPlusMod implements ModInitializer, BBSAddonMod
     public void onInitialize()
     {
         LOGGER.info("BBS++ initialized!");
+
+        /* BBS 2.7 的 addon API 版本为 2；版本不符时给出明确错误，而不是运行期随机崩溃。 */
+        BBSApi.requireVersion(MOD_ID, 2);
 
         // BBSPlusPlusBlocks 依赖 FabricBlockSettings（1.21.11 Fabric API 已移除该包），
         // 在 1.21.11 构建时被 source-set excludes 排除，此处用反射调用避免编译期依赖。
