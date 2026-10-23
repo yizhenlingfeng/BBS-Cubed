@@ -1,6 +1,8 @@
 # BBS Cubed
 
 > [BBSFS](https://github.com/Wemppy4/bbs-fs) 功能增强插件
+>
+> **构建状态**：1.20.1 为主发布目标（单 jar 兼容 1.20.1–1.20.4）；1.21.11 为实验性构建，约 20% 的渲染 / UI / 第三方插件适配代码尚未移植（构建时排除）。
 
 **简体中文** | [English](README_EN.md)
 
@@ -61,8 +63,7 @@
 > 前置依赖：需安装 `aaa_particles-2.2.0` + `architectury`，未安装则自动禁用该功能。
 
 - 新增 AAA 粒子伪装，粒子文件需存放至 `assets/effeks/` 目录
-- 新增指令：`/bbsplusplus aaa_particle trigger <x> <y> <z> <触发器ID>`
-  - 示例：`/bbsplusplus aaa_particle trigger 100 64 200 0`（触发指定坐标模型方块粒子的"触发器 0"）
+- 触发器：可在表单关键帧中驱动 `trigger0-3`；`/bbsplusplus aaa_particle trigger` 指令仍为实验性（服务端广播尚未实现，暂不会真正触发）
 - 已知限制：
   - 功能已通过基础稳定性测试（无崩溃），非崩溃级问题不再维护
   - 若加载粒子后游戏崩溃，请尝试使用新版 Effekseer 重新导出粒子文件
@@ -90,12 +91,12 @@
 - 右键开关或取色器可选择"应用到子骨骼"，将状态扩散到该骨骼的全部子骨骼（含未编辑过的子骨骼）
 - 已知限制：Iris 光影包启用时流光暂不显示（关闭光影或仅在编辑器预览时正常）。原因是 Iris 对模组自定义核心 shader 存在原理性兼容限制，详见 Iris 文档 `docs/development/compatibility/core-shaders.md`
 
-### 结构伪装
+### 结构与破坏魔杖增强
 
-> 合并自"卫巾纸薄"的 tools 插件。
+> 光影曲线等能力合并自"卫巾纸薄"的 tools 插件；结构伪装本体由 BBS 2.7 内置。
 
-- 新增结构棒与结构伪装
-- 后续将完善操作优化与群系支持
+- BBS 2.7 已内置结构棒与结构伪装
+- 本模组补充 VFX / Xavin 破坏魔杖的选区交互、操作提示与音效（需安装对应插件）
 
 ### 视频伪装
 

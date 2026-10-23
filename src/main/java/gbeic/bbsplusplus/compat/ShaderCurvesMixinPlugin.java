@@ -18,7 +18,6 @@ public class ShaderCurvesMixinPlugin implements IMixinConfigPlugin
 {
     /** 以 Iris 自身的类为注入目标的 Mixin，没装 Iris 时不能应用 */
     private static final Set<String> IRIS_ONLY_MIXINS = Set.of(
-        "CelestialUniformsMixin",
         "CustomUniformsSetupAccessor",
         "IrisRenderingPipelineMixin",
         "ShadowRendererMixin",

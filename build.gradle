@@ -150,7 +150,9 @@ processResources {
         // 从所有 mixins.json 里移除被 excludes 的 Mixin（目标类已变更/不存在）
         doLast {
             int totalRemoved = 0
-            fileTree("build/1.21.11/resources/main/").matching { include "*.mixins.json" }.each { f ->
+            def resourcesDir = layout.buildDirectory.dir("resources/main").get().asFile
+
+            fileTree(resourcesDir).matching { include "*.mixins.json" }.each { f ->
                 def text = f.text
                 sourceSets.main.java.excludes.each { excl ->
                     if (excl.contains("/mixin/") && excl.endsWith(".java")) {
@@ -160,6 +162,13 @@ processResources {
                         text = text.replaceAll("\"${simpleName}\",?\\s*", "")
                         if (text.length() < before) totalRemoved++
                     }
+                }
+                // 删除末项后会留下前一项的逗号，先收尾再校验，避免生成非法 JSON
+                text = text.replaceAll(",\\s*\\]", "]")
+                try {
+                    new groovy.json.JsonSlurper().parseText(text)
+                } catch (Exception e) {
+                    throw new GradleException("Mixin config 清洗后不是合法 JSON: ${f} - ${e.message}", e)
                 }
                 f.text = text
             }
@@ -298,7 +307,6 @@ if (targetMc == "1.21.11") {
         "gbeic/bbsplusplus/mixin/MotionPathMixin.java",
         "gbeic/bbsplusplus/mixin/vfx/BbsVfxClientMixin.java",
         "gbeic/bbsplusplus/mixin/vfx/VfxLightsClientMixin.java",
-        "gbeic/bbsplusplus/mixin/xavin/XavinClientMixin.java",
         "gbeic/bbsplusplus/mixin/BOBJModelVAOMixin.java",
         "gbeic/bbsplusplus/mixin/ModelVAOMixin.java",
         "gbeic/bbsplusplus/mixin/CubicCubeRendererMixin.java",
@@ -337,7 +345,6 @@ if (targetMc == "1.21.11") {
         "gbeic/bbsplusplus/mixin/UILinkKeyframeFactoryMixin.java",
         "gbeic/bbsplusplus/mixin/UIListPoseParameterBrushMixin.java",
         "gbeic/bbsplusplus/mixin/EffectDefinitionMixin.java",
-        "gbeic/bbsplusplus/mixin/UIAnimationStateKeyframesMixin.java",
         "gbeic/bbsplusplus/mixin/UIFilmKeyframesMixin.java",
         "gbeic/bbsplusplus/ui/morphing/UIBBSPPCategoryHome.java",
         "gbeic/bbsplusplus/ui/film/UIHotbarRenderer.java",
@@ -346,7 +353,6 @@ if (targetMc == "1.21.11") {
         "gbeic/bbsplusplus/mixin/UIFilmPanelGameModeMixin.java",
         // 第三批连锁
         "gbeic/bbsplusplus/client/ui/forms/editors/forms/UIAAAParticleForm.java",
-        "gbeic/bbsplusplus/client/ui/keyframes/UIAAAParticleLinkKeyframeFactory.java",
         "gbeic/bbsplusplus/mixin/client/UIActionsConfigEditorMixin.java",
         "gbeic/bbsplusplus/mixin/client/UIListAnimationPreviewAnchorMixin.java",
         "gbeic/bbsplusplus/ui/morphing/UIBBSPPFormList.java",
@@ -360,12 +366,8 @@ if (targetMc == "1.21.11") {
         "gbeic/bbsplusplus/BBSPlusPlusBlocks.java",
         // 入口类（1.21.11 用简化版 entrypoint，见 fabric.mod.json processResources 替换）
         "gbeic/bbsplusplus/client/BBSPlusPlusModClient.java",
-        // KeyBinding.Category type changed in 1.21.11
-        "gbeic/bbsplusplus/events/ClientEventHandler.java",
         // GameMode API changed in 1.21.11
         "gbeic/bbsplusplus/util/FilmAutoGameModeRestoreState.java",
-        // 运行时 Mixin 目标类已变更
-        "gbeic/bbsplusplus/mixin/MotionPathMixin.java",
     ]
 }
 

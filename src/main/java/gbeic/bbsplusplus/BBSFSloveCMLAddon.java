@@ -20,7 +20,7 @@ import mchorse.bbs_mod.utils.factory.MapFactory;
  *
  * <p>BBS 在 <code>bbs-addon</code> 入口加载本类，并在自身初始化完成后派发
  * {@link RegisterSettingsEvent}——这是唯一能安全调用 BBSMod 静态工厂的时机
- * （Fabric 入口顺序下 BBSFSloveCML.onInitialize 先于 BBSMod.onInitialize 执行，
+ * （Fabric 入口顺序下 BBSPlusPlusMod.onInitialize 先于 BBSMod.onInitialize 执行，
  * 直接注册会让 getForms()/getFactoryCameraClips() 返回 null）。</p>
  */
 public class BBSFSloveCMLAddon implements BBSAddonMod {
@@ -35,32 +35,32 @@ public class BBSFSloveCMLAddon implements BBSAddonMod {
         try {
             MapFactory<Clip, ClipFactoryData> factory = BBSMod.getFactoryCameraClips();
             if (factory == null) {
-                BBSFSloveCML.LOGGER.warn("[FSloveCML] 剪辑工厂为空，无法注册剪辑");
+                BBSPlusPlusMod.LOGGER.warn("[FSloveCML] 剪辑工厂为空，无法注册剪辑");
                 return;
             }
 
             /* 快捷栏剪辑 */
             factory.register(Link.bbs("hotbar"), HotbarClip.class, new ClipFactoryData(Icons.BLOCK, 0x55aaff));
-            BBSFSloveCML.LOGGER.info("[FSloveCML] 快捷栏剪辑 (HotbarClip) 注册成功!");
+            BBSPlusPlusMod.LOGGER.info("[FSloveCML] 快捷栏剪辑 (HotbarClip) 注册成功!");
 
             /* 电影效果剪辑 */
             factory.register(Link.bbs("cinematic"), CinematicClip.class, new ClipFactoryData(Icons.VIDEO_CAMERA, 0xffaa00));
-            BBSFSloveCML.LOGGER.info("[FSloveCML] 电影效果剪辑 (CinematicClip) 注册成功!");
+            BBSPlusPlusMod.LOGGER.info("[FSloveCML] 电影效果剪辑 (CinematicClip) 注册成功!");
 
             /* 重播是按所在图层读取下方摄像机剪辑的时间修饰剪辑 */
             factory.register(Link.bbs("replay"), ReplayClip.class, new ClipFactoryData(Icons.REFRESH, 0x4f8cff));
-            BBSFSloveCML.LOGGER.info("[FSloveCML] 重播剪辑 (ReplayClip) 注册成功!");
+            BBSPlusPlusMod.LOGGER.info("[FSloveCML] 重播剪辑 (ReplayClip) 注册成功!");
         } catch (Exception e) {
-            BBSFSloveCML.LOGGER.error("[FSloveCML] 注册剪辑失败: {}", e.getMessage(), e);
+            BBSPlusPlusMod.LOGGER.error("[FSloveCML] 注册剪辑失败: {}", e.getMessage(), e);
         }
     }
 
     private void registerFluidForm() {
         try {
             BBSMod.getForms().register(Link.bbs("fluid"), FluidForm.class, null);
-            BBSFSloveCML.LOGGER.info("[FSloveCML] 流体伪装 (FluidForm) 注册成功!");
+            BBSPlusPlusMod.LOGGER.info("[FSloveCML] 流体伪装 (FluidForm) 注册成功!");
         } catch (Exception e) {
-            BBSFSloveCML.LOGGER.error("[FSloveCML] 注册流体伪装失败: {}", e.getMessage(), e);
+            BBSPlusPlusMod.LOGGER.error("[FSloveCML] 注册流体伪装失败: {}", e.getMessage(), e);
         }
     }
 
@@ -77,13 +77,13 @@ public class BBSFSloveCMLAddon implements BBSAddonMod {
         try {
             if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("aaa_particles")) {
                 event.forms.register(Link.bbs("aaa_particle"), gbeic.bbsplusplus.forms.AAAParticleForm.class, null);
-                BBSFSloveCML.LOGGER.info("[FSloveCML] 已注册 AAAParticleForm 到 FormArchitect");
+                BBSPlusPlusMod.LOGGER.info("[FSloveCML] 已注册 AAAParticleForm 到 FormArchitect");
             }
 
             event.forms.register(Link.bbs("item_spray"), gbeic.bbsplusplus.forms.ItemSprayForm.class, null);
-            BBSFSloveCML.LOGGER.info("[FSloveCML] 已注册 ItemSprayForm 到 FormArchitect");
+            BBSPlusPlusMod.LOGGER.info("[FSloveCML] 已注册 ItemSprayForm 到 FormArchitect");
         } catch (Exception e) {
-            BBSFSloveCML.LOGGER.error("[FSloveCML] 注册 AAA 粒子 / 物品喷射表单失败", e);
+            BBSPlusPlusMod.LOGGER.error("[FSloveCML] 注册 AAA 粒子 / 物品喷射表单失败", e);
         }
     }
 
@@ -95,7 +95,7 @@ public class BBSFSloveCMLAddon implements BBSAddonMod {
     @Subscribe
     public void onRegisterKeyframeFactories(mchorse.bbs_mod.api.events.RegisterKeyframeFactoriesEvent event) {
         event.register("aaa_effect", gbeic.bbsplusplus.keyframes.BBSPlusPlusKeyframeFactories.AAA_EFFECT);
-        BBSFSloveCML.LOGGER.info("[FSloveCML] 已注册 aaa_effect 关键帧工厂");
+        BBSPlusPlusMod.LOGGER.info("[FSloveCML] 已注册 aaa_effect 关键帧工厂");
     }
 
     /**

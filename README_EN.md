@@ -1,6 +1,8 @@
 # BBS Cubed
 
 > An enhancement plugin for [BBSFS](https://github.com/Wemppy4/bbs-fs)
+>
+> **Build status**: 1.20.1 is the primary release (single jar compatible with 1.20.1–1.20.4); 1.21.11 is experimental — roughly 20% of the rendering / UI / third-party plugin integration code is not ported yet (excluded at build time).
 
 **[English]** | [简体中文](README.md)
 
@@ -61,8 +63,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 > Prerequisites: requires `aaa_particles-2.2.x` + `architectury`; the feature auto-disables if they are not installed.
 
 - Adds AAA particle disguise; particle files must be placed under `assets/effeks/`
-- New command: `/bbsplusplus aaa_particle trigger <x> <y> <z> <trigger ID>`
-  - Example: `/bbsplusplus aaa_particle trigger 100 64 200 0` (triggers trigger 0 of the model-block particle at the given coordinates)
+- Triggers: drive `trigger0-3` from form keyframes; the `/bbsplusplus aaa_particle trigger` command is still experimental (server broadcast is not implemented yet, so it does not actually fire)
 - Known limitations:
   - The feature has passed basic stability testing (no crashes); non-crash issues are not maintained further
   - If the game crashes after loading particles, try re-exporting them with a newer version of Effekseer
@@ -90,12 +91,12 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 - Right-click the toggle or picker to choose "Apply to children", propagating the state to all descendant bones (including unedited ones)
 - Known limitation: the glint does not render while an Iris shader pack is active (it works with shaders off and in the editor preview). This is a fundamental compatibility limitation of Iris regarding mod-provided core shaders; see `docs/development/compatibility/core-shaders.md`
 
-### Structure Disguise
+### Structure & Destruction Wand Enhancements
 
-> Merged from the `tools` plugin by "卫巾纸薄".
+> Shader-curve features are merged from the `tools` plugin by "卫巾纸薄"; the structure disguise itself ships with BBS 2.7.
 
-- Adds structure sticks and structure disguise
-- Operation optimization and biome support are planned for future releases
+- BBS 2.7 already includes the structure wand and structure disguise
+- This mod adds selection interaction, hints and sounds for the VFX / Xavin destruction wand (requires the corresponding plugin)
 
 ### Video Disguise
 

@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import gbeic.bbsplusplus.BBSFSloveCML;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.ui.particles.ParticlePlusUIKeys;
 import mchorse.bbs_mod.ui.dashboard.list.UIDataPathList;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -387,7 +387,7 @@ public abstract class UIDataPathListParticleMixin extends UIList<DataPath>
         }
         catch (IOException exception)
         {
-            BBSFSloveCML.LOGGER.warn("[Particle+] Failed to read {}", file, exception);
+            BBSPlusPlusMod.LOGGER.warn("[Particle+] Failed to read {}", file, exception);
         }
     }
 
@@ -401,7 +401,7 @@ public abstract class UIDataPathListParticleMixin extends UIList<DataPath>
         }
         catch (IOException exception)
         {
-            BBSFSloveCML.LOGGER.warn("[Particle+] Failed to write {}", file, exception);
+            BBSPlusPlusMod.LOGGER.warn("[Particle+] Failed to write {}", file, exception);
         }
     }
 

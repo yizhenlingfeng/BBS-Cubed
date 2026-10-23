@@ -11,8 +11,7 @@
     "environment": "client",
     "entrypoints": {
         "main": [
-            "gbeic.bbsplusplus.BBSPlusPlusMod",
-            "gbeic.bbsplusplus.BBSFSloveCML"
+            "gbeic.bbsplusplus.BBSPlusPlusMod"
         ],
         "client": [
             "gbeic.bbsplusplus.client.BBSPlusPlusModClient",

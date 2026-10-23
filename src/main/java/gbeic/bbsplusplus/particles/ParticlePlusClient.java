@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.particles;
 
-import gbeic.bbsplusplus.BBSFSloveCML;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.particles.components.ParticleComponentCollisionAppearance;
 import gbeic.bbsplusplus.particles.components.ParticleComponentCollisionTinting;
 import gbeic.bbsplusplus.particles.components.ParticleComponentParticleMorph;
@@ -45,11 +45,11 @@ public final class ParticlePlusClient
             try
             {
                 additiveMaterial = injectAdditiveMaterial();
-                BBSFSloveCML.LOGGER.info("[Particle+] Additive particle material registered");
+                BBSPlusPlusMod.LOGGER.info("[Particle+] Additive particle material registered");
             }
             catch (Throwable throwable)
             {
-                BBSFSloveCML.LOGGER.error("[Particle+] Failed to register additive particle material", throwable);
+                BBSPlusPlusMod.LOGGER.error("[Particle+] Failed to register additive particle material", throwable);
             }
         }
 

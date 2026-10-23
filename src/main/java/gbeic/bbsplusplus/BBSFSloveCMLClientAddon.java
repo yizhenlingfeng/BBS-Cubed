@@ -25,12 +25,12 @@ public class BBSFSloveCMLClientAddon implements BBSAddonMod {
 
     @Subscribe
     public void onRegisterClientSettings(RegisterClientSettingsEvent event) {
-        BBSFSloveCML.LOGGER.info("[FSloveCML] 客户端 addon 正在注册客户端设置...");
+        BBSPlusPlusMod.LOGGER.info("[FSloveCML] 客户端 addon 正在注册客户端设置...");
     }
 
     @Subscribe
     public void onRegisterL10n(RegisterL10nEvent event) {
-        BBSFSloveCML.LOGGER.info("[FSloveCML] 收到 RegisterL10nEvent");
+        BBSPlusPlusMod.LOGGER.info("[FSloveCML] 收到 RegisterL10nEvent");
         BBSFSloveCMLClient.registerTranslations(event.l10n);
     }
 

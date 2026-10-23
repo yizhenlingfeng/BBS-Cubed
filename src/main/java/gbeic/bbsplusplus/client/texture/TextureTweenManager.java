@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.client.texture;
 
-import gbeic.bbsplusplus.BBSPPPModClient;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.graphics.texture.Texture;
@@ -165,7 +165,7 @@ public class TextureTweenManager
         }
         catch (Exception e)
         {
-            BBSPPPModClient.LOGGER.warn("生成纹理补间运行时纹理失败：{} -> {}", a, b, e);
+            BBSPlusPlusMod.LOGGER.warn("生成纹理补间运行时纹理失败：{} -> {}", a, b, e);
 
             synchronized (CACHE)
             {

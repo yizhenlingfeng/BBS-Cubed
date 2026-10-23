@@ -44,29 +44,40 @@ import java.util.Collections;
  * 无论 addon 何时加载都不会错过 l10n 重载。</p>
  */
 public class BBSFSloveCMLClient implements ClientModInitializer {
-    public static final Logger LOGGER = LoggerFactory.getLogger(BBSFSloveCML.MOD_ID + "_client");
+    public static final Logger LOGGER = LoggerFactory.getLogger(BBSPlusPlusMod.MOD_ID + "_client");
     private static L10n registeredL10n;
 
     public static synchronized void registerTranslations(L10n l10n) {
-        if (l10n == null || registeredL10n == l10n) {
+        if (l10n == null) {
             return;
         }
 
-        /* BBS++ 自有 namespace 的 UI 文案（bbspp/strings/<lang>.json） */
-        l10n.registerOne((lang) -> Link.assets("bbspp/strings/" + lang + ".json"));
+        /* BBS 的 RegisterL10nEvent 可能早于本模组的 client 入口执行；此时自有 assets 包尚未注册，
+         * 直接 reload 只会打印一堆 FileNotFoundException。等 onInitializeClient 注册资源包后会再次调用。 */
+        if (!hasLanguageFile(Link.assets("bbspp/strings/en_us.json"))) {
+            LOGGER.debug("[FSloveCML] 自有资源包尚未注册，延迟加载 addon 翻译");
+            return;
+        }
 
-        /* BBS 主 namespace 的补充文案（assets/bbs/assets/lang/<lang>.json，原 L10nMixin 注册的那份）。
-         * 文件缺失时返回空列表，安静回落到 BBS 已加载的默认英文。 */
-        l10n.register((lang) -> {
-            Link link = Link.assets("lang/" + lang + ".json");
+        if (registeredL10n != l10n) {
+            /* BBS++ 自有 namespace 的 UI 文案（bbspp/strings/<lang>.json） */
+            l10n.registerOne((lang) -> Link.assets("bbspp/strings/" + lang + ".json"));
 
-            return hasLanguageFile(link)
-                ? java.util.Collections.singletonList(link)
-                : java.util.Collections.emptyList();
-        });
+            /* BBS 主 namespace 的补充文案（assets/bbs/assets/lang/<lang>.json，原 L10nMixin 注册的那份）。
+             * 文件缺失时返回空列表，安静回落到 BBS 已加载的默认英文。 */
+            l10n.register((lang) -> {
+                Link link = Link.assets("lang/" + lang + ".json");
 
-        registeredL10n = l10n;
+                return hasLanguageFile(link)
+                    ? java.util.Collections.singletonList(link)
+                    : java.util.Collections.emptyList();
+            });
 
+            registeredL10n = l10n;
+        }
+
+        /* 即使链接已注册过也必须重新 reload：首次（事件早于资源包注册）失败后，
+         * 这里是在资源包就绪后的第二次机会。 */
         try {
             l10n.reload();
             LOGGER.info("[FSloveCML] addon translations registered and loaded");

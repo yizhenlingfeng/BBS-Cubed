@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.client.screen;
 
-import gbeic.bbsplusplus.BBSFSloveCML;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 import mchorse.bbs_mod.utils.colors.Color;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.GlUniform;
@@ -129,11 +129,11 @@ public final class ModelTextureGradeShader
             }
             catch (IOException | RuntimeException e)
             {
-                BBSFSloveCML.LOGGER.error("[FSloveCML] 无法创建纹理调色 shader: " + variant.name, e);
+                BBSPlusPlusMod.LOGGER.error("[FSloveCML] 无法创建纹理调色 shader: " + variant.name, e);
             }
         }
 
-        BBSFSloveCML.LOGGER.info("[FSloveCML] 纹理材质 shader 变体加载完成: " + SHADERS.size() + "/" + VARIANTS.length);
+        BBSPlusPlusMod.LOGGER.info("[FSloveCML] 纹理材质 shader 变体加载完成: " + SHADERS.size() + "/" + VARIANTS.length);
     }
 
     public static ShaderProgram select(ShaderProgram fallback, Color tint, float whiten)
@@ -326,7 +326,7 @@ public final class ModelTextureGradeShader
         }
         catch (Throwable t)
         {
-            BBSFSloveCML.LOGGER.error("[FSloveCML] 附魔光效纹理加载失败，光效将被禁用", t);
+            BBSPlusPlusMod.LOGGER.error("[FSloveCML] 附魔光效纹理加载失败，光效将被禁用", t);
 
             return null;
         }
@@ -346,7 +346,7 @@ public final class ModelTextureGradeShader
         {
             if (id.getPath().contains("/core/"))
             {
-                return this.manager.getResource(Identifier.of(BBSFSloveCML.MOD_ID, id.getPath()));
+                return this.manager.getResource(Identifier.of(BBSPlusPlusMod.MOD_ID, id.getPath()));
             }
 
             return this.manager.getResource(id);

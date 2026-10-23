@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.client.texture;
 
-import gbeic.bbsplusplus.BBSPPPModClient;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.resources.Pixels;
@@ -147,7 +147,7 @@ final class TextureTweenSourceCache
         }
         catch (Exception e)
         {
-            BBSPPPModClient.LOGGER.warn("无法读取纹理补间源贴图：{}", link, e);
+            BBSPlusPlusMod.LOGGER.warn("无法读取纹理补间源贴图：{}", link, e);
             return null;
         }
         finally
@@ -174,7 +174,7 @@ final class TextureTweenSourceCache
 
             if (pixels.width != width || pixels.height != height)
             {
-                BBSPPPModClient.LOGGER.warn("忽略尺寸不匹配的 PBR 伴随贴图：{}（{}x{}，预期 {}x{}）",
+                BBSPlusPlusMod.LOGGER.warn("忽略尺寸不匹配的 PBR 伴随贴图：{}（{}x{}，预期 {}x{}）",
                     link, pixels.width, pixels.height, width, height);
                 return null;
             }
