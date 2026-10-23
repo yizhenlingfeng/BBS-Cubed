@@ -39,11 +39,11 @@ import java.util.Collections;
  * BBS FSloveCML Client - 注册客户端 UI 组件与 addon 翻译/源包。
  *
  * <p>BBS(2.5) 的 BBSModClient 通过 Fabric "bbs-client-addon" 入口加载 client addon
- * （即 BBSFSloveCMLClientAddon，见 fabric.mod.json），无需再手动 events.register。
+ * （即 BBSPlusPlusClientAddon，见 fabric.mod.json），无需再手动 events.register。
  * 本类保留翻译/源包的双保险注册：早于 MC 的 LanguageManager.reload 直接注册，
  * 无论 addon 何时加载都不会错过 l10n 重载。</p>
  */
-public class BBSFSloveCMLClient implements ClientModInitializer {
+public class BBSPlusPlusClient implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(BBSPlusPlusMod.MOD_ID + "_client");
     private static L10n registeredL10n;
 
@@ -103,7 +103,7 @@ public class BBSFSloveCMLClient implements ClientModInitializer {
              * 用本类 classloader 读 jar内 assets/bbspp/strings/<lang>.json，
              * 避免主 InternalAssetsSourcePack 用主 mod classloader 读 assets/bbs/assets/... 时
              * 与主 jar 同路径 zh_cn.json 先命中、盖掉本 addon 新增翻译键。 */
-            BBSMod.getProvider().register(new InternalAssetsSourcePack(Link.ASSETS, "assets", BBSFSloveCMLClient.class));
+            BBSMod.getProvider().register(new InternalAssetsSourcePack(Link.ASSETS, "assets", BBSPlusPlusClient.class));
 
             /* 注册 addon 自有 namespace 的翻译提供者（path 与主 bbs strings 不重叠）。
              * 注册后立即 reload；若此时 BBS 尚未创建 L10n，RegisterL10nEvent 会补注册。 */
@@ -187,7 +187,7 @@ public class BBSFSloveCMLClient implements ClientModInitializer {
         Class<?> formCls = Class.forName(formClassName);
         Class<?> factoryInterface = Class.forName("mchorse.bbs_mod.forms.FormUtilsClient$IFormRendererFactory");
         Object factory = java.lang.reflect.Proxy.newProxyInstance(
-            BBSFSloveCMLClient.class.getClassLoader(),
+            BBSPlusPlusClient.class.getClassLoader(),
             new Class<?>[]{factoryInterface},
             (proxy, method, args) -> {
                 if (method.getName().equals("create")) {

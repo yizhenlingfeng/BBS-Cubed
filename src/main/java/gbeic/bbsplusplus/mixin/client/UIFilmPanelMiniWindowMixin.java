@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import gbeic.bbsplusplus.BBSFSloveCMLClient;
+import gbeic.bbsplusplus.BBSPlusPlusClient;
 import gbeic.bbsplusplus.ui.miniwindow.IMiniWindowDockHost;
 import gbeic.bbsplusplus.ui.miniwindow.IMiniWindowDockHostRef;
 import gbeic.bbsplusplus.ui.miniwindow.UIFilmPanelMiniWindowSupport;
@@ -69,7 +69,7 @@ public abstract class UIFilmPanelMiniWindowMixin implements IMiniWindowDockHost,
         }
         catch (Throwable t)
         {
-            BBSFSloveCMLClient.LOGGER.warn("[MiniWindow] 布局同步(延迟)失败", t);
+            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 布局同步(延迟)失败", t);
         }
     }
 

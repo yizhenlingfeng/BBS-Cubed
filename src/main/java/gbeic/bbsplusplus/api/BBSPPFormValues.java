@@ -16,7 +16,7 @@ import java.util.List;
  *
  * <p>这些属性（UV 变换、纹理调色、molang 互通、动作覆盖层等）原先由一组
  * Form 构造器 Mixin 注册、并经 duck 接口（{@code TextureGradeProvider} 等）
- * 读取；现在改由 {@code BBSFSloveCMLAddon} 订阅 {@code RegisterFormModifiersEvent}
+ * 读取；现在改由 {@code BBSPlusPlusAddon} 订阅 {@code RegisterFormModifiersEvent}
  * 统一注册，本类按属性 ID 从 form 值树中直接取回，duck 接口与 Mixin 一并移除。</p>
  *
  * <p>取不到时返回 {@code null}：值不存在即"该 form 不支持此特性"（BBS 调色板

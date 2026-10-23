@@ -15,13 +15,13 @@
         ],
         "client": [
             "gbeic.bbsplusplus.client.BBSPlusPlusModClient",
-            "gbeic.bbsplusplus.BBSFSloveCMLClient"
+            "gbeic.bbsplusplus.BBSPlusPlusClient"
         ],
         "bbs-addon": [
-            "gbeic.bbsplusplus.BBSFSloveCMLAddon"
+            "gbeic.bbsplusplus.BBSPlusPlusAddon"
         ],
         "bbs-client-addon": [
-            "gbeic.bbsplusplus.BBSFSloveCMLClientAddon"
+            "gbeic.bbsplusplus.BBSPlusPlusClientAddon"
         ]
     },
     "mixins": [

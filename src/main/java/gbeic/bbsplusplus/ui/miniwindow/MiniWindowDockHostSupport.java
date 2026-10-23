@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.ui.miniwindow;
 
-import gbeic.bbsplusplus.BBSFSloveCMLClient;
+import gbeic.bbsplusplus.BBSPlusPlusClient;
 import mchorse.bbs_mod.ui.framework.elements.IUIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIDraggable;
@@ -107,7 +107,7 @@ public class MiniWindowDockHostSupport
         }
         catch (Throwable t)
         {
-            BBSFSloveCMLClient.LOGGER.warn("[MiniWindow] 面板 {} 转小窗失败", panelId, t);
+            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 面板 {} 转小窗失败", panelId, t);
         }
     }
 
@@ -123,7 +123,7 @@ public class MiniWindowDockHostSupport
         }
         catch (Throwable t)
         {
-            BBSFSloveCMLClient.LOGGER.warn("[MiniWindow] 还原小窗面板 {} 失败", panelId, t);
+            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 还原小窗面板 {} 失败", panelId, t);
         }
     }
 

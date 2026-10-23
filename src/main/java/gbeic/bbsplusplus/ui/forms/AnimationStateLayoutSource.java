@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.ui.forms;
 
-import gbeic.bbsplusplus.BBSFSloveCMLClient;
+import gbeic.bbsplusplus.BBSPlusPlusClient;
 import gbeic.bbsplusplus.settings.CMLSettings;
 import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.ListType;
@@ -69,7 +69,7 @@ public class AnimationStateLayoutSource implements ILayoutSource
         catch (Throwable t)
         {
             /* 配置里的布局串可能来自旧版本或被手工改坏,解析失败退回默认布局即可,不影响编辑器可用性。 */
-            BBSFSloveCMLClient.LOGGER.debug("[AnimationStateLayout] 布局配置解析失败,回退默认布局", t);
+            BBSPlusPlusClient.LOGGER.debug("[AnimationStateLayout] 布局配置解析失败,回退默认布局", t);
 
             return createDefault();
         }
@@ -100,7 +100,7 @@ public class AnimationStateLayoutSource implements ILayoutSource
         }
         catch (Throwable t)
         {
-            BBSFSloveCMLClient.LOGGER.debug("[AnimationStateLayout] 隐藏面板配置解析失败,按无隐藏处理", t);
+            BBSPlusPlusClient.LOGGER.debug("[AnimationStateLayout] 隐藏面板配置解析失败,按无隐藏处理", t);
 
             return new HashSet<>();
         }

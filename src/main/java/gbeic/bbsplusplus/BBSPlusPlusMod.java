@@ -11,7 +11,7 @@ import gbeic.bbsplusplus.command.BBSPlusPlusCommand;
 /**
  * BBS++ 主入口点。
  * <p>
- * 实际的 BBS 注册（表单 / 关键帧工厂）由 {@link BBSFSloveCMLAddon} 订阅
+ * 实际的 BBS 注册（表单 / 关键帧工厂）由 {@link BBSPlusPlusAddon} 订阅
  * BBS 官方事件完成。
  * </p>
  */
@@ -39,9 +39,9 @@ public class BBSPlusPlusMod implements ModInitializer, BBSAddonMod
         this.registerKeyframeTrackExtensions();
         CommandRegistrationCallback.EVENT.register(BBSPlusPlusCommand::register);
 
-        // aaa_effect 关键帧工厂改由 BBSFSloveCMLAddon 订阅 RegisterKeyframeFactoriesEvent 注册
+        // aaa_effect 关键帧工厂改由 BBSPlusPlusAddon 订阅 RegisterKeyframeFactoriesEvent 注册
         // （原直接 KeyframeFactories.FACTORIES.put 存在"未注册就被读取"的时序隐患）。
-        // 注意：AAA 粒子表单同样由 BBSFSloveCMLAddon 订阅 RegisterFormsEvent 注册。
+        // 注意：AAA 粒子表单同样由 BBSPlusPlusAddon 订阅 RegisterFormsEvent 注册。
     }
 
     /**

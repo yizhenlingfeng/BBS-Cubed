@@ -23,7 +23,7 @@ import mchorse.bbs_mod.utils.factory.MapFactory;
  * （Fabric 入口顺序下 BBSPlusPlusMod.onInitialize 先于 BBSMod.onInitialize 执行，
  * 直接注册会让 getForms()/getFactoryCameraClips() 返回 null）。</p>
  */
-public class BBSFSloveCMLAddon implements BBSAddonMod {
+public class BBSPlusPlusAddon implements BBSAddonMod {
 
     @Subscribe
     public void onRegisterSettings(RegisterSettingsEvent event) {
@@ -114,7 +114,7 @@ public class BBSFSloveCMLAddon implements BBSAddonMod {
      */
     @Subscribe
     public void onRegisterFormModifiers(mchorse.bbs_mod.api.events.RegisterFormModifiersEvent event) {
-        event.register(BBSFSloveCMLAddon::bbspp$modifyForm);
+        event.register(BBSPlusPlusAddon::bbspp$modifyForm);
     }
 
     private static void bbspp$modifyForm(mchorse.bbs_mod.forms.forms.Form form) {

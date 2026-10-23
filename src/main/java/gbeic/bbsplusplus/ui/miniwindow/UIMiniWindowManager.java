@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.ui.miniwindow;
 
-import gbeic.bbsplusplus.BBSFSloveCMLClient;
+import gbeic.bbsplusplus.BBSPlusPlusClient;
 import mchorse.bbs_mod.settings.values.ui.EditorLayoutNode;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
@@ -121,7 +121,7 @@ public class UIMiniWindowManager
         }
         catch (Throwable t)
         {
-            BBSFSloveCMLClient.LOGGER.warn("[MiniWindow] 面板 {} 转小窗失败,回滚到停靠状态", panelId, t);
+            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 面板 {} 转小窗失败,回滚到停靠状态", panelId, t);
             this.rollbackUndock(panelId, window, snapshot);
         }
     }
@@ -152,7 +152,7 @@ public class UIMiniWindowManager
         catch (Throwable t)
         {
             this.pendingRedocks.remove(window);
-            BBSFSloveCMLClient.LOGGER.warn("[MiniWindow] 还原任务无法投递到主线程,改为立即还原", t);
+            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 还原任务无法投递到主线程,改为立即还原", t);
             this.redockNow(window);
         }
     }
@@ -229,7 +229,7 @@ public class UIMiniWindowManager
         }
         catch (Throwable t)
         {
-            BBSFSloveCMLClient.LOGGER.warn("[MiniWindow] 还原小窗 {} 失败,尝试刷新布局兜底", window.getPanelIds(), t);
+            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 还原小窗 {} 失败,尝试刷新布局兜底", window.getPanelIds(), t);
 
             try
             {
@@ -238,7 +238,7 @@ public class UIMiniWindowManager
             catch (Throwable inner)
             {
                 /* 预期内:还原失败后的兜底刷新也可能失败,只记录调试日志 */
-                BBSFSloveCMLClient.LOGGER.debug("[MiniWindow] 还原失败后的布局兜底刷新也失败", inner);
+                BBSPlusPlusClient.LOGGER.debug("[MiniWindow] 还原失败后的布局兜底刷新也失败", inner);
             }
         }
     }
@@ -424,7 +424,7 @@ public class UIMiniWindowManager
             }
             catch (Throwable t)
             {
-                BBSFSloveCMLClient.LOGGER.warn("[MiniWindow] 清理时还原小窗失败,直接关闭窗壳", t);
+                BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 清理时还原小窗失败,直接关闭窗壳", t);
                 this.closeWindowShell(window);
             }
         }
@@ -438,7 +438,7 @@ public class UIMiniWindowManager
         }
         catch (Throwable t)
         {
-            BBSFSloveCMLClient.LOGGER.warn("[MiniWindow] 清理小窗后刷新宿主布局失败", t);
+            BBSPlusPlusClient.LOGGER.warn("[MiniWindow] 清理小窗后刷新宿主布局失败", t);
         }
     }
 
@@ -586,7 +586,7 @@ public class UIMiniWindowManager
         catch (Throwable t)
         {
             /* 预期内:回滚时宿主布局可能已不完整,刷新失败不再扩散,只记录调试日志 */
-            BBSFSloveCMLClient.LOGGER.debug("[MiniWindow] 回滚 undock 后刷新宿主布局失败", t);
+            BBSPlusPlusClient.LOGGER.debug("[MiniWindow] 回滚 undock 后刷新宿主布局失败", t);
         }
     }
 

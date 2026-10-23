@@ -1055,11 +1055,22 @@ BBS 2.7 的官方 addon API 已有 **11 个通用事件 + 30 个客户端事件*
 **验证**：三套 clean 构建通过；1.20.1 与 1.21.11 dev client 均启动到主菜单；1.21.11 日志确认
 `自动旁观模式在当前构建不可用 ... 跳过钩子`、AAA/物品喷射/流体渲染器按预期降级，无 `bbsplusplus` ERROR。
 
-#### D.2.2 待办
+#### D.2.2 入口类改名（完成）
 
-- `FluidFormRenderer` 双版本抽公共基类。
+- `BBSFSloveCMLAddon` → `BBSPlusPlusAddon`
+- `BBSFSloveCMLClientAddon` → `BBSPlusPlusClientAddon`
+- `BBSFSloveCMLClient` → `BBSPlusPlusClient`
+- 同步 `fabric.mod.json` 的 4 组 entrypoint 与 14 个源文件中的引用（含 Javadoc）；文件用 `git mv` 保留历史。
+
+**验证**：三套 clean 构建通过；1.20.1 与 1.21.11 dev client 均启动到主菜单；BBS addon / client-addon 回调正常，
+`addon translations registered and loaded` 与各表单/剪辑/关键帧注册日志齐全，无 entrypoint `ClassNotFoundException`。
+
+#### D.2.3 待办
+
+- `FluidFormRenderer` 双版本抽公共基类（两版渲染 API 差异大，需与 P6 版本隔离一并设计）。
 - 9 组同名 Mixin 合并到 `mixin/client` 并删除 root 副本。
-- 设置持有类合并、入口类改名（`BBSFSloveCML*` → `BBSPlusPlus*`）、`util`/`utils` 合并。
+- 设置持有类合并、`util`/`utils` 合并。
+- 入口 5→4：把 `BBSPlusPlusClient` 的 l10n/源包职责并入 `BBSPlusPlusModClient`（需保持 l10n 事件时序）。
 
 <!-- 后续阶段完成后在此继续追加 D.2.x / D.3 … -->
 
