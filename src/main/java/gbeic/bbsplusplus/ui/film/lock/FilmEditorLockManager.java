@@ -29,13 +29,13 @@ import java.util.WeakHashMap;
 import java.util.function.Consumer;
 
 /**
- * Per-film editor lock and merged timeline rail.
+ * Per-film editor lock.
  *
  * <p>Each editor (camera / replay / optional POV) gets an extra right-click entry
  * which locks or unlocks that mode. Locking only filters the {@code ·} cycle and
- * dims the editor's action-bar icon plus its rail tab; the mode itself stays fully
- * usable, can still be selected through the rail or the toolbar icon, and is
- * stored per film inside the film data ({@code bbspp:editor_locks}).</p>
+ * dims the editor's action-bar icon; the mode itself stays fully usable and can
+ * still be selected manually. The state is stored per film inside the film data
+ * ({@code bbspp:editor_locks}).</p>
  */
 public class FilmEditorLockManager
 {
@@ -50,7 +50,6 @@ public class FilmEditorLockManager
     private final Map<FilmEditorMode, Binding> bindings = new LinkedHashMap<>();
     private final Set<FilmEditorMode> locked = new LinkedHashSet<>();
 
-    private UITimelineTabs tabs;
     private boolean installed;
     private boolean updating;
 
@@ -62,9 +61,8 @@ public class FilmEditorLockManager
 
     /**
      * Called once per client tick. The POV addon installs its editor at the end of
-     * {@code UIFilmPanel}'s constructor, so the manager has to keep looking for it
-     * until it appears. The rail insets are also re-applied here because the mini
-     * window host resets editor flex when a floating timeline is reattached.
+     * {@code UIFilmPanel}'s constructor, so the manager keeps looking for it until
+     * it appears.
      */
     public static void tickAll()
     {
@@ -81,18 +79,10 @@ public class FilmEditorLockManager
 
     private void tick()
     {
-        if (!this.installed)
-        {
-            return;
-        }
-
-        if (!this.hasPov())
+        if (this.installed && !this.hasPov())
         {
             this.syncPov();
         }
-
-        this.applyEditorLayout();
-        this.applyStates();
     }
 
     public void install()
@@ -104,12 +94,9 @@ public class FilmEditorLockManager
 
         this.installed = true;
 
-        this.ensureTabs();
         this.addBinding(FilmEditorMode.CAMERA, this.panel.cameraEditor, this.panel.openCameraEditor);
         this.addBinding(FilmEditorMode.REPLAY, this.panel.replayEditor, this.panel.openReplayEditor);
-        this.rebuildTabs();
         this.syncPov();
-        this.applyEditorLayout();
         this.replaceCycleKeybind();
         this.onVisibilityUpdated(this.panel.getData() != null);
 
@@ -129,9 +116,7 @@ public class FilmEditorLockManager
 
         this.readLocks();
         this.syncPov();
-        this.applyEditorLayout();
         this.applyStates();
-        this.setTabsVisible(this.panel.getData() != null);
     }
 
     public void onPanelShown()
@@ -145,7 +130,7 @@ public class FilmEditorLockManager
         this.applyStates();
     }
 
-    /** 对应 updateMainEditorVisibility TAIL:布局变化后重新施加栏位合并与锁定状态。 */
+    /** 对应 updateMainEditorVisibility TAIL：同步 POV 绑定与锁定视觉状态。 */
     public void onVisibilityUpdated(boolean hasFilm)
     {
         if (!this.installed || this.updating)
@@ -158,100 +143,12 @@ public class FilmEditorLockManager
         try
         {
             this.syncPov();
-            this.applyEditorLayout();
             this.applyStates();
-            this.setTabsVisible(hasFilm && this.panel.getData() != null);
         }
         finally
         {
             this.updating = false;
         }
-    }
-
-    /* --------------------------------------------------------------------- */
-    /* Rail / layout                                                         */
-    /* --------------------------------------------------------------------- */
-
-    private void ensureTabs()
-    {
-        if (this.tabs != null || this.panel.main == null)
-        {
-            return;
-        }
-
-        this.tabs = new UITimelineTabs();
-        this.tabs.relative(this.panel.main).x(0).y(0).w(UITimelineTabs.WIDTH).h(1F);
-        this.tabs.setSelectHandler(this::onTabSelected);
-        this.tabs.setActiveSupplier(this::activeIndex);
-        this.panel.main.add(this.tabs);
-    }
-
-    private void rebuildTabs()
-    {
-        if (this.tabs == null)
-        {
-            return;
-        }
-
-        this.tabs.clear();
-
-        for (Binding binding : this.bindings.values())
-        {
-            binding.tab = this.tabs.addTab(binding.mode.icon(), binding.mode.label());
-        }
-    }
-
-    /** Reserve the 20px rail inside {@code main}; editors keep filling the rest. */
-    private void applyEditorLayout()
-    {
-        if (this.panel.main == null)
-        {
-            return;
-        }
-
-        for (Binding binding : this.bindings.values())
-        {
-            if (binding.editor.getParent() == this.panel.main)
-            {
-                binding.editor.relative(this.panel.main).x(UITimelineTabs.WIDTH).w(1F, -UITimelineTabs.WIDTH).h(1F);
-            }
-        }
-    }
-
-    private void setTabsVisible(boolean visible)
-    {
-        if (this.tabs != null)
-        {
-            this.tabs.setVisible(visible);
-        }
-    }
-
-    private void onTabSelected(int index)
-    {
-        FilmEditorMode mode = this.modeAt(index);
-
-        if (mode != null)
-        {
-            this.show(mode);
-        }
-    }
-
-    private int activeIndex()
-    {
-        UIElement selected = this.access().bbspp_cml$getSelectedMainEditorPanel();
-        int index = 0;
-
-        for (Binding binding : this.bindings.values())
-        {
-            if (binding.editor == selected)
-            {
-                return index;
-            }
-
-            index++;
-        }
-
-        return -1;
     }
 
     /* --------------------------------------------------------------------- */
@@ -279,8 +176,6 @@ public class FilmEditorLockManager
         }
 
         this.addBinding(FilmEditorMode.POV, editor, icon);
-        this.rebuildTabs();
-        this.applyEditorLayout();
         this.applyStates();
 
         BBSPlusPlusMod.LOGGER.info("[EditorLock] POV timeline attached");
@@ -355,24 +250,16 @@ public class FilmEditorLockManager
         for (Binding binding : this.bindings.values())
         {
             boolean isLocked = this.locked.contains(binding.mode);
-            int color = isLocked ? LOCKED_COLOR : Colors.WHITE;
 
-            /* Locked modes stay clickable: the lock only filters the `·` cycle. */
+            /* 锁定模式仍可点击：锁定只过滤 `·` 循环。 */
             binding.icon.callback = binding.originalCallback;
-            binding.icon.iconColor(color);
+            binding.icon.iconColor(isLocked ? LOCKED_COLOR : Colors.WHITE);
             binding.icon.hoverColor(isLocked ? LOCKED_COLOR : Colors.LIGHTEST_GRAY);
-
-            if (binding.tab != null)
-            {
-                binding.tab.setEnabled(true);
-                binding.tab.iconColor(color);
-                binding.tab.hoverColor(isLocked ? LOCKED_COLOR : Colors.LIGHTEST_GRAY);
-            }
         }
     }
 
     /* --------------------------------------------------------------------- */
-    /* Editor cycle / blocked switches                                       */
+    /* Editor cycle                                                          */
     /* --------------------------------------------------------------------- */
 
     private void replaceCycleKeybind()
@@ -414,32 +301,10 @@ public class FilmEditorLockManager
     {
         Binding binding = this.bindings.get(mode);
 
-        if (binding == null)
+        if (binding != null)
         {
-            return;
+            this.panel.showPanel(binding.editor);
         }
-
-        this.panel.showPanel(binding.editor);
-    }
-
-    private FilmEditorMode modeAt(int index)
-    {
-        if (index < 0)
-        {
-            return null;
-        }
-
-        int i = 0;
-
-        for (FilmEditorMode mode : this.bindings.keySet())
-        {
-            if (i++ == index)
-            {
-                return mode;
-            }
-        }
-
-        return null;
     }
 
     private FilmEditorMode selectedMode()
@@ -470,7 +335,7 @@ public class FilmEditorLockManager
                 continue;
             }
 
-            /* 浮动中的编辑器不在 main 壳里,切过去会让主区空白,循环时跳过。 */
+            /* 浮动中的编辑器不在 main 壳里，切过去会让主区空白，循环时跳过。 */
             if (this.panel.main != null && this.bindings.get(mode).editor.getParent() != this.panel.main)
             {
                 continue;
@@ -589,7 +454,6 @@ public class FilmEditorLockManager
         private final UIElement editor;
         private final UIIcon icon;
         private final Consumer<UIIcon> originalCallback;
-        private UIIcon tab;
 
         private Binding(FilmEditorMode mode, UIElement editor, UIIcon icon)
         {
