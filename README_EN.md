@@ -58,6 +58,14 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 - **Interaction**: single-click selects, double-click opens; the context menu supports create, rename, delete, and pin; search and name sorting stay at the top
 - Disabling the option restores BBS's original movie selection interface
 
+### Movie Editor Timeline Merge & Lock
+
+- **Merged timelines**: camera, replay and POV timelines share the movie editor's "Timeline" slot, with a 20px vertical icon rail on the left; click a tab to switch editors and the timeline content automatically makes room for the rail
+- **Right-click lock**: right-click the editor icons in the top bar to lock or unlock a timeline; locked icons and rail tabs are dimmed
+- **Hotkey-only restriction**: locking does not disable the editor — locked modes remain selectable by clicking their icon or rail tab; the `·` editor-cycle hotkey only visits unlocked modes
+- **Per-movie state**: lock state is saved with the movie (not in global config) and restored after switching movies or restarting, with at least one mode always left unlocked
+- **POV support**: with BBS-POV installed, the POV editor participates in merging and locking, and supports the same right-click "Convert to mini window / Restore" flow as camera and replay
+
 ### AAA Particles
 
 > Prerequisites: requires `aaa_particles-2.2.x` + `architectury`; the feature auto-disables if they are not installed.
@@ -195,6 +203,12 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 - This project is an extension plugin for [BBSFS](https://github.com/Wemppy4/bbs-fs), implemented via Mixin
 
 ### Mod Changelog
+
+#### 3.6.1 (Movie editor timeline merge + lock)
+* **Merged timelines**: camera, replay and POV timelines now share the movie editor's timeline slot behind a 20px vertical icon rail; click a tab to switch editors and timeline content makes room for the rail automatically
+* **Timeline lock**: right-click the editor icons in the top bar to lock or unlock a timeline; locked icons and rail tabs are dimmed, the `·` editor-cycle hotkey only visits unlocked modes, while locked modes remain selectable by icon or tab
+* **Per-movie state**: lock state is saved with the movie and restored after switching movies or restarting; at least one mode always stays unlocked
+* **POV editor mini-window**: the POV editor now supports the same right-click "Convert to mini window / Restore" flow as camera and replay
 
 #### 3.6.0 (Horizontal folder columns + shortcuts + track order unlock + tool overflow)
 * **Preview toolbar tool overflow**: a hamburger "tool overflow" button is fixed at the right end of the toolbar below the preview window. Hovering expands the stowed tools upward (with a slide animation that retracts when the mouse leaves); left-click pins/unpins, and a pinned button shows a selection marker; right-click opens a checklist of which tools to stow, with one-click restore of all. Stowed tools are hidden from the bar, which re-centers automatically; the mirror buttons in the expanded bar match the originals exactly in icons (including dynamic ones like play/pause), left-click actions, and right-click menus. With "auto-hide" enabled, hovering the expanded bar also counts as the toolbar; the stow state is saved automatically and restored when the film editor reopens

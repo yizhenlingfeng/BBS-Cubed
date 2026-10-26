@@ -9,6 +9,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import gbeic.bbsplusplus.util.ModelCullingConfigManager;
+import gbeic.bbsplusplus.ui.film.lock.FilmEditorLockManager;
 import net.fabricmc.loader.api.FabricLoader;
 
 /**
@@ -36,6 +37,7 @@ public class BBSPlusPlusModClient implements ClientModInitializer
         registerAutoGameModeHooks();
         ClientTickEvents.END_CLIENT_TICK.register(client -> ModelCullingConfigManager.tick());
         ClientTickEvents.END_CLIENT_TICK.register(AudioOutputDeviceWatcher::tick);
+        ClientTickEvents.END_CLIENT_TICK.register(client -> FilmEditorLockManager.tickAll());
 
         boolean hasAAAParticles = FabricLoader.getInstance().isModLoaded("aaa_particles");
 

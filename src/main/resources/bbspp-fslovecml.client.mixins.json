@@ -49,6 +49,7 @@
         "UIDockLayoutMiniWindowMixin",
         "UIElementPoseBrushClickMixin",
         "UIElementReplayDragSnapshotMixin",
+        "UIFilmPanelEditorLockMixin",
         "UIFilmPanelMiniWindowMixin",
         "UIFilmPreviewMixin",
         "UIFilmControllerPrevCameraModeMixin",

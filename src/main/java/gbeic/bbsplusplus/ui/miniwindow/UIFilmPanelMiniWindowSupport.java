@@ -4,6 +4,7 @@ import gbeic.bbsplusplus.client.ClientFeatures;
 import gbeic.bbsplusplus.api.UIClipsPanelAccessor;
 import gbeic.bbsplusplus.api.UIFilmPanelLayoutAccessor;
 import gbeic.bbsplusplus.api.UIDockLayoutAccessor;
+import gbeic.bbsplusplus.ui.film.PovEditorAccess;
 import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import mchorse.bbs_mod.settings.values.ui.EditorLayoutNode;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
@@ -13,6 +14,7 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIDraggable;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import net.minecraft.client.MinecraftClient;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,6 +39,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
     public static final String PANEL_MAIN = "main";
     public static final String PANEL_CAMERA = "cameraEditor";
     public static final String PANEL_REPLAY = "replayEditor";
+    public static final String PANEL_POV = "povEditor";
     public static final String PANEL_PREVIEW = "preview";
     public static final String PANEL_EDIT = "editArea";
     public static final String PANEL_REPLAYS = "replaysList";
@@ -47,6 +50,11 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
 
     /** 共享 editArea 当前应显示的检查器所属编辑器。最后一次选中/聚焦的时间线优先。 */
     private UIElement inspectorOwner;
+
+    /** BBS-POV 的虚拟时间线编辑器与顶栏图标（可选依赖，延迟到构造函数结束后解析）。 */
+    private UIElement povEditor;
+    private UIIcon povIcon;
+    private boolean povIconAttached;
 
     public UIFilmPanelMiniWindowSupport(UIFilmPanel panel, IMiniWindowDockHost host)
     {
@@ -90,6 +98,13 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
 
         out.put(PANEL_CAMERA, this.panel.cameraEditor);
         out.put(PANEL_REPLAY, this.panel.replayEditor);
+
+        this.syncPovEditor();
+
+        if (this.povEditor != null)
+        {
+            out.put(PANEL_POV, this.povEditor);
+        }
 
         if (this.panel.dock != null)
         {
@@ -142,6 +157,60 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
 
         this.inspectorOwner = this.panel.cameraEditor;
         this.attachSwitchButtonContext();
+
+        /* POV 在 UIFilmPanel 构造函数末尾才安装编辑器/图标,这里先尝试一次并继续轮询几帧。 */
+        this.syncPovEditor();
+        this.schedulePovLookup(60);
+    }
+
+    /**
+     * 解析可选 BBS-POV 编辑器与图标。POV 的 mixin 在 UIFilmPanel 构造返回值处
+     * 才写入 bbsPov$editor / bbsPov$openEditor,因此只能在构造完成后延迟解析。
+     */
+    private void syncPovEditor()
+    {
+        if (this.povEditor == null)
+        {
+            this.povEditor = PovEditorAccess.editor(this.panel);
+        }
+
+        if (this.povIcon == null)
+        {
+            UIIcon icon = PovEditorAccess.icon(this.panel);
+
+            if (icon != null)
+            {
+                this.povIcon = icon;
+
+                if (!this.povIconAttached)
+                {
+                    this.povIconAttached = true;
+                    this.attachUndockContext(icon, PANEL_POV, () -> this.povEditor != null, null);
+                    ClientFeatures.LOGGER.info("[MiniWindow] POV editor attached for floating windows");
+                }
+            }
+        }
+    }
+
+    /** 每帧一次重试,直到 POV 编辑器与图标都出现(或不存在的插件在若干帧后放弃)。 */
+    private void schedulePovLookup(int attempts)
+    {
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        if (client == null)
+        {
+            return;
+        }
+
+        client.execute(() ->
+        {
+            this.syncPovEditor();
+
+            if ((this.povEditor == null || this.povIcon == null) && attempts > 0)
+            {
+                this.schedulePovLookup(attempts - 1);
+            }
+        });
     }
 
     private void attachSwitchButtonContext()
@@ -212,6 +281,8 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
     /** 对应 showPanel(UIElement) TAIL:切换摄像机/回放后同步检查器与浮动时间线。 */
     public void afterShowPanel(UIElement element)
     {
+        this.syncPovEditor();
+
         if (element == this.panel.cameraEditor || element == this.panel.replayEditor)
         {
             this.selectInspectorOwner(element);
@@ -245,6 +316,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
      */
     public void afterDockLayoutSync()
     {
+        this.syncPovEditor();
         this.forceFloatingMainTimelineVisible();
         this.normalizeMainChildOrder();
         this.syncInspectorParents();
@@ -264,6 +336,13 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         if (PANEL_REPLAY.equals(panelId))
         {
             return this.panel.replayEditor;
+        }
+
+        if (PANEL_POV.equals(panelId))
+        {
+            this.syncPovEditor();
+
+            return this.povEditor;
         }
 
         if (this.panel.dock != null)
@@ -294,6 +373,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         {
             case PANEL_CAMERA -> Icons.FRUSTUM;
             case PANEL_REPLAY -> Icons.SCENE;
+            case PANEL_POV -> Icons.LOOKING;
             case PANEL_MAIN -> Icons.FILM;
             default -> Icons.FILE;
         };
@@ -308,8 +388,8 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
 
     public boolean hostCanUndockPanel(String panelId)
     {
-        /* 本宿主只负责摄像机/回放两个虚拟面板;dock 面板走 dock 宿主。 */
-        return PANEL_CAMERA.equals(panelId) || PANEL_REPLAY.equals(panelId);
+        /* 本宿主负责摄像机/回放/POV 三个虚拟面板;dock 面板走 dock 宿主。 */
+        return PANEL_CAMERA.equals(panelId) || PANEL_REPLAY.equals(panelId) || PANEL_POV.equals(panelId);
     }
 
     public EditorLayoutNode hostGetLayoutRoot()
@@ -355,9 +435,11 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
             return;
         }
 
-        /* 仅摄像机/回放时间线编辑器允许挂回 main 壳;dock 面板(dock 槽内面板)
+        this.syncPovEditor();
+
+        /* 仅摄像机/回放/POV 时间线编辑器允许挂回 main 壳;dock 面板(dock 槽内面板)
          * 由 dock 宿主管,误走这里会把整块面板 full() 进轨道容器。 */
-        if (!PANEL_CAMERA.equals(panelId) && !PANEL_REPLAY.equals(panelId))
+        if (!PANEL_CAMERA.equals(panelId) && !PANEL_REPLAY.equals(panelId) && !PANEL_POV.equals(panelId))
         {
             return;
         }
@@ -380,6 +462,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
 
     public void hostOnPanelFloated(String panelId)
     {
+        this.syncPovEditor();
         this.handoffDockedMainEditor(panelId);
 
         this.forceFloatingMainTimelineVisible();
@@ -392,6 +475,8 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
 
     public void hostOnPanelDocked(String panelId)
     {
+        this.syncPovEditor();
+
         UIElement mainEditor = null;
 
         if (PANEL_CAMERA.equals(panelId) && this.panel.cameraEditor != null)
@@ -401,6 +486,10 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         else if (PANEL_REPLAY.equals(panelId) && this.panel.replayEditor != null)
         {
             mainEditor = this.panel.replayEditor;
+        }
+        else if (PANEL_POV.equals(panelId) && this.povEditor != null)
+        {
+            mainEditor = this.povEditor;
         }
 
         if (mainEditor != null)
@@ -667,7 +756,8 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         UIElement[] ordered = {
             this.panel.cameraEditor,
             this.panel.actionEditor,
-            this.panel.replayEditor
+            this.panel.replayEditor,
+            this.povEditor
         };
 
         for (UIElement child : ordered)
@@ -701,6 +791,13 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
                 this.panel.replayEditor.setTimelineVisible(true);
             }
 
+            if (this.common.floatingIds().contains(PANEL_POV) && this.povEditor != null)
+            {
+                this.povEditor.setVisible(true);
+                this.povEditor.setEnabled(true);
+                PovEditorAccess.setTimelineVisible(this.povEditor, true);
+            }
+
             /* main 经 dock 宿主浮动时,壳内仍应显示当前选中的时间线编辑器。 */
             if (this.isDockFloating(PANEL_MAIN))
             {
@@ -719,6 +816,10 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
                     {
                         this.panel.replayEditor.setTimelineVisible(true);
                     }
+                    else if (selected == this.povEditor && this.povEditor != null)
+                    {
+                        PovEditorAccess.setTimelineVisible(this.povEditor, true);
+                    }
                 }
             }
         }
@@ -729,33 +830,64 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
     }
 
     /**
-     * 摄像机和回放共用 main。当前编辑器浮动后,main 必须立即交给仍停靠的另一方,
+     * 摄像机/回放/POV 共用 main。当前编辑器浮动后,main 必须立即交给仍停靠的另一方,
      * 否则原版会继续隐藏并禁用下层编辑器。
      */
     private void handoffDockedMainEditor(String panelId)
     {
         UIElement selected = this.getSelectedMainEditor();
-        UIElement replacement = null;
+        UIElement floated = this.editorForPanelId(panelId);
 
-        if (PANEL_CAMERA.equals(panelId)
-            && selected == this.panel.cameraEditor
-            && !this.common.floatingIds().contains(PANEL_REPLAY))
+        if (floated != null && selected == floated)
         {
-            replacement = this.panel.replayEditor;
-        }
-        else if (PANEL_REPLAY.equals(panelId)
-            && selected == this.panel.replayEditor
-            && !this.common.floatingIds().contains(PANEL_CAMERA))
-        {
-            replacement = this.panel.cameraEditor;
-        }
+            UIElement replacement = this.firstDockedEditorExcept(floated);
 
-        if (replacement != null)
-        {
-            this.panel.showPanel(replacement);
+            if (replacement != null)
+            {
+                this.panel.showPanel(replacement);
+            }
         }
 
         this.forceFloatingMainTimelineVisible();
+    }
+
+    private UIElement editorForPanelId(String panelId)
+    {
+        if (PANEL_CAMERA.equals(panelId))
+        {
+            return this.panel.cameraEditor;
+        }
+
+        if (PANEL_REPLAY.equals(panelId))
+        {
+            return this.panel.replayEditor;
+        }
+
+        if (PANEL_POV.equals(panelId))
+        {
+            return this.povEditor;
+        }
+
+        return null;
+    }
+
+    /** 回到 main 壳后应接替显示的编辑器:跳过正在浮动的那一个。 */
+    private UIElement firstDockedEditorExcept(UIElement floated)
+    {
+        UIElement[] editors = { this.panel.cameraEditor, this.panel.replayEditor, this.povEditor };
+        String[] ids = { PANEL_CAMERA, PANEL_REPLAY, PANEL_POV };
+
+        for (int i = 0; i < editors.length; i++)
+        {
+            UIElement editor = editors[i];
+
+            if (editor != null && editor != floated && !this.common.floatingIds().contains(ids[i]))
+            {
+                return editor;
+            }
+        }
+
+        return null;
     }
 
     private void setExclusiveInspectorVisibility(UIElement owner)
@@ -1096,6 +1228,11 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
             if (this.panel.replayEditor != null)
             {
                 this.panel.replayEditor.resize();
+            }
+
+            if (this.povEditor != null)
+            {
+                this.povEditor.resize();
             }
         }
         catch (Throwable t)
