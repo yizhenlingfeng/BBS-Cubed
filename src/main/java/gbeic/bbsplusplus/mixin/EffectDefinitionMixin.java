@@ -10,12 +10,16 @@ import mod.chloeprime.aaaparticles.client.internal.RenderStateCapture;
 import mod.chloeprime.aaaparticles.client.render.RenderUtil;
 import net.minecraft.client.gl.Framebuffer;
 import org.joml.Vector3f;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL30;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.nio.IntBuffer;
 
 /**
  * 混入 {@link EffectDefinition}，在世界粒子绘制完成后追加 X-Ray 穿透粒子的渲染。
@@ -40,10 +44,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * {@code CAPTURED_WORLD_DEPTH_BUFFER} 的深度 blit（其尺寸按原生主 FBO 建立，与自定义尺寸错配），
  * 从而在预览/导出中同样实现穿透方块渲染且不污染画面。</p>
  *
- * <p><b>GL 状态按原值恢复：</b>深度写入与深度测试必须在进入前记录、退出时还原。
- * 若写死恢复成 {@code glDepthMask(true)} + {@code enableDepthTest()}，当进入前
- * 深度测试本就关闭时（BBS 的 UI/预览渲染大量使用该状态）会把它强行打开，属状态泄漏，
- * 同样会吃掉后续画面。</p>
+ * <p><b>状态还原必须无条件执行：</b>本段会改动 framebuffer 绑定与 viewport（Effekseer 的 C++ 底层
+ * 自己调 glBindFramebuffer / glViewport），若因中途抛出而跳过还原，后续绘制就会落到 Effekseer 的
+ * 内部 FBO 或默认 FBO 0 上；BBS 编辑器预览把世界渲染进自己的离屏 Framebuffer，一旦绑定跑偏，
+ * 预览就整片发黑、只剩 UI 与 gizmo，且不产生任何异常日志。故整段用 try/finally 包裹。</p>
  */
 @Mixin(value = EffectDefinition.class, remap = true)
 public class EffectDefinitionMixin
@@ -66,94 +70,112 @@ public class EffectDefinitionMixin
             return;
         }
 
+        int prevFbo = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
+        IntBuffer prevViewport = BufferUtils.createIntBuffer(4);
+        GL11.glGetIntegerv(GL11.GL_VIEWPORT, prevViewport);
+
         EffekseerManager xrayManager = XRayManager.get();
-
-        // 同步所有必需的渲染状态
-        xrayManager.setViewport(w, h);
-        xrayManager.setCameraMatrix(camera);
-        xrayManager.setProjectionMatrix(projection);
-        xrayManager.setCameraParameter(front.x, front.y, front.z, pos.x, pos.y, pos.z);
-
-        xrayManager.update(deltaFrames);
 
         /* 记录进入前的深度状态，退出时按原值还原。 */
         boolean prevDepthTest = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
         boolean prevDepthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
 
-        boolean customSize = BBSRendering.isCustomSize();
-
-        // 独立 X-Ray 管理器不像全局管理器那样在 draw 里绑定背景色/深度附件。世界原生用 CAPTURED
-        // 深度缓冲备份/恢复；影片预览/导出（customSize）改为复刻全局管理器的 SetBackground/SetDepth
-        // 绑定（用与全局相同的 background 帧缓冲），避免 C++ 落到默认 framebuffer 而抹黑/画错目标，
-        // 同时跳过 CAPTURE 深度 blit（非原生尺寸会错配污染）。
-        if (customSize)
+        try
         {
-            if (background != null)
+            // 同步所有必需的渲染状态
+            xrayManager.setViewport(w, h);
+            xrayManager.setCameraMatrix(camera);
+            xrayManager.setProjectionMatrix(projection);
+            xrayManager.setCameraParameter(front.x, front.y, front.z, pos.x, pos.y, pos.z);
+
+            xrayManager.update(deltaFrames);
+
+            boolean customSize = BBSRendering.isCustomSize();
+
+            // 独立 X-Ray 管理器不像全局管理器那样在 draw 里绑定背景色/深度附件。世界原生用 CAPTURED
+            // 深度缓冲备份/恢复；影片预览/导出（customSize）改为复刻全局管理器的 SetBackground/SetDepth
+            // 绑定（用与全局相同的 background 帧缓冲），避免 C++ 落到默认 framebuffer 而抹黑/画错目标，
+            // 同时跳过 CAPTURE 深度 blit（非原生尺寸会错配污染）。
+            if (customSize)
             {
-                xrayManager.getImpl().SetBackground(background.getColorAttachment(), false);
-                xrayManager.getImpl().SetDepth(background.getDepthAttachment(), false);
+                if (background != null)
+                {
+                    xrayManager.getImpl().SetBackground(background.getColorAttachment(), false);
+                    xrayManager.getImpl().SetDepth(background.getDepthAttachment(), false);
+                }
+                else
+                {
+                    xrayManager.getImpl().UnsetBackground();
+                    xrayManager.getImpl().UnsetDepth();
+                }
             }
             else
+            {
+                // 深度测试覆盖：由于 Effekseer C++ 底层会强制重设 GL_DEPTH_TEST 和 GL_DEPTH_FUNC，
+                // 我们使用 glDepthRange(0.0, 0.0) 将深度强制压缩到 0.0（最近处），使得 GL_LEQUAL 测试必然通过！
+                // 同时，因为 C++ 底层可能会强行开启 glDepthMask(true)，导致这个 0.0 被写死在深度缓冲中，
+                // 进而导致随后的第一人称手臂在做深度测试时被这个 0.0 错误地遮挡。渲染前先备份深度缓冲，画后恢复。
+                RenderUtil.copyCurrentDepthTo(RenderStateCapture.CAPTURED_WORLD_DEPTH_BUFFER);
+            }
+
+            RenderSystem.disableDepthTest();
+            GL11.glDepthRange(0.0, 0.0);
+            GL11.glDepthMask(false);
+
+            xrayManager.drawBack();
+            xrayManager.drawFront();
+
+            // 预览：解绑背景；世界：强行恢复深度缓冲（消除 C++ 底层的任何污染）
+            if (customSize)
             {
                 xrayManager.getImpl().UnsetBackground();
                 xrayManager.getImpl().UnsetDepth();
             }
+            else
+            {
+                RenderUtil.pasteToCurrentDepthFrom(RenderStateCapture.CAPTURED_WORLD_DEPTH_BUFFER);
+            }
         }
-        else
+        finally
         {
-            // 深度测试覆盖：由于 Effekseer C++ 底层会强制重设 GL_DEPTH_TEST 和 GL_DEPTH_FUNC，
-            // 我们使用 glDepthRange(0.0, 0.0) 将深度强制压缩到 0.0（最近处），使得 GL_LEQUAL 测试必然通过！
-            // 同时，因为 C++ 底层可能会强行开启 glDepthMask(true)，导致这个 0.0 被写死在深度缓冲中，
-            // 进而导致随后的第一人称手臂在做深度测试时被这个 0.0 错误地遮挡。渲染前先备份深度缓冲，画后恢复。
-            RenderUtil.copyCurrentDepthTo(RenderStateCapture.CAPTURED_WORLD_DEPTH_BUFFER);
-        }
+            // 【BBS++ 核心修复】
+            // Effekseer 的 C++ 底层不仅更改了深度测试，还会直接调用 OpenGL 原生方法绑定纹理（glActiveTexture 和 glBindTexture）。
+            // 这种绕过 Minecraft RenderSystem 的行为，会导致 RenderSystem 的内部缓存（如当前激活的纹理单元、绑定的贴图 ID）与 OpenGL 实际状态严重脱节！
+            // 因为我们在 RenderContextMixin 中把粒子渲染强行提前到了“画手”和“画BBS伪装”之前，如果在这里不把状态拨乱反正，
+            // 接下来画手的时候，RenderSystem 以为自己早就绑定了玩家皮肤贴图而跳过绑定，最终导致手臂和 BBS 伪装使用错误的（或空的）贴图！
+            for (int i = 0; i < 8; i++)
+            {
+                RenderSystem.activeTexture(GL13.GL_TEXTURE0 + i);
+                RenderSystem.bindTexture(0);
+            }
 
-        RenderSystem.disableDepthTest();
-        GL11.glDepthRange(0.0, 0.0);
-        GL11.glDepthMask(false);
+            RenderSystem.activeTexture(GL13.GL_TEXTURE0);
 
-        xrayManager.drawBack();
-        xrayManager.drawFront();
+            // 深度范围与深度函数由本方法主动改动过，这里恢复成 Minecraft 的常规值。
+            GL11.glDepthRange(0.0, 1.0);
+            GL11.glDepthFunc(GL11.GL_LEQUAL);
+            RenderSystem.depthFunc(GL11.GL_LEQUAL);
 
-        // 预览：解绑背景；世界：强行恢复深度缓冲（消除 C++ 底层的任何污染）
-        if (customSize)
-        {
-            xrayManager.getImpl().UnsetBackground();
-            xrayManager.getImpl().UnsetDepth();
-        }
-        else
-        {
-            RenderUtil.pasteToCurrentDepthFrom(RenderStateCapture.CAPTURED_WORLD_DEPTH_BUFFER);
-        }
+            // 深度写入与深度测试按进入前的原值还原，避免把本该关闭的状态强行打开。
+            GL11.glDepthMask(prevDepthMask);
 
-        // 【BBS++ 核心修复】
-        // Effekseer 的 C++ 底层不仅更改了深度测试，还会直接调用 OpenGL 原生方法绑定纹理（glActiveTexture 和 glBindTexture）。
-        // 这种绕过 Minecraft RenderSystem 的行为，会导致 RenderSystem 的内部缓存（如当前激活的纹理单元、绑定的贴图 ID）与 OpenGL 实际状态严重脱节！
-        // 因为我们在 RenderContextMixin 中把粒子渲染强行提前到了“画手”和“画BBS伪装”之前，如果在这里不把状态拨乱反正，
-        // 接下来画手的时候，RenderSystem 以为自己早就绑定了玩家皮肤贴图而跳过绑定，最终导致手臂和 BBS 伪装使用错误的（或空的）贴图！
-        for (int i = 0; i < 8; i++)
-        {
-            RenderSystem.activeTexture(GL13.GL_TEXTURE0 + i);
-            RenderSystem.bindTexture(0);
-        }
+            if (prevDepthTest)
+            {
+                RenderSystem.enableDepthTest();
+            }
+            else
+            {
+                RenderSystem.disableDepthTest();
+            }
 
-        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+            // 绑定与视口：Effekseer 会自己 glBindFramebuffer / glViewport（背景色与深度附件的绑定即走这条路径），
+            // 这里按进入前的原值还原，避免后续绘制落到别的 FBO 上。
+            if (GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING) != prevFbo)
+            {
+                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, prevFbo);
+            }
 
-        // 深度范围与深度函数由本方法主动改动过，这里恢复成 Minecraft 的常规值。
-        GL11.glDepthRange(0.0, 1.0);
-        GL11.glDepthFunc(GL11.GL_LEQUAL);
-        RenderSystem.depthFunc(GL11.GL_LEQUAL);
-
-        // 深度写入与深度测试按进入前的原值还原，避免把本该关闭的状态强行打开。
-        GL11.glDepthMask(prevDepthMask);
-
-        if (prevDepthTest)
-        {
-            RenderSystem.enableDepthTest();
-        }
-        else
-        {
-            RenderSystem.disableDepthTest();
+            RenderSystem.viewport(prevViewport.get(0), prevViewport.get(1), prevViewport.get(2), prevViewport.get(3));
         }
     }
 }
