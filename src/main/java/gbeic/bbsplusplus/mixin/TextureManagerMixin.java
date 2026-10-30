@@ -121,7 +121,21 @@ public abstract class TextureManagerMixin
 
     private static boolean bbspp$isPBRSidecar(Link link)
     {
-        String path = link.path.toLowerCase(Locale.ROOT);
+        String path = link.path;
+
+        if (path.endsWith("_n.png") || path.endsWith("_s.png") || path.endsWith("_e.png")
+            || path.endsWith("_normal.png") || path.endsWith("_specular.png") || path.endsWith("_emission.png"))
+        {
+            return true;
+        }
+
+        /* 路径多为全小写，先零分配判断，避免每次请求都创建小写字符串 */
+        if (!bbspp$hasUpperCase(path))
+        {
+            return false;
+        }
+
+        path = path.toLowerCase(Locale.ROOT);
 
         return path.endsWith("_n.png")
             || path.endsWith("_s.png")
@@ -129,5 +143,18 @@ public abstract class TextureManagerMixin
             || path.endsWith("_normal.png")
             || path.endsWith("_specular.png")
             || path.endsWith("_emission.png");
+    }
+
+    private static boolean bbspp$hasUpperCase(String path)
+    {
+        for (int i = 0; i < path.length(); i++)
+        {
+            if (Character.isUpperCase(path.charAt(i)))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

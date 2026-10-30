@@ -44,6 +44,9 @@ public final class ShaderCurveState
     private static Integer centerDepthFBO;
     private static Integer centerDepthTexture;
 
+    /** 上一次写入焦点深度纹理的值，未变化时跳过 GL 更新 */
+    private static float lastCenterDepth = Float.NaN;
+
     private ShaderCurveState()
     {}
 
@@ -110,6 +113,8 @@ public final class ShaderCurveState
             GL11C.glTexParameteri(GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_WRAP_T, GL12C.GL_CLAMP_TO_EDGE);
             GL11C.glTexImage2D(GL11C.GL_TEXTURE_2D, 0, GL30.GL_R32F, 1, 1, 0, GL11C.GL_RED, GL11C.GL_FLOAT, (ByteBuffer) null);
             GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, 0);
+
+            lastCenterDepth = Float.NaN;
         }
 
         if (centerDepthFBO == null)
@@ -124,13 +129,21 @@ public final class ShaderCurveState
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, previous);
         }
 
+        float depthValue = (float) depth;
+
+        if (depthValue == lastCenterDepth)
+        {
+            return Optional.of(centerDepthTexture);
+        }
+
         int previous = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
 
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, centerDepthFBO);
-        GL11.glClearColor((float) depth, 0.0F, 0.0F, 0.0F);
+        GL11.glClearColor(depthValue, 0.0F, 0.0F, 0.0F);
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
-        GL11.glFinish();
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, previous);
+
+        lastCenterDepth = depthValue;
 
         return Optional.of(centerDepthTexture);
     }

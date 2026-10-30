@@ -43,6 +43,12 @@ public class TextureTweenManager
     private static final Map<RuntimeKey, RuntimeEntry> CACHE = new LinkedHashMap<>(16, 0.75F, true);
     private static final AtomicLong NEXT_ID = new AtomicLong();
 
+    /** 复用的源贴图保护集合（仅渲染线程访问） */
+    private static final Set<Link> PROTECTED_SOURCES = new HashSet<>();
+
+    /** 源贴图裁剪的节流计数 */
+    private static int trimTick;
+
     private static long runtimeBytes;
 
     public static Link getTween(Link a, Link b, float x, int mode, float originX, float originY, float originZ, boolean flash,
@@ -110,32 +116,35 @@ public class TextureTweenManager
             return a;
         }
 
-        Set<Link> protectedSources = new HashSet<>();
-
-        protectedSources.add(a);
-
-        if (mode != TEXTURE_TWEEN_DISSIPATE)
+        /* 裁剪会遍历整张缓存：新建条目时一次，其余每 32 次取用一次 */
+        if (entry == null || (++trimTick & 0x1F) == 0)
         {
-            protectedSources.add(b);
-        }
+            PROTECTED_SOURCES.clear();
+            PROTECTED_SOURCES.add(a);
 
-        synchronized (CACHE)
-        {
-            for (RuntimeEntry cached : CACHE.values())
+            if (mode != TEXTURE_TWEEN_DISSIPATE)
             {
-                if (cached.isBoundToForm())
-                {
-                    protectedSources.add(cached.key.a);
+                PROTECTED_SOURCES.add(b);
+            }
 
-                    if (cached.key.mode != TEXTURE_TWEEN_DISSIPATE)
+            synchronized (CACHE)
+            {
+                for (RuntimeEntry cached : CACHE.values())
+                {
+                    if (cached.isBoundToForm())
                     {
-                        protectedSources.add(cached.key.b);
+                        PROTECTED_SOURCES.add(cached.key.a);
+
+                        if (cached.key.mode != TEXTURE_TWEEN_DISSIPATE)
+                        {
+                            PROTECTED_SOURCES.add(cached.key.b);
+                        }
                     }
                 }
             }
-        }
 
-        TextureTweenSourceCache.trim(protectedSources);
+            TextureTweenSourceCache.trim(PROTECTED_SOURCES);
+        }
 
         if (entry == null)
         {

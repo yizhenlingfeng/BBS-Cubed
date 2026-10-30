@@ -12,6 +12,7 @@ import mchorse.bbs_mod.ui.framework.elements.context.UIContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.context.UISimpleContextMenu;
 import mchorse.bbs_mod.ui.utils.context.ContextAction;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -25,6 +26,10 @@ import java.util.List;
 @Mixin(UIElement.class)
 public class UIElementMixin
 {
+    /** 复用的子控件快照缓冲，避免每帧为每个元素新建 ArrayList */
+    @Unique
+    private List<IUIElement> bbspp$childSnapshot = new ArrayList<>();
+
     /**
      * 注入目标：{@link UIElement#render(UIContext)} 中遍历子控件列表的迭代器创建点。
      * 注入原因：部分 BBS 控件会在渲染期间处理拖拽并回调修改 UI 树，例如模型方块内编辑表单时拖动变换数值。
@@ -38,7 +43,12 @@ public class UIElementMixin
     )
     private Iterator<IUIElement> bbspp$renderChildrenSnapshot(List<IUIElement> children)
     {
-        return new ArrayList<>(children).iterator();
+        List<IUIElement> snapshot = this.bbspp$childSnapshot;
+
+        snapshot.clear();
+        snapshot.addAll(children);
+
+        return snapshot.iterator();
     }
 
     /**
