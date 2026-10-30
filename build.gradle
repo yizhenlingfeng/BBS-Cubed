@@ -445,6 +445,38 @@ if (!privateDevRuntimeBuildTasks.isEmpty()) {
 // ---- 多版本构建 / 运行客户端便捷任务 ----
 // 通过 GradleBuild 嵌套构建传 mc_version，避免 PowerShell 下 -P 参数被截断，
 // 同时让构建与运行客户端各自按版本使用独立的 run 目录（run/1.20.1、run/1.20.4）。
+
+// --offline 下 Gradle 不下载任何依赖，Loom 也不会重新拉取版本元数据。缓存不完整时
+// 只会得到 "Failed download after 3 attempts" 或成片的 "程序包 net.fabricmc.api 不存在"，
+// 这里提前检查并给出可直接执行的提示，避免把缓存问题误判成代码问题。
+def offlineCacheProblems = { String version ->
+    def problems = []
+
+    [
+            "fabric-loader": project.findProperty("loader_version_${version}".toString()),
+            "yarn"         : project.findProperty("yarn_mappings_${version}".toString())
+    ].each { artifact, artifactVersion ->
+        if (artifactVersion == null) {
+            return
+        }
+        def artifactDir = new File(gradle.gradleUserHomeDir,
+                "caches/modules-2/files-2.1/net.fabricmc/${artifact}/${artifactVersion}")
+        if (fileTree(artifactDir).matching { include "**/*.jar", "**/*.tiny" }.isEmpty()) {
+            problems << "Gradle 依赖缓存缺少 net.fabricmc:${artifact}:${artifactVersion}"
+        }
+    }
+
+    def loomDir = new File(gradle.gradleUserHomeDir, "caches/fabric-loom/${version}")
+    def hasVersionInfo = new File(loomDir, "mojang_minecraft_info.json").isFile()
+    def hasMinecraftJar = new File(loomDir, "minecraft-merged.jar").isFile() ||
+            new File(loomDir, "minecraft-client.jar").isFile()
+    if (!hasVersionInfo || !hasMinecraftJar) {
+        problems << "Loom 缓存缺少 Minecraft ${version} 的版本元数据（${loomDir}）"
+    }
+
+    return problems
+}
+
 def registerVersionTask = { name, version, taskList, description ->
     tasks.register(name, GradleBuild) {
         group = "bbsplusplus"
@@ -452,6 +484,17 @@ def registerVersionTask = { name, version, taskList, description ->
         dir = rootDir
         tasks = taskList
         startParameter.projectProperties = [mc_version: version]
+        doFirst {
+            if (!gradle.startParameter.offline) {
+                return
+            }
+            def problems = offlineCacheProblems(version)
+            if (!problems.isEmpty()) {
+                throw new GradleException("离线构建 ${version} 中止：本地依赖缓存不完整。\n" +
+                        problems.collect { "  - ${it}" }.join("\n") +
+                        "\n请先联网执行一次 .\\gradlew.bat ${name} 补全缓存，再使用 --offline 构建。")
+            }
+        }
     }
 }
 
