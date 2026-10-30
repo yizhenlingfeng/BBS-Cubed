@@ -234,28 +234,56 @@ public class AnimationFileAutoSyncSupport
         return new ArrayList<>(ticks);
     }
 
-    /** 取动画在该 tick 上第一个关键帧的插值类型，缺省线性。 */
+    /**
+     * 取动画从该 tick 起那一段的插值类型，缺省线性。
+     *
+     * <p>方块模型动画的插值挂在段内后一帧（目标帧）上，姿势通道走通用关键帧
+     * 插值、取段内首帧，两者正好错开一段。所以烘焙时要用该 tick <b>之后</b>那个
+     * 关键帧的插值：步阶帧的 CONST 才会落到跳变前的那一帧上，烘焙出的轨道才有
+     * 步阶（这与 {@link KeyframeChannel} 自身拆段插键时的做法一致）。</p>
+     */
     private static IInterp interpAt(Animation animation, float tick)
     {
+        IInterp nearest = null;
+        IInterp own = null;
+        float nearestTick = Float.MAX_VALUE;
+
         for (AnimationPart part : animation.parts.values())
         {
             for (KeyframeChannel<?> channel : part.channels)
             {
                 for (Keyframe<?> keyframe : channel.getKeyframes())
                 {
-                    if (Math.abs(keyframe.getTick() - tick) < 0.001F)
-                    {
-                        IInterp interp = keyframe.getInterpolation().getInterp();
+                    IInterp interp = keyframe.getInterpolation().getInterp();
 
-                        if (interp != null)
+                    if (interp == null)
+                    {
+                        continue;
+                    }
+
+                    float keyframeTick = keyframe.getTick();
+
+                    if (Math.abs(keyframeTick - tick) < 0.001F)
+                    {
+                        if (own == null)
                         {
-                            return interp;
+                            own = interp;
                         }
+                    }
+                    else if (keyframeTick > tick + 0.001F && keyframeTick < nearestTick)
+                    {
+                        nearestTick = keyframeTick;
+                        nearest = interp;
                     }
                 }
             }
         }
 
-        return Interpolations.LINEAR;
+        if (nearest != null)
+        {
+            return nearest;
+        }
+
+        return own == null ? Interpolations.LINEAR : own;
     }
 }
