@@ -206,6 +206,11 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 
 ### Mod Changelog
 
+#### 3.6.3 (Fix for Blockbench step keyframes being ignored in cubic model animations)
+* **Symptom**: step keyframes in a Bedrock animation imported from Blockbench fell back to a linear slide inside block model animations — the value should hold and then jump at the step frame, but it crawled smoothly towards the target instead
+* **Root cause**: BBS has two keyframe lookup paths that read different keys. Cubic model animations (`CubicModelAnimator`) take the interpolation from the segment's **destination key b**, while the generic path (`KeyframeSegment.createInterpolated`, used by pose/action baking) takes it from the **source key a**. The previous fix marked `CONST` only on the keyframe before the step, so the cubic path never saw it and kept playing the step frame with its own linear interpolation
+* **Fix**: the step frame and the keyframe before it are now both marked `CONST`, so either path holds the previous value and then jumps; the segment from the step frame to the next key is still governed by the next key's interpolation and is unaffected
+
 #### 3.6.2 (Fix for black editor preview with X-Ray particles)
 * **Symptom**: when the scene contains an AAA particle with X-Ray (ignore depth) enabled, opening the model block page, the movie page or any other editor preview leaves the 3D viewport completely black (only the sidebar UI and the gizmo remain visible), or reverses into the whole viewport being covered by the block atlas — without any error in the log
 * **Root cause**: X-Ray rendering draws the particles a second time outside the main render pass. Effekseer's native layer bypasses Minecraft's `RenderSystem` and calls `glActiveTexture` / `glBindTexture` directly, so the `RenderSystem` texture cache drifts away from the real GL state. Later draws believe the texture is already bound and skip rebinding, sampling an empty texture or the block atlas, which turns the whole viewport black or floods it with atlas content

@@ -30,10 +30,15 @@ import java.util.TreeMap;
  * <ol>
  *   <li><b>步阶帧（step）</b>：Blockbench 把步阶帧导出为 {@code {"pre": 前值, "post": 本值}}
  *       瞬变对，原生只读 post、丢弃 pre，步阶退化为线性滑动。在 {@code parseChannel} 尾部
- *       识别带 {@code pre} 数组的帧，把前一段插值标为 {@link Interpolations#CONST}。
- *       注意 BBS 的 {@code KeyframeSegment} 用段内<b>首帧 a</b> 的插值，而步阶作用于
- *       "进入该帧之前"的段，因此 CONST 标在<b>步阶帧的前一帧</b>上；步阶帧自身的
- *       {@code lerp_mode}（如 "catmullrom"）描述它到下一帧的段，必须原样保留。</li>
+ *       识别带 {@code pre} 数组的帧，把进入该帧的那一段标为 {@link Interpolations#CONST}。
+ *       BBS 有两条取值路径，用的关键帧不同，因此<b>两帧都要标</b>：
+ *       <ul>
+ *         <li>方块模型动画（{@code CubicModelAnimator}）用段内<b>后一帧 b</b> 的插值，
+ *             必须标在<b>步阶帧自身</b>；</li>
+ *         <li>通用通道（{@code KeyframeSegment.createInterpolated}，姿态/动作烘焙）用段内
+ *             <b>首帧 a</b> 的插值，必须标在<b>步阶帧的前一帧</b>。</li>
+ *       </ul>
+ *       只标其一，另一条路径上的步阶就会退化为线性滑动。</li>
  *   <li><b>标量通道简写</b>：Bedrock 允许 {@code "scale": 2}，原生只接受数组或对象，
  *       遇裸数字会静默丢弃。在 {@code parse} 入口把 bone 上的数字值改写为 {@code [n,n,n]}。</li>
  *   <li><b>loop 字段</b>：Bedrock 的 {@code loop: true} / {@code "hold_on_last_frame"}
@@ -87,6 +92,10 @@ public abstract class GeoAnimationParserMixin
                 }
 
                 float tick = entry.getKey() * 20F;
+
+                bbspp$markConstAtTick(x, tick);
+                bbspp$markConstAtTick(y, tick);
+                bbspp$markConstAtTick(z, tick);
 
                 bbspp$markPreviousConst(x, tick);
                 bbspp$markPreviousConst(y, tick);
@@ -170,8 +179,29 @@ public abstract class GeoAnimationParserMixin
     }
 
     /**
-     * 把步阶帧之前那一帧的插值设为 {@link Interpolations#CONST}，使前一段保持前值、
-     * 在步阶帧时刻瞬跳到 post。步阶帧自身的插值不动。
+     * 把步阶帧自身标为 {@link Interpolations#CONST}：方块模型动画
+     * （{@code CubicModelAnimator}）从段内后一帧 b 读取插值，进入步阶帧的那一段
+     * 因此保持前值、在步阶帧时刻瞬跳到 post；它到下一帧的段由下一帧的插值决定，
+     * 不受影响。
+     */
+    @Unique
+    private static void bbspp$markConstAtTick(KeyframeChannel<MolangExpression> channel, float stepTick)
+    {
+        for (Keyframe<MolangExpression> keyframe : channel.getKeyframes())
+        {
+            if (Math.abs(keyframe.getTick() - stepTick) < 0.001F)
+            {
+                keyframe.getInterpolation().setInterp(Interpolations.CONST);
+
+                return;
+            }
+        }
+    }
+
+    /**
+     * 把步阶帧之前那一帧的插值设为 {@link Interpolations#CONST}，供通用通道
+     * （{@code KeyframeSegment.createInterpolated} 取段内首帧 a 的插值，姿态/动作
+     * 烘焙走这条路径）同样得到"保持前值再瞬跳"的效果。
      */
     @Unique
     private static void bbspp$markPreviousConst(KeyframeChannel<MolangExpression> channel, float stepTick)
