@@ -138,18 +138,17 @@ public class EffectDefinitionMixin
         }
         finally
         {
-            // 【BBS++ 核心修复】
-            // Effekseer 的 C++ 底层不仅更改了深度测试，还会直接调用 OpenGL 原生方法绑定纹理（glActiveTexture 和 glBindTexture）。
-            // 这种绕过 Minecraft RenderSystem 的行为，会导致 RenderSystem 的内部缓存（如当前激活的纹理单元、绑定的贴图 ID）与 OpenGL 实际状态严重脱节！
-            // 因为我们在 RenderContextMixin 中把粒子渲染强行提前到了“画手”和“画BBS伪装”之前，如果在这里不把状态拨乱反正，
-            // 接下来画手的时候，RenderSystem 以为自己早就绑定了玩家皮肤贴图而跳过绑定，最终导致手臂和 BBS 伪装使用错误的（或空的）贴图！
+            // Effekseer 的 C++ 底层会绕过 RenderSystem 直接调用 glActiveTexture / glBindTexture，
+            // 使 RenderSystem 的贴图缓存与 GL 的真实绑定脱节：后续 setShaderTexture 认为贴图已绑好而跳过重绑，
+            // 绘制便采到错误的贴图（把绑定清空会导致视口全黑，回滚到进入前的绑定会铺满方块图集）。
+            // 这里按 GL 的真实绑定重新经 RenderSystem 绑定一次，绑定值不变，只校正缓存。
             for (int i = 0; i < 8; i++)
             {
-                RenderSystem.activeTexture(GL13.GL_TEXTURE0 + i);
-                RenderSystem.bindTexture(0);
+                GL13.glActiveTexture(GL13.GL_TEXTURE0 + i);
+                RenderSystem.bindTexture(GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D));
             }
 
-            RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+            GL13.glActiveTexture(GL13.GL_TEXTURE0);
 
             // 深度范围与深度函数由本方法主动改动过，这里恢复成 Minecraft 的常规值。
             GL11.glDepthRange(0.0, 1.0);

@@ -195,6 +195,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 | Keyframe color-bar break fix     | Fixes color bars breaking apart for identical parameters                                                                                          |
 | Blockbench step animation fix    | Fixes Blockbench-exported Bedrock animations treating step keyframes as linear interpolation                                                     |
 | Bedrock scalar channel fix        | Fixes Bedrock's bare-number shorthand (e.g. `"scale": 2`) being silently dropped by BBS, making bone scale animations ineffective; now normalized to `[2,2,2]` |
+| X-Ray particle viewport fix      | Fixes the editor preview viewport (model block page, movie page, etc.) turning black or covered by the block atlas when the scene contains an AAA particle with X-Ray rendering enabled |
 
 ## Open Source License
 
@@ -204,6 +205,13 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 - This project is an extension plugin for [BBSFS](https://github.com/Wemppy4/bbs-fs), implemented via Mixin
 
 ### Mod Changelog
+
+#### 3.6.2 (Fix for black editor preview with X-Ray particles)
+* **Symptom**: when the scene contains an AAA particle with X-Ray (ignore depth) enabled, opening the model block page, the movie page or any other editor preview leaves the 3D viewport completely black (only the sidebar UI and the gizmo remain visible), or reverses into the whole viewport being covered by the block atlas — without any error in the log
+* **Root cause**: X-Ray rendering draws the particles a second time outside the main render pass. Effekseer's native layer bypasses Minecraft's `RenderSystem` and calls `glActiveTexture` / `glBindTexture` directly, so the `RenderSystem` texture cache drifts away from the real GL state. Later draws believe the texture is already bound and skip rebinding, sampling an empty texture or the block atlas, which turns the whole viewport black or floods it with atlas content
+* **State restoration**: the X-Ray pass is now wrapped in `try/finally`, so depth range, depth function, depth writes, depth test, framebuffer binding and viewport are unconditionally restored to their entry values, even if drawing throws midway
+* **Texture cache resync**: on exit, texture units 0~7 are rebound through `RenderSystem` using the real GL binding (the binding itself is unchanged, only the cache is corrected). This clears whatever state Effekseer left behind without the previous side effects of an all-black viewport (clearing bindings) or an atlas-flooded viewport (rolling back bindings)
+* **Compatibility**: the fix lives in the separate X-Ray drawing pass and does not affect particle visibility, the X-Ray effect itself, or translucency ordering
 
 #### 3.6.1 (Movie editor timeline lock + track name localization + AAA Particles 2.3.4)
 * **Timeline lock**: right-click the editor icons in the top bar to lock or unlock a timeline; locked icons are dimmed, the `·` editor-cycle hotkey only visits unlocked modes, while locked modes remain selectable by icon
