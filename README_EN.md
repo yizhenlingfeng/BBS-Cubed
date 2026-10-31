@@ -139,7 +139,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 - **Premiere export**: exports movies as Premiere Pro XML projects alongside SRT subtitle files
 - **Three clip types**: hotbar clips, movie clips, and replay clips
 - **Action overlay**: each model form can configure overlay action layers (`actions_overlay`) blended with base actions during playback
-- **Action timeline endpoints**: after picking an action and then an animation on the actions track, paired endpoint keyframes are inserted at the end of the animation automatically, forming trimmable, loopable and overlayable action segments
+- **Action timeline endpoints**: after picking an action and an animation on the actions track, paired endpoint keyframes are inserted at the end of the animation, forming trimmable, loopable and overlayable action segments; controlled by the "Create animation track start keyframe" setting
 - **Additive animation**: overlay animation support with multi-layer blending
 - **Molang variable sharing**: interop toggle for variable action models; when on, Molang variables are shared across actions
 - **Animation state editor**: animation state editing with enhanced layout and pose insertion
@@ -212,6 +212,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 * Fixed the end endpoint not being rebuilt after choosing an animation in the animation list of the actions track (`snow_actions`); the endpoint length now follows the selected animation's actual duration
 * Fixed a 1-tick "fake endpoint" being inserted when an action has no animation of the same name on the model; no endpoint is inserted now and it is generated once an animation is selected
 * Fixed the paired endpoint keyframe not syncing loop, speed, fade and start tick when they are changed on either end of the segment
+* Renamed the snow_actions setting to "Create animation track start keyframe" and rewrote its description to state the actual behaviour: picking an action and an animation creates a start keyframe and its paired end keyframe
 
 #### 3.6.3 (Blockbench step keyframes + timeline viewport kept on undo)
 * Fixed step keyframes of Bedrock animations exported from Blockbench being played as a linear slide in block model animations; pose tracks baked by the "auto-load animation file" option keep the step as well
