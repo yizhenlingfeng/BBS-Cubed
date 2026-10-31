@@ -127,6 +127,12 @@ public abstract class UIActionsConfigEditorMixin implements ActionsTimelineEdito
         this.bbspp_cml$support().setTimelineContext(keyframe, editor, form, overlay);
     }
 
+    @Inject(method = "callback", at = @At("RETURN"), remap = false)
+    private void bbspp_cml$syncPairedOptions(Runnable runnable, CallbackInfo ci)
+    {
+        this.bbspp_cml$support().syncPairedOptions();
+    }
+
     @Inject(method = "pickAction", at = @At("HEAD"), remap = false)
     private void bbspp_cml$beginProgrammaticAnimationSelection(String key, boolean select, CallbackInfo ci)
     {
