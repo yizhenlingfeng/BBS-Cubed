@@ -139,6 +139,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 - **Premiere export**: exports movies as Premiere Pro XML projects alongside SRT subtitle files
 - **Three clip types**: hotbar clips, movie clips, and replay clips
 - **Action overlay**: each model form can configure overlay action layers (`actions_overlay`) blended with base actions during playback
+- **Action timeline endpoints**: after picking an action and then an animation on the actions track, paired endpoint keyframes are inserted at the end of the animation automatically, forming trimmable, loopable and overlayable action segments
 - **Additive animation**: overlay animation support with multi-layer blending
 - **Molang variable sharing**: interop toggle for variable action models; when on, Molang variables are shared across actions
 - **Animation state editor**: animation state editing with enhanced layout and pose insertion
@@ -206,8 +207,10 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 
 ### Mod Changelog
 
-#### 3.6.3 hotfix (Replay list position kept on undo)
+#### 3.6.3 hotfix (Replay list position kept on undo + action timeline endpoint fixes)
 * Fixed the replay list being forced back to the top when undoing in the film editor's replay track editing; undo now only reverts the data without moving the list
+* Fixed the end endpoint not being rebuilt after choosing an animation in the animation list of the actions track (`snow_actions`); the endpoint length now follows the selected animation's actual duration
+* Fixed a 1-tick "fake endpoint" being inserted when an action has no animation of the same name on the model; no endpoint is inserted now and it is generated once an animation is selected
 
 #### 3.6.3 (Blockbench step keyframes + timeline viewport kept on undo)
 * Fixed step keyframes of Bedrock animations exported from Blockbench being played as a linear slide in block model animations; pose tracks baked by the "auto-load animation file" option keep the step as well
