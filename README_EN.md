@@ -206,6 +206,9 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 
 ### Mod Changelog
 
+#### 3.6.3 hotfix (Replay list position kept on undo)
+* Fixed the replay list being forced back to the top when undoing in the film editor's replay track editing; undo now only reverts the data without moving the list
+
 #### 3.6.3 (Blockbench step keyframes + timeline viewport kept on undo)
 * Fixed step keyframes of Bedrock animations exported from Blockbench being played as a linear slide in block model animations; pose tracks baked by the "auto-load animation file" option keep the step as well
 * Fixed the timeline being forced back to its pre-edit position after undoing a clip or keyframe change in the film editor; the camera / action and replay / keyframe timelines now keep the pan, zoom and track scroll position you had before undoing

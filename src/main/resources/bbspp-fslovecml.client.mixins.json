@@ -75,6 +75,7 @@
         "UIPropTransformMixin",
         "UIReplaysEditorEmbedMixin",
         "UIReplaysEditorMixin",
+        "UIReplaysEditorUndoScrollMixin",
         "UIReplaysEditorActionsOverlayMixin",
         "UIReplaysEditorUtilsMixin",
         "UIActionsConfigEditorMixin",

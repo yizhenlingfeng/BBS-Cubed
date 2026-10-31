@@ -19,8 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * <p>{@code UIKeyframeEditor.applyUndoData(MapType)} 会调用 {@code UIKeyframes.applyState(...)}，
  * 后者用撤销条目里快照的 {@code x_min}/{@code x_max} 重新 {@code view()} 时间轴，并用
  * {@code currentGraph.restoreState(...)} 把轨道列表的垂直滚动也套回快照值；编辑之后的平移、缩放
- * 与滚动因此被丢弃（在回放轨道编辑器里表现为撤销后轨道列表被拉回顶部）。这里进入时抓当前视口、
- * 退出时原样恢复，关键帧选中与图状态的恢复仍保持原版行为。</p>
+ * 与滚动因此被丢弃。这里进入时抓当前视口、退出时原样恢复，关键帧选中与图状态的恢复仍保持原版行为。</p>
  */
 @Mixin(value = UIKeyframeEditor.class, remap = false)
 public abstract class UIKeyframeEditorUndoViewportMixin
