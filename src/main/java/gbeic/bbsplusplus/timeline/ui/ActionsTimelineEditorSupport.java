@@ -1,5 +1,6 @@
 package gbeic.bbsplusplus.timeline.ui;
 
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.api.ActionTimelineConfig;
 import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.timeline.ActionTimelineEvaluator;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -95,6 +97,28 @@ public class ActionsTimelineEditorSupport
 
         this.editor.add(this.loopBeyond, this.loopIntervalRow);
         this.refreshLoopControls();
+        this.hookAnimationSelection();
+    }
+
+    /** 动画列表切换动画时也要重建端点（原版回调只改 config.name）。 */
+    private void hookAnimationSelection()
+    {
+        if (this.editor.animations == null || this.editor.animations.list == null)
+        {
+            return;
+        }
+
+        Consumer<List<String>> original = this.editor.animations.list.callback;
+
+        this.editor.animations.list.callback = (selected) ->
+        {
+            if (original != null)
+            {
+                original.accept(selected);
+            }
+
+            this.createAnimationEndpoint();
+        };
     }
 
     public UIElement getLoopBeyondControl()
@@ -167,8 +191,8 @@ public class ActionsTimelineEditorSupport
         }
     }
 
-    /** 动作/动画列表选中变化时创建（或清理）成对的时间线端点关键帧。 */
-    public void createAnimationEndpoint()
+    /** 按当前动作与动画创建（或清理）成对的时间线端点关键帧。 */
+    private void createAnimationEndpoint()
     {
         if (!ModSettings.isSnowActionsEnabled()
             || this.programmaticSelection > 0
@@ -204,18 +228,32 @@ public class ActionsTimelineEditorSupport
             this.removePreviousSegment(channel, actionKey, previousClip);
         }
 
-        if (config.name == null || config.name.isEmpty())
+        Animation animation = config.name == null || config.name.isEmpty()
+            ? null
+            : this.getAnimation(config.name);
+
+        if (animation == null)
         {
+            /* 没有同名模型动画时不建端点，等选中真实动画后由动画回调重建。 */
             timeline.bbspp_cml$setClipId("");
             timeline.bbspp_cml$setTimelineFrame(0F);
             timeline.bbspp_cml$setOverlayTimeline(false);
             channel.sort();
             this.refreshLoopControls();
 
+            if (config.name != null && !config.name.isEmpty())
+            {
+                BBSPlusPlusMod.LOGGER.debug(
+                    "snow_actions: action '{}' refers to unknown animation '{}', endpoint skipped",
+                    actionKey,
+                    config.name
+                );
+            }
+
             return;
         }
 
-        int duration = this.getAnimationDuration(config.name);
+        int duration = ActionTimelineEvaluator.getEffectiveAnimationLength(animation);
         String clipId = UUID.randomUUID().toString();
 
         timeline.bbspp_cml$setClipId(clipId);
@@ -367,12 +405,16 @@ public class ActionsTimelineEditorSupport
         }
     }
 
-    private int getAnimationDuration(String animationName)
+    private Animation getAnimation(String animationName)
     {
         ModelInstance model = ModelFormRenderer.getModel(this.form);
-        Animation animation = model == null ? null : model.getAnimations().get(animationName);
 
-        return ActionTimelineEvaluator.getEffectiveAnimationLength(animation);
+        if (model == null || model.getAnimations() == null)
+        {
+            return null;
+        }
+
+        return model.getAnimations().get(animationName);
     }
 
     private Keyframe<ActionsConfig> findKeyframe(KeyframeChannel<ActionsConfig> channel, float tick)
