@@ -1,6 +1,5 @@
 package gbeic.bbsplusplus.timeline.ui;
 
-import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.api.ActionTimelineConfig;
 import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.timeline.ActionTimelineEvaluator;
@@ -240,15 +239,6 @@ public class ActionsTimelineEditorSupport
             timeline.bbspp_cml$setOverlayTimeline(false);
             channel.sort();
             this.refreshLoopControls();
-
-            if (config.name != null && !config.name.isEmpty())
-            {
-                BBSPlusPlusMod.LOGGER.debug(
-                    "snow_actions: action '{}' refers to unknown animation '{}', endpoint skipped",
-                    actionKey,
-                    config.name
-                );
-            }
 
             return;
         }
