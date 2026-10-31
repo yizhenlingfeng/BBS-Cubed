@@ -208,7 +208,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 
 #### 3.6.3 (Blockbench step keyframes + timeline viewport kept on undo)
 * Fixed step keyframes of Bedrock animations exported from Blockbench being played as a linear slide in block model animations; pose tracks baked by the "auto-load animation file" option keep the step as well
-* Fixed the timeline being forced back to its pre-edit position after undoing a clip or keyframe change in the film editor; the camera / action and replay / keyframe timelines now keep the pan and zoom you had before undoing
+* Fixed the timeline being forced back to its pre-edit position after undoing a clip or keyframe change in the film editor; the camera / action and replay / keyframe timelines now keep the pan, zoom and track scroll position you had before undoing
 
 #### 3.6.2 (Fix for black editor preview with X-Ray particles)
 * **Symptom**: when the scene contains an AAA particle with X-Ray (ignore depth) enabled, opening the model block page, the movie page or any other editor preview leaves the 3D viewport completely black (only the sidebar UI and the gizmo remain visible), or reverses into the whole viewport being covered by the block atlas — without any error in the log
