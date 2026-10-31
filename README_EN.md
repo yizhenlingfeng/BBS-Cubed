@@ -211,6 +211,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 * Fixed the replay list being forced back to the top when undoing in the film editor's replay track editing; undo now only reverts the data without moving the list
 * Fixed the end endpoint not being rebuilt after choosing an animation in the animation list of the actions track (`snow_actions`); the endpoint length now follows the selected animation's actual duration
 * Fixed a 1-tick "fake endpoint" being inserted when an action has no animation of the same name on the model; no endpoint is inserted now and it is generated once an animation is selected
+* Fixed the paired endpoint keyframe not syncing loop, speed, fade and start tick when they are changed on either end of the segment
 
 #### 3.6.3 (Blockbench step keyframes + timeline viewport kept on undo)
 * Fixed step keyframes of Bedrock animations exported from Blockbench being played as a linear slide in block model animations; pose tracks baked by the "auto-load animation file" option keep the step as well
