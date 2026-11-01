@@ -74,10 +74,13 @@ public final class OutlineGeometry
      *
      * <p>Global settings apply to every visible group; a limb entry replaces the global colour,
      * width and glow for the group with the same bone name. Width 0 disables either kind.</p>
+     *
+     * <p>The global toggle is not a master switch for limb entries. It only controls whether the
+     * whole model receives the global outline; an enabled limb still renders on its own.</p>
      */
     public static List<Spec> collect(Model model, ModelConfig config, OutlineConfigHolder outline, Set<ModelCube> decalCubes)
     {
-        if (model == null || config == null || outline == null || !outline.bbspp$isOutlineEnabled())
+        if (model == null || config == null || outline == null)
         {
             return Collections.emptyList();
         }
@@ -86,7 +89,7 @@ public final class OutlineGeometry
         int globalArgb = outline.bbspp$getOutlineColor();
         float globalWidth = outline.bbspp$getOutlineWidth();
 
-        if (globalWidth > 0F)
+        if (outline.bbspp$isOutlineEnabled() && globalWidth > 0F)
         {
             for (ModelGroup group : model.getAllGroups())
             {
