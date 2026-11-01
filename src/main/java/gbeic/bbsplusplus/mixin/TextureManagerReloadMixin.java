@@ -1,7 +1,11 @@
 package gbeic.bbsplusplus.mixin;
 
+import gbeic.bbsplusplus.client.outline.OutlineEmissiveTexture;
+import gbeic.bbsplusplus.client.outline.geometry.OutlineAlphaMask;
 import gbeic.bbsplusplus.client.texture.TextureTweenManager;
+import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.texture.TextureManager;
+import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.watchdog.WatchDogEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,10 +28,27 @@ public class TextureManagerReloadMixin
      * 注入原因：F6 等全量资源重载会删除实际纹理，但 BBSPPP 的静态 Link 缓存不会自动清空。
      * 修改行为：同步清空全部运行时补间缓存，使下一帧重新生成纹理。
      */
+    /**
+     * 单条纹理被删除时，只清掉与该纹理绑定的 alpha 掩码缓存。
+     * 用 HEAD 是因为 delete(Link) 返回前纹理对象已经被移出表，无法再反查。
+     */
+    @Inject(method = "delete(Lmchorse/bbs_mod/resources/Link;)V", at = @At("HEAD"))
+    private void bbsppp$invalidateOutlineBeforeLinkDelete(Link link, CallbackInfo ci)
+    {
+        Texture texture = ((TextureManager) (Object) this).textures.get(link);
+
+        if (texture != null)
+        {
+            OutlineAlphaMask.invalidate(texture);
+        }
+    }
+
     @Inject(method = "delete", at = @At("TAIL"))
     private void bbsppp$invalidateTweenAfterDelete(CallbackInfo ci)
     {
         TextureTweenManager.invalidateAll();
+        OutlineAlphaMask.invalidate();
+        OutlineEmissiveTexture.invalidate();
     }
 
     /**
@@ -39,5 +60,7 @@ public class TextureManagerReloadMixin
     private void bbsppp$invalidateTweenAfterAssetChange(Path path, WatchDogEvent event, CallbackInfo ci)
     {
         TextureTweenManager.invalidateAll();
+        OutlineAlphaMask.invalidate();
+        OutlineEmissiveTexture.invalidate();
     }
 }

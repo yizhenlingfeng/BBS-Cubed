@@ -8,6 +8,17 @@ plugins {
 // （runClient1204），不再单独发布 1.20.4 jar。
 def targetMc = providers.gradleProperty("mc_version").orElse("1.20.1").get()
 
+// 1.21.11 的描边后端需要访问私有 POSITION_COLOR_SNIPPET。1.20.x 没有 RenderPipelines
+// 类，若把同一条目写进共享 AW，Loom 的 validateAccessWidener 会在 1.20.x 构建时失败。
+// 因此按目标版本生成 build 目录里的 AW，再作为资源打进 jar。
+def outlineAwSource = file(targetMc == "1.21.11"
+        ? "gradle/outline-1.21.11.accesswidener"
+        : "gradle/outline-empty.accesswidener")
+def outlineAwFile = file("$buildDir/generated/outline/bbsplusplus.accesswidener")
+outlineAwFile.parentFile.mkdirs()
+outlineAwFile.text = outlineAwSource.text
+
+
 // gradle.properties 中的属性名含小数点，必须用 providers.gradleProperty 读取
 def gprop = { name -> providers.gradleProperty(name).get() }
 
@@ -114,6 +125,8 @@ processResources {
             java_version_range: javaVersionRange
         )
     }
+
+    from(outlineAwFile)
 
     // 1.21.11 需要 Mixin Java 21 字节码，主线保持 JAVA_17
     if (targetMc == "1.21.11") {
@@ -295,6 +308,7 @@ if (targetMc == "1.21.11") {
         "gbeic/bbsplusplus/mixin/ExtrudedFormRendererMixin.java",
         "gbeic/bbsplusplus/mixin/ModelFormRendererEquipmentMixin.java",
         "gbeic/bbsplusplus/mixin/ModelInstanceMixin.java",
+        "gbeic/bbsplusplus/mixin/ModelInstanceOutlineMixin.java",
         "gbeic/bbsplusplus/mixin/ModelVAORendererMixin.java",
         "gbeic/bbsplusplus/mixin/MotionPathMixin.java",
         "gbeic/bbsplusplus/mixin/vfx/BbsVfxClientMixin.java",
@@ -373,6 +387,8 @@ if (targetMc == "1.21.11") {
 }
 
 loom {
+    accessWidenerPath = outlineAwFile
+
     runs {
         client {
             vmArg "-Dsodium.checks.issue2561=false"

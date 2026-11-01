@@ -1,0 +1,5 @@
+accessWidener v2 named
+
+# The outline backend needs the vanilla position-colour shader snippet to build
+# three custom render pipelines. It is private in 1.21.11, so widen it.
+accessible field net/minecraft/client/gl/RenderPipelines POSITION_COLOR_SNIPPET Lcom/mojang/blaze3d/pipeline/RenderPipeline$Snippet;

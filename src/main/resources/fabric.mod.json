@@ -23,6 +23,7 @@
             "gbeic.bbsplusplus.BBSPlusPlusClientAddon"
         ]
     },
+    "accessWidener": "bbsplusplus.accesswidener",
     "mixins": [
         "bbsplusplus.mixins.json",
         "bbsplusplus-irlite.mixins.json",
