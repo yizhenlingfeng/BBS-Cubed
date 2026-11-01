@@ -281,13 +281,17 @@ public final class OutlineRenderer120
             {
                 RenderSystem.setShaderTexture(0, textures.get(i).getGlId());
                 BufferBuilder builder = Tessellator.getInstance().getBuffer();
-                int[] count = { 0 };
-
-                builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+                boolean[] began = { false };
 
                 OutlineGeometry.emit(model, config, ordered.get(i).specs(), base, formAlpha,
                     (x, y, z, nx, ny, nz, r, g, b, a) ->
                     {
+                        if (!began[0])
+                        {
+                            builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+                            began[0] = true;
+                        }
+
                         builder.vertex(x, y, z)
                             .color(1F, 1F, 1F, formAlpha)
                             .texture(0F, 0F)
@@ -295,15 +299,14 @@ public final class OutlineRenderer120
                             .light(LightmapTextureManager.MAX_LIGHT_COORDINATE)
                             .normal(nx, ny, nz)
                             .next();
-                        count[0]++;
                     }, faceRects, decals, materialVisible);
 
-                BufferBuilder.BuiltBuffer built = builder.end();
-
-                if (count[0] > 0)
+                if (!began[0])
                 {
-                    BufferRenderer.drawWithGlobalProgram(built);
+                    continue;
                 }
+
+                BufferRenderer.drawWithGlobalProgram(builder.end());
             }
         }
         catch (Throwable ignored)
@@ -423,21 +426,24 @@ public final class OutlineRenderer120
         }
 
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
-        int[] count = { 0 };
-
-        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        boolean[] began = { false };
 
         OutlineGeometry.emit(model, config, specs, base, formAlpha, (x, y, z, nx, ny, nz, r, g, b, a) ->
         {
+            if (!began[0])
+            {
+                builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+                began[0] = true;
+            }
+
             builder.vertex(x, y, z).color(r, g, b, a).next();
-            count[0]++;
         }, faceRects, decals, materialVisible);
 
-        BufferBuilder.BuiltBuffer built = builder.end();
-
-        if (count[0] > 0)
+        if (!began[0])
         {
-            BufferRenderer.drawWithGlobalProgram(built);
+            return;
         }
+
+        BufferRenderer.drawWithGlobalProgram(builder.end());
     }
 }

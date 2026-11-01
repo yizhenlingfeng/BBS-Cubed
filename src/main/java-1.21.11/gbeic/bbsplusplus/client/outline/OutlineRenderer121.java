@@ -147,18 +147,26 @@ public final class OutlineRenderer121
             return;
         }
 
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
-        int[] count = { 0 };
+        BufferBuilder[] builder = { null };
 
         OutlineGeometry.emit(model, config, specs, base, formAlpha, (x, y, z, nx, ny, nz, r, g, b, a) ->
         {
-            builder.vertex(x, y, z).color(r, g, b, a);
-            count[0]++;
+            if (builder[0] == null)
+            {
+                builder[0] = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+            }
+
+            builder[0].vertex(x, y, z).color(r, g, b, a);
         }, faceRects, decals, materialVisible);
 
-        BuiltBuffer built = builder.endNullable();
+        if (builder[0] == null)
+        {
+            return;
+        }
 
-        if (built != null && count[0] > 0)
+        BuiltBuffer built = builder[0].endNullable();
+
+        if (built != null)
         {
             layer.draw(built);
         }
