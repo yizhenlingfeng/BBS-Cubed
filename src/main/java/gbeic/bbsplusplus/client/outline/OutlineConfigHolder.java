@@ -39,7 +39,9 @@ public interface OutlineConfigHolder
 
     List<OutlineLimbValue> bbspp$getOutlineLimbs();
 
-    void bbspp$addOutlineLimb();
+    /** The outline override for this bone, or null when the bone uses the global outline. */
+    OutlineLimbValue bbspp$getOutlineLimb(String bone);
 
-    void bbspp$removeOutlineLimb(int index);
+    /** Add or remove the outline override for one bone, with undo support. */
+    void bbspp$setOutlineLimbEnabled(String bone, boolean enabled);
 }

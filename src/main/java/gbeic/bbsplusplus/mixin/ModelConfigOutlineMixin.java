@@ -167,32 +167,64 @@ public abstract class ModelConfigOutlineMixin implements OutlineConfigHolder
     }
 
     @Override
-    public void bbspp$addOutlineLimb()
+    public OutlineLimbValue bbspp$getOutlineLimb(String bone)
     {
         this.bbspp$ensureOutlineValues();
 
-        BaseValue.edit(this.bbspp$outlineLimbs, limbs ->
+        if (bone == null || bone.isEmpty())
         {
-            OutlineLimbValue limb = new OutlineLimbValue(String.valueOf(limbs.getList().size()));
+            return null;
+        }
 
-            /* A new limb starts at the global glow so it looks like the rest of the model. */
-            limb.glow.set(this.bbspp$outlineGlow.get());
+        for (OutlineLimbValue limb : this.bbspp$outlineLimbs.getAllTyped())
+        {
+            if (bone.equals(limb.bone.get()))
+            {
+                return limb;
+            }
+        }
 
-            limbs.add(limb);
-            limbs.sync();
-        });
+        return null;
     }
 
     @Override
-    public void bbspp$removeOutlineLimb(int index)
+    public void bbspp$setOutlineLimbEnabled(String bone, boolean enabled)
     {
         this.bbspp$ensureOutlineValues();
+
+        if (bone == null || bone.isEmpty())
+        {
+            return;
+        }
 
         BaseValue.edit(this.bbspp$outlineLimbs, limbs ->
         {
             List<OutlineLimbValue> values = limbs.getAllTyped();
+            int index = -1;
 
-            if (index >= 0 && index < values.size())
+            for (int i = 0; i < values.size(); i++)
+            {
+                if (bone.equals(values.get(i).bone.get()))
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (enabled && index < 0)
+            {
+                OutlineLimbValue limb = new OutlineLimbValue(String.valueOf(values.size()));
+
+                /* A new limb starts from the global look so enabling it changes the result at once. */
+                limb.bone.set(bone);
+                limb.color.set(new Color().set(this.bbspp$outlineColor.get().getARGBColor()));
+                limb.width.set(this.bbspp$outlineWidth.get());
+                limb.glow.set(this.bbspp$outlineGlow.get());
+
+                limbs.add(limb);
+                limbs.sync();
+            }
+            else if (!enabled && index >= 0)
             {
                 values.remove(index);
                 limbs.sync();
