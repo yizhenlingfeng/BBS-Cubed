@@ -390,7 +390,7 @@ public final class OutlineRenderer120
     private static boolean canRender(Model model, ModelConfig config, OutlineConfigHolder outline, Color color)
     {
         return model != null && config != null && outline != null && color != null
-            && (outline.bbspp$isOutlineEnabled() || !outline.bbspp$getOutlineLimbs().isEmpty())
+            && outline.bbspp$hasOutline()
             && !BBSRendering.isIrisShadowPass();
     }
 

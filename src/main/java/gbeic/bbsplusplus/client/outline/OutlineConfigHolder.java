@@ -39,6 +39,12 @@ public interface OutlineConfigHolder
 
     List<OutlineLimbValue> bbspp$getOutlineLimbs();
 
+    /** True when the whole model or at least one limb is outlined. */
+    default boolean bbspp$hasOutline()
+    {
+        return this.bbspp$isOutlineEnabled() || !this.bbspp$getOutlineLimbs().isEmpty();
+    }
+
     /** The outline override for this bone, or null when the bone uses the global outline. */
     OutlineLimbValue bbspp$getOutlineLimb(String bone);
 

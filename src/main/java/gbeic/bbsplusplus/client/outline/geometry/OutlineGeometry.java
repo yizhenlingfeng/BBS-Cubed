@@ -73,10 +73,9 @@ public final class OutlineGeometry
      * Collects the groups that should get an outline.
      *
      * <p>Global settings apply to every visible group; a limb entry replaces the global colour,
-     * width and glow for the group with the same bone name. Width 0 disables either kind.</p>
-     *
-     * <p>The global toggle is not a master switch for limb entries. It only controls whether the
-     * whole model receives the global outline; an enabled limb still renders on its own.</p>
+     * width and glow for the group with the same bone name. Width 0 disables either kind.
+     * The global toggle only controls the whole-model outline, so limb entries render
+     * independently of it.</p>
      */
     public static List<Spec> collect(Model model, ModelConfig config, OutlineConfigHolder outline, Set<ModelCube> decalCubes)
     {
