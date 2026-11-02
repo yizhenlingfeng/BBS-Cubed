@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import gbeic.bbsplusplus.client.outline.geometry.OutlineAlphaMask;
 import gbeic.bbsplusplus.client.outline.geometry.OutlineDecalFilter;
 import gbeic.bbsplusplus.client.outline.geometry.OutlineGeometry;
+import gbeic.bbsplusplus.client.outline.geometry.OutlineShellKey;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.cubic.data.model.Model;
@@ -15,6 +16,8 @@ import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.resources.Pixels;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.ShaderProgram;
+import net.minecraft.client.gl.VertexBuffer;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -28,6 +31,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,15 +40,30 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * 1.20.x immediate-mode backend for the outline shell.
+ * 1.20.x backend for the outline shell.
  *
  * <p>Two passes are drawn around the model's own render: a colour pass at HEAD with depth writes
  * disabled (so the body covers the near half of the shell), and a depth-only pass at RETURN with
  * colour writes disabled (so the surviving rim pixels write real geometric depth and Iris's
  * deferred/composite stages do not classify them as sky).</p>
+ *
+ * <p>The solid colour and depth halves of both passes are now baked once into
+ * {@link VertexBuffer}s in model-root space (see {@link OutlineShellCache}); a cache hit costs
+ * two draws and no per-cube work at all. The LabPBR entity pass still rebuilds its vertices once
+ * per frame because the vanilla entity shader consumes world-space normals, which cannot be
+ * shared across poses.</p>
  */
 public final class OutlineRenderer120
 {
+    private static final Matrix4f IDENTITY = new Matrix4f();
+
+    /** HEAD/RETURN pairing for the cached path. Nested renders pair like a stack. */
+    private record Prepared(Model model, ModelConfig config, OutlineShellCache.Entry entry, int generation)
+    {
+    }
+
+    private static final ArrayDeque<Prepared> PREPARED = new ArrayDeque<>();
+
     private OutlineRenderer120()
     {
     }
@@ -61,6 +80,316 @@ public final class OutlineRenderer120
             return;
         }
 
+        if (color.a <= 0F)
+        {
+            /* Still pair HEAD/RETURN, but do not bake or rebuild anything for a fully faded form. */
+            pushPrepared(model, config, null);
+
+            return;
+        }
+
+        OutlineShellKey.Key key = OutlineShellKey.of(model, config, outline, textureLink, materialVisible);
+        OutlineShellCache.Entry entry = OutlineShellCache.getOrBuild(model, key,
+            cached -> buildEntry(cached, key, model, config, outline, textureLink, materialVisible));
+
+        pushPrepared(model, config, entry);
+
+        if (entry == null)
+        {
+            renderImmediate(stack, model, config, outline, color, textureLink, materialVisible);
+
+            return;
+        }
+
+        drawColor(entry, model, config, new Matrix4f(stack.peek().getPositionMatrix()), color.a, materialVisible);
+    }
+
+    private static void pushPrepared(Model model, ModelConfig config, OutlineShellCache.Entry entry)
+    {
+        while (PREPARED.size() > 32)
+        {
+            PREPARED.pollLast();
+        }
+
+        PREPARED.push(new Prepared(model, config, entry, entry == null ? 0 : entry.generation));
+    }
+
+    private static void buildEntry(OutlineShellCache.Entry entry, OutlineShellKey.Key key, Model model,
+                                   ModelConfig config, OutlineConfigHolder outline, Link textureLink,
+                                   Predicate<String> materialVisible)
+    {
+        if (entry.geometryHash != 0L && entry.geometryHash != key.geometryHash())
+        {
+            /* Cube positions/UVs changed while the game is running: the per-cube mask cache is
+             * keyed by cube identity, so it has to be dropped before it is queried again. */
+            OutlineAlphaMask.invalidateMasks();
+        }
+
+        entry.geometryHash = key.geometryHash();
+
+        Set<ModelCube> decals = OutlineDecalFilter.find(model, outline.bbspp$getOutlineDecalSize());
+        List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model, config, outline, decals);
+        Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
+        Map<Long, ResourceTexture> glowTextures = resolveGlowTextures(specs);
+        List<OutlineGeometry.Spec> solid = new ArrayList<>(specs.size());
+        List<OutlineGeometry.Spec> glow = new ArrayList<>(specs.size());
+
+        for (OutlineGeometry.Spec spec : specs)
+        {
+            (glowTextures.containsKey(specKey(spec)) ? glow : solid).add(spec);
+        }
+
+        entry.glowSpecs = glow;
+        entry.faceRects = faceRects;
+        entry.decals = decals;
+
+        Uploaded solidBuild = upload(entry.solidVbo, model, config, solid, faceRects, decals, materialVisible);
+        entry.solidVbo = solidBuild.vbo;
+        entry.solidVertices = solidBuild.vertices;
+
+        Uploaded glowBuild = upload(entry.glowVbo, model, config, glow, faceRects, decals, materialVisible);
+        entry.glowVbo = glowBuild.vbo;
+        entry.glowVertices = glowBuild.vertices;
+
+        entry.valid = true;
+    }
+
+    private record Uploaded(VertexBuffer vbo, int vertices)
+    {
+    }
+
+    /**
+     * Bakes one spec list into a {@code POSITION_COLOR} buffer. The bake uses the model-root
+     * frame (identity base) and the spec's own alpha; the form opacity is applied at draw time
+     * through {@code ColorModulator}.
+     */
+    private static Uploaded upload(VertexBuffer existing, Model model, ModelConfig config,
+                                   List<OutlineGeometry.Spec> specs, Map<ModelCube, float[][]> faceRects,
+                                   Set<ModelCube> decals, Predicate<String> materialVisible)
+    {
+        if (specs == null || specs.isEmpty())
+        {
+            return new Uploaded(existing, 0);
+        }
+
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        boolean[] began = { false };
+        int[] count = { 0 };
+
+        try
+        {
+            OutlineGeometry.emit(model, config, specs, IDENTITY, 1F, (x, y, z, nx, ny, nz, r, g, b, a) ->
+            {
+                if (!began[0])
+                {
+                    builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+                    began[0] = true;
+                }
+
+                count[0]++;
+                builder.vertex(x, y, z).color(r, g, b, a).next();
+            }, faceRects, decals, materialVisible, false);
+        }
+        catch (Throwable throwable)
+        {
+            if (began[0])
+            {
+                try
+                {
+                    builder.end();
+                }
+                catch (Throwable ignored)
+                {
+                }
+            }
+
+            throw throwable;
+        }
+
+        if (!began[0])
+        {
+            return new Uploaded(existing, 0);
+        }
+
+        BufferBuilder.BuiltBuffer built = builder.end();
+        VertexBuffer vbo = existing == null ? new VertexBuffer(VertexBuffer.Usage.DYNAMIC) : existing;
+
+        vbo.bind();
+        vbo.upload(built);
+        VertexBuffer.unbind();
+
+        return new Uploaded(vbo, count[0]);
+    }
+
+    private static void drawColor(OutlineShellCache.Entry entry, Model model, ModelConfig config, Matrix4f base,
+                                  float formAlpha, Predicate<String> materialVisible)
+    {
+        if (entry.solidVertices <= 0 && entry.glowSpecs.isEmpty())
+        {
+            return;
+        }
+
+        boolean blend = GL11.glIsEnabled(GL11.GL_BLEND);
+        boolean cull = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+        boolean depthTest = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+        boolean depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
+        float[] shaderColor = RenderSystem.getShaderColor().clone();
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(false);
+        RenderSystem.enableCull();
+        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShaderColor(1F, 1F, 1F, formAlpha * shaderColor[3]);
+
+        Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(base);
+        ShaderProgram shader = RenderSystem.getShader();
+
+        if (entry.solidVertices > 0)
+        {
+            drawVbo(entry.solidVbo, modelView, shader);
+        }
+
+        if (!entry.glowSpecs.isEmpty())
+        {
+            boolean handled = false;
+
+            if (FabricLoader.getInstance().isModLoaded("iris"))
+            {
+                handled = renderLabPBR(model, config, entry.glowSpecs, base, formAlpha,
+                    entry.faceRects, entry.decals, materialVisible);
+            }
+
+            if (!handled && entry.glowVertices > 0)
+            {
+                RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+                RenderSystem.setShaderColor(1F, 1F, 1F, formAlpha * shaderColor[3]);
+                shader = RenderSystem.getShader();
+
+                drawVbo(entry.glowVbo, modelView, shader);
+            }
+        }
+
+        RenderSystem.setShaderColor(shaderColor[0], shaderColor[1], shaderColor[2], shaderColor[3]);
+        RenderSystem.depthMask(depthMask);
+
+        if (!depthTest)
+        {
+            RenderSystem.disableDepthTest();
+        }
+
+        if (!blend)
+        {
+            RenderSystem.disableBlend();
+        }
+
+        if (!cull)
+        {
+            RenderSystem.disableCull();
+        }
+    }
+
+    private static void drawVbo(VertexBuffer vbo, Matrix4f modelView, ShaderProgram shader)
+    {
+        vbo.bind();
+        vbo.draw(modelView, RenderSystem.getProjectionMatrix(), shader);
+        VertexBuffer.unbind();
+    }
+
+    /** Writes depth for rim pixels that survived the body. Called at {@code ModelInstance.render} RETURN. */
+    public static void renderDepth(MatrixStack stack, Model model, ModelConfig config, OutlineConfigHolder outline,
+                                   Color color, Link textureLink, Predicate<String> materialVisible)
+    {
+        if (!canRender(model, config, outline, color))
+        {
+            return;
+        }
+
+        Prepared prepared = PREPARED.poll();
+
+        if (color.a <= 0F)
+        {
+            return;
+        }
+
+        if (prepared == null || prepared.model != model || prepared.config != config)
+        {
+            if (prepared != null)
+            {
+                PREPARED.clear();
+            }
+
+            renderDepthImmediate(stack, model, config, outline, color, textureLink, materialVisible);
+
+            return;
+        }
+
+        if (prepared.entry == null || !prepared.entry.valid || prepared.entry.generation != prepared.generation)
+        {
+            renderDepthImmediate(stack, model, config, outline, color, textureLink, materialVisible);
+
+            return;
+        }
+
+        drawDepth(prepared.entry, new Matrix4f(stack.peek().getPositionMatrix()));
+    }
+
+    private static void drawDepth(OutlineShellCache.Entry entry, Matrix4f base)
+    {
+        if (entry.solidVertices <= 0 && entry.glowVertices <= 0)
+        {
+            return;
+        }
+
+        boolean blend = GL11.glIsEnabled(GL11.GL_BLEND);
+        boolean cull = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+        boolean depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
+        int depthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
+        float[] shaderColor = RenderSystem.getShaderColor().clone();
+
+        RenderSystem.disableBlend();
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthFunc(GL11.GL_LEQUAL);
+        RenderSystem.depthMask(true);
+        RenderSystem.colorMask(false, false, false, false);
+        RenderSystem.enableCull();
+        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+
+        Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(base);
+        ShaderProgram shader = RenderSystem.getShader();
+
+        if (entry.solidVertices > 0)
+        {
+            drawVbo(entry.solidVbo, modelView, shader);
+        }
+
+        if (entry.glowVertices > 0)
+        {
+            drawVbo(entry.glowVbo, modelView, shader);
+        }
+
+        RenderSystem.colorMask(true, true, true, true);
+        RenderSystem.depthMask(depthMask);
+        RenderSystem.depthFunc(depthFunc);
+        RenderSystem.setShaderColor(shaderColor[0], shaderColor[1], shaderColor[2], shaderColor[3]);
+
+        if (blend)
+        {
+            RenderSystem.enableBlend();
+        }
+
+        if (!cull)
+        {
+            RenderSystem.disableCull();
+        }
+    }
+
+    /** Old per-frame path, kept as a fallback when the cache cannot build. */
+    private static void renderImmediate(MatrixStack stack, Model model, ModelConfig config, OutlineConfigHolder outline,
+                                        Color color, Link textureLink, Predicate<String> materialVisible)
+    {
         Set<ModelCube> decals = OutlineDecalFilter.find(model, outline.bbspp$getOutlineDecalSize());
         List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model, config, outline, decals);
         Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
@@ -299,7 +628,7 @@ public final class OutlineRenderer120
                             .light(LightmapTextureManager.MAX_LIGHT_COORDINATE)
                             .normal(nx, ny, nz)
                             .next();
-                    }, faceRects, decals, materialVisible);
+                    }, faceRects, decals, materialVisible, true);
 
                 if (!began[0])
                 {
@@ -346,15 +675,11 @@ public final class OutlineRenderer120
         return ok;
     }
 
-    /** Writes depth for rim pixels that survived the body. Called at {@code ModelInstance.render} RETURN. */
-    public static void renderDepth(MatrixStack stack, Model model, ModelConfig config, OutlineConfigHolder outline,
-                                   Color color, Link textureLink, Predicate<String> materialVisible)
+    /** Old per-frame depth path, kept as a fallback when the cache cannot build. */
+    private static void renderDepthImmediate(MatrixStack stack, Model model, ModelConfig config,
+                                             OutlineConfigHolder outline, Color color, Link textureLink,
+                                             Predicate<String> materialVisible)
     {
-        if (!canRender(model, config, outline, color))
-        {
-            return;
-        }
-
         Set<ModelCube> decals = OutlineDecalFilter.find(model, outline.bbspp$getOutlineDecalSize());
         List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model, config, outline, decals);
         Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
@@ -437,7 +762,7 @@ public final class OutlineRenderer120
             }
 
             builder.vertex(x, y, z).color(r, g, b, a).next();
-        }, faceRects, decals, materialVisible);
+        }, faceRects, decals, materialVisible, false);
 
         if (!began[0])
         {

@@ -11,12 +11,13 @@ import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.pose.Transform;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,10 +29,10 @@ import java.util.function.Predicate;
  * The shared, loader-independent half of the outline renderer.
  *
  * <p>This class walks a cubic model, builds the negative-volume shell geometry and hands raw
- * world-space vertices to a {@link VertexSink}. It deliberately knows nothing about
- * {@code BufferBuilder}, render pipelines or shaders: 1.20.x and 1.21.11 each provide their own
- * sink. That keeps the geometry, the bone maths and the rim/weld/alpha rules identical on both
- * Minecraft versions.</p>
+ * vertices to a {@link VertexSink}, expressed in the frame supplied by the {@code base} matrix.
+ * It deliberately knows nothing about {@code BufferBuilder}, render pipelines or shaders: 1.20.x
+ * and 1.21.11 each provide their own sink. That keeps the geometry, the bone maths and the
+ * rim/weld/alpha rules identical on both Minecraft versions.</p>
  *
  * <p>The shell is a "negative volume": the real cube bounds, inflated by {@code 0.25 * width}
  * model pixels, are written with min/max swapped, so the six faces point inwards. With back-face
@@ -53,6 +54,15 @@ public final class OutlineGeometry
 
     private static final String[] FACE_NAMES = { "front", "right", "back", "left", "top", "bottom" };
 
+    /** Cached {@code bone -> mirrored weld faces} tables, keyed by config identity. */
+    private static final Map<ModelConfig, CachedWelds> WELD_CACHE = new IdentityHashMap<>();
+    private static final int MAX_WELD_CACHE = 64;
+    private static final Map<String, Set<String>> NO_WELDS = Collections.emptyMap();
+
+    private record CachedWelds(long signature, Map<String, Set<String>> byBone)
+    {
+    }
+
     private OutlineGeometry()
     {
     }
@@ -62,7 +72,7 @@ public final class OutlineGeometry
     {
     }
 
-    /** Receives world-space vertices in triangle order. */
+    /** Receives vertices in the frame supplied by the {@code base} matrix. */
     @FunctionalInterface
     public interface VertexSink
     {
@@ -147,24 +157,17 @@ public final class OutlineGeometry
     /**
      * Emits the shell for every collected spec.
      *
-     * @param base           the caller's model-view matrix (the stack at {@code ModelInstance.render} entry)
-     * @param formAlpha      the form's own opacity, multiplied into every outline pixel
-     * @param faceRects      per-cube alpha coverage rectangles from {@link OutlineAlphaMask}; null = no clipping
-     * @param decalCubes     small cubes buried inside larger ones that should not get a rim
-     */
-    public static void emit(Model model, ModelConfig config, List<Spec> specs, Matrix4f base, float formAlpha,
-                            VertexSink sink, Map<ModelCube, float[][]> faceRects, Set<ModelCube> decalCubes)
-    {
-        emit(model, config, specs, base, formAlpha, sink, faceRects, decalCubes, material -> true);
-    }
-
-    /**
-     * Same as above, but lets the caller hide cubes whose material is switched off in the
-     * material tab (otherwise their rims would remain visible around invisible geometry).
+     * @param base            the caller's base matrix (the stack at {@code ModelInstance.render} entry)
+     * @param formAlpha       the form's own opacity, multiplied into every outline pixel
+     * @param faceRects       per-cube alpha coverage rectangles from {@link OutlineAlphaMask}; null = no clipping
+     * @param decalCubes      small cubes buried inside larger ones that should not get a rim
+     * @param materialVisible hides cubes whose material is switched off in the material tab
+     * @param needsNormals    the entity/LabPBR path reads normals; the {@code POSITION_COLOR}
+     *                        passes have no normal attribute and pass false to skip the work
      */
     public static void emit(Model model, ModelConfig config, List<Spec> specs, Matrix4f base, float formAlpha,
                             VertexSink sink, Map<ModelCube, float[][]> faceRects, Set<ModelCube> decalCubes,
-                            Predicate<String> materialVisible)
+                            Predicate<String> materialVisible, boolean needsNormals)
     {
         if (model == null || config == null || specs == null || specs.isEmpty() || sink == null)
         {
@@ -180,8 +183,9 @@ public final class OutlineGeometry
             collectGroupMatrices(group, root, matrices);
         }
 
-        Emitter emitter = new Emitter(sink);
+        Emitter emitter = new Emitter(sink, needsNormals);
         Set<ModelCube> skip = decalCubes == null ? Collections.emptySet() : decalCubes;
+        Map<String, Set<String>> welds = weldTable(config);
 
         for (Spec spec : specs)
         {
@@ -192,7 +196,7 @@ public final class OutlineGeometry
                 continue;
             }
 
-            Set<String> welded = collectWeldedFaces(config, spec.group().id);
+            Set<String> welded = welds.getOrDefault(spec.group().id, Collections.emptySet());
             float alpha = spec.a() * formAlpha;
 
             if (alpha <= 0F)
@@ -294,15 +298,29 @@ public final class OutlineGeometry
         }
     }
 
-    /** Collects the welded seams of a bone, mapped to the shell's reversed face names. */
-    public static Set<String> collectWeldedFaces(ModelConfig config, String bone)
+    /**
+     * Builds (and caches) the whole bone-to-welded-faces table for one config.
+     *
+     * <p>The old implementation walked every weld once per spec and allocated a fresh
+     * {@code HashSet} each time. This version walks the weld list once per config change and
+     * reuses immutable sets.</p>
+     */
+    static Map<String, Set<String>> weldTable(ModelConfig config)
     {
-        Set<String> out = new java.util.HashSet<>();
-
-        if (config == null || bone == null || config.welds == null)
+        if (config == null || config.welds == null)
         {
-            return out;
+            return NO_WELDS;
         }
+
+        long signature = weldSignature(config);
+        CachedWelds cached = WELD_CACHE.get(config);
+
+        if (cached != null && cached.signature == signature)
+        {
+            return cached.byBone;
+        }
+
+        Map<String, Set<String>> byBone = new HashMap<>();
 
         for (WeldValue weld : config.welds.getAllTyped())
         {
@@ -311,26 +329,63 @@ public final class OutlineGeometry
                 continue;
             }
 
-            if (bone.equals(weld.sourceBone.get()))
-            {
-                addMirroredFace(out, weld.sourceFace.get());
-            }
-
-            if (bone.equals(weld.targetBone.get()))
-            {
-                addMirroredFace(out, weld.targetFace.get());
-            }
+            addWeldedFace(byBone, weld.sourceBone.get(), weld.sourceFace.get());
+            addWeldedFace(byBone, weld.targetBone.get(), weld.targetFace.get());
         }
 
-        return out;
+        for (Map.Entry<String, Set<String>> entry : byBone.entrySet())
+        {
+            entry.setValue(Collections.unmodifiableSet(entry.getValue()));
+        }
+
+        Map<String, Set<String>> result = Collections.unmodifiableMap(byBone);
+        if (WELD_CACHE.size() >= MAX_WELD_CACHE)
+        {
+            WELD_CACHE.clear();
+        }
+
+        WELD_CACHE.put(config, new CachedWelds(signature, result));
+
+        return result;
     }
 
-    private static void addMirroredFace(Set<String> out, String face)
+    private static void addWeldedFace(Map<String, Set<String>> byBone, String bone, String face)
     {
-        if (face != null && !face.isEmpty())
+        if (bone == null || bone.isEmpty() || face == null || face.isEmpty())
         {
-            out.add(mirrorFace(face));
+            return;
         }
+
+        byBone.computeIfAbsent(bone, key -> new HashSet<>()).add(mirrorFace(face));
+    }
+
+    private static long weldSignature(ModelConfig config)
+    {
+        long hash = 1125899906842597L;
+        int count = 0;
+
+        for (WeldValue weld : config.welds.getAllTyped())
+        {
+            count++;
+
+            if (weld == null)
+            {
+                hash = hash * 31 + 1;
+                continue;
+            }
+
+            hash = hash * 31 + stringHash(weld.sourceBone.get());
+            hash = hash * 31 + stringHash(weld.sourceFace.get());
+            hash = hash * 31 + stringHash(weld.targetBone.get());
+            hash = hash * 31 + stringHash(weld.targetFace.get());
+        }
+
+        return hash * 31 + count;
+    }
+
+    private static int stringHash(String value)
+    {
+        return value == null ? 0 : value.hashCode();
     }
 
     private static String mirrorFace(String face)
@@ -351,15 +406,17 @@ public final class OutlineGeometry
     private static final class Emitter
     {
         private final VertexSink sink;
+        private final boolean needsNormals;
         private final Matrix4f matrix = new Matrix4f();
         private final Matrix3f normalMatrix = new Matrix3f();
         private final Vector3f position = new Vector3f();
         private final Vector3f normal = new Vector3f();
         private final float[] corners = new float[12];
 
-        private Emitter(VertexSink sink)
+        private Emitter(VertexSink sink, boolean needsNormals)
         {
             this.sink = sink;
+            this.needsNormals = needsNormals;
         }
 
         private void cube(Matrix4f parent, ModelCube cube, float width, float r, float g, float b, float a,
@@ -397,7 +454,11 @@ public final class OutlineGeometry
             }
 
             this.matrix.translate(-pivot.x / 16F, -pivot.y / 16F, -pivot.z / 16F);
-            this.normalMatrix.set(this.matrix).invert().transpose();
+
+            if (this.needsNormals)
+            {
+                this.normalMatrix.set(this.matrix).invert().transpose();
+            }
 
             if (!welded.contains("front") && cube.back != null)
             {
@@ -514,16 +575,24 @@ public final class OutlineGeometry
         {
             this.position.set(x, y, z);
             this.matrix.transformPosition(this.position);
-            this.normal.set(nx, ny, nz);
-            this.normalMatrix.transform(this.normal);
 
-            if (this.normal.lengthSquared() > 1.0E-12F)
+            if (this.needsNormals)
             {
-                this.normal.normalize();
-            }
+                this.normal.set(nx, ny, nz);
+                this.normalMatrix.transform(this.normal);
 
-            this.sink.vertex(this.position.x, this.position.y, this.position.z,
-                this.normal.x, this.normal.y, this.normal.z, r, g, b, a);
+                if (this.normal.lengthSquared() > 1.0E-12F)
+                {
+                    this.normal.normalize();
+                }
+
+                this.sink.vertex(this.position.x, this.position.y, this.position.z,
+                    this.normal.x, this.normal.y, this.normal.z, r, g, b, a);
+            }
+            else
+            {
+                this.sink.vertex(this.position.x, this.position.y, this.position.z, 0F, 0F, 0F, r, g, b, a);
+            }
         }
     }
 

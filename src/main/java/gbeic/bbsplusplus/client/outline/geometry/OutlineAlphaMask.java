@@ -53,13 +53,26 @@ public final class OutlineAlphaMask
     private static final Map<ModelCube, CubeRects> MASKS = new IdentityHashMap<>();
     private static final float[] CORNERS = new float[12];
 
+    /**
+     * Bumped whenever the cached masks stop being valid (texture reload/deletion, model edits).
+     * The outline shell cache folds this into its key so stale geometry is never reused.
+     */
+    private static long version;
+
     private OutlineAlphaMask()
     {
+    }
+
+    static long version()
+    {
+        return version;
     }
 
     /** Drops native pixel buffers and all cached masks. Call on resource reload and texture deletion. */
     public static void invalidate()
     {
+        version++;
+
         for (Pixels pixels : PIXELS.values())
         {
             if (pixels != null)
@@ -74,6 +87,13 @@ public final class OutlineAlphaMask
         MASKS.clear();
     }
 
+    /** Drops only the cached per-cube masks (model geometry/UV edits). */
+    public static void invalidateMasks()
+    {
+        version++;
+        MASKS.clear();
+    }
+
     /** Drops only the cached data belonging to one deleted texture. */
     public static void invalidate(Texture texture)
     {
@@ -81,6 +101,8 @@ public final class OutlineAlphaMask
         {
             return;
         }
+
+        version++;
 
         Pixels pixels = PIXELS.remove(texture);
 
