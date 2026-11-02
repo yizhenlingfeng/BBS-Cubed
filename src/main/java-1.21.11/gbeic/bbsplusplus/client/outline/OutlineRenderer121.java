@@ -84,7 +84,7 @@ public final class OutlineRenderer121
         RenderSetup.builder(DEPTH_PIPELINE).build());
 
     /** HEAD/RETURN pairing for the cached path. Nested renders pair like a stack. */
-    private record Prepared(Model model, ModelConfig config, OutlineShellCache121.Entry entry, int generation)
+    private record Prepared(Model model, ModelConfig config, OutlineShellCache121.Entry entry, int generation, boolean skipDepth)
     {
     }
 
@@ -95,34 +95,41 @@ public final class OutlineRenderer121
     }
 
     /** Draws the coloured rim. Called at {@code ModelInstance.render} HEAD, before the body. */
-    public static void render(MatrixStack stack, Model model, ModelConfig config, OutlineConfigHolder outline,
+    public static void render(MatrixStack stack, Model model, ModelConfig config,
                               Color color, Link textureLink, Predicate<String> materialVisible)
     {
-        if (!canRender(model, config, outline, color))
+        if (!canRender(model, config, color))
         {
+            return;
+        }
+
+        if (!OutlineGeometry.hasAnyOutline(model))
+        {
+            pushPrepared(model, config, null, true);
+
             return;
         }
 
         if (color.a <= 0F)
         {
             /* Still pair HEAD/RETURN, but do not bake or rebuild anything for a fully faded form. */
-            pushPrepared(model, config, null);
+            pushPrepared(model, config, null, true);
 
             return;
         }
 
         Matrix4f base = new Matrix4f(stack.peek().getPositionMatrix());
-        OutlineShellKey.Key shared = OutlineShellKey.of(model, config, outline, textureLink, materialVisible);
+        OutlineShellKey.Key shared = OutlineShellKey.of(model, config, textureLink, materialVisible);
         long baseHash = OutlineShellKey.baseHash(base);
         OutlineShellKey.Key key = new OutlineShellKey.Key(shared.value() * 31 + baseHash, shared.geometryHash());
         OutlineShellCache121.Entry entry = OutlineShellCache121.getOrBuild(model, key,
-            cached -> buildEntry(cached, key, model, config, outline, textureLink, materialVisible, base, baseHash));
+            cached -> buildEntry(cached, key, model, config, textureLink, materialVisible, base, baseHash));
 
         pushPrepared(model, config, entry);
 
         if (entry == null)
         {
-            renderImmediate(stack, model, config, outline, color, textureLink, materialVisible);
+            renderImmediate(stack, model, config, color, textureLink, materialVisible);
 
             return;
         }
@@ -132,16 +139,21 @@ public final class OutlineRenderer121
 
     private static void pushPrepared(Model model, ModelConfig config, OutlineShellCache121.Entry entry)
     {
+        pushPrepared(model, config, entry, false);
+    }
+
+    private static void pushPrepared(Model model, ModelConfig config, OutlineShellCache121.Entry entry, boolean skipDepth)
+    {
         while (PREPARED.size() > 32)
         {
             PREPARED.pollLast();
         }
 
-        PREPARED.push(new Prepared(model, config, entry, entry == null ? 0 : entry.generation));
+        PREPARED.push(new Prepared(model, config, entry, entry == null ? 0 : entry.generation, skipDepth));
     }
 
     private static void buildEntry(OutlineShellCache121.Entry entry, OutlineShellKey.Key key, Model model,
-                                   ModelConfig config, OutlineConfigHolder outline, Link textureLink,
+                                   ModelConfig config, Link textureLink,
                                    Predicate<String> materialVisible, Matrix4f base, long baseHash)
     {
         if (entry.geometryHash != 0L && entry.geometryHash != key.geometryHash())
@@ -151,8 +163,9 @@ public final class OutlineRenderer121
 
         entry.geometryHash = key.geometryHash();
 
-        Set<ModelCube> decals = OutlineDecalFilter.find(model, outline.bbspp$getOutlineDecalSize());
-        List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model, config, outline, decals);
+        Map<String, Float> decalSizes = OutlineGeometry.decalSizes(model);
+        Set<ModelCube> decals = OutlineDecalFilter.find(model, decalSizes);
+        List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model);
         Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
         OutlineShellCache121.VertexData data = new OutlineShellCache121.VertexData();
 
@@ -167,10 +180,10 @@ public final class OutlineRenderer121
     }
 
     /** Writes depth for rim pixels that survived the body. Called at {@code ModelInstance.render} RETURN. */
-    public static void renderDepth(MatrixStack stack, Model model, ModelConfig config, OutlineConfigHolder outline,
+    public static void renderDepth(MatrixStack stack, Model model, ModelConfig config,
                                    Color color, Link textureLink, Predicate<String> materialVisible)
     {
-        if (!canRender(model, config, outline, color))
+        if (!canRender(model, config, color))
         {
             return;
         }
@@ -178,6 +191,11 @@ public final class OutlineRenderer121
         Prepared prepared = PREPARED.poll();
 
         if (color.a <= 0F)
+        {
+            return;
+        }
+
+        if (prepared != null && prepared.skipDepth())
         {
             return;
         }
@@ -195,7 +213,7 @@ public final class OutlineRenderer121
                 PREPARED.clear();
             }
 
-            renderDepthImmediate(stack, model, config, outline, color, textureLink, materialVisible);
+            renderDepthImmediate(stack, model, config, color, textureLink, materialVisible);
 
             return;
         }
@@ -229,35 +247,36 @@ public final class OutlineRenderer121
         }
     }
 
-    /** Old per-frame path, kept as a fallback when the cache cannot build. */
-    private static void renderImmediate(MatrixStack stack, Model model, ModelConfig config, OutlineConfigHolder outline,
+    /** Fallback per-frame path used when the cached shell cannot be built. */
+    private static void renderImmediate(MatrixStack stack, Model model, ModelConfig config,
                                         Color color, Link textureLink, Predicate<String> materialVisible)
     {
-        Set<ModelCube> decals = OutlineDecalFilter.find(model, outline.bbspp$getOutlineDecalSize());
-        List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model, config, outline, decals);
+        Map<String, Float> decalSizes = OutlineGeometry.decalSizes(model);
+        Set<ModelCube> decals = OutlineDecalFilter.find(model, decalSizes);
+        List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model);
         Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
 
         drawImmediate(model, config, specs, new Matrix4f(stack.peek().getPositionMatrix()), color.a,
             faceRects, decals, materialVisible, COLOR_LAYER);
     }
 
-    /** Old per-frame depth path, kept as a fallback when the cache cannot build. */
+    /** Fallback per-frame depth path used when the cached shell cannot be built. */
     private static void renderDepthImmediate(MatrixStack stack, Model model, ModelConfig config,
-                                             OutlineConfigHolder outline, Color color, Link textureLink,
+                                             Color color, Link textureLink,
                                              Predicate<String> materialVisible)
     {
-        Set<ModelCube> decals = OutlineDecalFilter.find(model, outline.bbspp$getOutlineDecalSize());
-        List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model, config, outline, decals);
+        Map<String, Float> decalSizes = OutlineGeometry.decalSizes(model);
+        Set<ModelCube> decals = OutlineDecalFilter.find(model, decalSizes);
+        List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model);
         Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
 
         drawImmediate(model, config, specs, new Matrix4f(stack.peek().getPositionMatrix()), color.a,
             faceRects, decals, materialVisible, DEPTH_LAYER);
     }
 
-    private static boolean canRender(Model model, ModelConfig config, OutlineConfigHolder outline, Color color)
+    private static boolean canRender(Model model, ModelConfig config, Color color)
     {
-        return model != null && config != null && outline != null && color != null
-            && outline.bbspp$hasOutline()
+        return model != null && config != null && color != null
             && !BBSRendering.isIrisShadowPass();
     }
 

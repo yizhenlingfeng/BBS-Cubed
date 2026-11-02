@@ -94,6 +94,8 @@
   "bbs.ui.camera.clips.bbs:vhs": "VHS",
   "bbs.ui.camera.clips.bbs:vintage": "复古",
   "bbs.ui.pose.enchant_glint": "附魔光效",
+  "bbs.ui.pose.glint_color": "光效颜色",
+  "bbs.ui.pose.section_glint": "附魔光效设置",
   "bbs.ui.pose.pick_bone_texture": "骨骼纹理",
   "bbs.ui.transforms.pivot.title": "中心点",
   "bbspp.config.bbs_enhancements.allow_clip_track_expansion": "允许拖动扩展剪辑轨道",

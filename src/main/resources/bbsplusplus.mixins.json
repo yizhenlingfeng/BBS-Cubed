@@ -129,8 +129,6 @@
         "client.UIModelBlockPanelUndoMixin",
         "client.TransformGestureBlockbenchMixin",
         "ModelConfigLimbCullingMixin",
-        "ModelConfigOutlineMixin",
-        "UIModelConfigEditorOutlineMixin",
         "ReloadableResourceManagerImplOutlineMixin",
         "CubicVAORendererLimbCullingMixin",
         "UIModelConfigEditorLimbCullingMixin",

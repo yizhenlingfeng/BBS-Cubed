@@ -1,7 +1,6 @@
 package gbeic.bbsplusplus.client.outline.geometry;
 
-import gbeic.bbsplusplus.client.outline.OutlineConfigHolder;
-import gbeic.bbsplusplus.client.outline.OutlineLimbValue;
+import gbeic.bbsplusplus.api.GroupOutlineHolder;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelCube;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
@@ -80,73 +79,108 @@ public final class OutlineGeometry
     }
 
     /**
-     * Collects the groups that should get an outline.
+     * Collects the visible groups that have their own outline enabled.
      *
-     * <p>Global settings apply to every visible group; a limb entry replaces the global colour,
-     * width and glow for the group with the same bone name. Width 0 disables either kind.
-     * The global toggle only controls the whole-model outline, so limb entries render
-     * independently of it.</p>
+     * <p>Outline settings now live on the bone's {@code PoseTransform} (see
+     * {@link GroupOutlineHolder}) and are mirrored onto {@link ModelGroup} whenever a pose is
+     * applied. There is no model-wide toggle: every bone decides for itself, which is what makes
+     * the settings animatable and keeps them out of the model config.</p>
      */
-    public static List<Spec> collect(Model model, ModelConfig config, OutlineConfigHolder outline, Set<ModelCube> decalCubes)
+    public static List<Spec> collect(Model model)
     {
-        if (model == null || config == null || outline == null)
+        if (model == null)
         {
             return Collections.emptyList();
         }
 
-        Map<ModelGroup, Spec> specs = new LinkedHashMap<>();
-        int globalArgb = outline.bbspp$getOutlineColor();
-        float globalWidth = outline.bbspp$getOutlineWidth();
+        List<Spec> specs = new ArrayList<>();
 
-        if (outline.bbspp$isOutlineEnabled() && globalWidth > 0F)
+        for (ModelGroup group : model.getAllGroups())
         {
-            for (ModelGroup group : model.getAllGroups())
-            {
-                if (group == null || !group.isVisible() || group.cubes == null || group.cubes.isEmpty())
-                {
-                    continue;
-                }
-
-                specs.put(group, new Spec(group, globalArgb, globalWidth, outline.bbspp$getOutlineGlow(),
-                    channel(globalArgb, 16), channel(globalArgb, 8), channel(globalArgb, 0), channel(globalArgb, 24)));
-            }
-        }
-
-        for (OutlineLimbValue limb : outline.bbspp$getOutlineLimbs())
-        {
-            if (limb == null)
-            {
-                continue;
-            }
-
-            String bone = limb.bone.get();
-
-            if (bone == null || bone.isEmpty())
-            {
-                continue;
-            }
-
-            ModelGroup group = model.getGroup(bone);
-
             if (group == null || !group.isVisible() || group.cubes == null || group.cubes.isEmpty())
             {
                 continue;
             }
 
-            float width = limb.width.get();
+            GroupOutlineHolder holder = (GroupOutlineHolder) group;
+
+            if (!holder.bbspp_cml$getOutline())
+            {
+                continue;
+            }
+
+            float width = holder.bbspp_cml$getOutlineWidth();
 
             if (width <= 0F)
             {
                 continue;
             }
 
-            int argb = limb.color.get().getARGBColor();
+            int argb = holder.bbspp_cml$getOutlineColor().getARGBColor();
 
-            specs.put(group, new Spec(group, argb, width, limb.glow.get(),
+            specs.add(new Spec(group, argb, width, holder.bbspp_cml$getOutlineGlow(),
                 channel(argb, 16), channel(argb, 8), channel(argb, 0), channel(argb, 24)));
         }
 
-        return new ArrayList<>(specs.values());
+        return specs;
+    }
+
+    /** Cheap pre-check so a model without any outlined bone does not build an empty entry. */
+    public static boolean hasAnyOutline(Model model)
+    {
+        if (model == null)
+        {
+            return false;
+        }
+
+        for (ModelGroup group : model.getAllGroups())
+        {
+            if (group == null || !group.isVisible() || group.cubes == null || group.cubes.isEmpty())
+            {
+                continue;
+            }
+
+            GroupOutlineHolder holder = (GroupOutlineHolder) group;
+
+            if (holder.bbspp_cml$getOutline() && holder.bbspp_cml$getOutlineWidth() > 0F)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Bone -> detail threshold used by {@link OutlineDecalFilter}. Only groups with an active
+     * outline contribute; the filter still keeps their small cubes when a bigger cube hosts them.
+     */
+    public static Map<String, Float> decalSizes(Model model)
+    {
+        Map<String, Float> sizes = new LinkedHashMap<>();
+
+        if (model == null)
+        {
+            return sizes;
+        }
+
+        for (ModelGroup group : model.getAllGroups())
+        {
+            if (group == null || group.id == null || group.cubes == null || group.cubes.isEmpty())
+            {
+                continue;
+            }
+
+            GroupOutlineHolder holder = (GroupOutlineHolder) group;
+
+            if (holder.bbspp_cml$getOutline() && holder.bbspp_cml$getOutlineWidth() > 0F
+                && holder.bbspp_cml$getOutlineDecalSize() > 0F)
+            {
+                sizes.put(group.id, holder.bbspp_cml$getOutlineDecalSize());
+            }
+        }
+
+        return sizes;
     }
 
     private static float channel(int argb, int shift)

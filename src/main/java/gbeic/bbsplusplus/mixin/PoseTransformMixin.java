@@ -1,8 +1,10 @@
 package gbeic.bbsplusplus.mixin;
 
+import gbeic.bbsplusplus.api.BoneOutlineHolder;
 import gbeic.bbsplusplus.api.BonePbrHolder;
 import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
+import gbeic.bbsplusplus.api.GlintSettingsHolder;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
@@ -19,31 +21,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * 给 {@link PoseTransform} 增加"骨骼纹理"链接字段（内存期）及其序列化/拷贝/相等钩子，
- * 与 BBScml 的 PoseTransform.texture 对齐。
+ * 为 {@link PoseTransform} 挂载逐骨骼的纹理、附魔光效、PBR 与描边参数，并把它们接入
+ * 序列化（{@code toData/fromData}）、拷贝（{@code copy}）、相等比较（{@code equals}）、
+ * 重置（{@code identity}）、插值（{@code lerp/autoLerp}）与叠加（{@code add}）。
  *
- * <p>注入点：
- * <ul>
- *   <li>{@code toData} TAIL —— 把 texture 写进 data（"texture" 键）；</li>
- *   <li>{@code fromData} TAIL —— 从 data 读取 texture（不存在则置 null）；</li>
- *   <li>{@code copy} TAIL —— 从源 transform 拷贝 texture；</li>
- *   <li>{@code equals} RETURN —— 原判定相等时再比较 texture（对齐 CML），
- *       防止"仅纹理不同"的两个 Pose 在值比较/关键帧去重场景被误判相等。</li>
- *   <li>{@code identity} TAIL —— 置空 texture（对齐 CML identity；同时防止
- *       PoseKeyframeFactory 共享插值缓存中残留上一次的纹理）；</li>
- *   <li>{@code lerp/autoLerp} TAIL —— 纹理不可插值，取"最近关键帧"的值
- *       （x&lt;0.5 取 a，否则取 b），等效 CML 运行期 getClosest 语义，使
- *       pose 关键帧轨道回放时骨骼纹理生效；</li>
- *   <li>{@code add} TAIL —— 叠加语义：源带纹理则覆盖（per-limb 骨骼通道
- *       应用链 FormProperties {@code transform.add(interpolated)} 的传播点）。</li>
- * </ul></p>
- *
- * <p>"附魔光效"（{@link GlintHolder}）与纹理走<b>完全相同的 8 处钩子</b>，唯一差别是
- * 布尔量不可插值：lerp/autoLerp 同样按"最近关键帧"取值。漏掉其中任意一处
- * （尤其是 equals 与 lerp）都会表现为"关键帧上光效闪烁或莫名丢失"。</p>
+ * <p>这些钩子必须成组维护：漏掉 {@code equals} 会让关键帧误判相等，漏掉
+ * {@code lerp/autoLerp} 会让回放时的参数丢失或闪烁。</p>
  */
 @Mixin(value = PoseTransform.class, remap = false)
-public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BonePbrHolder
+public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, GlintSettingsHolder, BonePbrHolder, BoneOutlineHolder
 {
     @Unique
     private Link bbspp_cml$texture;
@@ -54,6 +40,14 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
     /** 光效颜色，默认白色 = 原版观感。alpha 通道会一并乘进最终亮度。 */
     @Unique
     private final Color bbspp_cml$glintColor = new Color(1F, 1F, 1F, 1F);
+
+    /** 光效流动速度倍率，1 = 原速，0 = 静止。 */
+    @Unique
+    private float bbspp_cml$glintSpeed = GlintSettingsHolder.DEFAULT_SPEED;
+
+    /** 光效图层自发光强度，1 = 原始亮度。 */
+    @Unique
+    private float bbspp_cml$glintBrightness = GlintSettingsHolder.DEFAULT_BRIGHTNESS;
 
     /* PBR 五值（LabPBR specular channels），0~1，全 0 = 无 PBR。 */
     @Unique
@@ -70,6 +64,22 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
 
     @Unique
     private float bbspp_cml$pbrRelief;
+
+    /* 逐骨骼描边设置：跟随姿势/关键帧保存，不再写入 model config。 */
+    @Unique
+    private boolean bbspp_cml$outline;
+
+    @Unique
+    private final Color bbspp_cml$outlineColor = new Color(1F, 1F, 1F, 1F);
+
+    @Unique
+    private float bbspp_cml$outlineWidth = BoneOutlineHolder.DEFAULT_WIDTH;
+
+    @Unique
+    private float bbspp_cml$outlineGlow = BoneOutlineHolder.DEFAULT_GLOW;
+
+    @Unique
+    private float bbspp_cml$outlineDecalSize = BoneOutlineHolder.DEFAULT_DECAL;
 
     @Override
     public Link bbspp_cml$getTexture()
@@ -108,6 +118,36 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
         {
             this.bbspp_cml$glintColor.copy(color);
         }
+    }
+
+    @Override
+    public float bbspp_cml$getGlintSpeed()
+    {
+        return this.bbspp_cml$glintSpeed;
+    }
+
+    @Override
+    public void bbspp_cml$setGlintSpeed(float speed)
+    {
+        this.bbspp_cml$glintSpeed = clampGlintSetting(speed, GlintSettingsHolder.MAX_SPEED);
+    }
+
+    @Override
+    public float bbspp_cml$getGlintBrightness()
+    {
+        return this.bbspp_cml$glintBrightness;
+    }
+
+    @Override
+    public void bbspp_cml$setGlintBrightness(float brightness)
+    {
+        this.bbspp_cml$glintBrightness = clampGlintSetting(brightness, GlintSettingsHolder.MAX_BRIGHTNESS);
+    }
+
+    @Unique
+    private static float clampGlintSetting(float value, float max)
+    {
+        return Math.max(0F, Math.min(max, value));
     }
 
     /* ---- PBR getters / setters ---- */
@@ -172,6 +212,71 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
         this.bbspp_cml$pbrRelief = value;
     }
 
+    /* ---- outline getters / setters ---- */
+
+    @Override
+    public boolean bbspp_cml$getOutline()
+    {
+        return this.bbspp_cml$outline;
+    }
+
+    @Override
+    public void bbspp_cml$setOutline(boolean outline)
+    {
+        this.bbspp_cml$outline = outline;
+    }
+
+    @Override
+    public Color bbspp_cml$getOutlineColor()
+    {
+        return this.bbspp_cml$outlineColor;
+    }
+
+    @Override
+    public void bbspp_cml$setOutlineColor(Color color)
+    {
+        if (color != null)
+        {
+            this.bbspp_cml$outlineColor.copy(color);
+        }
+    }
+
+    @Override
+    public float bbspp_cml$getOutlineWidth()
+    {
+        return this.bbspp_cml$outlineWidth;
+    }
+
+    @Override
+    public void bbspp_cml$setOutlineWidth(float width)
+    {
+        this.bbspp_cml$outlineWidth = width;
+    }
+
+    @Override
+    public float bbspp_cml$getOutlineGlow()
+    {
+        return this.bbspp_cml$outlineGlow;
+    }
+
+    @Override
+    public void bbspp_cml$setOutlineGlow(float glow)
+    {
+        this.bbspp_cml$outlineGlow = glow;
+    }
+
+    @Override
+    public float bbspp_cml$getOutlineDecalSize()
+    {
+        return this.bbspp_cml$outlineDecalSize;
+    }
+
+    @Override
+    public void bbspp_cml$setOutlineDecalSize(float size)
+    {
+        this.bbspp_cml$outlineDecalSize = size;
+    }
+
     @Inject(method = "toData", at = @At("TAIL"), remap = false)
     private void bbspp_cml$writeTexture(MapType data, CallbackInfo ci)
     {
@@ -188,12 +293,39 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
         {
             data.putInt("glint_color", this.bbspp_cml$glintColor.getARGBColor());
         }
+        if (this.bbspp_cml$glintSpeed != GlintSettingsHolder.DEFAULT_SPEED)
+        {
+            data.putFloat("glint_speed", this.bbspp_cml$glintSpeed);
+        }
+        if (this.bbspp_cml$glintBrightness != GlintSettingsHolder.DEFAULT_BRIGHTNESS)
+        {
+            data.putFloat("glint_brightness", this.bbspp_cml$glintBrightness);
+        }
 
         if (this.bbspp_cml$pbrSmoothness != 0F) data.putFloat("pbr_smoothness", this.bbspp_cml$pbrSmoothness);
         if (this.bbspp_cml$pbrMetallic != 0F)  data.putFloat("pbr_metallic", this.bbspp_cml$pbrMetallic);
         if (this.bbspp_cml$pbrSss != 0F)       data.putFloat("pbr_sss", this.bbspp_cml$pbrSss);
         if (this.bbspp_cml$pbrEmission != 0F)  data.putFloat("pbr_emission", this.bbspp_cml$pbrEmission);
         if (this.bbspp_cml$pbrRelief != 0F)    data.putFloat("pbr_relief", this.bbspp_cml$pbrRelief);
+
+        boolean outlineData = this.bbspp_cml$outline
+            || this.bbspp_cml$outlineColor.getARGBColor() != 0xFFFFFFFF
+            || this.bbspp_cml$outlineWidth != BoneOutlineHolder.DEFAULT_WIDTH
+            || this.bbspp_cml$outlineGlow != BoneOutlineHolder.DEFAULT_GLOW
+            || this.bbspp_cml$outlineDecalSize != BoneOutlineHolder.DEFAULT_DECAL;
+
+        if (outlineData)
+        {
+            if (this.bbspp_cml$outline)
+            {
+                data.putBool("outline", true);
+            }
+
+            data.putInt("outline_color", this.bbspp_cml$outlineColor.getARGBColor());
+            data.putFloat("outline_width", this.bbspp_cml$outlineWidth);
+            data.putFloat("outline_glow", this.bbspp_cml$outlineGlow);
+            data.putFloat("outline_decal", this.bbspp_cml$outlineDecalSize);
+        }
     }
 
     @Inject(method = "fromData", at = @At("TAIL"), remap = false)
@@ -210,12 +342,25 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
 
         this.bbspp_cml$glint = data.getBool("glint");
         this.bbspp_cml$glintColor.set(data.getInt("glint_color", 0xFFFFFFFF));
+        this.bbspp_cml$glintSpeed = data.has("glint_speed")
+            ? data.getFloat("glint_speed") : GlintSettingsHolder.DEFAULT_SPEED;
+        this.bbspp_cml$glintBrightness = data.has("glint_brightness")
+            ? data.getFloat("glint_brightness") : GlintSettingsHolder.DEFAULT_BRIGHTNESS;
 
         this.bbspp_cml$pbrSmoothness = data.getFloat("pbr_smoothness");
         this.bbspp_cml$pbrMetallic = data.getFloat("pbr_metallic");
         this.bbspp_cml$pbrSss = data.getFloat("pbr_sss");
         this.bbspp_cml$pbrEmission = data.getFloat("pbr_emission");
         this.bbspp_cml$pbrRelief = data.getFloat("pbr_relief");
+
+        this.bbspp_cml$outline = data.getBool("outline");
+        this.bbspp_cml$outlineColor.set(data.getInt("outline_color", 0xFFFFFFFF));
+        this.bbspp_cml$outlineWidth = data.has("outline_width")
+            ? data.getFloat("outline_width") : BoneOutlineHolder.DEFAULT_WIDTH;
+        this.bbspp_cml$outlineGlow = data.has("outline_glow")
+            ? data.getFloat("outline_glow") : BoneOutlineHolder.DEFAULT_GLOW;
+        this.bbspp_cml$outlineDecalSize = data.has("outline_decal")
+            ? data.getFloat("outline_decal") : BoneOutlineHolder.DEFAULT_DECAL;
     }
 
     @Inject(method = "copy(Lmchorse/bbs_mod/utils/pose/Transform;)V", at = @At("TAIL"), remap = false)
@@ -232,6 +377,12 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
             this.bbspp_cml$glintColor.copy(holder.bbspp_cml$getGlintColor());
         }
 
+        if (transform instanceof GlintSettingsHolder holder)
+        {
+            this.bbspp_cml$glintSpeed = holder.bbspp_cml$getGlintSpeed();
+            this.bbspp_cml$glintBrightness = holder.bbspp_cml$getGlintBrightness();
+        }
+
         if (transform instanceof BonePbrHolder holder)
         {
             this.bbspp_cml$pbrSmoothness = holder.bbspp_cml$getSmoothness();
@@ -239,6 +390,15 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
             this.bbspp_cml$pbrSss = holder.bbspp_cml$getSss();
             this.bbspp_cml$pbrEmission = holder.bbspp_cml$getEmission();
             this.bbspp_cml$pbrRelief = holder.bbspp_cml$getRelief();
+        }
+
+        if (transform instanceof BoneOutlineHolder holder)
+        {
+            this.bbspp_cml$outline = holder.bbspp_cml$getOutline();
+            this.bbspp_cml$outlineColor.copy(holder.bbspp_cml$getOutlineColor());
+            this.bbspp_cml$outlineWidth = holder.bbspp_cml$getOutlineWidth();
+            this.bbspp_cml$outlineGlow = holder.bbspp_cml$getOutlineGlow();
+            this.bbspp_cml$outlineDecalSize = holder.bbspp_cml$getOutlineDecalSize();
         }
     }
 
@@ -267,6 +427,15 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
             }
         }
 
+        if (cir.getReturnValueZ() && obj instanceof GlintSettingsHolder holder)
+        {
+            if (Float.compare(this.bbspp_cml$glintSpeed, holder.bbspp_cml$getGlintSpeed()) != 0
+                || Float.compare(this.bbspp_cml$glintBrightness, holder.bbspp_cml$getGlintBrightness()) != 0)
+            {
+                cir.setReturnValue(false);
+            }
+        }
+
         if (cir.getReturnValueZ() && obj instanceof BonePbrHolder holder)
         {
             if (this.bbspp_cml$pbrSmoothness != holder.bbspp_cml$getSmoothness()
@@ -274,6 +443,18 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
                 || this.bbspp_cml$pbrSss != holder.bbspp_cml$getSss()
                 || this.bbspp_cml$pbrEmission != holder.bbspp_cml$getEmission()
                 || this.bbspp_cml$pbrRelief != holder.bbspp_cml$getRelief())
+            {
+                cir.setReturnValue(false);
+            }
+        }
+
+        if (cir.getReturnValueZ() && obj instanceof BoneOutlineHolder holder)
+        {
+            if (this.bbspp_cml$outline != holder.bbspp_cml$getOutline()
+                || this.bbspp_cml$outlineColor.getARGBColor() != holder.bbspp_cml$getOutlineColor().getARGBColor()
+                || this.bbspp_cml$outlineWidth != holder.bbspp_cml$getOutlineWidth()
+                || this.bbspp_cml$outlineGlow != holder.bbspp_cml$getOutlineGlow()
+                || this.bbspp_cml$outlineDecalSize != holder.bbspp_cml$getOutlineDecalSize())
             {
                 cir.setReturnValue(false);
             }
@@ -286,11 +467,19 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
         this.bbspp_cml$texture = null;
         this.bbspp_cml$glint = false;
         this.bbspp_cml$glintColor.set(0xFFFFFFFF);
+        this.bbspp_cml$glintSpeed = GlintSettingsHolder.DEFAULT_SPEED;
+        this.bbspp_cml$glintBrightness = GlintSettingsHolder.DEFAULT_BRIGHTNESS;
         this.bbspp_cml$pbrSmoothness = 0F;
         this.bbspp_cml$pbrMetallic = 0F;
         this.bbspp_cml$pbrSss = 0F;
         this.bbspp_cml$pbrEmission = 0F;
         this.bbspp_cml$pbrRelief = 0F;
+
+        this.bbspp_cml$outline = false;
+        this.bbspp_cml$outlineColor.set(0xFFFFFFFF);
+        this.bbspp_cml$outlineWidth = BoneOutlineHolder.DEFAULT_WIDTH;
+        this.bbspp_cml$outlineGlow = BoneOutlineHolder.DEFAULT_GLOW;
+        this.bbspp_cml$outlineDecalSize = BoneOutlineHolder.DEFAULT_DECAL;
     }
 
     @Inject(
@@ -320,6 +509,18 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
             );
         }
 
+        /* 光效速度/亮度是连续浮点，随关键帧插值。 */
+        if (preA instanceof GlintSettingsHolder preS && a instanceof GlintSettingsHolder curS
+            && b instanceof GlintSettingsHolder nextS && postB instanceof GlintSettingsHolder postS)
+        {
+            this.bbspp_cml$glintSpeed = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(
+                preS.bbspp_cml$getGlintSpeed(), curS.bbspp_cml$getGlintSpeed(),
+                nextS.bbspp_cml$getGlintSpeed(), postS.bbspp_cml$getGlintSpeed(), x)), 0F, GlintSettingsHolder.MAX_SPEED);
+            this.bbspp_cml$glintBrightness = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(
+                preS.bbspp_cml$getGlintBrightness(), curS.bbspp_cml$getGlintBrightness(),
+                nextS.bbspp_cml$getGlintBrightness(), postS.bbspp_cml$getGlintBrightness(), x)), 0F, GlintSettingsHolder.MAX_BRIGHTNESS);
+        }
+
         /* PBR 五值是连续浮点，可插值（与 glintColor 同构）。 */
         if (preA instanceof BonePbrHolder preP && a instanceof BonePbrHolder curP
             && b instanceof BonePbrHolder nextP && postB instanceof BonePbrHolder postP)
@@ -329,6 +530,35 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
             this.bbspp_cml$pbrSss = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preP.bbspp_cml$getSss(), curP.bbspp_cml$getSss(), nextP.bbspp_cml$getSss(), postP.bbspp_cml$getSss(), x)), 0F, 1F);
             this.bbspp_cml$pbrEmission = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preP.bbspp_cml$getEmission(), curP.bbspp_cml$getEmission(), nextP.bbspp_cml$getEmission(), postP.bbspp_cml$getEmission(), x)), 0F, 1F);
             this.bbspp_cml$pbrRelief = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preP.bbspp_cml$getRelief(), curP.bbspp_cml$getRelief(), nextP.bbspp_cml$getRelief(), postP.bbspp_cml$getRelief(), x)), 0F, 1F);
+        }
+
+        /* 描边开关按最近关键帧，颜色/宽度/辉光/细化可插值。 */
+        this.bbspp_cml$outline = bbspp_cml$closestOutline(a, b, x);
+
+        if (preA instanceof BoneOutlineHolder preO && a instanceof BoneOutlineHolder curO
+            && b instanceof BoneOutlineHolder nextO && postB instanceof BoneOutlineHolder postO)
+        {
+            Color preC = preO.bbspp_cml$getOutlineColor();
+            Color curC = curO.bbspp_cml$getOutlineColor();
+            Color nextC = nextO.bbspp_cml$getOutlineColor();
+            Color postC = postO.bbspp_cml$getOutlineColor();
+
+            this.bbspp_cml$outlineColor.set(
+                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preC.r, curC.r, nextC.r, postC.r, x)), 0F, 1F),
+                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preC.g, curC.g, nextC.g, postC.g, x)), 0F, 1F),
+                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preC.b, curC.b, nextC.b, postC.b, x)), 0F, 1F),
+                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preC.a, curC.a, nextC.a, postC.a, x)), 0F, 1F)
+            );
+
+            this.bbspp_cml$outlineWidth = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(
+                preO.bbspp_cml$getOutlineWidth(), curO.bbspp_cml$getOutlineWidth(),
+                nextO.bbspp_cml$getOutlineWidth(), postO.bbspp_cml$getOutlineWidth(), x)), 0F, 10F);
+            this.bbspp_cml$outlineGlow = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(
+                preO.bbspp_cml$getOutlineGlow(), curO.bbspp_cml$getOutlineGlow(),
+                nextO.bbspp_cml$getOutlineGlow(), postO.bbspp_cml$getOutlineGlow(), x)), 0F, 255F);
+            this.bbspp_cml$outlineDecalSize = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(
+                preO.bbspp_cml$getOutlineDecalSize(), curO.bbspp_cml$getOutlineDecalSize(),
+                nextO.bbspp_cml$getOutlineDecalSize(), postO.bbspp_cml$getOutlineDecalSize(), x)), 0F, 16F);
         }
     }
 
@@ -359,6 +589,20 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
             );
         }
 
+        /* 光效速度/亮度的 AutoBezier 插值。 */
+        if (preA instanceof GlintSettingsHolder preS && a instanceof GlintSettingsHolder curS
+            && b instanceof GlintSettingsHolder nextS && postB instanceof GlintSettingsHolder postS)
+        {
+            this.bbspp_cml$glintSpeed = (float) MathUtils.clamp(AutoBezier.get(
+                preS.bbspp_cml$getGlintSpeed(), curS.bbspp_cml$getGlintSpeed(),
+                nextS.bbspp_cml$getGlintSpeed(), postS.bbspp_cml$getGlintSpeed(),
+                pt, at, bt, qt, clamped, x), 0F, GlintSettingsHolder.MAX_SPEED);
+            this.bbspp_cml$glintBrightness = (float) MathUtils.clamp(AutoBezier.get(
+                preS.bbspp_cml$getGlintBrightness(), curS.bbspp_cml$getGlintBrightness(),
+                nextS.bbspp_cml$getGlintBrightness(), postS.bbspp_cml$getGlintBrightness(),
+                pt, at, bt, qt, clamped, x), 0F, GlintSettingsHolder.MAX_BRIGHTNESS);
+        }
+
         /* PBR 五值的 AutoBezier 插值。 */
         if (preA instanceof BonePbrHolder preP && a instanceof BonePbrHolder curP
             && b instanceof BonePbrHolder nextP && postB instanceof BonePbrHolder postP)
@@ -368,6 +612,38 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
             this.bbspp_cml$pbrSss = (float) MathUtils.clamp(AutoBezier.get(preP.bbspp_cml$getSss(), curP.bbspp_cml$getSss(), nextP.bbspp_cml$getSss(), postP.bbspp_cml$getSss(), pt, at, bt, qt, clamped, x), 0F, 1F);
             this.bbspp_cml$pbrEmission = (float) MathUtils.clamp(AutoBezier.get(preP.bbspp_cml$getEmission(), curP.bbspp_cml$getEmission(), nextP.bbspp_cml$getEmission(), postP.bbspp_cml$getEmission(), pt, at, bt, qt, clamped, x), 0F, 1F);
             this.bbspp_cml$pbrRelief = (float) MathUtils.clamp(AutoBezier.get(preP.bbspp_cml$getRelief(), curP.bbspp_cml$getRelief(), nextP.bbspp_cml$getRelief(), postP.bbspp_cml$getRelief(), pt, at, bt, qt, clamped, x), 0F, 1F);
+        }
+
+        /* 描边开关按最近关键帧，颜色/宽度/辉光/细化可插值。 */
+        this.bbspp_cml$outline = bbspp_cml$closestOutline(a, b, x);
+
+        if (preA instanceof BoneOutlineHolder preO && a instanceof BoneOutlineHolder curO
+            && b instanceof BoneOutlineHolder nextO && postB instanceof BoneOutlineHolder postO)
+        {
+            Color preC = preO.bbspp_cml$getOutlineColor();
+            Color curC = curO.bbspp_cml$getOutlineColor();
+            Color nextC = nextO.bbspp_cml$getOutlineColor();
+            Color postC = postO.bbspp_cml$getOutlineColor();
+
+            this.bbspp_cml$outlineColor.set(
+                (float) MathUtils.clamp(AutoBezier.get(preC.r, curC.r, nextC.r, postC.r, pt, at, bt, qt, clamped, x), 0F, 1F),
+                (float) MathUtils.clamp(AutoBezier.get(preC.g, curC.g, nextC.g, postC.g, pt, at, bt, qt, clamped, x), 0F, 1F),
+                (float) MathUtils.clamp(AutoBezier.get(preC.b, curC.b, nextC.b, postC.b, pt, at, bt, qt, clamped, x), 0F, 1F),
+                (float) MathUtils.clamp(AutoBezier.get(preC.a, curC.a, nextC.a, postC.a, pt, at, bt, qt, clamped, x), 0F, 1F)
+            );
+
+            this.bbspp_cml$outlineWidth = (float) MathUtils.clamp(AutoBezier.get(
+                preO.bbspp_cml$getOutlineWidth(), curO.bbspp_cml$getOutlineWidth(),
+                nextO.bbspp_cml$getOutlineWidth(), postO.bbspp_cml$getOutlineWidth(),
+                pt, at, bt, qt, clamped, x), 0F, 10F);
+            this.bbspp_cml$outlineGlow = (float) MathUtils.clamp(AutoBezier.get(
+                preO.bbspp_cml$getOutlineGlow(), curO.bbspp_cml$getOutlineGlow(),
+                nextO.bbspp_cml$getOutlineGlow(), postO.bbspp_cml$getOutlineGlow(),
+                pt, at, bt, qt, clamped, x), 0F, 255F);
+            this.bbspp_cml$outlineDecalSize = (float) MathUtils.clamp(AutoBezier.get(
+                preO.bbspp_cml$getOutlineDecalSize(), curO.bbspp_cml$getOutlineDecalSize(),
+                nextO.bbspp_cml$getOutlineDecalSize(), postO.bbspp_cml$getOutlineDecalSize(),
+                pt, at, bt, qt, clamped, x), 0F, 16F);
         }
     }
 
@@ -401,6 +677,18 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
             }
         }
 
+        if (transform instanceof GlintSettingsHolder holder)
+        {
+            if (holder.bbspp_cml$getGlintSpeed() != GlintSettingsHolder.DEFAULT_SPEED)
+            {
+                this.bbspp_cml$glintSpeed = holder.bbspp_cml$getGlintSpeed();
+            }
+            if (holder.bbspp_cml$getGlintBrightness() != GlintSettingsHolder.DEFAULT_BRIGHTNESS)
+            {
+                this.bbspp_cml$glintBrightness = holder.bbspp_cml$getGlintBrightness();
+            }
+        }
+
         /* PBR 叠加：源任一值 > 0 则覆盖（与材质级 hasPbr 语义一致）。 */
         if (transform instanceof BonePbrHolder holder)
         {
@@ -409,6 +697,16 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
             if (holder.bbspp_cml$getSss() > 0F)       this.bbspp_cml$pbrSss = holder.bbspp_cml$getSss();
             if (holder.bbspp_cml$getEmission() > 0F)  this.bbspp_cml$pbrEmission = holder.bbspp_cml$getEmission();
             if (holder.bbspp_cml$getRelief() > 0F)    this.bbspp_cml$pbrRelief = holder.bbspp_cml$getRelief();
+        }
+
+        /* 描边叠加：源开启则连同参数一起覆盖。 */
+        if (transform instanceof BoneOutlineHolder holder && holder.bbspp_cml$getOutline())
+        {
+            this.bbspp_cml$outline = true;
+            this.bbspp_cml$outlineColor.copy(holder.bbspp_cml$getOutlineColor());
+            this.bbspp_cml$outlineWidth = holder.bbspp_cml$getOutlineWidth();
+            this.bbspp_cml$outlineGlow = holder.bbspp_cml$getOutlineGlow();
+            this.bbspp_cml$outlineDecalSize = holder.bbspp_cml$getOutlineDecalSize();
         }
     }
 
@@ -427,5 +725,14 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, BoneP
         mchorse.bbs_mod.utils.pose.Transform closest = x < 0.5F ? a : b;
 
         return closest instanceof GlintHolder holder && holder.bbspp_cml$getGlint();
+    }
+
+    /** 描边开关同样取"最近关键帧"的值。 */
+    @Unique
+    private static boolean bbspp_cml$closestOutline(mchorse.bbs_mod.utils.pose.Transform a, mchorse.bbs_mod.utils.pose.Transform b, float x)
+    {
+        mchorse.bbs_mod.utils.pose.Transform closest = x < 0.5F ? a : b;
+
+        return closest instanceof BoneOutlineHolder holder && holder.bbspp_cml$getOutline();
     }
 }

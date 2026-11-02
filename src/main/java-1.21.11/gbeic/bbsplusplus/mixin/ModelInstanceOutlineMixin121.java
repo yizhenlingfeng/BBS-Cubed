@@ -1,6 +1,5 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.client.outline.OutlineConfigHolder;
 import gbeic.bbsplusplus.client.outline.OutlineRenderer121;
 import mchorse.bbs_mod.cubic.IModel;
 import mchorse.bbs_mod.cubic.ModelInstance;
@@ -69,23 +68,23 @@ public abstract class ModelInstanceOutlineMixin121
 
     private void bbspp$renderColor(MatrixStack stack, Color color)
     {
-        if (!(this.model instanceof Model model) || !(this.config instanceof OutlineConfigHolder outline))
+        if (!(this.model instanceof Model model) || this.config == null)
         {
             return;
         }
 
-        OutlineRenderer121.render(stack, model, this.config, outline, color,
+        OutlineRenderer121.render(stack, model, this.config, color,
             bbspp$texture(), bbspp$materialVisible());
     }
 
     private void bbspp$renderDepth(MatrixStack stack, Color color)
     {
-        if (!(this.model instanceof Model model) || !(this.config instanceof OutlineConfigHolder outline))
+        if (!(this.model instanceof Model model) || this.config == null)
         {
             return;
         }
 
-        OutlineRenderer121.renderDepth(stack, model, this.config, outline, color,
+        OutlineRenderer121.renderDepth(stack, model, this.config, color,
             bbspp$texture(), bbspp$materialVisible());
     }
 

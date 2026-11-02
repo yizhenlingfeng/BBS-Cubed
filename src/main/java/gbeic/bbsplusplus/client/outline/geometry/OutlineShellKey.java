@@ -1,7 +1,6 @@
 package gbeic.bbsplusplus.client.outline.geometry;
 
-import gbeic.bbsplusplus.client.outline.OutlineConfigHolder;
-import gbeic.bbsplusplus.client.outline.OutlineLimbValue;
+import gbeic.bbsplusplus.api.GroupOutlineHolder;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelCube;
@@ -15,7 +14,6 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -39,13 +37,13 @@ public final class OutlineShellKey
     {
     }
 
-    public static Key of(Model model, ModelConfig config, OutlineConfigHolder outline, Link textureLink,
-                         Predicate<String> materialVisible)
+    public static Key of(Model model, ModelConfig config, Link textureLink, Predicate<String> materialVisible)
     {
         Predicate<String> visible = materialVisible == null ? material -> true : materialVisible;
         Map<String, Boolean> visibility = new HashMap<>();
         long pose = SEED;
         long geometry = SEED;
+        long outline = SEED;
 
         for (ModelGroup group : model.getAllGroups())
         {
@@ -64,6 +62,15 @@ public final class OutlineShellKey
             pose = pose * 31 + (group.orient == null ? 0 : group.orient.hashCode());
             pose = pose * 31 + (group.offset == null ? 0 : group.offset.hashCode());
 
+            GroupOutlineHolder holder = (GroupOutlineHolder) group;
+
+            outline = outline * 31 + stringHash(group.id);
+            outline = outline * 31 + (holder.bbspp_cml$getOutline() ? 1 : 0);
+            outline = outline * 31 + holder.bbspp_cml$getOutlineColor().getARGBColor();
+            outline = outline * 31 + Float.floatToIntBits(holder.bbspp_cml$getOutlineWidth());
+            outline = outline * 31 + Float.floatToIntBits(holder.bbspp_cml$getOutlineGlow());
+            outline = outline * 31 + Float.floatToIntBits(holder.bbspp_cml$getOutlineDecalSize());
+
             geometry = geometry * 31 + stringHash(group.id);
 
             if (group.cubes == null)
@@ -79,32 +86,7 @@ public final class OutlineShellKey
 
         long hash = pose;
         hash = hash * 31 + geometry;
-        hash = hash * 31 + (outline.bbspp$isOutlineEnabled() ? 1 : 0);
-        hash = hash * 31 + outline.bbspp$getOutlineColor();
-        hash = hash * 31 + Float.floatToIntBits(outline.bbspp$getOutlineWidth());
-        hash = hash * 31 + Float.floatToIntBits(outline.bbspp$getOutlineGlow());
-        hash = hash * 31 + Float.floatToIntBits(outline.bbspp$getOutlineDecalSize());
-
-        List<OutlineLimbValue> limbs = outline.bbspp$getOutlineLimbs();
-
-        if (limbs != null)
-        {
-            hash = hash * 31 + limbs.size();
-
-            for (OutlineLimbValue limb : limbs)
-            {
-                if (limb == null)
-                {
-                    continue;
-                }
-
-                hash = hash * 31 + stringHash(limb.bone.get());
-                hash = hash * 31 + limb.color.get().getARGBColor();
-                hash = hash * 31 + Float.floatToIntBits(limb.width.get());
-                hash = hash * 31 + Float.floatToIntBits(limb.glow.get());
-            }
-        }
-
+        hash = hash * 31 + outline;
         hash = hash * 31 + (config == null ? 0 : OutlineGeometry.weldTable(config).hashCode());
 
         Texture texture = textureLink == null ? null : BBSModClient.getTextures().getTexture(textureLink);

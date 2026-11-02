@@ -1,12 +1,15 @@
 package gbeic.bbsplusplus.mixin.client;
 
+import gbeic.bbsplusplus.api.BoneOutlineHolder;
 import gbeic.bbsplusplus.api.BonePbrHolder;
 import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.PickTextureButtonHolder;
+import gbeic.bbsplusplus.client.outline.OutlineEmissiveTexture;
 import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.cubic.IBoneHierarchy;
 import mchorse.bbs_mod.l10n.L10n;
+import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.IValueListener;
 import mchorse.bbs_mod.settings.values.core.ValuePose;
@@ -20,11 +23,13 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
 import mchorse.bbs_mod.ui.framework.elements.input.UISliderTrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker;
+import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.pose.UIPoseEditor;
+import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.PoseTransform;
 import mchorse.bbs_mod.utils.resources.LinkUtils;
@@ -36,6 +41,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Collection;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -86,6 +92,27 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     /* PBR 折叠栏：五个滑条，与材质栏同构，插在材质栏与骨骼纹理按钮之间。 */
     @Unique
     private UISection bbspp_cml$pbrSection;
+
+    @Unique
+    private UISection bbspp_cml$outlineSection;
+
+    @Unique
+    private UIToggle bbspp_cml$outline;
+
+    @Unique
+    private UIColor bbspp_cml$outlineColor;
+
+    @Unique
+    private UITrackpad bbspp_cml$outlineWidth;
+
+    @Unique
+    private UITrackpad bbspp_cml$outlineGlow;
+
+    @Unique
+    private UITrackpad bbspp_cml$outlineDecal;
+
+    @Unique
+    private UISection bbspp_cml$glintSection;
 
     @Unique
     private UISliderTrackpad bbspp_cml$pbrSmoothness;
@@ -168,13 +195,74 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             UI.labelRow(UIKeys.FORMS_EDITORS_MATERIAL_RELIEF, this.bbspp_cml$pbrRelief)
         );
 
-        /* PBR 栏与骨骼纹理按钮插入到材质栏正下方，而非面板末尾。 */
+        /* ---- 描边折叠栏（逐骨骼，插在 PBR 下方） ---- */
+        this.bbspp_cml$outline = new UIToggle(L10n.lang("bbs.ui.model_editor.outline.all"), false, (toggle) ->
+        {
+            this.bbspp_cml$applyOutlineToSelection(self, toggle.getValue());
+        });
+        this.bbspp_cml$outline.h(20);
+
+        /* 与光效/定位一致：开关右键可把开启状态扩散到整条肢体链。 */
+        this.bbspp_cml$outline.context((ContextMenuManager manager) ->
+        {
+            manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
+            {
+                this.bbspp_cml$applyOutlineToChildren(self, this.bbspp_cml$outline.getValue());
+            });
+        });
+
+        this.bbspp_cml$outlineColor = new UIColor((argb) ->
+        {
+            this.bbspp_cml$applyOutlineColorToSelection(self, argb == null ? 0xFFFFFFFF : argb);
+            OutlineEmissiveTexture.invalidate();
+        });
+        this.bbspp_cml$outlineColor.withAlpha().direction(Direction.LEFT);
+        this.bbspp_cml$outlineColor.h(20);
+
+        this.bbspp_cml$outlineColor.context((ContextMenuManager manager) ->
+        {
+            manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
+            {
+                this.bbspp_cml$applyOutlineColorToChildren(self);
+            });
+        });
+
+        this.bbspp_cml$outlineWidth = this.bbspp_cml$createOutlineTrackpad(self, 0D, 10D,
+            L10n.lang("bbs.ui.model_editor.outline.width.tooltip"),
+            (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineWidth(v));
+        this.bbspp_cml$outlineGlow = this.bbspp_cml$createOutlineTrackpad(self, 0D, 255D,
+            L10n.lang("bbs.ui.model_editor.outline.glow.tooltip"),
+            (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineGlow(v));
+        this.bbspp_cml$outlineDecal = this.bbspp_cml$createOutlineTrackpad(self, 0D, 16D,
+            L10n.lang("bbs.ui.model_editor.outline.decal_size.tooltip"),
+            (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineDecalSize(v));
+
+        this.bbspp_cml$outlineSection = new UISection(L10n.lang("bbs.ui.model_editor.outline"));
+        this.bbspp_cml$outlineSection.setExpanded(false);
+        this.bbspp_cml$outlineSection.fields.add(
+            UI.row(this.bbspp_cml$outline),
+            UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.color"), this.bbspp_cml$outlineColor),
+            UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.width"), this.bbspp_cml$outlineWidth),
+            UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.glow"), this.bbspp_cml$outlineGlow),
+            UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.decal_size"), this.bbspp_cml$outlineDecal)
+        );
+
+        /* ---- 附魔光效折叠栏（插在描边下方） ---- */
+        this.bbspp_cml$glintSection = new UISection(L10n.lang("bbs.ui.pose.section_glint"));
+        this.bbspp_cml$glintSection.setExpanded(false);
+        this.bbspp_cml$glintSection.fields.add(
+            UI.row(this.bbspp_cml$glint),
+            UI.labelRow(L10n.lang("bbs.ui.pose.glint_color"), this.bbspp_cml$glintColor)
+        );
+
+        /* PBR / 描边 / 光效栏与骨骼纹理按钮插入到材质栏正下方，而非面板末尾。 */
         this.bbspp_cml$attachAfterMaterial();
 
-        /* glint 开关/取色器由 refreshGlintButton 按设置显隐（BBS 布局不跳过不可见元素，
+        /* glint 折叠栏由 refreshGlintButton 按设置显隐（BBS 布局不跳过不可见元素，
          * 隐藏时必须 removeFromParent，否则留空白）。 */
         this.bbspp_cml$refreshBoneTextureButton();
         this.bbspp_cml$refreshGlintButton();
+        this.bbspp_cml$syncOutlineControls();
     }
 
     /** 换姿势 / 换选中的骨骼时，把开关与颜色同步成当前骨骼的实际状态。 */
@@ -183,6 +271,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     {
         this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$syncPbrSliders();
+        this.bbspp_cml$syncOutlineControls();
     }
 
     /**
@@ -201,10 +290,11 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$attachAfterMaterial();
         this.bbspp_cml$refreshGlintButton();
         this.bbspp_cml$refreshBoneTextureButton();
+        this.bbspp_cml$syncOutlineControls();
     }
 
     /**
-     * 把 PBR 折叠栏与骨骼纹理按钮插入到材质栏正下方。
+     * 把 PBR、描边、附魔光效折叠栏与骨骼纹理按钮插入到材质栏正下方。
      * 通过 material.getParent() 统一拿到直接父容器，wide / narrow 两种布局均适用。
      */
     @Unique
@@ -212,7 +302,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     {
         UIPoseEditor self = (UIPoseEditor) (Object) this;
 
-        if (self.material == null)
+        if (self.material == null || this.bbspp_cml$pbrSection == null || this.bbspp_cml$outlineSection == null)
         {
             return;
         }
@@ -225,19 +315,36 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         }
 
         /* 先从旧父容器移除（如果已经挂载过），避免重复。 */
-        if (this.bbspp_cml$pbrSection.getParent() != null)
+        for (UIElement element : new UIElement[] {
+            this.bbspp_cml$pbrSection, this.bbspp_cml$outlineSection,
+            this.bbspp_cml$glintSection, this.bbspp_cml$pickTexture
+        })
         {
-            this.bbspp_cml$pbrSection.removeFromParent();
+            if (element != null && element.getParent() != null)
+            {
+                element.removeFromParent();
+            }
         }
 
-        if (this.bbspp_cml$pickTexture != null && this.bbspp_cml$pickTexture.getParent() != null)
-        {
-            this.bbspp_cml$pickTexture.removeFromParent();
-        }
+        boolean glint = this.bbspp_cml$glintSection != null
+            && ModSettings.enchantGlint != null && ModSettings.enchantGlint.get();
 
-        /* 在材质栏后面依次插入 PBR 栏、骨骼纹理按钮。 */
+        /* 在材质栏后面依次插入 PBR 栏、描边栏、附魔光效栏、骨骼纹理按钮。 */
         parent.addAfter(self.material, this.bbspp_cml$pbrSection);
-        parent.addAfter(this.bbspp_cml$pbrSection, this.bbspp_cml$pickTexture);
+        parent.addAfter(this.bbspp_cml$pbrSection, this.bbspp_cml$outlineSection);
+
+        UIElement last = this.bbspp_cml$outlineSection;
+
+        if (glint)
+        {
+            parent.addAfter(last, this.bbspp_cml$glintSection);
+            last = this.bbspp_cml$glintSection;
+        }
+
+        if (this.bbspp_cml$pickTexture != null)
+        {
+            parent.addAfter(last, this.bbspp_cml$pickTexture);
+        }
     }
 
     @Inject(method = "selectBone(Ljava/lang/String;)V", at = @At("TAIL"), remap = false)
@@ -245,6 +352,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     {
         this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$syncPbrSliders();
+        this.bbspp_cml$syncOutlineControls();
     }
 
     @Inject(method = "selectBone(Ljava/lang/String;Z)V", at = @At("TAIL"), remap = false)
@@ -252,6 +360,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     {
         this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$syncPbrSliders();
+        this.bbspp_cml$syncOutlineControls();
     }
 
     @Unique
@@ -526,55 +635,132 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         }
 
         this.bbspp_cml$syncGlintToggle();
+        this.bbspp_cml$syncOutlineControls();
     }
 
     @Unique
     private void bbspp_cml$refreshGlintButton()
     {
-        if (this.bbspp_cml$glint == null)
+        if (this.bbspp_cml$glintSection == null)
         {
             return;
         }
 
-        UIPoseEditor self = (UIPoseEditor) (Object) this;
         boolean enabled = ModSettings.enchantGlint != null && ModSettings.enchantGlint.get();
 
         /* BBS ColumnResizer 布局不跳过不可见元素：隐藏时必须真的从父容器移除，
          * 否则即使 setVisible(false) 也会在面板上留一块空白。 */
         if (enabled)
         {
-            if (this.bbspp_cml$glint.getParent() == null)
-            {
-                self.add(this.bbspp_cml$glint);
-            }
-
-            if (this.bbspp_cml$glintColor != null && this.bbspp_cml$glintColor.getParent() == null)
-            {
-                self.add(this.bbspp_cml$glintColor);
-            }
-
-            this.bbspp_cml$glint.setVisible(true);
-
-            if (this.bbspp_cml$glintColor != null)
-            {
-                this.bbspp_cml$glintColor.setVisible(true);
-            }
-
+            this.bbspp_cml$glintSection.setVisible(true);
+            this.bbspp_cml$attachAfterMaterial();
             this.bbspp_cml$syncGlintToggle();
         }
-        else
+        else if (this.bbspp_cml$glintSection.getParent() != null)
         {
-            if (this.bbspp_cml$glint.getParent() != null)
-            {
-                this.bbspp_cml$glint.removeFromParent();
-            }
-
-            if (this.bbspp_cml$glintColor != null && this.bbspp_cml$glintColor.getParent() != null)
-            {
-                this.bbspp_cml$glintColor.removeFromParent();
-            }
+            this.bbspp_cml$glintSection.removeFromParent();
         }
     }
+
+    @Unique
+    private void bbspp_cml$syncOutlineControls()
+    {
+        if (this.bbspp_cml$outline == null)
+        {
+            return;
+        }
+
+        UIPoseEditor self = (UIPoseEditor) (Object) this;
+        PoseTransform current = this.bbspp_cml$getCurrentPoseTransform(self);
+        BoneOutlineHolder holder = current == null ? null : (BoneOutlineHolder) current;
+
+        this.bbspp_cml$outline.setValue(holder != null && holder.bbspp_cml$getOutline());
+        this.bbspp_cml$outlineColor.setColor(holder == null
+            ? 0xFFFFFFFF
+            : holder.bbspp_cml$getOutlineColor().getARGBColor());
+        this.bbspp_cml$outlineWidth.setValue(holder == null
+            ? BoneOutlineHolder.DEFAULT_WIDTH
+            : holder.bbspp_cml$getOutlineWidth());
+        this.bbspp_cml$outlineGlow.setValue(holder == null
+            ? BoneOutlineHolder.DEFAULT_GLOW
+            : holder.bbspp_cml$getOutlineGlow());
+        this.bbspp_cml$outlineDecal.setValue(holder == null
+            ? BoneOutlineHolder.DEFAULT_DECAL
+            : holder.bbspp_cml$getOutlineDecalSize());
+    }
+
+    @Unique
+    private void bbspp_cml$applyOutlineToSelection(UIPoseEditor self, boolean value)
+    {
+        this.bbspp_cml$writeToSelection(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutline(value);
+        });
+    }
+
+    @Unique
+    private void bbspp_cml$applyOutlineColorToSelection(UIPoseEditor self, int argb)
+    {
+        this.bbspp_cml$writeToSelection(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$getOutlineColor().set(argb);
+        });
+    }
+
+    @Unique
+    private void bbspp_cml$applyOutlineToChildren(UIPoseEditor self, boolean value)
+    {
+        this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutline(value);
+        });
+    }
+
+    @Unique
+    private void bbspp_cml$applyOutlineColorToChildren(UIPoseEditor self)
+    {
+        if (this.bbspp_cml$outlineColor == null)
+        {
+            return;
+        }
+
+        int argb = this.bbspp_cml$outlineColor.picker.color.getARGBColor();
+
+        this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$getOutlineColor().set(argb);
+        });
+
+        OutlineEmissiveTexture.invalidate();
+    }
+
+    @Unique
+    private UITrackpad bbspp_cml$createOutlineTrackpad(UIPoseEditor self, double min, double max, IKey tooltip,
+                                                       BiConsumer<PoseTransform, Float> setter)
+    {
+        UITrackpad trackpad = new UITrackpad((v) ->
+        {
+            float value = v.floatValue();
+            this.bbspp_cml$writeToSelection(self, (poseT) -> setter.accept(poseT, value));
+        });
+
+        trackpad.limit(min, max);
+        trackpad.increment(1D);
+        trackpad.delayedInput();
+        trackpad.tooltip(tooltip, Direction.LEFT);
+
+        trackpad.context((ContextMenuManager manager) ->
+        {
+            manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
+            {
+                float value = (float) trackpad.getValue();
+                this.bbspp_cml$forEachSelectedChildren(self, (poseT) -> setter.accept(poseT, value));
+            });
+        });
+
+        return trackpad;
+    }
+
     @Unique
     private void bbspp_cml$refreshBoneTextureButton()
     {
@@ -593,7 +779,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
      * 右键菜单"应用到子骨骼"。
      */
     @Unique
-    private UISliderTrackpad bbspp_cml$createPbrSlider(UIPoseEditor self, java.util.function.BiConsumer<PoseTransform, Float> setter)
+    private UISliderTrackpad bbspp_cml$createPbrSlider(UIPoseEditor self, BiConsumer<PoseTransform, Float> setter)
     {
         UISliderTrackpad slider = new UISliderTrackpad((v) ->
         {

@@ -16,15 +16,15 @@ import java.util.Set;
  * own outline. Eyes, brows, pupils and similar decals sit on (or just inside) the head; a rim
  * around each of them reads as a ring floating inside the face.
  *
- * <p>A cube is skipped when its largest axis is at most {@code maxDetailSize} model pixels, it has
+ * <p>A cube is skipped when its largest axis is at most its bone's detail threshold, it has
  * positive volume, and another cube with at least eight times its volume contains it (with half a
- * model pixel of tolerance). Setting the decal size to 0 disables the filter.</p>
+ * model pixel of tolerance). A bone with a threshold of 0 disables the filter for its cubes.</p>
  *
  * <p>The old implementation re-scanned every cube for every candidate and allocated a fresh
  * {@code float[6]} for every (detail, host) pair, which is O(n&sup2;) allocations per call and was
  * run twice per frame. This version precomputes flat bounds once, pre-sorts candidate hosts by
- * volume, and caches the result per model until the cube geometry changes. The result set is
- * immutable, so callers can safely share it.</p>
+ * volume, and caches the result per model until the cube geometry or the per-bone thresholds
+ * change. The result set is immutable, so callers can safely share it.</p>
  */
 public final class OutlineDecalFilter
 {
@@ -40,38 +40,62 @@ public final class OutlineDecalFilter
     {
     }
 
-    private record CacheEntry(float size, long fingerprint, Set<ModelCube> details)
+    private record CacheEntry(long sizesHash, long fingerprint, Set<ModelCube> details)
     {
     }
 
-    public static Set<ModelCube> find(Model model, float maxDetailSize)
+    /**
+     * @param sizes bone -> decal/detail threshold in model pixels; bones absent from the map keep
+     *              their small cubes (no filtering)
+     */
+    public static Set<ModelCube> find(Model model, Map<String, Float> sizes)
     {
-        if (model == null || maxDetailSize <= 0F)
+        if (model == null || sizes == null || sizes.isEmpty())
         {
             return Collections.emptySet();
         }
 
+        long sizesHash = sizesHash(sizes);
         long fingerprint = fingerprint(model);
         CacheEntry entry = CACHE.get(model);
 
-        if (entry != null && entry.size == maxDetailSize && entry.fingerprint == fingerprint)
+        if (entry != null && entry.sizesHash == sizesHash && entry.fingerprint == fingerprint)
         {
             return entry.details;
         }
 
-        Set<ModelCube> details = compute(model, maxDetailSize);
+        Set<ModelCube> details = compute(model, sizes);
 
         if (CACHE.size() >= MAX_MODELS)
         {
             CACHE.clear();
         }
 
-        CACHE.put(model, new CacheEntry(maxDetailSize, fingerprint, details));
+        CACHE.put(model, new CacheEntry(sizesHash, fingerprint, details));
 
         return details;
     }
 
-    /** Cheap O(n) signature of everything {@link #compute} depends on. */
+    private static long sizesHash(Map<String, Float> sizes)
+    {
+        /* Order independent: group iteration order can change without changing the result. */
+        long hash = 1125899906842597L;
+
+        for (Map.Entry<String, Float> entry : sizes.entrySet())
+        {
+            String bone = entry.getKey();
+            Float size = entry.getValue();
+
+            long part = bone == null ? 0 : bone.hashCode();
+            part = part * 31 + Float.floatToIntBits(size == null ? 0F : size);
+
+            hash += part * 0x9E3779B97F4A7C15L;
+        }
+
+        return hash;
+    }
+
+    /** Cheap O(n) signature of everything {@link #compute} depends on besides the thresholds. */
     private static long fingerprint(Model model)
     {
         long hash = 1125899906842597L;
@@ -82,6 +106,8 @@ public final class OutlineDecalFilter
             {
                 continue;
             }
+
+            hash = hash * 31 + (group.id == null ? 0 : group.id.hashCode());
 
             for (ModelCube cube : group.cubes)
             {
@@ -103,16 +129,20 @@ public final class OutlineDecalFilter
         return hash;
     }
 
-    private static Set<ModelCube> compute(Model model, float maxDetailSize)
+    private static Set<ModelCube> compute(Model model, Map<String, Float> sizes)
     {
         List<ModelCube> all = new ArrayList<>();
+        List<Float> limits = new ArrayList<>();
 
         for (ModelGroup group : model.getAllGroups())
         {
-            if (group == null || group.cubes == null)
+            if (group == null || group.cubes == null || group.id == null)
             {
                 continue;
             }
+
+            Float limit = sizes.get(group.id);
+            float size = limit == null ? 0F : limit;
 
             for (ModelCube cube : group.cubes)
             {
@@ -122,6 +152,7 @@ public final class OutlineDecalFilter
                 }
 
                 all.add(cube);
+                limits.add(size);
             }
         }
 
@@ -143,6 +174,7 @@ public final class OutlineDecalFilter
         for (int i = 0; i < count; i++)
         {
             ModelCube cube = all.get(i);
+            float limit = limits.get(i);
 
             bounds[i * 6] = Math.min(cube.origin.x - cube.inflate, cube.origin.x + cube.size.x + cube.inflate);
             bounds[i * 6 + 1] = Math.min(cube.origin.y - cube.inflate, cube.origin.y + cube.size.y + cube.inflate);
@@ -156,7 +188,7 @@ public final class OutlineDecalFilter
             maxAxis[i] = Math.max(Math.abs(cube.size.x), Math.max(Math.abs(cube.size.y), Math.abs(cube.size.z)));
             detailVolume[i] = Math.abs(cube.size.x) * Math.abs(cube.size.y) * Math.abs(cube.size.z);
 
-            if (detailVolume[i] > 0F && maxAxis[i] <= maxDetailSize)
+            if (limit > 0F && detailVolume[i] > 0F && maxAxis[i] <= limit)
             {
                 isDetail[i] = true;
                 detailCount++;

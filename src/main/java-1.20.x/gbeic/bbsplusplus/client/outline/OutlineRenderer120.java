@@ -58,7 +58,7 @@ public final class OutlineRenderer120
     private static final Matrix4f IDENTITY = new Matrix4f();
 
     /** HEAD/RETURN pairing for the cached path. Nested renders pair like a stack. */
-    private record Prepared(Model model, ModelConfig config, OutlineShellCache.Entry entry, int generation)
+    private record Prepared(Model model, ModelConfig config, OutlineShellCache.Entry entry, int generation, boolean skipDepth)
     {
     }
 
@@ -72,31 +72,39 @@ public final class OutlineRenderer120
      * Draws the complete rim at HEAD. Specs with a resolved LabPBR texture use the entity
      * shader; every other spec uses the solid position-colour path. Each spec is submitted once.
      */
-    public static void render(MatrixStack stack, Model model, ModelConfig config, OutlineConfigHolder outline,
+    public static void render(MatrixStack stack, Model model, ModelConfig config,
                               Color color, Link textureLink, Predicate<String> materialVisible)
     {
-        if (!canRender(model, config, outline, color))
+        if (!canRender(model, config, color))
         {
+            return;
+        }
+
+        if (!OutlineGeometry.hasAnyOutline(model))
+        {
+            /* Keep HEAD/RETURN paired; the RETURN side falls back to an (empty) immediate pass. */
+            pushPrepared(model, config, null, true);
+
             return;
         }
 
         if (color.a <= 0F)
         {
             /* Still pair HEAD/RETURN, but do not bake or rebuild anything for a fully faded form. */
-            pushPrepared(model, config, null);
+            pushPrepared(model, config, null, true);
 
             return;
         }
 
-        OutlineShellKey.Key key = OutlineShellKey.of(model, config, outline, textureLink, materialVisible);
+        OutlineShellKey.Key key = OutlineShellKey.of(model, config, textureLink, materialVisible);
         OutlineShellCache.Entry entry = OutlineShellCache.getOrBuild(model, key,
-            cached -> buildEntry(cached, key, model, config, outline, textureLink, materialVisible));
+            cached -> buildEntry(cached, key, model, config, textureLink, materialVisible));
 
         pushPrepared(model, config, entry);
 
         if (entry == null)
         {
-            renderImmediate(stack, model, config, outline, color, textureLink, materialVisible);
+            renderImmediate(stack, model, config, color, textureLink, materialVisible);
 
             return;
         }
@@ -106,17 +114,21 @@ public final class OutlineRenderer120
 
     private static void pushPrepared(Model model, ModelConfig config, OutlineShellCache.Entry entry)
     {
+        pushPrepared(model, config, entry, false);
+    }
+
+    private static void pushPrepared(Model model, ModelConfig config, OutlineShellCache.Entry entry, boolean skipDepth)
+    {
         while (PREPARED.size() > 32)
         {
             PREPARED.pollLast();
         }
 
-        PREPARED.push(new Prepared(model, config, entry, entry == null ? 0 : entry.generation));
+        PREPARED.push(new Prepared(model, config, entry, entry == null ? 0 : entry.generation, skipDepth));
     }
 
     private static void buildEntry(OutlineShellCache.Entry entry, OutlineShellKey.Key key, Model model,
-                                   ModelConfig config, OutlineConfigHolder outline, Link textureLink,
-                                   Predicate<String> materialVisible)
+                                   ModelConfig config, Link textureLink, Predicate<String> materialVisible)
     {
         if (entry.geometryHash != 0L && entry.geometryHash != key.geometryHash())
         {
@@ -127,8 +139,9 @@ public final class OutlineRenderer120
 
         entry.geometryHash = key.geometryHash();
 
-        Set<ModelCube> decals = OutlineDecalFilter.find(model, outline.bbspp$getOutlineDecalSize());
-        List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model, config, outline, decals);
+        Map<String, Float> decalSizes = OutlineGeometry.decalSizes(model);
+        Set<ModelCube> decals = OutlineDecalFilter.find(model, decalSizes);
+        List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model);
         Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
         Map<Long, ResourceTexture> glowTextures = resolveGlowTextures(specs);
         List<OutlineGeometry.Spec> solid = new ArrayList<>(specs.size());
@@ -298,10 +311,10 @@ public final class OutlineRenderer120
     }
 
     /** Writes depth for rim pixels that survived the body. Called at {@code ModelInstance.render} RETURN. */
-    public static void renderDepth(MatrixStack stack, Model model, ModelConfig config, OutlineConfigHolder outline,
+    public static void renderDepth(MatrixStack stack, Model model, ModelConfig config,
                                    Color color, Link textureLink, Predicate<String> materialVisible)
     {
-        if (!canRender(model, config, outline, color))
+        if (!canRender(model, config, color))
         {
             return;
         }
@@ -320,14 +333,19 @@ public final class OutlineRenderer120
                 PREPARED.clear();
             }
 
-            renderDepthImmediate(stack, model, config, outline, color, textureLink, materialVisible);
+            renderDepthImmediate(stack, model, config, color, textureLink, materialVisible);
 
+            return;
+        }
+
+        if (prepared.skipDepth())
+        {
             return;
         }
 
         if (prepared.entry == null || !prepared.entry.valid || prepared.entry.generation != prepared.generation)
         {
-            renderDepthImmediate(stack, model, config, outline, color, textureLink, materialVisible);
+            renderDepthImmediate(stack, model, config, color, textureLink, materialVisible);
 
             return;
         }
@@ -386,12 +404,13 @@ public final class OutlineRenderer120
         }
     }
 
-    /** Old per-frame path, kept as a fallback when the cache cannot build. */
-    private static void renderImmediate(MatrixStack stack, Model model, ModelConfig config, OutlineConfigHolder outline,
+    /** Fallback per-frame path used when the cached shell cannot be built. */
+    private static void renderImmediate(MatrixStack stack, Model model, ModelConfig config,
                                         Color color, Link textureLink, Predicate<String> materialVisible)
     {
-        Set<ModelCube> decals = OutlineDecalFilter.find(model, outline.bbspp$getOutlineDecalSize());
-        List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model, config, outline, decals);
+        Map<String, Float> decalSizes = OutlineGeometry.decalSizes(model);
+        Set<ModelCube> decals = OutlineDecalFilter.find(model, decalSizes);
+        List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model);
         Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
         Matrix4f base = new Matrix4f(stack.peek().getPositionMatrix());
         Map<Long, ResourceTexture> glowTextures = resolveGlowTextures(specs);
@@ -675,13 +694,14 @@ public final class OutlineRenderer120
         return ok;
     }
 
-    /** Old per-frame depth path, kept as a fallback when the cache cannot build. */
+    /** Fallback per-frame depth path used when the cached shell cannot be built. */
     private static void renderDepthImmediate(MatrixStack stack, Model model, ModelConfig config,
-                                             OutlineConfigHolder outline, Color color, Link textureLink,
+                                             Color color, Link textureLink,
                                              Predicate<String> materialVisible)
     {
-        Set<ModelCube> decals = OutlineDecalFilter.find(model, outline.bbspp$getOutlineDecalSize());
-        List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model, config, outline, decals);
+        Map<String, Float> decalSizes = OutlineGeometry.decalSizes(model);
+        Set<ModelCube> decals = OutlineDecalFilter.find(model, decalSizes);
+        List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model);
         Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
         Matrix4f base = new Matrix4f(stack.peek().getPositionMatrix());
 
@@ -715,10 +735,9 @@ public final class OutlineRenderer120
         }
     }
 
-    private static boolean canRender(Model model, ModelConfig config, OutlineConfigHolder outline, Color color)
+    private static boolean canRender(Model model, ModelConfig config, Color color)
     {
-        return model != null && config != null && outline != null && color != null
-            && outline.bbspp$hasOutline()
+        return model != null && config != null && color != null
             && !BBSRendering.isIrisShadowPass();
     }
 

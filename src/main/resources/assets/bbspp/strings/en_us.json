@@ -94,6 +94,8 @@
   "bbs.ui.camera.clips.bbs:vhs": "VHS",
   "bbs.ui.camera.clips.bbs:vintage": "Vintage",
   "bbs.ui.pose.enchant_glint": "Enchant Glint",
+  "bbs.ui.pose.glint_color": "Glint Colour",
+  "bbs.ui.pose.section_glint": "Enchant Glint Settings",
   "bbs.ui.pose.pick_bone_texture": "Bone Texture",
   "bbs.ui.transforms.pivot.title": "Pivot",
   "bbspp.config.bbs_enhancements.allow_clip_track_expansion": "Allow clip track expansion by dragging",

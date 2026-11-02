@@ -1,9 +1,12 @@
 package gbeic.bbsplusplus.mixin;
 
+import gbeic.bbsplusplus.api.BoneOutlineHolder;
 import gbeic.bbsplusplus.api.BonePbrHolder;
 import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
+import gbeic.bbsplusplus.api.GlintSettingsHolder;
 import gbeic.bbsplusplus.api.GroupGlintHolder;
+import gbeic.bbsplusplus.api.GroupOutlineHolder;
 import gbeic.bbsplusplus.api.GroupPbrHolder;
 import gbeic.bbsplusplus.api.GroupTextureHolder;
 import gbeic.bbsplusplus.api.PivotHolder;
@@ -22,17 +25,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Map;
 
 /**
- * 在 {@link Model#applyPose(Pose)} 末尾补几件 CML 的事：
- * <ul>
- *   <li>骨骼纹理 —— {@code PoseTransform} 上的纹理（{@link BoneTextureHolder}）
- *       传播到对应 {@link ModelGroup} 的渲染期覆盖字段（{@link GroupTextureHolder}）；</li>
- *   <li>附魔光效 —— {@code PoseTransform} 上的光效开关（{@link GlintHolder}）
- *       传播到 {@link ModelGroup}（{@link GroupGlintHolder}）；</li>
- *   <li>中心点 —— pose 的 pivot 加进 {@code group.current}（对齐 CML 的
- *       {@code group.current.translate.add(pivot); group.current.pivot.add(pivot);}，
- *       渲染时经 Transform.setupMatrix 的 ±pivot 平移生效）。</li>
- * </ul>
- * FS 版该方法没有这些逻辑，以 TAIL 二次遍历补齐（骨骼数量级为几十，开销可忽略）。
+ * 在 {@link Model#applyPose(Pose)} 末尾把姿势上的逐骨骼设置同步到 {@link ModelGroup}：
+ * 纹理、附魔光效、PBR、描边与中心点。{@link ModelGroup#reset()} 会在每帧应用姿势前
+ * 清空这些渲染期字段，避免共享 {@link Model} 实例在多个 form 之间串数据。
  */
 @Mixin(value = Model.class, remap = false)
 public abstract class ModelMixin
@@ -54,6 +49,7 @@ public abstract class ModelMixin
             Link texture = ((BoneTextureHolder) transform).bbspp_cml$getTexture();
             Vector3f pivot = ((PivotHolder) transform).bbspp_cml$getPivot();
             boolean glint = ((GlintHolder) transform).bbspp_cml$getGlint();
+            boolean outline = ((BoneOutlineHolder) transform).bbspp_cml$getOutline();
             boolean pivoted = pivot.x != 0F || pivot.y != 0F || pivot.z != 0F;
 
             /* PBR：任一值 > 0 即认为该骨骼有 PBR 覆盖。 */
@@ -62,8 +58,8 @@ public abstract class ModelMixin
                 || pbr.bbspp_cml$getSss() > 0F || pbr.bbspp_cml$getEmission() > 0F
                 || pbr.bbspp_cml$getRelief() > 0F;
 
-            /* glint 必须计入这个提前跳过判断，否则"只开光效"的骨骼会被整段忽略。 */
-            if (texture == null && !pivoted && !glint && !hasPbr)
+            /* glint / outline 必须计入这个提前跳过判断，否则"只开光效/描边"的骨骼会被整段忽略。 */
+            if (texture == null && !pivoted && !glint && !hasPbr && !outline)
             {
                 continue;
             }
@@ -88,6 +84,12 @@ public abstract class ModelMixin
 
                 groupGlint.bbspp_cml$setGlint(true);
                 groupGlint.bbspp_cml$setGlintColor(((GlintHolder) transform).bbspp_cml$getGlintColor());
+
+                GlintSettingsHolder tuning = (GlintSettingsHolder) transform;
+                GlintSettingsHolder groupTuning = (GlintSettingsHolder) group;
+
+                groupTuning.bbspp_cml$setGlintSpeed(tuning.bbspp_cml$getGlintSpeed());
+                groupTuning.bbspp_cml$setGlintBrightness(tuning.bbspp_cml$getGlintBrightness());
             }
 
             /* PBR：只在有值时写入（全 0 由 reset() 负责清空）。 */
@@ -100,6 +102,19 @@ public abstract class ModelMixin
                 groupPbr.bbspp_cml$setSss(pbr.bbspp_cml$getSss());
                 groupPbr.bbspp_cml$setEmission(pbr.bbspp_cml$getEmission());
                 groupPbr.bbspp_cml$setRelief(pbr.bbspp_cml$getRelief());
+            }
+
+            /* 描边：只在开启时写入（关闭由 reset() 负责）。 */
+            if (outline)
+            {
+                BoneOutlineHolder boneOutline = (BoneOutlineHolder) transform;
+                GroupOutlineHolder groupOutline = (GroupOutlineHolder) group;
+
+                groupOutline.bbspp_cml$setOutline(true);
+                groupOutline.bbspp_cml$setOutlineColor(boneOutline.bbspp_cml$getOutlineColor());
+                groupOutline.bbspp_cml$setOutlineWidth(boneOutline.bbspp_cml$getOutlineWidth());
+                groupOutline.bbspp_cml$setOutlineGlow(boneOutline.bbspp_cml$getOutlineGlow());
+                groupOutline.bbspp_cml$setOutlineDecalSize(boneOutline.bbspp_cml$getOutlineDecalSize());
             }
 
             if (pivoted)
