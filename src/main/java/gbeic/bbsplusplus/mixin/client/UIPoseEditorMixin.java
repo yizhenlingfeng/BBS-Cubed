@@ -52,8 +52,8 @@ import java.util.function.Consumer;
  * {@link PoseTransform} 的 texture 字段（经 {@link BoneTextureHolder} 接口）。
  * 默认无选中骨骼则 no-op；受 {@code ModSettings.pickLimbTexture} 开关控制（与 CML 行为一致）。</p>
  *
- * <p><b>附魔光效</b> —— 点击切换当前选中骨骼的原版风格附魔流光（经 {@link GlintHolder} 接口），
- * 受 {@code ModSettings.enchantGlint} 开关控制，按钮文字会反映当前骨骼的开/关状态。
+ * <p><b>附魔光效</b> —— 点击切换当前选中骨骼的原版风格附魔流光（经 {@link GlintHolder} 接口）；
+ * 面板始终显示该栏，不再依赖模组设置开关。
  * 两个按钮共用同一套写入分派（{@link #bbspp_cml$writeToSelection}）。</p>
  *
  * <p>纹理数据流：UI → {@code BoneTextureHolder#bbspp_cml$setTexture} →
@@ -277,10 +277,8 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         /* PBR / 描边 / 光效栏与骨骼纹理按钮插入到材质栏正下方，而非面板末尾。 */
         this.bbspp_cml$attachAfterMaterial();
 
-        /* glint 折叠栏由 refreshGlintButton 按设置显隐（BBS 布局不跳过不可见元素，
-         * 隐藏时必须 removeFromParent，否则留空白）。 */
+        this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$refreshBoneTextureButton();
-        this.bbspp_cml$refreshGlintButton();
         this.bbspp_cml$syncOutlineControls();
     }
 
@@ -307,7 +305,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         }
 
         this.bbspp_cml$attachAfterMaterial();
-        this.bbspp_cml$refreshGlintButton();
+        this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$refreshBoneTextureButton();
         this.bbspp_cml$syncOutlineControls();
     }
@@ -355,16 +353,13 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             }
         }
 
-        boolean glint = this.bbspp_cml$glintSection != null
-            && ModSettings.enchantGlint != null && ModSettings.enchantGlint.get();
-
         /* 在锚点（材质栏或 poseOnly 的 transform）后面依次插入。 */
         parent.addAfter(anchor, this.bbspp_cml$pbrSection);
         parent.addAfter(this.bbspp_cml$pbrSection, this.bbspp_cml$outlineSection);
 
         UIElement last = this.bbspp_cml$outlineSection;
 
-        if (glint)
+        if (this.bbspp_cml$glintSection != null)
         {
             parent.addAfter(last, this.bbspp_cml$glintSection);
             last = this.bbspp_cml$glintSection;
@@ -722,30 +717,6 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
 
         this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$syncOutlineControls();
-    }
-
-    @Unique
-    private void bbspp_cml$refreshGlintButton()
-    {
-        if (this.bbspp_cml$glintSection == null)
-        {
-            return;
-        }
-
-        boolean enabled = ModSettings.enchantGlint != null && ModSettings.enchantGlint.get();
-
-        /* BBS ColumnResizer 布局不跳过不可见元素：隐藏时必须真的从父容器移除，
-         * 否则即使 setVisible(false) 也会在面板上留一块空白。 */
-        if (enabled)
-        {
-            this.bbspp_cml$glintSection.setVisible(true);
-            this.bbspp_cml$attachAfterMaterial();
-            this.bbspp_cml$syncGlintToggle();
-        }
-        else if (this.bbspp_cml$glintSection.getParent() != null)
-        {
-            this.bbspp_cml$glintSection.removeFromParent();
-        }
     }
 
     @Unique

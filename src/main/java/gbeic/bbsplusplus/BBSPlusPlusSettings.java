@@ -135,12 +135,6 @@ public class BBSPlusPlusSettings
 
         ModSettings.blockbenchGizmo = builder.getBoolean("blockbench_gizmo", false);
         ModSettings.gizmoKeepOriginal = builder.getBoolean("gizmo_keep_original", false);
-
-        /* ===== 分类九：附魔光效 ===== */
-        builder.category("wip", Icons.DUPE);
-
-        /* 默认关闭；开启后在姿势编辑器显示附魔光效栏，支持颜色、流动速度与亮度。 */
-        ModSettings.enchantGlint = builder.getBoolean("enchant_glint", false);
     }
 
     private static IKey lang(String key)

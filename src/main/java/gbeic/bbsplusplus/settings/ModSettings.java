@@ -103,9 +103,6 @@ public final class ModSettings
     /** 骨骼纹理按钮 */
     public static ValueBoolean pickLimbTexture;
 
-    /** 附魔光效按钮 */
-    public static ValueBoolean enchantGlint;
-
     /** 流体精确模型交互 */
     public static ValueBoolean fluidRealisticModelInteraction;
 

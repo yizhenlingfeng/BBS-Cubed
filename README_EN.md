@@ -93,7 +93,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 
 ### Enchant Glint
 
-- Adds an "Enchant Glint" section to the pose editor for the selected bone.
+- Adds an "Enchant Glint" section to the pose editor for the selected bone. The section is always shown and is no longer gated by a mod setting.
 - Supports custom color and alpha, flow speed (0–4×) and brightness (0–4×); right-click applies the settings to child bones.
 - With shaders off, the mod's built-in shader draws the glint. With Iris shaders on, the pack's glint program draws it instead. Both paths share the same phase, so flow speed stays consistent.
 - If the pack has no `gbuffers_armor_glint`, Iris falls back to `gbuffers_textured`; the final look depends on the pack.
@@ -212,7 +212,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 * **Pose editor layout**: a collapsible Outline section is added below PBR, and Enchant Glint becomes its own section below Outline. Right-click applies outline and glint settings to child bones
 * **Enchant Glint rework**: the section now supports color, alpha, flow speed and brightness; values are stored in bone pose data and support keyframe interpolation
 * **Iris compatibility**: on 1.20.1 / 1.20.4, when a shader pack takes over world rendering the glint is drawn as a second pass of the same group VAO with the vanilla glint program; the built-in shader and the pack path share the same phase, so flow speed matches with shaders on or off. Packs without `gbuffers_armor_glint` fall back to `gbuffers_textured`
-* **Persistence fix**: fixed the Enchant Glint section not showing in the model editor and glint settings being lost after closing and reopening the editor
+* **Settings cleanup**: removed the Enchant Glint category and toggle from the BBS++ settings page; the pose editor section is always shown, and the glint data/render path is unchanged
 * **Outline rendering**: shell geometry is built and cached per bone; models without outlines skip shell building and depth prepass
 * **Multi-version support**: 1.20.1 / 1.20.4 and 1.21.11
 
