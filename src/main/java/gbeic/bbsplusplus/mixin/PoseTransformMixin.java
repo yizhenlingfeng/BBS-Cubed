@@ -402,6 +402,23 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         }
     }
 
+    /**
+     * 关键帧缓存/脏标记会用到 {@code contentHash()}。BBS 原版只哈希姿势可见字段，
+     * 这里把光效与速度/亮度也算进去，避免"只改光效"被误判为同一姿势。
+     */
+    @Inject(method = "contentHash", at = @At("RETURN"), cancellable = true, remap = false)
+    private void bbspp_cml$hashGlint(CallbackInfoReturnable<Integer> cir)
+    {
+        int hash = cir.getReturnValue();
+
+        hash = 31 * hash + Boolean.hashCode(this.bbspp_cml$glint);
+        hash = 31 * hash + this.bbspp_cml$glintColor.getARGBColor();
+        hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$glintSpeed);
+        hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$glintBrightness);
+
+        cir.setReturnValue(hash);
+    }
+
     @Inject(method = "equals(Ljava/lang/Object;)Z", at = @At("RETURN"), cancellable = true, remap = false)
     private void bbspp_cml$equalsTexture(Object obj, CallbackInfoReturnable<Boolean> cir)
     {

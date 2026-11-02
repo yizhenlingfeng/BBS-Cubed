@@ -1,8 +1,10 @@
 package gbeic.bbsplusplus.mixin.client;
 
 import gbeic.bbsplusplus.api.GlintHolder;
+import gbeic.bbsplusplus.api.GlintSettingsHolder;
 import gbeic.bbsplusplus.api.GroupGlintHolder;
 import gbeic.bbsplusplus.client.screen.ModelTextureGradeShader;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.model.Model;
@@ -60,6 +62,14 @@ public abstract class ModelInstanceTextureGradeMixin
             return original;
         }
 
+        /* Iris 光影真正接管本次世界绘制时，自建核心 shader 不在它的 program 管线内：
+         * 继续替换只会让光效（以及 tint/whiten）整个消失。这里保留原 shader，
+         * 光效改由 CubicVAORendererMixin 的 RETURN 注入走原版 glint 第二遍。 */
+        if (BBSRendering.isIrisWorldShadersEnabled())
+        {
+            return original;
+        }
+
         Color tintValue = new Color(1F, 1F, 1F, 0F);
         float whitenValue = 0F;
 
@@ -79,6 +89,8 @@ public abstract class ModelInstanceTextureGradeMixin
 
         boolean poseGlint = false;
         Color fallbackPoseGlintColor = null;
+        float fallbackGlintSpeed = 1F;
+        float fallbackGlintBrightness = 1F;
 
         for (ModelGroup group : model.model.getAllGroups())
         {
@@ -89,12 +101,22 @@ public abstract class ModelInstanceTextureGradeMixin
             {
                 poseGlint = true;
                 fallbackPoseGlintColor = ((GroupGlintHolder) group).bbspp_cml$getGlintColor().copy();
+                GlintSettingsHolder tuning = (GlintSettingsHolder) group;
+
+                fallbackGlintSpeed = tuning.bbspp_cml$getGlintSpeed();
+                fallbackGlintBrightness = tuning.bbspp_cml$getGlintBrightness();
             }
             else if (!poseGlint && group.current instanceof GlintHolder renderGlint
                 && renderGlint.bbspp_cml$getGlint())
             {
                 poseGlint = true;
                 fallbackPoseGlintColor = renderGlint.bbspp_cml$getGlintColor().copy();
+
+                if (group.current instanceof GlintSettingsHolder renderTuning)
+                {
+                    fallbackGlintSpeed = renderTuning.bbspp_cml$getGlintSpeed();
+                    fallbackGlintBrightness = renderTuning.bbspp_cml$getGlintBrightness();
+                }
             }
         }
 
@@ -118,7 +140,8 @@ public abstract class ModelInstanceTextureGradeMixin
             /* 基准强度与颜色：VAO 模型下每组的 CubicVAORendererMixin 会立即覆盖它们；
              * 动态 Geo 模型整块绘制、无法逐组改 uniform，这里用"整模型 fallback"
              * （与上方 tint/whiten 的策略一致），否则开了光效会什么都不发生。 */
-            ModelTextureGradeShader.applyGlint(selected, !supportsPerGroupGrade && poseGlint, fallbackPoseGlintColor);
+            ModelTextureGradeShader.applyGlint(selected, !supportsPerGroupGrade && poseGlint,
+                fallbackPoseGlintColor, fallbackGlintSpeed, fallbackGlintBrightness);
         }
 
         return selected;

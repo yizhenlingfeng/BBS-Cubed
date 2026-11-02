@@ -8,6 +8,7 @@ uniform vec4 ColorModulator;
 uniform vec4 TextureTint;
 uniform float TextureWhiten;
 uniform float GlintStrength;
+uniform float GlintBrightness;
 uniform vec4 GlintColor;
 uniform float FogStart;
 uniform float FogEnd;
@@ -117,7 +118,7 @@ void main()
         float lum = max(glintSample.r, max(glintSample.g, glintSample.b));
         float intensity = lum > 0.01 ? lum * lum : glintSample.a * glintSample.a;
 
-        color.rgb += GlintColor.rgb * intensity * GlintColor.a * glint;
+        color.rgb += GlintColor.rgb * intensity * GlintColor.a * glint * GlintBrightness;
     }
 
     fragColor = linear_fog(color, vertexDistance, FogStart, FogEnd, FogColor);

@@ -4,6 +4,7 @@ import gbeic.bbsplusplus.api.BoneOutlineHolder;
 import gbeic.bbsplusplus.api.BonePbrHolder;
 import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
+import gbeic.bbsplusplus.api.GlintSettingsHolder;
 import gbeic.bbsplusplus.api.PickTextureButtonHolder;
 import gbeic.bbsplusplus.client.outline.OutlineEmissiveTexture;
 import gbeic.bbsplusplus.settings.ModSettings;
@@ -88,6 +89,12 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
 
     @Unique
     private UIColor bbspp_cml$glintColor;
+
+    @Unique
+    private UITrackpad bbspp_cml$glintSpeed;
+
+    @Unique
+    private UITrackpad bbspp_cml$glintBrightness;
 
     /* PBR 折叠栏：五个滑条，与材质栏同构，插在材质栏与骨骼纹理按钮之间。 */
     @Unique
@@ -178,6 +185,16 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             });
         });
 
+        /* 流动速度 / 亮度：与颜色同级；右键"应用到子骨骼"沿用同一套扩散逻辑。 */
+        this.bbspp_cml$glintSpeed = this.bbspp_cml$createGlintTrackpad(self,
+            GlintSettingsHolder.MAX_SPEED,
+            L10n.lang("bbs.ui.pose.glint_speed.tooltip"),
+            (poseT, v) -> ((GlintSettingsHolder) poseT).bbspp_cml$setGlintSpeed(v));
+        this.bbspp_cml$glintBrightness = this.bbspp_cml$createGlintTrackpad(self,
+            GlintSettingsHolder.MAX_BRIGHTNESS,
+            L10n.lang("bbs.ui.pose.glint_brightness.tooltip"),
+            (poseT, v) -> ((GlintSettingsHolder) poseT).bbspp_cml$setGlintBrightness(v));
+
         /* ---- PBR 折叠栏 ---- */
         this.bbspp_cml$pbrSmoothness = this.bbspp_cml$createPbrSlider(self, (poseT, v) -> ((BonePbrHolder) poseT).bbspp_cml$setSmoothness(v));
         this.bbspp_cml$pbrMetallic = this.bbspp_cml$createPbrSlider(self, (poseT, v) -> ((BonePbrHolder) poseT).bbspp_cml$setMetallic(v));
@@ -252,7 +269,9 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$glintSection.setExpanded(false);
         this.bbspp_cml$glintSection.fields.add(
             UI.row(this.bbspp_cml$glint),
-            UI.labelRow(L10n.lang("bbs.ui.pose.glint_color"), this.bbspp_cml$glintColor)
+            UI.labelRow(L10n.lang("bbs.ui.pose.glint_color"), this.bbspp_cml$glintColor),
+            UI.labelRow(L10n.lang("bbs.ui.pose.glint_speed"), this.bbspp_cml$glintSpeed),
+            UI.labelRow(L10n.lang("bbs.ui.pose.glint_brightness"), this.bbspp_cml$glintBrightness)
         );
 
         /* PBR / 描边 / 光效栏与骨骼纹理按钮插入到材质栏正下方，而非面板末尾。 */
@@ -307,9 +326,19 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             return;
         }
 
-        UIElement parent = self.material.getParent();
+        /* material 只在非 poseOnly 布局里挂到父容器；模型编辑器的 poseOnly
+         * 布局只有骨骼可见性与 transform 两个字段，此时退化为以 transform
+         * 为锚点插入，否则这些栏在模型编辑器里永远不会出现。 */
+        UIElement anchor = self.material;
+        UIElement parent = anchor.getParent();
 
         if (parent == null)
+        {
+            anchor = self.transform;
+            parent = anchor == null ? null : anchor.getParent();
+        }
+
+        if (parent == null || anchor == null)
         {
             return;
         }
@@ -329,8 +358,8 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         boolean glint = this.bbspp_cml$glintSection != null
             && ModSettings.enchantGlint != null && ModSettings.enchantGlint.get();
 
-        /* 在材质栏后面依次插入 PBR 栏、描边栏、附魔光效栏、骨骼纹理按钮。 */
-        parent.addAfter(self.material, this.bbspp_cml$pbrSection);
+        /* 在锚点（材质栏或 poseOnly 的 transform）后面依次插入。 */
+        parent.addAfter(anchor, this.bbspp_cml$pbrSection);
         parent.addAfter(this.bbspp_cml$pbrSection, this.bbspp_cml$outlineSection);
 
         UIElement last = this.bbspp_cml$outlineSection;
@@ -384,6 +413,22 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
                 ? 0xFFFFFFFF
                 : ((GlintHolder) current).bbspp_cml$getGlintColor().getARGBColor());
         }
+
+        GlintSettingsHolder tuning = current == null ? null : (GlintSettingsHolder) current;
+
+        if (this.bbspp_cml$glintSpeed != null)
+        {
+            this.bbspp_cml$glintSpeed.setValue(tuning == null
+                ? GlintSettingsHolder.DEFAULT_SPEED
+                : tuning.bbspp_cml$getGlintSpeed());
+        }
+
+        if (this.bbspp_cml$glintBrightness != null)
+        {
+            this.bbspp_cml$glintBrightness.setValue(tuning == null
+                ? GlintSettingsHolder.DEFAULT_BRIGHTNESS
+                : tuning.bbspp_cml$getGlintBrightness());
+        }
     }
 
     @Unique
@@ -407,6 +452,28 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         });
     }
 
+    /**
+     * 模型编辑器里真正被保存的是 {@link UIModelPoseEditor} 持有的 {@code ValuePose.get()}，
+     * 而不是 {@code UIPoseEditor.getPose()}。两者正常情况下是同一个对象，但模型编辑器
+     * 每次 fill 都会用 {@code shownPose().get()} 重新 setPose，若我们只写编辑器那份，
+     * 退出/重开时会被权威值覆盖。
+     */
+    @Unique
+    private Pose bbspp_cml$getAuthoritativePose(UIPoseEditor self)
+    {
+        if (self instanceof UIModelPoseEditor)
+        {
+            ValuePose valuePose = ((UIModelPoseEditorAccessor) self).bbspp_cml$getValuePose();
+
+            if (valuePose != null && valuePose.get() != null)
+            {
+                return valuePose.get();
+            }
+        }
+
+        return self.getPose();
+    }
+
     @Unique
     private PoseTransform bbspp_cml$getCurrentPoseTransform(UIPoseEditor self)
     {
@@ -419,7 +486,9 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
 
         try
         {
-            return self.getPose().get(bone);
+            Pose pose = this.bbspp_cml$getAuthoritativePose(self);
+
+            return pose == null ? null : pose.get(bone);
         }
         catch (Exception e)
         {
@@ -463,52 +532,52 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
          * 退出页面就变回默认关，渲染端永远拿不到值"。
          * 这里补建一个空的 PoseTransform（即恒等变换，与手动拖动骨骼时 BBS 的行为一致），
          * 让值真正落进数据链。骨骼纹理按钮此前也有同样的问题。 */
-        Pose pose = self.getPose();
-        PoseTransform poseTransform = pose == null ? null : pose.get(bone);
+        Pose editorPose = self.getPose();
+        ValuePose valuePose = self instanceof UIModelPoseEditor
+            ? ((UIModelPoseEditorAccessor) self).bbspp_cml$getValuePose()
+            : null;
+        Pose livePose = valuePose == null ? null : valuePose.get();
+        Pose targetPose = livePose != null ? livePose : editorPose;
 
-        if (poseTransform == null && pose != null)
-        {
-            poseTransform = new PoseTransform();
-            pose.transforms.put(bone, poseTransform);
-        }
-
-        if (poseTransform == null)
+        if (targetPose == null)
         {
             return;
         }
 
-        ValuePose valuePose = self instanceof UIModelPoseEditor
-            ? ((UIModelPoseEditorAccessor) self).bbspp_cml$getValuePose()
-            : null;
-
+        /* 通知窗口必须包住全部写入：ValuePose 的监听器/撤销/保存都在 preNotify/postNotify
+         * 之间收集变化，postNotify 之后再补写不会被看到。 */
         if (valuePose != null)
         {
             valuePose.preNotify(IValueListener.FLAG_UNMERGEABLE);
         }
 
-        writer.accept(poseTransform);
+        PoseTransform target = targetPose.get(bone);
+
+        if (target == null)
+        {
+            target = new PoseTransform();
+            targetPose.transforms.put(bone, target);
+        }
+
+        writer.accept(target);
+
+        /* 编辑器缓存与权威数据不是同一个对象时，镜像写一份；正常同对象时不会重复。 */
+        if (editorPose != null && editorPose != targetPose)
+        {
+            PoseTransform editorTransform = editorPose.get(bone);
+
+            if (editorTransform == null)
+            {
+                editorTransform = new PoseTransform();
+                editorPose.transforms.put(bone, editorTransform);
+            }
+
+            writer.accept(editorTransform);
+        }
 
         if (valuePose != null)
         {
             valuePose.postNotify(IValueListener.FLAG_UNMERGEABLE);
-        }
-
-        /* 防御：编辑器里的 pose 与 valuePose.get() 若<b>不是</b>同一个对象，
-         * 写编辑器这份是没用的 —— 退出页面重新 setPose 会用 valuePose 里的旧数据覆盖。
-         * 这里镜像写一份到权威数据上，保证退出后不丢。实测两者是同一对象，此分支平时不生效。 */
-        Pose live = valuePose == null ? null : valuePose.get();
-
-        if (live != null && live != pose)
-        {
-            PoseTransform liveTransform = live.get(bone);
-
-            if (liveTransform == null)
-            {
-                liveTransform = new PoseTransform();
-                live.transforms.put(bone, liveTransform);
-            }
-
-            writer.accept(liveTransform);
         }
     }
 
@@ -588,9 +657,13 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     @Unique
     private void bbspp_cml$forEachSelectedChildren(UIPoseEditor self, Consumer<PoseTransform> writer)
     {
-        Pose pose = self.getPose();
+        Pose editorPose = self.getPose();
+        ValuePose valuePose = self instanceof UIModelPoseEditor
+            ? ((UIModelPoseEditorAccessor) self).bbspp_cml$getValuePose()
+            : null;
+        Pose livePose = valuePose == null ? null : valuePose.get();
 
-        if (pose == null || this.model == null)
+        if ((editorPose == null && livePose == null) || this.model == null)
         {
             return;
         }
@@ -601,10 +674,6 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         {
             return;
         }
-
-        ValuePose valuePose = self instanceof UIModelPoseEditor
-            ? ((UIModelPoseEditorAccessor) self).bbspp_cml$getValuePose()
-            : null;
 
         if (valuePose != null)
         {
@@ -617,15 +686,32 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         {
             for (String child : children)
             {
-                PoseTransform transform = pose.get(child);
-
-                if (transform == null)
+                /* 先写权威数据（真正被保存的那一份），再镜像到编辑器缓存。 */
+                if (livePose != null)
                 {
-                    transform = new PoseTransform();
-                    pose.transforms.put(child, transform);
+                    PoseTransform transform = livePose.get(child);
+
+                    if (transform == null)
+                    {
+                        transform = new PoseTransform();
+                        livePose.transforms.put(child, transform);
+                    }
+
+                    writer.accept(transform);
                 }
 
-                writer.accept(transform);
+                if (editorPose != null && editorPose != livePose)
+                {
+                    PoseTransform transform = editorPose.get(child);
+
+                    if (transform == null)
+                    {
+                        transform = new PoseTransform();
+                        editorPose.transforms.put(child, transform);
+                    }
+
+                    writer.accept(transform);
+                }
             }
         }
 
@@ -732,6 +818,34 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         });
 
         OutlineEmissiveTexture.invalidate();
+    }
+
+    /** 光效参数滑条：0..max，步进 0.05，右键应用到子骨骼。 */
+    @Unique
+    private UITrackpad bbspp_cml$createGlintTrackpad(UIPoseEditor self, float max, IKey tooltip,
+                                                     BiConsumer<PoseTransform, Float> setter)
+    {
+        UITrackpad trackpad = new UITrackpad((v) ->
+        {
+            float value = v.floatValue();
+            this.bbspp_cml$writeToSelection(self, (poseT) -> setter.accept(poseT, value));
+        });
+
+        trackpad.limit(0D, max);
+        trackpad.increment(0.05D);
+        trackpad.delayedInput();
+        trackpad.tooltip(tooltip, Direction.LEFT);
+
+        trackpad.context((ContextMenuManager manager) ->
+        {
+            manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
+            {
+                float value = (float) trackpad.getValue();
+                this.bbspp_cml$forEachSelectedChildren(self, (poseT) -> setter.accept(poseT, value));
+            });
+        });
+
+        return trackpad;
     }
 
     @Unique

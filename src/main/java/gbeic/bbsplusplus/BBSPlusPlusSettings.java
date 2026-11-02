@@ -136,10 +136,10 @@ public class BBSPlusPlusSettings
         ModSettings.blockbenchGizmo = builder.getBoolean("blockbench_gizmo", false);
         ModSettings.gizmoKeepOriginal = builder.getBoolean("gizmo_keep_original", false);
 
-        /* ===== 分类八：未完成（WIP） ===== */
+        /* ===== 分类九：附魔光效 ===== */
         builder.category("wip", Icons.DUPE);
 
-        /* 附魔光效：Iris 光影兼容未完成，默认关闭（不显示姿势编辑器里的按钮）。 */
+        /* 默认关闭；开启后在姿势编辑器显示附魔光效栏，支持颜色、流动速度与亮度。 */
         ModSettings.enchantGlint = builder.getBoolean("enchant_glint", false);
     }
 

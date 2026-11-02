@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus.client.screen;
 
 import gbeic.bbsplusplus.BBSPlusPlusMod;
+import gbeic.bbsplusplus.client.glint.GlintTiming;
 import mchorse.bbs_mod.utils.colors.Color;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.GlUniform;
@@ -53,11 +54,9 @@ public final class ModelTextureGradeShader
 
     /* ---------- 附魔光效 ----------
      *
-     * TODO(未完成 / WIP)：Iris 光影兼容尚未完成。
-     * 当前实现为自建核心 shader（model_texture_grade）单 pass 加色，无 Iris 时正常；
-     * Iris 世界渲染时自建 program 不在 Iris 管线内，光效不显示。
-     * 计划方向：Iris 下改用原版 glint RenderType 材质路径（同组 VAO 二次绘制），
-     * 详见计划文档。在完成前，README 已知限制保留此说明。 */
+     * 无光影时由本类自建核心 shader（model_texture_grade）单 pass 加色；
+     * Iris 接管世界渲染时改由 {@code gbeic.bbsplusplus.client.glint.GlintRenderer}
+     * 用原版 glint 程序做同组 VAO 第二遍，两条路径共用同一套速度/亮度参数。 */
     /**
      * 原版物品附魔光效纹理。1.20.1 / 1.20.4 的真实路径是 {@code enchanted_glint_item.png}
      * （从 ItemRenderer.ITEM_ENCHANTMENT_GLINT 的字节码确认，勿用旧名 enchanted_item_glint.png）。
@@ -68,15 +67,13 @@ public final class ModelTextureGradeShader
     private static final String GLINT_STRENGTH = "GlintStrength";
     private static final String GLINT_PHASE = "GlintPhase";
     private static final String GLINT_COLOR = "GlintColor";
+    private static final String GLINT_BRIGHTNESS = "GlintBrightness";
 
-    /** 开启时的光效强度。第一版不做 UI 参数，改这里即可整体调亮/调暗。 */
+    /** 光效开启时的片元强度；亮度滑条会在此基础上继续缩放。 */
     private static final float GLINT_ON = 1.0F;
 
     /** 光效默认颜色（白色 = 原版观感）。 */
     private static final Color DEFAULT_GLINT_COLOR = new Color(1F, 1F, 1F, 1F);
-
-    /** 光效扫过一轮的周期（毫秒）。改这里即可调快/调慢。 */
-    private static final long GLINT_PERIOD_MS = 3000L;
 
     /** 光效纹理是否已成功注册到 shader 上。 */
     private static boolean glintAvailable;
@@ -221,12 +218,13 @@ public final class ModelTextureGradeShader
     }
 
     /**
-     * 写入一个 model group 的附魔光效开关。
+     * 逐组写入光效参数。
      *
-     * <p>这是<b>逐组</b>调用，所以每次都必须写（包括关闭时写 0）—— 否则同一个模型里
-     * 前一个开了光效的骨骼会把状态泄漏给后一个没开的骨骼。</p>
+     * @param speed     流动速度倍率，与 {@link GlintTiming#phase(float)} 共用同一相位，
+     *                  保证无光影 / Iris 两条路径流速一致
+     * @param brightness 光效图层自发光强度（约 0..4），默认 1
      */
-    public static void applyGlint(ShaderProgram program, boolean enabled, Color color)
+    public static void applyGlint(ShaderProgram program, boolean enabled, Color color, float speed, float brightness)
     {
         if (program == null)
         {
@@ -246,7 +244,7 @@ public final class ModelTextureGradeShader
 
         if (phase != null)
         {
-            phase.set(glintPhase());
+            phase.set(GlintTiming.phase(speed));
         }
 
         GlUniform tint = program.getUniform(GLINT_COLOR);
@@ -258,12 +256,13 @@ public final class ModelTextureGradeShader
 
             tint.set(use.r, use.g, use.b, use.a);
         }
-    }
 
-    /** 光效滚动相位，取值 [0,1)。整数格位移 + sin/cos 连续滚动 → 无限循环无接缝。 */
-    public static float glintPhase()
-    {
-        return (float) (System.currentTimeMillis() % GLINT_PERIOD_MS) / (float) GLINT_PERIOD_MS;
+        GlUniform brightnessUniform = program.getUniform(GLINT_BRIGHTNESS);
+
+        if (brightnessUniform != null)
+        {
+            brightnessUniform.set(Math.max(0F, brightness));
+        }
     }
 
     public static boolean isGlintPerGroup()

@@ -1,9 +1,12 @@
 package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.api.ModelVAODataAccess;
+import gbeic.bbsplusplus.api.ModelVAOGlintAccess;
 import mchorse.bbs_mod.cubic.render.vao.ModelVAO;
 import mchorse.bbs_mod.cubic.render.vao.ModelVAOData;
+import org.lwjgl.opengl.GL30;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,8 +16,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 保留模型 VAO 最近一次上传的原始网格数据，供动态 UV 的 CPU 兼容路径读取。
  */
 @Mixin(value = ModelVAO.class, remap = true)
-public class ModelVAOMixin implements ModelVAODataAccess
+public class ModelVAOMixin implements ModelVAODataAccess, ModelVAOGlintAccess
 {
+    @Shadow(remap = false) private int vao2;
+    @Shadow(remap = false) private int count;
+
     @Unique private ModelVAOData bbspp$modelVaoData;
 
     /**
@@ -32,5 +38,17 @@ public class ModelVAOMixin implements ModelVAODataAccess
     public ModelVAOData bbspp$getModelVaoData()
     {
         return this.bbspp$modelVaoData;
+    }
+
+    /**
+     * 用 {@code vao2}（Position=0、UV0=1）直接画一遍，不经过 {@link ModelVAO#render}：
+     * 后者在 Iris 下永远选择扩展布局的 {@code vao}，UV0 位于 attribute 2，
+     * 与原版 glint 程序（{@code POSITION_TEX}）不匹配。
+     */
+    @Override
+    public void bbspp_cml$drawGlintVao()
+    {
+        GL30.glBindVertexArray(this.vao2);
+        GL30.glDrawArrays(GL30.GL_TRIANGLES, 0, this.count);
     }
 }

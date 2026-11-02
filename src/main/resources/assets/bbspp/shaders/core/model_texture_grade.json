@@ -57,6 +57,12 @@
             "values": [0.0]
         },
         {
+            "name": "GlintBrightness",
+            "type": "float",
+            "count": 1,
+            "values": [1.0]
+        },
+        {
             "name": "GlintPhase",
             "type": "float",
             "count": 1,

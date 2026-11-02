@@ -2,9 +2,11 @@ package gbeic.bbsplusplus.mixin.client;
 
 import gbeic.bbsplusplus.api.BonePbrHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
+import gbeic.bbsplusplus.api.GlintSettingsHolder;
 import gbeic.bbsplusplus.api.GroupGlintHolder;
 import gbeic.bbsplusplus.api.GroupPbrHolder;
 import gbeic.bbsplusplus.api.GroupTextureHolder;
+import gbeic.bbsplusplus.client.glint.GlintRenderer;
 import gbeic.bbsplusplus.client.screen.ModelTextureGradeShader;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
@@ -27,6 +29,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -54,6 +57,12 @@ public abstract class CubicVAORendererMixin
     @Shadow(remap = false)
     private Function<String, Link> textureResolver;
 
+    @Shadow(remap = false)
+    private boolean drawVaoGroups;
+
+    @Shadow(remap = false)
+    private Set<ModelGroup> cpuGroups;
+
     @Inject(method = "renderGroup", at = @At("HEAD"), require = 1, remap = false)
     private void bbspp_cml$applyGroupGlint(BufferBuilder builder, MatrixStack stack, ModelGroup group, Model model, CallbackInfoReturnable<Boolean> cir)
     {
@@ -62,18 +71,63 @@ public abstract class CubicVAORendererMixin
          * 回退到 Transform 上的渲染期光效。 */
         boolean glint = group != null && ((GroupGlintHolder) group).bbspp_cml$getGlint();
         Color glintColor = group != null ? ((GroupGlintHolder) group).bbspp_cml$getGlintColor() : null;
+        float glintSpeed = 1F;
+        float glintBrightness = 1F;
+
+        if (group != null)
+        {
+            GlintSettingsHolder tuning = (GlintSettingsHolder) group;
+
+            glintSpeed = tuning.bbspp_cml$getGlintSpeed();
+            glintBrightness = tuning.bbspp_cml$getGlintBrightness();
+        }
 
         if (!glint && group != null && group.current instanceof GlintHolder renderGlint)
         {
             glint = renderGlint.bbspp_cml$getGlint();
             glintColor = renderGlint.bbspp_cml$getGlintColor();
+
+            if (group.current instanceof GlintSettingsHolder renderTuning)
+            {
+                glintSpeed = renderTuning.bbspp_cml$getGlintSpeed();
+                glintBrightness = renderTuning.bbspp_cml$getGlintBrightness();
+            }
         }
 
         /* 必须逐组写入（含关闭时的 0）—— 否则同一模型里前一个开了光效的骨骼
          * 会把状态泄漏给后一个。仅限 VAO 渲染；CPU 路径靠 select() 的整模型 fallback。 */
         if (ModelTextureGradeShader.isGlintPerGroup())
         {
-            ModelTextureGradeShader.applyGlint(this.program, glint, glintColor);
+            ModelTextureGradeShader.applyGlint(this.program, glint, glintColor, glintSpeed, glintBrightness);
+        }
+    }
+
+    /**
+     * Iris 光影下的附魔光效第二遍：在同一 group 的材质绘制全部结束后，用原版 glint 程序
+     * 把该组的 VAO 再画一遍，交给光影包的 {@code gbuffers_armor_glint} 输出。
+     *
+     * <p>不能放在 HEAD：glint 用 {@code depthFunc(EQUAL)}，必须等基础几何写完深度后才有效；
+     * 也不能用 {@code cir.getReturnValue()} 判断是否画过——正常 VAO 路径返回值恒为 false。</p>
+     */
+    @Inject(method = "renderGroup", at = @At("RETURN"), require = 1, remap = false)
+    private void bbspp_cml$renderIrisGlint(BufferBuilder builder, MatrixStack stack, ModelGroup group, Model model, CallbackInfoReturnable<Boolean> cir)
+    {
+        /* 混合模式的 CPU 烘焙 pass 不写屏幕，不能在这里追加光效。 */
+        if (!this.drawVaoGroups)
+        {
+            return;
+        }
+
+        /* 混合模式的 CPU 组由 super.renderGroup() 用 BufferBuilder 绘制，基础深度不在
+         * 本 pass 的 VAO 里，跳过。不能调用 isCpuGroup：该方法在编译期 BBS jar 里不存在。 */
+        if (this.cpuGroups != null && this.cpuGroups.contains(group))
+        {
+            return;
+        }
+
+        if (GlintRenderer.shouldRender(this.program, group))
+        {
+            GlintRenderer.render(this.model, group, stack);
         }
     }
 
