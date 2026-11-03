@@ -100,7 +100,7 @@
   "bbs.ui.pose.glint_speed.tooltip": "How fast the glint pattern scrolls across the model (0 = still, 1 = original speed)",
   "bbs.ui.pose.glint_brightness": "Brightness",
   "bbs.ui.pose.glint_brightness.tooltip": "Emissive strength of the glint layer (1 = original brightness)",
-  "bbs.ui.pose.pick_bone_texture": "Bone Texture",
+  "bbs.ui.pose.pick_bone_texture": "Bone texture",
   "bbs.ui.transforms.pivot.title": "Pivot",
   "bbspp.config.bbs_enhancements.allow_clip_track_expansion": "Allow clip track expansion by dragging",
   "bbspp.config.bbs_enhancements.allow_clip_track_expansion-comment": "When enabled, dragging a clip beyond the top of the timeline no longer limits track depth, allowing more tracks like vanilla BBS.",

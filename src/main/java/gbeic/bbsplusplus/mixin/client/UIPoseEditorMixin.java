@@ -1,20 +1,26 @@
 package gbeic.bbsplusplus.mixin.client;
 
+import gbeic.bbsplusplus.api.BBSPPFormValues;
 import gbeic.bbsplusplus.api.BoneOutlineHolder;
 import gbeic.bbsplusplus.api.BonePbrHolder;
 import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.GlintSettingsHolder;
+import gbeic.bbsplusplus.api.ModelFormUvSectionHolder;
 import gbeic.bbsplusplus.api.PickTextureButtonHolder;
 import gbeic.bbsplusplus.client.outline.OutlineEmissiveTexture;
+import gbeic.bbsplusplus.client.ui.UVTransformEditor;
 import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.cubic.IBoneHierarchy;
+import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.IValueListener;
 import mchorse.bbs_mod.settings.values.core.ValuePose;
+import mchorse.bbs_mod.settings.values.misc.ValueVector4f;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.forms.editors.panels.widgets.UIModelPoseEditor;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -25,6 +31,8 @@ import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
 import mchorse.bbs_mod.ui.framework.elements.input.UISliderTrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
@@ -34,6 +42,7 @@ import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.PoseTransform;
 import mchorse.bbs_mod.utils.resources.LinkUtils;
+import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -42,6 +51,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -84,6 +94,10 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     @Unique
     private UIButton bbspp_cml$pickTexture;
 
+    /** 按钮已被外部宿主接管（模型形态页顶部），重建布局时不要收回到姿态面板。 */
+    @Unique
+    private boolean bbspp_cml$pickTextureDetached;
+
     @Unique
     private UIToggle bbspp_cml$glint;
 
@@ -121,6 +135,13 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     @Unique
     private UISection bbspp_cml$glintSection;
 
+    /* 纹理变换折叠栏：表单级 UV，仅影片姿势关键帧面板使用（模型编辑页已有独立表单级 UV 栏）。 */
+    @Unique
+    private UISection bbspp_cml$uvSection;
+
+    @Unique
+    private UVTransformEditor bbspp_cml$uvEditor;
+
     @Unique
     private UISliderTrackpad bbspp_cml$pbrSmoothness;
 
@@ -140,6 +161,17 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     public UIButton bbspp_cml$getPickTextureButton()
     {
         return this.bbspp_cml$pickTexture;
+    }
+
+    @Override
+    public void bbspp_cml$setPickTextureButtonDetached(boolean detached)
+    {
+        this.bbspp_cml$pickTextureDetached = detached;
+
+        if (detached && this.bbspp_cml$pickTexture != null)
+        {
+            this.bbspp_cml$pickTexture.removeFromParent();
+        }
     }
 
     @Inject(method = "<init>", at = @At("TAIL"), remap = false)
@@ -274,12 +306,28 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             UI.labelRow(L10n.lang("bbs.ui.pose.glint_brightness"), this.bbspp_cml$glintBrightness)
         );
 
-        /* PBR / 描边 / 光效栏与骨骼纹理按钮插入到材质栏正下方，而非面板末尾。 */
+        /* ---- 纹理变换折叠栏（仅影片姿势关键帧面板；模型编辑页的 UV 栏属于表单面板） ---- */
+        this.bbspp_cml$uvEditor = new UVTransformEditor((value) ->
+        {
+            ValueVector4f uvTransform = this.bbspp_cml$getUvTransformValue();
+
+            if (uvTransform != null)
+            {
+                uvTransform.set(new Vector4f(value));
+            }
+        });
+        this.bbspp_cml$uvSection = new UISection(L10n.lang("bbs.ui.forms.editor.model.uv_transform"));
+        this.bbspp_cml$uvSection.setExpanded(false);
+        this.bbspp_cml$uvSection.setVisible(false);
+        this.bbspp_cml$uvSection.fields.add(this.bbspp_cml$uvEditor);
+
+        /* PBR / 描边 / 光效 / 纹理变换栏与骨骼纹理按钮插入到材质栏正下方，而非面板末尾。 */
         this.bbspp_cml$attachAfterMaterial();
 
         this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$refreshBoneTextureButton();
         this.bbspp_cml$syncOutlineControls();
+        this.bbspp_cml$syncUvControls();
     }
 
     /** 换姿势 / 换选中的骨骼时，把开关与颜色同步成当前骨骼的实际状态。 */
@@ -289,6 +337,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$syncPbrSliders();
         this.bbspp_cml$syncOutlineControls();
+        this.bbspp_cml$syncUvControls();
     }
 
     /**
@@ -308,6 +357,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$refreshBoneTextureButton();
         this.bbspp_cml$syncOutlineControls();
+        this.bbspp_cml$syncUvControls();
     }
 
     /**
@@ -341,13 +391,16 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             return;
         }
 
-        /* 先从旧父容器移除（如果已经挂载过），避免重复。 */
+        /* 先从旧父容器移除（如果已经挂载过），避免重复。
+         * 被外部宿主接管的骨骼纹理按钮不在此列：它现在属于顶部按钮行，
+         * 这里再移除会把按钮从行里拽走。 */
         for (UIElement element : new UIElement[] {
             this.bbspp_cml$pbrSection, this.bbspp_cml$outlineSection,
-            this.bbspp_cml$glintSection, this.bbspp_cml$pickTexture
+            this.bbspp_cml$glintSection, this.bbspp_cml$uvSection, this.bbspp_cml$pickTexture
         })
         {
-            if (element != null && element.getParent() != null)
+            if (element != null && element.getParent() != null
+                && !(element == this.bbspp_cml$pickTexture && this.bbspp_cml$pickTextureDetached))
             {
                 element.removeFromParent();
             }
@@ -365,7 +418,14 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             last = this.bbspp_cml$glintSection;
         }
 
-        if (this.bbspp_cml$pickTexture != null)
+        /* 纹理变换栏只服务于影片姿势关键帧面板；模型编辑页的 UV 栏位于表单面板，避免重复。 */
+        if (this.bbspp_cml$uvSection != null && self instanceof UIPoseKeyframeFactory.UIPoseFactoryEditor)
+        {
+            parent.addAfter(last, this.bbspp_cml$uvSection);
+            last = this.bbspp_cml$uvSection;
+        }
+
+        if (this.bbspp_cml$pickTexture != null && !this.bbspp_cml$pickTextureDetached)
         {
             parent.addAfter(last, this.bbspp_cml$pickTexture);
         }
@@ -377,6 +437,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$syncPbrSliders();
         this.bbspp_cml$syncOutlineControls();
+        this.bbspp_cml$syncUvControls();
     }
 
     @Inject(method = "selectBone(Ljava/lang/String;Z)V", at = @At("TAIL"), remap = false)
@@ -385,6 +446,17 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$syncPbrSliders();
         this.bbspp_cml$syncOutlineControls();
+        this.bbspp_cml$syncUvControls();
+    }
+
+    /** 骨骼列表自动选中首根骨骼时不经过 selectBone()，在此统一刷新面板控件。 */
+    @Inject(method = "pickBones(Ljava/util/List;)V", at = @At("TAIL"), remap = false)
+    private void bbspp_cml$syncOnPickBones(List<String> bones, CallbackInfo ci)
+    {
+        this.bbspp_cml$syncGlintToggle();
+        this.bbspp_cml$syncPbrSliders();
+        this.bbspp_cml$syncOutlineControls();
+        this.bbspp_cml$syncUvControls();
     }
 
     @Unique
@@ -910,5 +982,150 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$pbrSss.setValue(sss);
         this.bbspp_cml$pbrEmission.setValue(emission);
         this.bbspp_cml$pbrRelief.setValue(relief);
+    }
+
+    /**
+     * 从姿势关键帧宿主反查表单上的纹理变换值。
+     * 模型编辑页（{@link UIModelPoseEditor}）不使用本栏 —— 那里已有表单面板级 UV 栏。
+     */
+    @Unique
+    private ValueVector4f bbspp_cml$getUvTransformValue()
+    {
+        UIPoseEditor self = (UIPoseEditor) (Object) this;
+
+        if (!(self instanceof UIPoseKeyframeFactory.UIPoseFactoryEditor))
+        {
+            return null;
+        }
+
+        UIPoseFactoryEditorAccessor accessor = (UIPoseFactoryEditorAccessor) self;
+
+        if (accessor.bbspp_cml$getEditor() == null || accessor.bbspp_cml$getKeyframe() == null)
+        {
+            return null;
+        }
+
+        UIKeyframeSheet sheet = accessor.bbspp_cml$getEditor().getGraph().getSheet(accessor.bbspp_cml$getKeyframe());
+
+        if (sheet == null)
+        {
+            return null;
+        }
+
+        Form form = UIReplaysEditor.getSheetForm(sheet);
+
+        return form == null ? null : BBSPPFormValues.getUvTransform(form);
+    }
+
+    /**
+     * 模型编辑页的“默认展开”策略：选中骨骼后，按该骨骼的 PoseTransform 决定材质 / PBR /
+     * 描边 / 附魔光效四栏是否展开。纹理变换是模型级属性，由 {@code UIModelFormPanelMixin}
+     * 在表单同步时处理。
+     *
+     * <p>只在 {@link UIModelPoseEditor} 宿主生效；影片姿势关键帧面板的 UIPoseEditor 也带
+     * 这些栏，但它的栏位应对应当前关键帧，而不是模型编辑页的骨骼选择逻辑。</p>
+     */
+    @Unique
+    private void bbspp_cml$autoExpandSections()
+    {
+        UIPoseEditor self = (UIPoseEditor) (Object) this;
+
+        if (!(self instanceof UIModelPoseEditor))
+        {
+            return;
+        }
+
+        PoseTransform current = this.bbspp_cml$getCurrentPoseTransform(self);
+        boolean material = false;
+        boolean pbr = false;
+        boolean outline = false;
+        boolean glint = false;
+
+        if (current != null)
+        {
+            material = current.color.getARGBColor() != 0xFFFFFFFF
+                || current.overlay.r != 1F
+                || current.overlay.g != 1F
+                || current.overlay.b != 1F
+                || current.overlay.a != 0F
+                || current.lighting != 0F;
+
+            BonePbrHolder pbrHolder = (BonePbrHolder) current;
+            pbr = pbrHolder.bbspp_cml$getSmoothness() != 0F
+                || pbrHolder.bbspp_cml$getMetallic() != 0F
+                || pbrHolder.bbspp_cml$getSss() != 0F
+                || pbrHolder.bbspp_cml$getEmission() != 0F
+                || pbrHolder.bbspp_cml$getRelief() != 0F;
+
+            BoneOutlineHolder outlineHolder = (BoneOutlineHolder) current;
+            outline = outlineHolder.bbspp_cml$getOutline()
+                || outlineHolder.bbspp_cml$getOutlineColor().getARGBColor() != 0xFFFFFFFF
+                || outlineHolder.bbspp_cml$getOutlineWidth() != BoneOutlineHolder.DEFAULT_WIDTH
+                || outlineHolder.bbspp_cml$getOutlineGlow() != BoneOutlineHolder.DEFAULT_GLOW
+                || outlineHolder.bbspp_cml$getOutlineDecalSize() != BoneOutlineHolder.DEFAULT_DECAL;
+
+            GlintHolder glintHolder = (GlintHolder) current;
+            GlintSettingsHolder glintSettings = (GlintSettingsHolder) current;
+            glint = glintHolder.bbspp_cml$getGlint()
+                || glintHolder.bbspp_cml$getGlintColor().getARGBColor() != 0xFFFFFFFF
+                || glintSettings.bbspp_cml$getGlintSpeed() != GlintSettingsHolder.DEFAULT_SPEED
+                || glintSettings.bbspp_cml$getGlintBrightness() != GlintSettingsHolder.DEFAULT_BRIGHTNESS;
+        }
+
+        if (self.material != null)
+        {
+            self.material.setExpanded(material);
+        }
+
+        if (this.bbspp_cml$pbrSection != null)
+        {
+            this.bbspp_cml$pbrSection.setExpanded(pbr);
+        }
+
+        if (this.bbspp_cml$outlineSection != null)
+        {
+            this.bbspp_cml$outlineSection.setExpanded(outline);
+        }
+
+        if (this.bbspp_cml$glintSection != null)
+        {
+            this.bbspp_cml$glintSection.setExpanded(glint);
+        }
+
+        /* 纹理变换是模型级属性，但用户要求选中肢体时五栏一起刷新；沿父链请形态面板重算 UV 栏。 */
+        UIElement parent = self.getParent();
+
+        while (parent != null)
+        {
+            if (parent instanceof ModelFormUvSectionHolder holder)
+            {
+                holder.bbspp$refreshUvSectionExpansion();
+
+                break;
+            }
+
+            parent = parent.getParent();
+        }
+    }
+
+    /** 同步纹理变换栏的显隐与当前表单 UV 值，并刷新模型编辑页的栏位默认展开状态。 */
+    @Unique
+    private void bbspp_cml$syncUvControls()
+    {
+        this.bbspp_cml$autoExpandSections();
+
+        if (this.bbspp_cml$uvSection == null)
+        {
+            return;
+        }
+
+        ValueVector4f uvTransform = this.bbspp_cml$getUvTransformValue();
+
+        this.bbspp_cml$uvSection.setVisible(uvTransform != null);
+
+        if (uvTransform != null && uvTransform.get() != null)
+        {
+            this.bbspp_cml$uvEditor.setValue(uvTransform.get());
+        }
     }
 }

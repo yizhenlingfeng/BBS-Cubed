@@ -11,4 +11,7 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 public interface PickTextureButtonHolder
 {
     UIButton bbspp_cml$getPickTextureButton();
+
+    /** 标记骨骼纹理按钮已由外部宿主接管，姿态面板重建布局时不再收回。 */
+    void bbspp_cml$setPickTextureButtonDetached(boolean detached);
 }

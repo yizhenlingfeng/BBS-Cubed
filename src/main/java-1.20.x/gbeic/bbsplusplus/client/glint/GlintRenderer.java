@@ -2,6 +2,7 @@ package gbeic.bbsplusplus.client.glint;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.GlintSettingsHolder;
 import gbeic.bbsplusplus.api.GroupGlintHolder;
@@ -19,12 +20,17 @@ import net.minecraft.client.gl.GlUniform;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.texture.AbstractTexture;
+import net.minecraft.client.texture.NativeImage;
+import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.resource.Resource;
 import net.minecraft.util.Identifier;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -46,6 +52,10 @@ public final class GlintRenderer
     private static final Color DEFAULT_COLOR = new Color(1F, 1F, 1F, 1F);
     private static final float GLINT_SCALE = 8.0F;
     private static final float GLINT_ANGLE = 0.17453292F;
+
+    /** 原版贴图转成的灰度遮罩，见 {@link #createGlintMask()}。 */
+    private static AbstractTexture glintMask;
+    private static boolean glintMaskUnavailable;
 
     private GlintRenderer()
     {}
@@ -301,6 +311,13 @@ public final class GlintRenderer
 
     private static AbstractTexture resolveGlintTexture()
     {
+        AbstractTexture mask = getGlintMask();
+
+        if (mask != null)
+        {
+            return mask;
+        }
+
         AbstractTexture texture = MinecraftClient.getInstance().getTextureManager().getTexture(GLINT_TEXTURE);
 
         if (texture == null)
@@ -318,6 +335,77 @@ public final class GlintRenderer
 
         /* 光效 UV 会大幅超出 [0,1]：线性过滤 + REPEAT 让超出部分平铺回贴图内。 */
         texture.setFilter(true, false);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+
+        return texture;
+    }
+
+    /**
+     * 原版附魔光效贴图本身是紫色，直接乘 {@code ColorModulator} 会让世界里的光效永远带紫色；
+     * 编辑器预览只把这张贴图当成亮度遮罩。这里把原版贴图逐像素转成灰度遮罩，
+     * 两条路径就都变成「遮罩亮度² × 选项颜色」，默认白色不再被染紫。
+     */
+    private static AbstractTexture getGlintMask()
+    {
+        if (glintMask == null && !glintMaskUnavailable)
+        {
+            try
+            {
+                glintMask = createGlintMask();
+            }
+            catch (Exception e)
+            {
+                glintMaskUnavailable = true;
+                BBSPlusPlusMod.LOGGER.warn("[FSloveCML] 附魔光效灰度遮罩生成失败，回退到原版贴图", e);
+            }
+        }
+
+        return glintMask;
+    }
+
+    private static AbstractTexture createGlintMask() throws IOException
+    {
+        Resource resource = MinecraftClient.getInstance().getResourceManager()
+            .getResource(GLINT_TEXTURE)
+            .orElseThrow(() -> new IOException("Missing " + GLINT_TEXTURE));
+
+        NativeImage mask;
+
+        try (InputStream stream = resource.getInputStream(); NativeImage source = NativeImage.read(stream))
+        {
+            int width = source.getWidth();
+            int height = source.getHeight();
+
+            mask = new NativeImage(width, height, false);
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    /* getColor() 返回 RGBA 字节按小端读出的 int，即 R 在最低字节。 */
+                    int pixel = source.getColor(x, y);
+                    int r = pixel & 0xFF;
+                    int g = (pixel >> 8) & 0xFF;
+                    int b = (pixel >> 16) & 0xFF;
+                    int a = (pixel >>> 24) & 0xFF;
+                    int value = Math.max(r, Math.max(g, b));
+
+                    /* 与 model_texture_grade.fsh 的 lum <= 0.01 分支保持一致：没有 RGB 时退回 alpha。 */
+                    if (value <= 2)
+                    {
+                        value = a;
+                    }
+
+                    mask.setColor(x, y, value | (value << 8) | (value << 16) | (a << 24));
+                }
+            }
+        }
+
+        NativeImageBackedTexture texture = new NativeImageBackedTexture(mask);
+
+        texture.setFilter(true, false);
+        texture.bindTexture();
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
 

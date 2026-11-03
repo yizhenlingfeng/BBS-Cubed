@@ -214,6 +214,10 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 * **Iris compatibility**: on 1.20.1 / 1.20.4, when a shader pack takes over world rendering the glint is drawn as a second pass of the same group VAO with the vanilla glint program; the built-in shader and the pack path share the same phase, so flow speed matches with shaders on or off. Packs without `gbuffers_armor_glint` fall back to `gbuffers_textured`
 * **Settings cleanup**: removed the Enchant Glint category and toggle from the BBS++ settings page; the pose editor section is always shown, and the glint data/render path is unchanged
 * **Outline rendering**: shell geometry is built and cached per bone; models without outlines skip shell building and depth prepass
+* **Outline toggle sync**: after reopening the pose editor, the Outline, Enchant Glint, PBR and UV transform controls now refresh with the auto-selected bone; a rendered outline no longer appears disabled
+* **Enchant Glint color fix**: with shaders enabled, the in-world glint color now matches the editor color; the default white no longer renders purple
+* **UV transform section**: the model form editor gains a collapsible UV transform section for texture offset and scale; the film pose keyframe editor can also edit the form-level UV below the material section
+* **Texture button layout**: "Pick texture…" and "Bone texture" now share one row at the top of the model form editor; the bone texture button no longer takes up space at the bottom of the pose panel
 * **Multi-version support**: 1.20.1 / 1.20.4 and 1.21.11
 
 #### 3.6.3 hotfix (Replay list position kept on undo + action timeline endpoint fixes)
