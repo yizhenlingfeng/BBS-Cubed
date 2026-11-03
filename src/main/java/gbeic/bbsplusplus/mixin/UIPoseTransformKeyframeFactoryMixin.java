@@ -1,24 +1,18 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.api.BBSPPFormValues;
 import gbeic.bbsplusplus.api.BoneOutlineHolder;
 import gbeic.bbsplusplus.api.BonePbrHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.GlintSettingsHolder;
 import gbeic.bbsplusplus.client.outline.OutlineEmissiveTexture;
-import gbeic.bbsplusplus.client.ui.UVTransformEditor;
-import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
-import mchorse.bbs_mod.settings.values.misc.ValueVector4f;
 import mchorse.bbs_mod.ui.UIKeys;
-import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.framework.elements.UISection;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
 import mchorse.bbs_mod.ui.framework.elements.input.UISliderTrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseTransformKeyframeFactory;
@@ -26,7 +20,6 @@ import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.pose.PoseTransform;
-import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -39,14 +32,14 @@ import java.util.function.Consumer;
 /**
  * 在影片编辑器中，肢体轨道（BONE 类型）选中关键帧后打开的属性面板
  * 是 {@link UIPoseTransformKeyframeFactory}。它自带固定、可见、颜色、叠加色、光照五个控件，
- * 但缺少逐骨骼 PBR、描边、附魔光效滑条，也没有模型编辑页底部的纹理变换栏。
+ * 但缺少逐骨骼 PBR、描边与附魔光效控件。纹理变换是表单级属性，仅由模型编辑页提供，
+ * 这里不再重复。
  *
- * <p>本 Mixin 在该面板构造完成后，于原版材质栏之后依次追加四个折叠栏：</p>
+ * <p>本 Mixin 在该面板构造完成后，于原版材质栏之后依次追加三个折叠栏：</p>
  * <ol>
  *   <li><b>PBR</b> —— 光泽度 / 金属度 / 散射 / 自发光 / 凹凸（0~1）；</li>
  *   <li><b>描边</b> —— 开关 / 颜色 / 宽度 / 辉光 / 贴花；</li>
- *   <li><b>附魔光效</b> —— 开关 / 颜色 / 流动速度 / 亮度；</li>
- *   <li><b>纹理变换</b> —— UV 偏移 / 缩放（表单级属性，非关键帧值）。</li>
+ *   <li><b>附魔光效</b> —— 开关 / 颜色 / 流动速度 / 亮度。</li>
  * </ol>
  *
  * <p><b>与姿势轨道面板的适配差异：</b></p>
@@ -58,9 +51,7 @@ import java.util.function.Consumer;
  * </ul>
  *
  * <p>骨骼级写入路径复用原版 {@code UIPoseTransforms.apply(editor, keyframe, consumer)}，
- * 与固定 / 光照滑条走同一套关键帧通知与 undo 流程。纹理变换是 {@code Form} 上的
- * {@link BBSPPFormValues#UV_TRANSFORM}，因此通过关键帧所属的 {@link UIKeyframeSheet}
- * 反查表单后直接写表单值。</p>
+ * 与固定 / 光照滑条走同一套关键帧通知与 undo 流程。</p>
  *
  * <p>本类 extends {@link UIKeyframeFactory}&lt;{@link PoseTransform}&gt; 以直接访问基类的
  * {@code scroll}、{@code keyframe}、{@code editor} 字段——Mixin @Shadow 默认不沿继承链查找，
@@ -95,13 +86,10 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
     @Unique private UITrackpad bbspp$glintSpeed;
     @Unique private UITrackpad bbspp$glintBrightness;
 
-    @Unique private UISection bbspp$uvSection;
-    @Unique private UVTransformEditor bbspp$uvEditor;
-
     /**
-     * 在构造器尾部追加 PBR / 描边 / 附魔光效 / 纹理变换四个折叠栏。
+     * 在构造器尾部追加 PBR / 描边 / 附魔光效三个折叠栏。
      * 原版最后 {@code scroll.add(...)} 放入四个控件，这里在其之后再 add 各 section，
-     * 顺序为：可见 → 固定 → 变换 → 材质（颜色/叠加/光照）→ PBR → 描边 → 附魔光效 → 纹理变换。
+     * 顺序为：可见 → 固定 → 变换 → 材质（颜色/叠加/光照）→ PBR → 描边 → 附魔光效。
      */
     @Inject(method = "<init>", at = @At("TAIL"), remap = true)
     private void bbspp$addExtraSections(Keyframe<PoseTransform> keyframe, UIKeyframes editor, CallbackInfo ci)
@@ -190,21 +178,7 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
             UI.labelRow(L10n.lang("bbs.ui.pose.glint_brightness"), this.bbspp$glintBrightness)
         );
 
-        /* ---- 纹理变换折叠栏（表单级纹理 UV，不随骨骼关键帧变化） ---- */
-        this.bbspp$uvEditor = new UVTransformEditor((value) ->
-        {
-            ValueVector4f uvTransform = this.bbspp$getUvTransform();
-
-            if (uvTransform != null)
-            {
-                uvTransform.set(new Vector4f(value));
-            }
-        });
-        this.bbspp$uvSection = new UISection(L10n.lang("bbs.ui.forms.editor.model.uv_transform"));
-        this.bbspp$uvSection.setExpanded(false);
-        this.bbspp$uvSection.fields.add(this.bbspp$uvEditor);
-
-        this.scroll.add(this.bbspp$pbrSection, this.bbspp$outlineSection, this.bbspp$glintSection, this.bbspp$uvSection);
+        this.scroll.add(this.bbspp$pbrSection, this.bbspp$outlineSection, this.bbspp$glintSection);
 
         /* 用当前关键帧的 PoseTransform 值初始化各控件。 */
         this.bbspp$syncPbrSliders();
@@ -273,7 +247,7 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
         this.bbspp$pbrRelief.setValue(((BonePbrHolder) poseT).bbspp_cml$getRelief());
     }
 
-    /** 从当前关键帧 / 所属表单同步描边、附魔光效、纹理变换控件。 */
+    /** 从当前关键帧的 PoseTransform 同步描边与附魔光效控件。 */
     @Unique
     private void bbspp$syncExtraSections()
     {
@@ -311,35 +285,5 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
         this.bbspp$glintBrightness.setValue(glintSettings == null
             ? GlintSettingsHolder.DEFAULT_BRIGHTNESS
             : glintSettings.bbspp_cml$getGlintBrightness());
-
-        ValueVector4f uvTransform = this.bbspp$getUvTransform();
-
-        this.bbspp$uvSection.setVisible(uvTransform != null);
-
-        if (uvTransform != null && uvTransform.get() != null)
-        {
-            this.bbspp$uvEditor.setValue(uvTransform.get());
-        }
-    }
-
-    /** 通过关键帧所属的 dope sheet 反查表单，再取表单上的 UV 变换值。 */
-    @Unique
-    private ValueVector4f bbspp$getUvTransform()
-    {
-        if (this.editor == null || this.keyframe == null)
-        {
-            return null;
-        }
-
-        UIKeyframeSheet sheet = this.editor.getGraph().getSheet(this.keyframe);
-
-        if (sheet == null)
-        {
-            return null;
-        }
-
-        Form form = UIReplaysEditor.getSheetForm(sheet);
-
-        return form == null ? null : BBSPPFormValues.getUvTransform(form);
     }
 }

@@ -1,6 +1,5 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import gbeic.bbsplusplus.api.BBSPPFormValues;
 import gbeic.bbsplusplus.api.BoneOutlineHolder;
 import gbeic.bbsplusplus.api.BonePbrHolder;
 import gbeic.bbsplusplus.api.BoneTextureHolder;
@@ -9,18 +8,14 @@ import gbeic.bbsplusplus.api.GlintSettingsHolder;
 import gbeic.bbsplusplus.api.ModelFormUvSectionHolder;
 import gbeic.bbsplusplus.api.PickTextureButtonHolder;
 import gbeic.bbsplusplus.client.outline.OutlineEmissiveTexture;
-import gbeic.bbsplusplus.client.ui.UVTransformEditor;
 import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.cubic.IBoneHierarchy;
-import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.IValueListener;
 import mchorse.bbs_mod.settings.values.core.ValuePose;
-import mchorse.bbs_mod.settings.values.misc.ValueVector4f;
 import mchorse.bbs_mod.ui.UIKeys;
-import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.forms.editors.panels.widgets.UIModelPoseEditor;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -31,7 +26,6 @@ import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
 import mchorse.bbs_mod.ui.framework.elements.input.UISliderTrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory;
 import mchorse.bbs_mod.ui.utils.UI;
@@ -42,7 +36,6 @@ import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.PoseTransform;
 import mchorse.bbs_mod.utils.resources.LinkUtils;
-import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -56,15 +49,16 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
- * 在 {@link UIPoseEditor} 中追加两个按钮：骨骼纹理、附魔光效，均作用于当前选中骨骼。
+ * 在 {@link UIPoseEditor} 的材质栏下方追加骨骼纹理按钮，以及 PBR / 描边 / 附魔光效三个折叠栏，
+ * 均作用于当前选中骨骼。
  *
  * <p><b>骨骼纹理</b> —— 点开按钮弹出 {@link UITexturePicker}，选择纹理后写回当前选中骨骼对应
  * {@link PoseTransform} 的 texture 字段（经 {@link BoneTextureHolder} 接口）。
  * 默认无选中骨骼则 no-op；受 {@code ModSettings.pickLimbTexture} 开关控制（与 CML 行为一致）。</p>
  *
- * <p><b>附魔光效</b> —— 点击切换当前选中骨骼的原版风格附魔流光（经 {@link GlintHolder} 接口）；
- * 面板始终显示该栏，不再依赖模组设置开关。
- * 两个按钮共用同一套写入分派（{@link #bbspp_cml$writeToSelection}）。</p>
+ * <p><b>PBR / 描边 / 附魔光效</b> —— 分别经 {@link BonePbrHolder}、{@link BoneOutlineHolder}、
+ * {@link GlintHolder} 等接口读写当前选中骨骼；这些栏始终显示，不再依赖模组设置开关。
+ * 骨骼纹理按钮与三个折叠栏共用同一套写入分派（{@link #bbspp_cml$writeToSelection}）。</p>
  *
  * <p>纹理数据流：UI → {@code BoneTextureHolder#bbspp_cml$setTexture} →
  * PoseTransformMixin 的 texture 字段（含 toData/fromData/copy 持久化钩子）→
@@ -134,13 +128,6 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
 
     @Unique
     private UISection bbspp_cml$glintSection;
-
-    /* 纹理变换折叠栏：表单级 UV，仅影片姿势关键帧面板使用（模型编辑页已有独立表单级 UV 栏）。 */
-    @Unique
-    private UISection bbspp_cml$uvSection;
-
-    @Unique
-    private UVTransformEditor bbspp_cml$uvEditor;
 
     @Unique
     private UISliderTrackpad bbspp_cml$pbrSmoothness;
@@ -306,28 +293,13 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             UI.labelRow(L10n.lang("bbs.ui.pose.glint_brightness"), this.bbspp_cml$glintBrightness)
         );
 
-        /* ---- 纹理变换折叠栏（仅影片姿势关键帧面板；模型编辑页的 UV 栏属于表单面板） ---- */
-        this.bbspp_cml$uvEditor = new UVTransformEditor((value) ->
-        {
-            ValueVector4f uvTransform = this.bbspp_cml$getUvTransformValue();
-
-            if (uvTransform != null)
-            {
-                uvTransform.set(new Vector4f(value));
-            }
-        });
-        this.bbspp_cml$uvSection = new UISection(L10n.lang("bbs.ui.forms.editor.model.uv_transform"));
-        this.bbspp_cml$uvSection.setExpanded(false);
-        this.bbspp_cml$uvSection.setVisible(false);
-        this.bbspp_cml$uvSection.fields.add(this.bbspp_cml$uvEditor);
-
-        /* PBR / 描边 / 光效 / 纹理变换栏与骨骼纹理按钮插入到材质栏正下方，而非面板末尾。 */
+        /* PBR / 描边 / 光效栏与骨骼纹理按钮插入到材质栏正下方，而非面板末尾。 */
         this.bbspp_cml$attachAfterMaterial();
 
         this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$refreshBoneTextureButton();
         this.bbspp_cml$syncOutlineControls();
-        this.bbspp_cml$syncUvControls();
+        this.bbspp_cml$syncAutoExpand();
     }
 
     /** 换姿势 / 换选中的骨骼时，把开关与颜色同步成当前骨骼的实际状态。 */
@@ -337,7 +309,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$syncPbrSliders();
         this.bbspp_cml$syncOutlineControls();
-        this.bbspp_cml$syncUvControls();
+        this.bbspp_cml$syncAutoExpand();
     }
 
     /**
@@ -357,7 +329,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$refreshBoneTextureButton();
         this.bbspp_cml$syncOutlineControls();
-        this.bbspp_cml$syncUvControls();
+        this.bbspp_cml$syncAutoExpand();
     }
 
     /**
@@ -396,7 +368,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
          * 这里再移除会把按钮从行里拽走。 */
         for (UIElement element : new UIElement[] {
             this.bbspp_cml$pbrSection, this.bbspp_cml$outlineSection,
-            this.bbspp_cml$glintSection, this.bbspp_cml$uvSection, this.bbspp_cml$pickTexture
+            this.bbspp_cml$glintSection, this.bbspp_cml$pickTexture
         })
         {
             if (element != null && element.getParent() != null
@@ -418,13 +390,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             last = this.bbspp_cml$glintSection;
         }
 
-        /* 纹理变换栏只服务于影片姿势关键帧面板；模型编辑页的 UV 栏位于表单面板，避免重复。 */
-        if (this.bbspp_cml$uvSection != null && self instanceof UIPoseKeyframeFactory.UIPoseFactoryEditor)
-        {
-            parent.addAfter(last, this.bbspp_cml$uvSection);
-            last = this.bbspp_cml$uvSection;
-        }
-
+        /* 骨骼纹理按钮接在最后一个折叠栏之后。 */
         if (this.bbspp_cml$pickTexture != null && !this.bbspp_cml$pickTextureDetached)
         {
             parent.addAfter(last, this.bbspp_cml$pickTexture);
@@ -437,7 +403,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$syncPbrSliders();
         this.bbspp_cml$syncOutlineControls();
-        this.bbspp_cml$syncUvControls();
+        this.bbspp_cml$syncAutoExpand();
     }
 
     @Inject(method = "selectBone(Ljava/lang/String;Z)V", at = @At("TAIL"), remap = false)
@@ -446,7 +412,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$syncPbrSliders();
         this.bbspp_cml$syncOutlineControls();
-        this.bbspp_cml$syncUvControls();
+        this.bbspp_cml$syncAutoExpand();
     }
 
     /** 骨骼列表自动选中首根骨骼时不经过 selectBone()，在此统一刷新面板控件。 */
@@ -456,7 +422,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$syncGlintToggle();
         this.bbspp_cml$syncPbrSliders();
         this.bbspp_cml$syncOutlineControls();
-        this.bbspp_cml$syncUvControls();
+        this.bbspp_cml$syncAutoExpand();
     }
 
     @Unique
@@ -985,39 +951,6 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     }
 
     /**
-     * 从姿势关键帧宿主反查表单上的纹理变换值。
-     * 模型编辑页（{@link UIModelPoseEditor}）不使用本栏 —— 那里已有表单面板级 UV 栏。
-     */
-    @Unique
-    private ValueVector4f bbspp_cml$getUvTransformValue()
-    {
-        UIPoseEditor self = (UIPoseEditor) (Object) this;
-
-        if (!(self instanceof UIPoseKeyframeFactory.UIPoseFactoryEditor))
-        {
-            return null;
-        }
-
-        UIPoseFactoryEditorAccessor accessor = (UIPoseFactoryEditorAccessor) self;
-
-        if (accessor.bbspp_cml$getEditor() == null || accessor.bbspp_cml$getKeyframe() == null)
-        {
-            return null;
-        }
-
-        UIKeyframeSheet sheet = accessor.bbspp_cml$getEditor().getGraph().getSheet(accessor.bbspp_cml$getKeyframe());
-
-        if (sheet == null)
-        {
-            return null;
-        }
-
-        Form form = UIReplaysEditor.getSheetForm(sheet);
-
-        return form == null ? null : BBSPPFormValues.getUvTransform(form);
-    }
-
-    /**
      * 模型编辑页的“默认展开”策略：选中骨骼后，按该骨骼的 PoseTransform 决定材质 / PBR /
      * 描边 / 附魔光效四栏是否展开。纹理变换是模型级属性，由 {@code UIModelFormPanelMixin}
      * 在表单同步时处理。
@@ -1092,7 +1025,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             this.bbspp_cml$glintSection.setExpanded(glint);
         }
 
-        /* 纹理变换是模型级属性，但用户要求选中肢体时五栏一起刷新；沿父链请形态面板重算 UV 栏。 */
+        /* 纹理变换是模型级属性（模型编辑页表单面板），这里只需刷新它的默认展开状态。 */
         UIElement parent = self.getParent();
 
         while (parent != null)
@@ -1108,24 +1041,10 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         }
     }
 
-    /** 同步纹理变换栏的显隐与当前表单 UV 值，并刷新模型编辑页的栏位默认展开状态。 */
+    /** 刷新模型编辑页各栏的默认展开状态。 */
     @Unique
-    private void bbspp_cml$syncUvControls()
+    private void bbspp_cml$syncAutoExpand()
     {
         this.bbspp_cml$autoExpandSections();
-
-        if (this.bbspp_cml$uvSection == null)
-        {
-            return;
-        }
-
-        ValueVector4f uvTransform = this.bbspp_cml$getUvTransformValue();
-
-        this.bbspp_cml$uvSection.setVisible(uvTransform != null);
-
-        if (uvTransform != null && uvTransform.get() != null)
-        {
-            this.bbspp_cml$uvEditor.setValue(uvTransform.get());
-        }
     }
 }

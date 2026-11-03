@@ -94,6 +94,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 ### Enchant Glint
 
 - Adds an "Enchant Glint" section to the pose editor for the selected bone. The section is always shown and is no longer gated by a mod setting.
+- In the film editor, the keyframe inspector for limb tracks also provides an Enchant Glint section for per-bone adjustments; in the pose track keyframe inspector, the section applies to the selected bone.
 - Supports custom color and alpha, flow speed (0–4×) and brightness (0–4×); right-click applies the settings to child bones.
 - With shaders off, the mod's built-in shader draws the glint. With Iris shaders on, the pack's glint program draws it instead. Both paths share the same phase, so flow speed stays consistent.
 - If the pack has no `gbuffers_armor_glint`, Iris falls back to `gbuffers_textured`; the final look depends on the pack.
@@ -127,6 +128,12 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 - Adjustable pixel block size, spread strength, flash color, and PBR emission brightness
 - Built-in 3D spread-origin picker: right-click the model surface to pick the origin; left-drag rotates, middle-drag pans, Ctrl+scroll zooms; X/Y/Z can also be numeric fine-tuned
 - Automatically migrates legacy BBSPPP texture tween keyframe data
+
+### UV Transform
+
+- The model form editor provides a collapsible UV Transform section at the bottom for texture offset and scale.
+- UV is a form-level property, independent of individual bones and their keyframes; the film pose and limb track inspectors do not expose this section.
+- On 1.20.1 / 1.20.4 the transform is applied in both the model shader and the built-in Enchant Glint shader, so UV adjustments keep working with glint enabled.
 
 ### CML Features (merged from bbs_snow)
 
@@ -213,10 +220,11 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 * **Enchant Glint rework**: the section now supports color, alpha, flow speed and brightness; values are stored in bone pose data and support keyframe interpolation
 * **Iris compatibility**: on 1.20.1 / 1.20.4, when a shader pack takes over world rendering the glint is drawn as a second pass of the same group VAO with the vanilla glint program; the built-in shader and the pack path share the same phase, so flow speed matches with shaders on or off. Packs without `gbuffers_armor_glint` fall back to `gbuffers_textured`
 * **Settings cleanup**: removed the Enchant Glint category and toggle from the BBS++ settings page; the pose editor section is always shown, and the glint data/render path is unchanged
+* **Film track inspector**: in the film editor, the keyframe inspector for limb tracks now adds collapsible PBR, Outline and Enchant Glint sections below the material section for per-bone adjustments; the same sections in the pose track keyframe inspector apply to the selected bone
 * **Outline rendering**: shell geometry is built and cached per bone; models without outlines skip shell building and depth prepass
-* **Outline toggle sync**: after reopening the pose editor, the Outline, Enchant Glint, PBR and UV transform controls now refresh with the auto-selected bone; a rendered outline no longer appears disabled
+* **Outline toggle sync**: after reopening the pose editor, the Outline, Enchant Glint and PBR controls now refresh with the auto-selected bone, and the UV transform section's default expanded state updates too; a rendered outline no longer appears disabled
 * **Enchant Glint color fix**: with shaders enabled, the in-world glint color now matches the editor color; the default white no longer renders purple
-* **UV transform section**: the model form editor gains a collapsible UV transform section for texture offset and scale; the film pose keyframe editor can also edit the form-level UV below the material section
+* **UV transform section**: the model form editor gains a collapsible UV transform section for texture offset and scale; the UV values apply to both the model shader and the built-in Enchant Glint shader. UV is a form-level property, independent of individual bones and their keyframes, so the film pose and limb track inspectors do not expose this section
 * **Texture button layout**: "Pick texture…" and "Bone texture" now share one row at the top of the model form editor; the bone texture button no longer takes up space at the bottom of the pose panel
 * **Multi-version support**: 1.20.1 / 1.20.4 and 1.21.11
 
