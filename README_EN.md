@@ -129,6 +129,18 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 - Built-in 3D spread-origin picker: right-click the model surface to pick the origin; left-drag rotates, middle-drag pans, Ctrl+scroll zooms; X/Y/Z can also be numeric fine-tuned
 - Automatically migrates legacy BBSPPP texture tween keyframe data
 
+### Model Outlines
+
+- Outline settings live in a collapsible "Outline" section below the "PBR" section in the pose editor and are configured per bone. Expand it to enable an outline for the current bone and adjust its color, width, glow and "non-outlined block size".
+- In the film editor, the keyframe inspector for limb tracks also provides an "Outline" section for configuring outlines per bone directly on the film timeline.
+- Like PBR and Enchant Glint, outline values are stored in bone pose data, support keyframe interpolation and are no longer written to the model's `config.json`.
+- Only the outer edge of each bone's silhouette is drawn: transparent texture areas produce no outline, welded faces are skipped automatically, and small decorative blocks fully enclosed by larger blocks can be filtered out with "non-outlined block size".
+- "Non-outlined block size" is measured in model pixels; `0` disables filtering. Width is measured in quarter model pixels, so `4` is roughly one model pixel.
+- Right-click the outline toggle, color or any parameter slider and choose "Apply to child bones" to spread the setting to all descendants of the bone.
+- Glow ranges from 0 to 255; `0` disables it. On 1.20.1 / 1.20.4, with Iris installed, glow is drawn via LabPBR emission; without Iris or when the textures are unavailable it falls back to a solid-color outline. On 1.21.11, solid-color outlines and depth write-back are supported, while LabPBR glow is still being adapted.
+- The "Enchant Glint" section below the same panel has also been merged into a collapsible section with the glint toggle, color, flow speed and brightness, so both can be managed together.
+- Migration note: outlines no longer read the legacy outline keys in the model's `config.json`; existing projects must re-enable outlines per bone in the pose editor, and "Apply to child bones" can be used to spread them quickly.
+
 ### UV Transform
 
 - The model form editor provides a collapsible UV Transform section at the bottom for texture offset and scale.
