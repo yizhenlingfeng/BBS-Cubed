@@ -1,34 +1,64 @@
 package gbeic.bbsplusplus.mixin;
 
+import gbeic.bbsplusplus.api.IBbsppStepChannel;
+import gbeic.bbsplusplus.keyframes.BBSPlusPlusKeyframeFactories;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
-import gbeic.bbsplusplus.keyframes.BBSPlusPlusKeyframeFactories;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * KeyframeChannel Mixin
- *
- * 1. 在 KeyframeChannel 从数据加载时检查是否为旧版本的 "effect" 通道，并且工厂是原版的 LINK 工厂。如果是，则自动升级为 BBS++ 的 AAA_EFFECT 工厂，以兼容旧版本的录像文件。
- * 2. 通过这种方式，用户在使用 BBS++ 的新版本时，无需手动修改旧录像文件中的通道工厂设置，即可享受 AAA 粒子效果带来的增强功能。
- */
+import java.util.HashSet;
+import java.util.Set;
 
+/**
+ * 通道侧的两处兼容：
+ * <ol>
+ *   <li>旧录像里的 {@code effect} 通道若仍使用原版 LINK 工厂，加载时自动升级为
+ *       AAA_EFFECT，无需手动改档；</li>
+ *   <li>为 {@link IBbsppStepChannel} 提供挂载点，登记 Bedrock 步阶帧的 tick。</li>
+ * </ol>
+ */
 @Mixin(value = KeyframeChannel.class, remap = true)
-public class KeyframeChannelMixin
+public class KeyframeChannelMixin implements IBbsppStepChannel
 {
     @Shadow
     private IKeyframeFactory<?> factory;
+
+    @Unique
+    private final Set<Float> bbspp$stepTicks = new HashSet<>();
+
+    @Override
+    public void bbspp$addStepTick(float tick)
+    {
+        this.bbspp$stepTicks.add(tick);
+    }
+
+    @Override
+    public boolean bbspp$isStepTick(float tick)
+    {
+        for (float step : this.bbspp$stepTicks)
+        {
+            /* 秒转 tick 经过 float 乘法，用 0.01 tick 容差兜住舍入差。 */
+            if (Math.abs(step - tick) < 0.01F)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     @Inject(method = "fromData", at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/settings/values/core/ValueList;fromData(Lmchorse/bbs_mod/data/types/BaseType;)V", shift = At.Shift.BEFORE))
     private void bbspp$modifyFactory(BaseType data, CallbackInfo ci)
     {
         KeyframeChannel<?> channel = (KeyframeChannel<?>) (Object) this;
-        // 如果是从旧版本读取的 "effect" 通道，且使用了原版的 LINK 工厂，则自动升级为 AAA_EFFECT
+
         if ("effect".equals(channel.getId()) && this.factory == KeyframeFactories.LINK)
         {
             this.factory = BBSPlusPlusKeyframeFactories.AAA_EFFECT;

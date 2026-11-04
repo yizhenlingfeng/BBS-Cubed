@@ -1,5 +1,6 @@
 package gbeic.bbsplusplus.util;
 
+import gbeic.bbsplusplus.api.IBbsppStepChannel;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.AnimationInterpolation;
 import mchorse.bbs_mod.cubic.data.animation.AnimationPart;
@@ -49,9 +50,14 @@ public class AnimationInterpInheritance
     /**
      * 收集动画全部通道在该 tick 上关键帧的插值,取出现最多的非线性插值并
      * 映射为 pose 关键帧插值;全线性(或该 tick 无关键帧)返回 null 表示不动。
+     *
+     * <p>步阶到达帧例外:它自身的插值是 {@link Interpolations#CONST},表示"进入该帧的段保持"。
+     * pose 通道的插值描述的是"从本帧出发的段",直接搬过去会把离开步阶帧的整段压成常量,
+     * 动画看起来卡住一段再跳。此时改取<b>下一帧</b>的插值,那才是离开本帧那一段的真实类型。</p>
      */
     public static IInterp pickInterp(Animation animation, float tick)
     {
+        float sample = isStepTickAt(animation, tick) ? nextKeyframeTick(animation, tick) : tick;
         Map<IInterp, Integer> counts = new HashMap<>();
 
         for (AnimationPart part : animation.parts.values())
@@ -60,7 +66,7 @@ public class AnimationInterpInheritance
             {
                 for (Keyframe<MolangExpression> keyframe : channel.getKeyframes())
                 {
-                    if (Math.abs(keyframe.getTick() - tick) < 0.001F)
+                    if (Math.abs(keyframe.getTick() - sample) < 0.001F)
                     {
                         IInterp interp = keyframe.getInterpolation().getInterp();
 
@@ -86,6 +92,47 @@ public class AnimationInterpInheritance
         }
 
         return best == null ? null : map(best);
+    }
+
+    /** 该 tick 是否为任一骨骼通道上的步阶到达帧。 */
+    private static boolean isStepTickAt(Animation animation, float tick)
+    {
+        for (AnimationPart part : animation.parts.values())
+        {
+            for (KeyframeChannel<MolangExpression> channel : part.channels)
+            {
+                if (channel instanceof IBbsppStepChannel steps && steps.bbspp$isStepTick(tick))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /** 严格大于该 tick 的最近关键帧 tick；没有下一帧时退回原 tick。 */
+    private static float nextKeyframeTick(Animation animation, float tick)
+    {
+        float next = Float.MAX_VALUE;
+
+        for (AnimationPart part : animation.parts.values())
+        {
+            for (KeyframeChannel<MolangExpression> channel : part.channels)
+            {
+                for (Keyframe<MolangExpression> keyframe : channel.getKeyframes())
+                {
+                    float keyframeTick = keyframe.getTick();
+
+                    if (keyframeTick > tick + 0.001F && keyframeTick < next)
+                    {
+                        next = keyframeTick;
+                    }
+                }
+            }
+        }
+
+        return next == Float.MAX_VALUE ? tick : next;
     }
 
     private static IInterp map(IInterp interp)

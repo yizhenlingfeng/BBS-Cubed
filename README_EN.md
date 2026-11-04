@@ -226,6 +226,13 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 
 ### Mod Changelog
 
+#### 3.6.6 (Bedrock step keyframes and interpolation reading)
+* **Step keyframe detection**: previously any keyframe carrying `pre` was treated as a step, but Blockbench writes `pre` and `post` on every keyframe that has a previous value (both identical on smooth keys), so smooth animations were played back as steps. Detection now follows the interpolation declared in the file: a keyframe is a step only when its `pre` differs from its `post`, or when the previous keyframe declares `easing: "step"`
+* **Step interpolation**: step keyframes use BBS's built-in step interpolation (`CONST`), so cubic model animation holds the previous value and snaps on that key as intended
+* **Segment after a step keyframe**: converting an animation to pose keyframes used to copy the step key's interpolation onto the pose key as well, holding the segment leaving that key. It now takes the interpolation of the next keyframe, so the segment after a step is smooth again
+* **Pose baking**: keeps step keyframes in the same way, without holding an extra segment
+* These changes only affect animations containing step keyframes; pure catmullrom or linear animations play as before
+
 #### 3.6.5 (Per-bone model outlines + pose panel cleanup)
 * **Per-bone outlines**: outline settings moved from the model `config.json` into bone pose data, alongside PBR and Enchant Glint. Each bone can enable its own outline and set color, width, glow and non-outlined block size; values support keyframe interpolation. Legacy outline keys in `config.json` are no longer read, so existing projects need to re-enable outlines in the pose editor
 * **Pose editor layout**: a collapsible Outline section is added below PBR, and Enchant Glint becomes its own section below Outline. Right-click applies outline and glint settings to child bones

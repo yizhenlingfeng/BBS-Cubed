@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.api.IBbsppAnimation;
+import gbeic.bbsplusplus.api.IBbsppStepChannel;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.geo.GeoAnimationParser;
 import mchorse.bbs_mod.math.molang.MolangParser;
@@ -19,31 +20,22 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
- * Bedrock 动画解析兼容层。
+ * Bedrock 动画解析兼容层，补齐 BBS 原生 {@link GeoAnimationParser} 对 Blockbench
+ * 导出格式的三处支持缺口。
  *
- * <p>BBS 原生 {@link GeoAnimationParser} 按自身格式解析，对 Blockbench 导出的 Bedrock
- * 动画有三处兼容缺口，统一在本 Mixin 补齐：
- * <ol>
- *   <li><b>步阶帧（step）</b>：Blockbench 把步阶帧导出为 {@code {"pre": 前值, "post": 本值}}
- *       瞬变对，原生只读 post、丢弃 pre，步阶退化为线性滑动。在 {@code parseChannel} 尾部
- *       识别带 {@code pre} 数组的帧，把进入该帧的那一段标为 {@link Interpolations#CONST}。
- *       BBS 有两条取值路径，用的关键帧不同，因此<b>两帧都要标</b>：
- *       <ul>
- *         <li>方块模型动画（{@code CubicModelAnimator}）用段内<b>后一帧 b</b> 的插值，
- *             必须标在<b>步阶帧自身</b>；</li>
- *         <li>通用通道（{@code KeyframeSegment.createInterpolated}，姿态/动作烘焙）用段内
- *             <b>首帧 a</b> 的插值，必须标在<b>步阶帧的前一帧</b>。</li>
- *       </ul>
- *       只标其一，另一条路径上的步阶就会退化为线性滑动。</li>
- *   <li><b>标量通道简写</b>：Bedrock 允许 {@code "scale": 2}，原生只接受数组或对象，
- *       遇裸数字会静默丢弃。在 {@code parse} 入口把 bone 上的数字值改写为 {@code [n,n,n]}。</li>
- *   <li><b>loop 字段</b>：Bedrock 的 {@code loop: true} / {@code "hold_on_last_frame"}
- *       原生不读，挂到解析后的 {@link Animation} 上供动作编辑器使用。</li>
- * </ol>
+ * <ul>
+ *   <li><b>步阶帧</b>：识别步阶到达帧并写入对应标记，见 {@link #bbspp$applyStepFrames}；</li>
+ *   <li><b>标量通道简写</b>：{@code "scale": 2} 规范化为 {@code [n, n, n]}；</li>
+ *   <li><b>loop 字段</b>：读取 {@code loop} 供动作编辑器使用。</li>
+ * </ul>
  */
 @Mixin(value = GeoAnimationParser.class, remap = false)
 public abstract class GeoAnimationParserMixin
@@ -55,56 +47,186 @@ public abstract class GeoAnimationParserMixin
     {
         try
         {
-            if (!element.isJsonObject())
-            {
-                return;
-            }
-
-            TreeMap<Float, JsonElement> frames = new TreeMap<>();
-
-            for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet())
-            {
-                try
-                {
-                    frames.put(Float.parseFloat(entry.getKey()), entry.getValue());
-                }
-                catch (NumberFormatException ignored)
-                {
-                    /* 非时间键（如 vector/lerp_mode）跳过 */
-                }
-            }
-
-            for (Map.Entry<Float, JsonElement> entry : frames.entrySet())
-            {
-                JsonElement value = entry.getValue();
-
-                if (!value.isJsonObject())
-                {
-                    continue;
-                }
-
-                JsonObject frame = value.getAsJsonObject();
-
-                if (!frame.has("pre") || !frame.get("pre").isJsonArray()
-                    || frame.getAsJsonArray("pre").size() < 3)
-                {
-                    continue;
-                }
-
-                float tick = entry.getKey() * 20F;
-
-                bbspp$markConstAtTick(x, tick);
-                bbspp$markConstAtTick(y, tick);
-                bbspp$markConstAtTick(z, tick);
-
-                bbspp$markPreviousConst(x, tick);
-                bbspp$markPreviousConst(y, tick);
-                bbspp$markPreviousConst(z, tick);
-            }
+            bbspp$applyStepFrames(x, y, z, element);
         }
         catch (Exception e)
         {
             BBSPlusPlusMod.LOGGER.warn("Blockbench 步阶帧识别失败：{}", e.getMessage());
+        }
+    }
+
+    /**
+     * 步阶帧在 BBS 里有三个读取方，语义各不相同，必须分别标记：
+     *
+     * <ul>
+     *   <li>{@code CubicModelAnimator} 取段内<b>后一帧</b>的插值——把到达帧标为
+     *       {@link Interpolations#CONST}，播放时才会"保持前值 → 瞬跳"。这也是关键帧
+     *       本身的插值类型，界面与后续读取方看到的都是 BBS 内置的步阶；</li>
+     *   <li>pose / 影片轨道取段内<b>首帧</b>的插值——把到达帧的前一帧同样标为 CONST，
+     *       在出发帧上表达同一段保持；</li>
+ *   <li>动画转姿势需要知道"下一帧是不是步阶"，只靠插值无法区分 CONST 表示的是
+ *       进入还是离开，因此把 tick 登记到通道（{@link IBbsppStepChannel}）。</li>
+     * </ul>
+     */
+    @Unique
+    private static void bbspp$applyStepFrames(KeyframeChannel<MolangExpression> x,
+        KeyframeChannel<MolangExpression> y, KeyframeChannel<MolangExpression> z, JsonElement element)
+    {
+        for (float seconds : bbspp$collectStepTimes(element))
+        {
+            float tick = seconds * 20F;
+
+            bbspp$markConstAtTick(x, tick);
+            bbspp$markConstAtTick(y, tick);
+            bbspp$markConstAtTick(z, tick);
+
+            bbspp$markPreviousConst(x, tick);
+            bbspp$markPreviousConst(y, tick);
+            bbspp$markPreviousConst(z, tick);
+
+            bbspp$recordStepTick(x, tick);
+            bbspp$recordStepTick(y, tick);
+            bbspp$recordStepTick(z, tick);
+        }
+    }
+
+    /**
+     * 收集步阶"到达帧"的时间（秒）。判据来自动画文件已有的插值声明，不靠 {@code pre}
+     * 的存在与否推断——Blockbench 对<b>有前值的平滑帧</b>同样会写 {@code pre}、{@code post}：
+     *
+     * <ul>
+     *   <li>本帧 {@code pre != post}：到达本帧时确有瞬变；</li>
+     *   <li>上一帧 {@code easing == "step"}：Bedrock 的 easing 描述"从该帧出发的段"，
+     *       因此步阶到达帧是它的下一帧。</li>
+     * </ul>
+     *
+     * <p>{@code pre == post} 的帧不加任何标记，交回原生 {@code lerp_mode} /
+     * {@code easing} 解析，保留它原本的插值类型。</p>
+     */
+    @Unique
+    private static Set<Float> bbspp$collectStepTimes(JsonElement element)
+    {
+        Set<Float> stepTimes = new TreeSet<>();
+
+        if (!element.isJsonObject())
+        {
+            return stepTimes;
+        }
+
+        TreeMap<Float, JsonElement> frames = new TreeMap<>();
+
+        for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet())
+        {
+            try
+            {
+                frames.put(Float.parseFloat(entry.getKey()), entry.getValue());
+            }
+            catch (NumberFormatException ignored)
+            {
+                /* 非时间键（如 lerp_mode）跳过 */
+            }
+        }
+
+        List<Map.Entry<Float, JsonElement>> ordered = new ArrayList<>(frames.entrySet());
+
+        for (int i = 0; i < ordered.size(); i++)
+        {
+            JsonElement value = ordered.get(i).getValue();
+
+            if (!value.isJsonObject())
+            {
+                continue;
+            }
+
+            JsonObject frame = value.getAsJsonObject();
+            JsonArray pre = bbspp$asVector(frame.get("pre"));
+            JsonArray post = bbspp$asVector(frame.get("post"));
+
+            if (pre != null && post != null && pre.size() >= 3 && post.size() >= 3
+                && !pre.equals(post))
+            {
+                stepTimes.add(ordered.get(i).getKey());
+            }
+
+            if (i + 1 < ordered.size() && bbspp$isStepEasing(frame))
+            {
+                stepTimes.add(ordered.get(i + 1).getKey());
+            }
+        }
+
+        return stepTimes;
+    }
+
+    /** {@code easing} 是否为 {@code "step"}（原生映射到 {@link Interpolations#CONST}）。 */
+    @Unique
+    private static boolean bbspp$isStepEasing(JsonObject frame)
+    {
+        JsonElement easing = frame.get("easing");
+
+        return easing != null && easing.isJsonPrimitive() && "step".equals(easing.getAsString());
+    }
+
+    /** 取三轴数组，兼容原生支持的 {@code [x, y, z]} 与 {@code {"vector": [x, y, z]}}。 */
+    @Unique
+    private static JsonArray bbspp$asVector(JsonElement element)
+    {
+        if (element == null)
+        {
+            return null;
+        }
+
+        if (element.isJsonArray())
+        {
+            return element.getAsJsonArray();
+        }
+
+        JsonElement vector = element.isJsonObject() ? element.getAsJsonObject().get("vector") : null;
+
+        return vector != null && vector.isJsonArray() ? vector.getAsJsonArray() : null;
+    }
+
+    /** 把时间恰好为 {@code tick} 的关键帧标为步阶。 */
+    @Unique
+    private static void bbspp$markConstAtTick(KeyframeChannel<MolangExpression> channel, float tick)
+    {
+        for (Keyframe<MolangExpression> keyframe : channel.getKeyframes())
+        {
+            if (Math.abs(keyframe.getTick() - tick) < 0.001F)
+            {
+                keyframe.getInterpolation().setInterp(Interpolations.CONST);
+
+                return;
+            }
+        }
+    }
+
+    /** 把该 tick 之前最近的一帧标为步阶，供取"段内首帧"插值的通道使用。 */
+    @Unique
+    private static void bbspp$markPreviousConst(KeyframeChannel<MolangExpression> channel, float tick)
+    {
+        Keyframe<MolangExpression> previous = null;
+
+        for (Keyframe<MolangExpression> keyframe : channel.getKeyframes())
+        {
+            if (keyframe.getTick() < tick - 0.001F
+                && (previous == null || keyframe.getTick() > previous.getTick()))
+            {
+                previous = keyframe;
+            }
+        }
+
+        if (previous != null)
+        {
+            previous.getInterpolation().setInterp(Interpolations.CONST);
+        }
+    }
+
+    @Unique
+    private static void bbspp$recordStepTick(KeyframeChannel<MolangExpression> channel, float tick)
+    {
+        if (channel instanceof IBbsppStepChannel steps)
+        {
+            steps.bbspp$addStepTick(tick);
         }
     }
 
@@ -134,8 +256,7 @@ public abstract class GeoAnimationParserMixin
                 {
                     JsonElement value = boneObject.get(channel);
 
-                    if (value != null && value.isJsonPrimitive()
-                        && value.getAsJsonPrimitive().isNumber())
+                    if (value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isNumber())
                     {
                         double n = value.getAsDouble();
                         JsonArray array = new JsonArray();
@@ -175,52 +296,6 @@ public abstract class GeoAnimationParserMixin
         catch (Exception e)
         {
             BBSPlusPlusMod.LOGGER.warn("动画 loop 字段读取失败：{}", e.getMessage());
-        }
-    }
-
-    /**
-     * 把步阶帧自身标为 {@link Interpolations#CONST}：方块模型动画
-     * （{@code CubicModelAnimator}）从段内后一帧 b 读取插值，进入步阶帧的那一段
-     * 因此保持前值、在步阶帧时刻瞬跳到 post；它到下一帧的段由下一帧的插值决定，
-     * 不受影响。
-     */
-    @Unique
-    private static void bbspp$markConstAtTick(KeyframeChannel<MolangExpression> channel, float stepTick)
-    {
-        for (Keyframe<MolangExpression> keyframe : channel.getKeyframes())
-        {
-            if (Math.abs(keyframe.getTick() - stepTick) < 0.001F)
-            {
-                keyframe.getInterpolation().setInterp(Interpolations.CONST);
-
-                return;
-            }
-        }
-    }
-
-    /**
-     * 把步阶帧之前那一帧的插值设为 {@link Interpolations#CONST}，供通用通道
-     * （{@code KeyframeSegment.createInterpolated} 取段内首帧 a 的插值，姿态/动作
-     * 烘焙走这条路径）同样得到"保持前值再瞬跳"的效果。
-     */
-    @Unique
-    private static void bbspp$markPreviousConst(KeyframeChannel<MolangExpression> channel, float stepTick)
-    {
-        Keyframe<MolangExpression> prev = null;
-
-        for (Keyframe<MolangExpression> keyframe : channel.getKeyframes())
-        {
-            float t = keyframe.getTick();
-
-            if (t < stepTick - 0.001F && (prev == null || t > prev.getTick()))
-            {
-                prev = keyframe;
-            }
-        }
-
-        if (prev != null)
-        {
-            prev.getInterpolation().setInterp(Interpolations.CONST);
         }
     }
 }
