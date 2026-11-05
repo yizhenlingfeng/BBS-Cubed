@@ -13,7 +13,6 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,7 +50,15 @@ public final class OutlineGeometry
     /** Shell face -> the cube face it really covers (the shell points the other way). */
     private static final int[] SHELL_TO_CUBE_FACE = { FACE_BACK, FACE_LEFT, FACE_FRONT, FACE_RIGHT, FACE_BOTTOM, FACE_TOP };
 
-    private static final String[] FACE_NAMES = { "front", "right", "back", "left", "top", "bottom" };
+    /**
+     * Rendered extent below which an axis counts as flat, in blocks (the same unit as the
+     * {@code realMin}/{@code realMax} bounds, which are already divided by 16).
+     *
+     * <p>Blockbench writes zero-thickness planes and lines all the time, so this has to be an
+     * epsilon rather than a plain {@code == 0F} check. The value is far below anything a model
+     * can meaningfully author (0.0016 model pixels), so it only ever catches collapsed cubes.</p>
+     */
+    private static final float MIN_EXTENT = 1.0E-4F;
 
     /** Cached {@code bone -> mirrored weld faces} tables, keyed by config identity. */
     private static final Map<ModelConfig, CachedWelds> WELD_CACHE = new IdentityHashMap<>();
@@ -66,8 +73,16 @@ public final class OutlineGeometry
     {
     }
 
-    /** One draw: a group, its outline colour/width/glow and the colour already split into floats. */
-    public record Spec(ModelGroup group, int argb, float width, float glow, float r, float g, float b, float a)
+    /**
+     * One draw: a group, its outline colour/width/glow and the colour already split into floats.
+     *
+     * <p>{@code glow} is the LabPBR emission strength (0..254) and only ever reaches the shader
+     * through the {@code _s} companion texture. {@code vanillaGlow} is the strength of the plain
+     * full-bright overlay (0 = off, 255 = full), which does not need Iris at all; the editor
+     * exposes it as a on/off switch.</p>
+     */
+    public record Spec(ModelGroup group, int argb, float width, float glow, float vanillaGlow,
+        float r, float g, float b, float a, boolean faceCull)
     {
     }
 
@@ -119,7 +134,9 @@ public final class OutlineGeometry
             int argb = holder.bbspp_cml$getOutlineColor().getARGBColor();
 
             specs.add(new Spec(group, argb, width, holder.bbspp_cml$getOutlineGlow(),
-                channel(argb, 16), channel(argb, 8), channel(argb, 0), channel(argb, 24)));
+                holder.bbspp_cml$getOutlineVanillaGlow(),
+                channel(argb, 16), channel(argb, 8), channel(argb, 0), channel(argb, 24),
+                holder.bbspp_cml$getOutlineFaceCull()));
         }
 
         return specs;
@@ -247,7 +264,7 @@ public final class OutlineGeometry
                 }
 
                 emitter.cube(groupMatrix, cube, spec.width(), spec.r(), spec.g(), spec.b(), alpha, welded,
-                    faceRects == null ? null : faceRects.get(cube));
+                    faceRects == null ? null : faceRects.get(cube), spec.faceCull());
             }
         }
     }
@@ -446,6 +463,7 @@ public final class OutlineGeometry
         private final Vector3f position = new Vector3f();
         private final Vector3f normal = new Vector3f();
         private final float[] corners = new float[12];
+        private boolean doubleSided;
 
         private Emitter(VertexSink sink, boolean needsNormals)
         {
@@ -454,7 +472,7 @@ public final class OutlineGeometry
         }
 
         private void cube(Matrix4f parent, ModelCube cube, float width, float r, float g, float b, float a,
-                          Set<String> welded, float[][] faceRects)
+                          Set<String> welded, float[][] faceRects, boolean faceCull)
         {
             float off = 0.25F * width / 16F;
             float inflate = cube.inflate;
@@ -471,6 +489,24 @@ public final class OutlineGeometry
             float maxX = Math.min(realMinX, realMaxX) - off;
             float maxY = Math.min(realMinY, realMaxY) - off;
             float maxZ = Math.min(realMinZ, realMaxZ) - off;
+
+            /* A face only exists while both of its in-plane axes have some extent. Blockbench
+             * happily writes 0×0×1 markers and other collapsed cubes; vanilla draws nothing for
+             * them because the quad has no area, but the shell above inflates every axis by
+             * {@code off}, which would turn each of those dead faces back into a one-pixel
+             * sliver on screen. Measure the real (inflate-included) bounds, not the shell. */
+            boolean flatX = Math.abs(realMaxX - realMinX) < MIN_EXTENT;
+            boolean flatY = Math.abs(realMaxY - realMinY) < MIN_EXTENT;
+            boolean flatZ = Math.abs(realMaxZ - realMinZ) < MIN_EXTENT;
+            boolean hasXY = !flatX && !flatY;
+            boolean hasYZ = !flatY && !flatZ;
+            boolean hasXZ = !flatX && !flatZ;
+
+            /* The shell is an inward-facing box, so culling it leaves only the far walls and the
+             * body hides the rest - that is what turns a solid ring into a rim. A flat cube or a
+             * decal has no thickness to hide anything, so with culling on it disappears at some
+             * angles; those bones emit both windings instead (see {@link #quad}). */
+            this.doubleSided = !faceCull;
 
             this.matrix.set(parent);
 
@@ -494,37 +530,37 @@ public final class OutlineGeometry
                 this.normalMatrix.set(this.matrix).invert().transpose();
             }
 
-            if (!welded.contains("front") && cube.back != null)
+            if (!welded.contains("front") && cube.back != null && hasXY)
             {
                 this.quad(faceRects, FACE_FRONT, 0F, 0F, -1F, r, g, b, a,
                     maxX, minY, minZ, minX, minY, minZ, minX, maxY, minZ, maxX, maxY, minZ);
             }
 
-            if (!welded.contains("right") && cube.left != null)
+            if (!welded.contains("right") && cube.left != null && hasYZ)
             {
                 this.quad(faceRects, FACE_RIGHT, 1F, 0F, 0F, r, g, b, a,
                     maxX, minY, maxZ, maxX, minY, minZ, maxX, maxY, minZ, maxX, maxY, maxZ);
             }
 
-            if (!welded.contains("back") && cube.front != null)
+            if (!welded.contains("back") && cube.front != null && hasXY)
             {
                 this.quad(faceRects, FACE_BACK, 0F, 0F, 1F, r, g, b, a,
                     minX, minY, maxZ, maxX, minY, maxZ, maxX, maxY, maxZ, minX, maxY, maxZ);
             }
 
-            if (!welded.contains("left") && cube.right != null)
+            if (!welded.contains("left") && cube.right != null && hasYZ)
             {
                 this.quad(faceRects, FACE_LEFT, -1F, 0F, 0F, r, g, b, a,
                     minX, minY, minZ, minX, minY, maxZ, minX, maxY, maxZ, minX, maxY, minZ);
             }
 
-            if (!welded.contains("top") && cube.bottom != null)
+            if (!welded.contains("top") && cube.bottom != null && hasXZ)
             {
                 this.quad(faceRects, FACE_TOP, 0F, 1F, 0F, r, g, b, a,
                     maxX, maxY, minZ, minX, maxY, minZ, minX, maxY, maxZ, maxX, maxY, maxZ);
             }
 
-            if (!welded.contains("bottom") && cube.top != null)
+            if (!welded.contains("bottom") && cube.top != null && hasXZ)
             {
                 this.quad(faceRects, FACE_BOTTOM, 0F, -1F, 0F, r, g, b, a,
                     minX, minY, minZ, maxX, minY, minZ, maxX, minY, maxZ, minX, minY, maxZ);
@@ -564,6 +600,16 @@ public final class OutlineGeometry
                 this.vertex(x2, y2, z2, nx, ny, nz, r, g, b, a);
                 this.vertex(x3, y3, z3, nx, ny, nz, r, g, b, a);
 
+                if (this.doubleSided)
+                {
+                    this.vertex(x0, y0, z0, -nx, -ny, -nz, r, g, b, a);
+                    this.vertex(x2, y2, z2, -nx, -ny, -nz, r, g, b, a);
+                    this.vertex(x1, y1, z1, -nx, -ny, -nz, r, g, b, a);
+                    this.vertex(x0, y0, z0, -nx, -ny, -nz, r, g, b, a);
+                    this.vertex(x3, y3, z3, -nx, -ny, -nz, r, g, b, a);
+                    this.vertex(x2, y2, z2, -nx, -ny, -nz, r, g, b, a);
+                }
+
                 return;
             }
 
@@ -592,6 +638,16 @@ public final class OutlineGeometry
                 this.vertex(ax, ay, az, nx, ny, nz, r, g, b, a);
                 this.vertex(cx, cy, cz, nx, ny, nz, r, g, b, a);
                 this.vertex(dx, dy, dz, nx, ny, nz, r, g, b, a);
+
+                if (this.doubleSided)
+                {
+                    this.vertex(ax, ay, az, -nx, -ny, -nz, r, g, b, a);
+                    this.vertex(cx, cy, cz, -nx, -ny, -nz, r, g, b, a);
+                    this.vertex(bx, by, bz, -nx, -ny, -nz, r, g, b, a);
+                    this.vertex(ax, ay, az, -nx, -ny, -nz, r, g, b, a);
+                    this.vertex(dx, dy, dz, -nx, -ny, -nz, r, g, b, a);
+                    this.vertex(cx, cy, cz, -nx, -ny, -nz, r, g, b, a);
+                }
             }
         }
 
@@ -630,28 +686,8 @@ public final class OutlineGeometry
         }
     }
 
-    public static String faceName(int face)
-    {
-        return FACE_NAMES[face];
-    }
-
     public static int cubeFace(int shellFace)
     {
         return SHELL_TO_CUBE_FACE[shellFace];
-    }
-
-    public static Collection<ModelCube> cubes(Model model)
-    {
-        List<ModelCube> out = new ArrayList<>();
-
-        for (ModelGroup group : model.getAllGroups())
-        {
-            if (group != null && group.cubes != null)
-            {
-                out.addAll(group.cubes);
-            }
-        }
-
-        return out;
     }
 }

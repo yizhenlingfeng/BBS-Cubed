@@ -28,9 +28,11 @@ import java.util.function.Consumer;
  * animated model keeps one slot for the previous pose as well. LRU eviction happens inside the
  * model's list first, then across models, with a global byte budget on top.</p>
  *
- * <p>Only the solid colour pass and the depth pass are cached. The LabPBR entity pass needs
- * world-space normals (the vanilla entity shader uses them without a normal matrix), so it stays
- * on the immediate path and is rebuilt once per frame.</p>
+ * <p>Only the solid colour pass and the depth pass are cached. The two additive layers on top of
+ * the shell - LabPBR emission and the vanilla full-bright glow - are rebuilt from their spec
+ * lists every frame: emission needs world-space normals (the vanilla entity shader consumes them
+ * without a normal matrix), and the vanilla layer is cheap enough to re-emit rather than bake a
+ * second buffer per strength.</p>
  *
  * <p>All access happens on the render thread.</p>
  */
@@ -66,12 +68,20 @@ final class OutlineShellCache
         boolean valid;
         long bytes;
 
+        /**
+         * The plain colour shell. It always holds every outlined spec, so the rim itself never
+         * depends on Iris or on a LabPBR shader pack being present; the glow layers below are
+         * purely additive on top of it.
+         */
         VertexBuffer solidVbo;
-        VertexBuffer glowVbo;
         int solidVertices;
-        int glowVertices;
 
+        /** Specs with {@code glow > 0}: submitted again through the LabPBR entity pass. */
         List<OutlineGeometry.Spec> glowSpecs = List.of();
+
+        /** Specs with {@code vanillaGlow > 0}: submitted again as a full-bright overlay. */
+        List<OutlineGeometry.Spec> vanillaSpecs = List.of();
+
         Map<ModelCube, float[][]> faceRects;
         Set<ModelCube> decals = Collections.emptySet();
 
@@ -82,7 +92,7 @@ final class OutlineShellCache
 
         void recalcBytes()
         {
-            this.bytes = (this.solidVertices + this.glowVertices) * BYTES_PER_VERTEX;
+            this.bytes = this.solidVertices * BYTES_PER_VERTEX;
         }
     }
 
@@ -143,7 +153,8 @@ final class OutlineShellCache
         entry.key = key.value();
         entry.valid = false;
         entry.solidVertices = 0;
-        entry.glowVertices = 0;
+        entry.glowSpecs = List.of();
+        entry.vanillaSpecs = List.of();
         entry.bytes = 0;
 
         try
@@ -266,13 +277,8 @@ final class OutlineShellCache
             entry.solidVbo = null;
         }
 
-        if (entry.glowVbo != null)
-        {
-            entry.glowVbo.close();
-            entry.glowVbo = null;
-        }
-
         entry.solidVertices = 0;
-        entry.glowVertices = 0;
+        entry.glowSpecs = List.of();
+        entry.vanillaSpecs = List.of();
     }
 }

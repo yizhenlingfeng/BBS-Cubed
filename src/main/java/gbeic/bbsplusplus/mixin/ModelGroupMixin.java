@@ -68,7 +68,13 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder, Gl
     private float bbspp_cml$outlineGlow = BoneOutlineHolder.DEFAULT_GLOW;
 
     @Unique
+    private float bbspp_cml$outlineVanillaGlow = BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
+
+    @Unique
     private float bbspp_cml$outlineDecalSize = BoneOutlineHolder.DEFAULT_DECAL;
+
+    @Unique
+    private boolean bbspp_cml$outlineFaceCull = BoneOutlineHolder.DEFAULT_FACE_CULL;
 
     @Override
     public Link bbspp_cml$getTextureOverride()
@@ -249,6 +255,18 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder, Gl
     }
 
     @Override
+    public float bbspp_cml$getOutlineVanillaGlow()
+    {
+        return this.bbspp_cml$outlineVanillaGlow;
+    }
+
+    @Override
+    public void bbspp_cml$setOutlineVanillaGlow(float glow)
+    {
+        this.bbspp_cml$outlineVanillaGlow = glow;
+    }
+
+    @Override
     public float bbspp_cml$getOutlineDecalSize()
     {
         return this.bbspp_cml$outlineDecalSize;
@@ -258,6 +276,18 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder, Gl
     public void bbspp_cml$setOutlineDecalSize(float size)
     {
         this.bbspp_cml$outlineDecalSize = size;
+    }
+
+    @Override
+    public boolean bbspp_cml$getOutlineFaceCull()
+    {
+        return this.bbspp_cml$outlineFaceCull;
+    }
+
+    @Override
+    public void bbspp_cml$setOutlineFaceCull(boolean faceCull)
+    {
+        this.bbspp_cml$outlineFaceCull = faceCull;
     }
 
     @Inject(method = "reset()V", at = @At("TAIL"), remap = false)
@@ -278,6 +308,8 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder, Gl
         this.bbspp_cml$outlineColor.set(0xFFFFFFFF);
         this.bbspp_cml$outlineWidth = BoneOutlineHolder.DEFAULT_WIDTH;
         this.bbspp_cml$outlineGlow = BoneOutlineHolder.DEFAULT_GLOW;
+        this.bbspp_cml$outlineVanillaGlow = BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
         this.bbspp_cml$outlineDecalSize = BoneOutlineHolder.DEFAULT_DECAL;
+        this.bbspp_cml$outlineFaceCull = BoneOutlineHolder.DEFAULT_FACE_CULL;
     }
 }

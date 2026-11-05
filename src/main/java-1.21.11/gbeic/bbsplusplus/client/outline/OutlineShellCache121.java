@@ -61,6 +61,14 @@ final class OutlineShellCache121
         float[] vertices = EMPTY;
         int vertexCount;
 
+        /**
+         * The vanilla full-bright overlay, baked separately because each spec carries its own
+         * strength: the alpha is pre-scaled per group, so replaying it is still a single array
+         * copy instead of a per-frame geometry walk.
+         */
+        float[] vanillaVertices = EMPTY;
+        int vanillaVertexCount;
+
         private Entry(Model model)
         {
             this.model = model;
@@ -151,6 +159,8 @@ final class OutlineShellCache121
         entry.bytes = 0;
         entry.vertexCount = 0;
         entry.vertices = EMPTY;
+        entry.vanillaVertexCount = 0;
+        entry.vanillaVertices = EMPTY;
 
         try
         {
@@ -259,6 +269,8 @@ final class OutlineShellCache121
         entry.bytes = 0;
         entry.vertices = EMPTY;
         entry.vertexCount = 0;
+        entry.vanillaVertices = EMPTY;
+        entry.vanillaVertexCount = 0;
         entry.valid = false;
     }
 

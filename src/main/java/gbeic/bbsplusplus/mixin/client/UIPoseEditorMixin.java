@@ -124,7 +124,13 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     private UITrackpad bbspp_cml$outlineGlow;
 
     @Unique
+    private UIToggle bbspp_cml$outlineVanillaGlow;
+
+    @Unique
     private UITrackpad bbspp_cml$outlineDecal;
+
+    @Unique
+    private UIToggle bbspp_cml$outlineFaceCull;
 
     @Unique
     private UISection bbspp_cml$glintSection;
@@ -266,12 +272,46 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$outlineWidth = this.bbspp_cml$createOutlineTrackpad(self, 0D, 10D,
             L10n.lang("bbs.ui.model_editor.outline.width.tooltip"),
             (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineWidth(v));
-        this.bbspp_cml$outlineGlow = this.bbspp_cml$createOutlineTrackpad(self, 0D, 255D,
+        this.bbspp_cml$outlineGlow = this.bbspp_cml$createOutlineTrackpad(self, 0D, 254D,
             L10n.lang("bbs.ui.model_editor.outline.glow.tooltip"),
             (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineGlow(v));
+        this.bbspp_cml$outlineVanillaGlow = new UIToggle(L10n.lang("bbs.ui.model_editor.outline.vanilla_glow"),
+            false, (toggle) ->
+        {
+            this.bbspp_cml$applyOutlineVanillaGlowToSelection(self, toggle.getValue());
+        });
+        this.bbspp_cml$outlineVanillaGlow.h(20);
+        this.bbspp_cml$outlineVanillaGlow.tooltip(
+            L10n.lang("bbs.ui.model_editor.outline.vanilla_glow.tooltip"), Direction.LEFT);
+
+        this.bbspp_cml$outlineVanillaGlow.context((ContextMenuManager manager) ->
+        {
+            manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
+            {
+                this.bbspp_cml$applyOutlineVanillaGlowToChildren(self,
+                    this.bbspp_cml$outlineVanillaGlow.getValue());
+            });
+        });
         this.bbspp_cml$outlineDecal = this.bbspp_cml$createOutlineTrackpad(self, 0D, 16D,
             L10n.lang("bbs.ui.model_editor.outline.decal_size.tooltip"),
             (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineDecalSize(v));
+
+        this.bbspp_cml$outlineFaceCull = new UIToggle(L10n.lang("bbs.ui.model_editor.outline.face_cull"),
+            BoneOutlineHolder.DEFAULT_FACE_CULL, (toggle) ->
+        {
+            this.bbspp_cml$applyOutlineFaceCullToSelection(self, toggle.getValue());
+        });
+        this.bbspp_cml$outlineFaceCull.h(20);
+        this.bbspp_cml$outlineFaceCull.tooltip(
+            L10n.lang("bbs.ui.model_editor.outline.face_cull.tooltip"), Direction.LEFT);
+        this.bbspp_cml$outlineFaceCull.context((ContextMenuManager manager) ->
+        {
+            manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
+            {
+                this.bbspp_cml$applyOutlineFaceCullToChildren(self,
+                    this.bbspp_cml$outlineFaceCull.getValue());
+            });
+        });
 
         this.bbspp_cml$outlineSection = new UISection(L10n.lang("bbs.ui.model_editor.outline"));
         this.bbspp_cml$outlineSection.setExpanded(false);
@@ -280,6 +320,9 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.color"), this.bbspp_cml$outlineColor),
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.width"), this.bbspp_cml$outlineWidth),
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.glow"), this.bbspp_cml$outlineGlow),
+            /* UIToggle 自带标签，套 labelRow 会把名字画两遍，所以独占一行。 */
+            UI.row(this.bbspp_cml$outlineVanillaGlow),
+            UI.row(this.bbspp_cml$outlineFaceCull),
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.decal_size"), this.bbspp_cml$outlineDecal)
         );
 
@@ -779,9 +822,13 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$outlineGlow.setValue(holder == null
             ? BoneOutlineHolder.DEFAULT_GLOW
             : holder.bbspp_cml$getOutlineGlow());
+        this.bbspp_cml$outlineVanillaGlow.setValue(holder != null && holder.bbspp_cml$getOutlineVanillaGlow() > 0F);
         this.bbspp_cml$outlineDecal.setValue(holder == null
             ? BoneOutlineHolder.DEFAULT_DECAL
             : holder.bbspp_cml$getOutlineDecalSize());
+        this.bbspp_cml$outlineFaceCull.setValue(holder == null
+            ? BoneOutlineHolder.DEFAULT_FACE_CULL
+            : holder.bbspp_cml$getOutlineFaceCull());
     }
 
     @Unique
@@ -808,6 +855,46 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
         {
             ((BoneOutlineHolder) poseT).bbspp_cml$setOutline(value);
+        });
+    }
+
+    @Unique
+    private void bbspp_cml$applyOutlineVanillaGlowToSelection(UIPoseEditor self, boolean value)
+    {
+        this.bbspp_cml$writeToSelection(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineVanillaGlow(value
+                ? BoneOutlineHolder.VANILLA_GLOW_ON
+                : BoneOutlineHolder.DEFAULT_VANILLA_GLOW);
+        });
+    }
+
+    @Unique
+    private void bbspp_cml$applyOutlineVanillaGlowToChildren(UIPoseEditor self, boolean value)
+    {
+        float strength = value ? BoneOutlineHolder.VANILLA_GLOW_ON : BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
+
+        this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineVanillaGlow(strength);
+        });
+    }
+
+    @Unique
+    private void bbspp_cml$applyOutlineFaceCullToSelection(UIPoseEditor self, boolean value)
+    {
+        this.bbspp_cml$writeToSelection(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceCull(value);
+        });
+    }
+
+    @Unique
+    private void bbspp_cml$applyOutlineFaceCullToChildren(UIPoseEditor self, boolean value)
+    {
+        this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceCull(value);
         });
     }
 
@@ -995,7 +1082,9 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
                 || outlineHolder.bbspp_cml$getOutlineColor().getARGBColor() != 0xFFFFFFFF
                 || outlineHolder.bbspp_cml$getOutlineWidth() != BoneOutlineHolder.DEFAULT_WIDTH
                 || outlineHolder.bbspp_cml$getOutlineGlow() != BoneOutlineHolder.DEFAULT_GLOW
-                || outlineHolder.bbspp_cml$getOutlineDecalSize() != BoneOutlineHolder.DEFAULT_DECAL;
+                || outlineHolder.bbspp_cml$getOutlineVanillaGlow() != BoneOutlineHolder.DEFAULT_VANILLA_GLOW
+                || outlineHolder.bbspp_cml$getOutlineDecalSize() != BoneOutlineHolder.DEFAULT_DECAL
+                || outlineHolder.bbspp_cml$getOutlineFaceCull() != BoneOutlineHolder.DEFAULT_FACE_CULL;
 
             GlintHolder glintHolder = (GlintHolder) current;
             GlintSettingsHolder glintSettings = (GlintSettingsHolder) current;

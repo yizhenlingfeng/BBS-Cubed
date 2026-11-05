@@ -9,6 +9,7 @@ import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.resources.Pixels;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL21;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -148,7 +149,16 @@ public final class OutlineAlphaMask
 
                 try
                 {
-                    cached = Texture.pixelsFromTexture(texture);
+                    int[] packState = pushPackState();
+
+                    try
+                    {
+                        cached = Texture.pixelsFromTexture(texture);
+                    }
+                    finally
+                    {
+                        popPackState(packState);
+                    }
                 }
                 finally
                 {
@@ -572,6 +582,45 @@ public final class OutlineAlphaMask
         CORNERS[9] = x3;
         CORNERS[10] = y3;
         CORNERS[11] = z3;
+    }
+
+    /**
+     * 1.21.11 hazard: vanilla's GlCommandEncoder.copyTextureToBuffer leaves GL_PACK_ROW_LENGTH set to
+     * the width of whatever texture it downloaded (and a PIXEL_PACK_BUFFER may still be bound). A
+     * later glGetTexImage whose destination buffer is sized {@code width * height * 4} then gets
+     * {@code rowLength} pixels written per row - straight past the end of the buffer. The driver dies
+     * with EXCEPTION_ACCESS_VIOLATION, which no Java catch block can intercept.
+     *
+     * <p>Upstream solves this with {@code mchorse.bbs_mod.graphics.PixelPackState}; that class only
+     * exists in the 1.21.11 line, so this shared file keeps its own tiny copy (raw GL, no BBS type).
+     * Restoring the previous state afterwards keeps vanilla's bookkeeping intact.</p>
+     */
+    private static int[] pushPackState()
+    {
+        int[] saved = new int[] {
+            GL11.glGetInteger(GL11.GL_PACK_ROW_LENGTH),
+            GL11.glGetInteger(GL11.GL_PACK_SKIP_PIXELS),
+            GL11.glGetInteger(GL11.GL_PACK_SKIP_ROWS),
+            GL11.glGetInteger(GL11.GL_PACK_ALIGNMENT),
+            GL11.glGetInteger(GL21.GL_PIXEL_PACK_BUFFER_BINDING)
+        };
+
+        GL11.glPixelStorei(GL11.GL_PACK_ROW_LENGTH, 0);
+        GL11.glPixelStorei(GL11.GL_PACK_SKIP_PIXELS, 0);
+        GL11.glPixelStorei(GL11.GL_PACK_SKIP_ROWS, 0);
+        GL11.glPixelStorei(GL11.GL_PACK_ALIGNMENT, 4);
+        GL21.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, 0);
+
+        return saved;
+    }
+
+    private static void popPackState(int[] saved)
+    {
+        GL11.glPixelStorei(GL11.GL_PACK_ROW_LENGTH, saved[0]);
+        GL11.glPixelStorei(GL11.GL_PACK_SKIP_PIXELS, saved[1]);
+        GL11.glPixelStorei(GL11.GL_PACK_SKIP_ROWS, saved[2]);
+        GL11.glPixelStorei(GL11.GL_PACK_ALIGNMENT, saved[3]);
+        GL21.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, saved[4]);
     }
 
     private record CubeRects(int textureId, float[][] faces)

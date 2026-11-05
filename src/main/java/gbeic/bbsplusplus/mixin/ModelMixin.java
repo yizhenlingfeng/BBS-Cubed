@@ -114,7 +114,9 @@ public abstract class ModelMixin
                 groupOutline.bbspp_cml$setOutlineColor(boneOutline.bbspp_cml$getOutlineColor());
                 groupOutline.bbspp_cml$setOutlineWidth(boneOutline.bbspp_cml$getOutlineWidth());
                 groupOutline.bbspp_cml$setOutlineGlow(boneOutline.bbspp_cml$getOutlineGlow());
+                groupOutline.bbspp_cml$setOutlineVanillaGlow(boneOutline.bbspp_cml$getOutlineVanillaGlow());
                 groupOutline.bbspp_cml$setOutlineDecalSize(boneOutline.bbspp_cml$getOutlineDecalSize());
+                groupOutline.bbspp_cml$setOutlineFaceCull(boneOutline.bbspp_cml$getOutlineFaceCull());
             }
 
             if (pivoted)

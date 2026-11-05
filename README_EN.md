@@ -131,15 +131,19 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 
 ### Model Outlines
 
-- Outline settings live in a collapsible "Outline" section below the "PBR" section in the pose editor and are configured per bone. Expand it to enable an outline for the current bone and adjust its color, width, glow and "non-outlined block size".
+- Outline settings live in a collapsible "Outline" section below the "PBR" section in the pose editor and are configured per bone. Expand it to enable an outline for the current bone and adjust its color, width, emission, vanilla glow, face culling and "non-outlined block size".
 - In the film editor, the keyframe inspector for limb tracks also provides an "Outline" section for configuring outlines per bone directly on the film timeline.
 - Like PBR and Enchant Glint, outline values are stored in bone pose data, support keyframe interpolation and are no longer written to the model's `config.json`.
 - Only the outer edge of each bone's silhouette is drawn: transparent texture areas produce no outline, welded faces are skipped automatically, and small decorative blocks fully enclosed by larger blocks can be filtered out with "non-outlined block size".
 - "Non-outlined block size" is measured in model pixels; `0` disables filtering. Width is measured in quarter model pixels, so `4` is roughly one model pixel.
-- Right-click the outline toggle, color or any parameter slider and choose "Apply to child bones" to spread the setting to all descendants of the bone.
-- Glow ranges from 0 to 255; `0` disables it. On 1.20.1 / 1.20.4, with Iris installed, glow is drawn via LabPBR emission; without Iris or when the textures are unavailable it falls back to a solid-color outline. On 1.21.11, solid-color outlines and depth write-back are supported, while LabPBR glow is still being adapted.
+- Right-click the outline toggle, the color, vanilla glow, face culling or any parameter slider and choose "Apply to child bones" to spread the setting to all descendants of the bone.
+- "Emission" drives the LabPBR emissive channel: `0` emits nothing, and `1`–`254` ramp linearly along that channel. It requires Iris plus a shader pack that declares the `normals` / `specular` samplers; otherwise the outline is still a solid shell, just without emission.
+- "Vanilla Glow" is a separate additive overlay toggle that needs no shader pack and reproduces the older, uniformly brighter rim. It clashes with most shader packs because they take over the entity shader, so prefer "Emission" when the two overlap.
+- "Face Culling" is enabled by default. Turning it off draws the shell double-sided, so flat planes and decals keep their outline from every angle, at the cost of twice the vertices.
+- The layers are independent: the solid shell always contains every outlined bone, and emission and vanilla glow only add brightness on top of it without changing the silhouette or the base color.
+- On 1.21.11, solid-color outlines, vanilla glow and depth write-back are supported, while LabPBR emission is still being adapted.
 - The "Enchant Glint" section below the same panel has also been merged into a collapsible section with the glint toggle, color, flow speed and brightness, so both can be managed together.
-- Migration note: outlines no longer read the legacy outline keys in the model's `config.json`; existing projects must re-enable outlines per bone in the pose editor, and "Apply to child bones" can be used to spread them quickly.
+- Migration note: outlines no longer read the legacy outline keys in the model's `config.json`; existing projects must re-enable them per bone in the pose editor, and "Apply to child bones" can be used to spread them quickly. Bones whose legacy "glow" was on get "Vanilla Glow" enabled automatically, preserving the previous look.
 
 ### UV Transform
 
@@ -226,7 +230,13 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 
 ### Mod Changelog
 
-#### 3.6.6 (Bedrock step keyframes and interpolation reading)
+#### 3.6.6 (Outline emission split and Bedrock step keyframe fix)
+* **Emission now drives LabPBR**: the old "glow" value was effectively a switch, since every value from `1` to `255` painted the same result. It now writes the alpha of the LabPBR emissive channel directly: `0` emits nothing and `1`–`254` ramp linearly, with `255` left unused because the standard reserves it for "no emission". The channel is only read by a shader pack that declares the `normals` / `specular` samplers, so without shaders the outline stays a solid shell
+* **Vanilla Glow split out into a toggle**: the older "uniformly brighter rim" effect is now a separate "Vanilla Glow" switch below "Emission". It needs no shader pack and clashes with most of them
+* **Layered outline rendering**: the solid shell always contains every outlined bone, and emission and vanilla glow became additive layers on top of it. The two never affect each other and neither changes the silhouette or the base color; the shell cache was collapsed into a single buffer to match
+* **Face culling toggle**: a per-bone "Face Culling" option, on by default. Turning it off draws the shell double-sided so flat planes and decals keep their outline from every angle, at the cost of twice the vertices
+* **Collapsed cubes no longer produce outlines**: the zero-thickness planes and lines Blockbench routinely writes regained area once the shell was inflated, leaving a thin sliver on screen. Flat axes are now detected from the real bounding box, so only faces that actually have area are drawn
+* **Legacy save compatibility**: bones whose old "glow" was on get "Vanilla Glow" enabled on load, so the upgrade keeps the previous look; bones that had it off do not gain a glow
 * **Step keyframe detection**: previously any keyframe carrying `pre` was treated as a step, but Blockbench writes `pre` and `post` on every keyframe that has a previous value (both identical on smooth keys), so smooth animations were played back as steps. Detection now follows the interpolation declared in the file: a keyframe is a step only when its `pre` differs from its `post`, or when the previous keyframe declares `easing: "step"`
 * **Step interpolation**: step keyframes use BBS's built-in step interpolation (`CONST`), so cubic model animation holds the previous value and snaps on that key as intended
 * **Segment after a step keyframe**: converting an animation to pose keyframes used to copy the step key's interpolation onto the pose key as well, holding the segment leaving that key. It now takes the interpolation of the next keyframe, so the segment after a step is smooth again

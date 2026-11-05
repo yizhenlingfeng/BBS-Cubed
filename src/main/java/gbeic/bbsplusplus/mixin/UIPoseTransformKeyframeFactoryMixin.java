@@ -38,7 +38,7 @@ import java.util.function.Consumer;
  * <p>本 Mixin 在该面板构造完成后，于原版材质栏之后依次追加三个折叠栏：</p>
  * <ol>
  *   <li><b>PBR</b> —— 光泽度 / 金属度 / 散射 / 自发光 / 凹凸（0~1）；</li>
- *   <li><b>描边</b> —— 开关 / 颜色 / 宽度 / 辉光 / 贴花；</li>
+ *   <li><b>描边</b> —— 开关 / 颜色 / 宽度 / 发光 / 原版辉光 / 面剔除 / 不描边块尺寸；</li>
  *   <li><b>附魔光效</b> —— 开关 / 颜色 / 流动速度 / 亮度。</li>
  * </ol>
  *
@@ -78,7 +78,9 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
     @Unique private UIColor bbspp$outlineColor;
     @Unique private UITrackpad bbspp$outlineWidth;
     @Unique private UITrackpad bbspp$outlineGlow;
+    @Unique private UIToggle bbspp$outlineVanillaGlow;
     @Unique private UITrackpad bbspp$outlineDecal;
+    @Unique private UIToggle bbspp$outlineFaceCull;
 
     @Unique private UISection bbspp$glintSection;
     @Unique private UIToggle bbspp$glint;
@@ -130,12 +132,32 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
         this.bbspp$outlineWidth = this.bbspp$createTrackpad(0D, 10D, 1D,
             L10n.lang("bbs.ui.model_editor.outline.width.tooltip"),
             (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineWidth(v));
-        this.bbspp$outlineGlow = this.bbspp$createTrackpad(0D, 255D, 1D,
+        this.bbspp$outlineGlow = this.bbspp$createTrackpad(0D, 254D, 1D,
             L10n.lang("bbs.ui.model_editor.outline.glow.tooltip"),
             (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineGlow(v));
+        this.bbspp$outlineVanillaGlow = new UIToggle(L10n.lang("bbs.ui.model_editor.outline.vanilla_glow"),
+            false, (toggle) ->
+        {
+            float strength = ((UIToggle) toggle).getValue()
+                ? BoneOutlineHolder.VANILLA_GLOW_ON
+                : BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
+
+            this.bbspp$write((poseT) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineVanillaGlow(strength));
+        });
+        this.bbspp$outlineVanillaGlow.h(20);
+        this.bbspp$outlineVanillaGlow.tooltip(
+            L10n.lang("bbs.ui.model_editor.outline.vanilla_glow.tooltip"), Direction.LEFT);
         this.bbspp$outlineDecal = this.bbspp$createTrackpad(0D, 16D, 1D,
             L10n.lang("bbs.ui.model_editor.outline.decal_size.tooltip"),
             (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineDecalSize(v));
+        this.bbspp$outlineFaceCull = new UIToggle(L10n.lang("bbs.ui.model_editor.outline.face_cull"),
+            BoneOutlineHolder.DEFAULT_FACE_CULL, (toggle) ->
+        {
+            this.bbspp$write((poseT) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceCull(toggle.getValue()));
+        });
+        this.bbspp$outlineFaceCull.h(20);
+        this.bbspp$outlineFaceCull.tooltip(
+            L10n.lang("bbs.ui.model_editor.outline.face_cull.tooltip"), Direction.LEFT);
 
         this.bbspp$outlineSection = new UISection(L10n.lang("bbs.ui.model_editor.outline"));
         this.bbspp$outlineSection.setExpanded(false);
@@ -144,6 +166,9 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.color"), this.bbspp$outlineColor),
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.width"), this.bbspp$outlineWidth),
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.glow"), this.bbspp$outlineGlow),
+            /* UIToggle 自带标签，套 labelRow 会把名字画两遍，所以独占一行。 */
+            UI.row(this.bbspp$outlineVanillaGlow),
+            UI.row(this.bbspp$outlineFaceCull),
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.decal_size"), this.bbspp$outlineDecal)
         );
 
@@ -271,9 +296,13 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
         this.bbspp$outlineGlow.setValue(outline == null
             ? BoneOutlineHolder.DEFAULT_GLOW
             : outline.bbspp_cml$getOutlineGlow());
+        this.bbspp$outlineVanillaGlow.setValue(outline != null && outline.bbspp_cml$getOutlineVanillaGlow() > 0F);
         this.bbspp$outlineDecal.setValue(outline == null
             ? BoneOutlineHolder.DEFAULT_DECAL
             : outline.bbspp_cml$getOutlineDecalSize());
+        this.bbspp$outlineFaceCull.setValue(outline == null
+            ? BoneOutlineHolder.DEFAULT_FACE_CULL
+            : outline.bbspp_cml$getOutlineFaceCull());
 
         this.bbspp$glint.setValue(glint != null && glint.bbspp_cml$getGlint());
         this.bbspp$glintColor.setColor(glint == null

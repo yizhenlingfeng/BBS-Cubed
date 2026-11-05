@@ -2,6 +2,7 @@ package gbeic.bbsplusplus.client.outline.geometry;
 
 import gbeic.bbsplusplus.api.GroupOutlineHolder;
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelCube;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
@@ -69,7 +70,9 @@ public final class OutlineShellKey
             outline = outline * 31 + holder.bbspp_cml$getOutlineColor().getARGBColor();
             outline = outline * 31 + Float.floatToIntBits(holder.bbspp_cml$getOutlineWidth());
             outline = outline * 31 + Float.floatToIntBits(holder.bbspp_cml$getOutlineGlow());
+            outline = outline * 31 + Float.floatToIntBits(holder.bbspp_cml$getOutlineVanillaGlow());
             outline = outline * 31 + Float.floatToIntBits(holder.bbspp_cml$getOutlineDecalSize());
+            outline = outline * 31 + (holder.bbspp_cml$getOutlineFaceCull() ? 1 : 0);
 
             geometry = geometry * 31 + stringHash(group.id);
 
@@ -102,6 +105,10 @@ public final class OutlineShellKey
         hash = hash * 31 + textureId;
         hash = hash * 31 + textureValid;
         hash = hash * 31 + OutlineAlphaMask.version();
+        /* The resident list of glow specs is only filled while a shader pack is active, so toggling
+         * one on has to invalidate the shell - otherwise a model edited without shaders keeps the
+         * emission-less entry until something else happens to rebuild it. */
+        hash = hash * 31 + (BBSRendering.isIrisShadersEnabled() ? 1 : 0);
 
         return new Key(hash, geometry);
     }

@@ -129,7 +129,9 @@ public final class OutlineEmissiveTexture
                 r = (SPECULAR_RGB >> 16) & 0xFF;
                 g = (SPECULAR_RGB >> 8) & 0xFF;
                 b = SPECULAR_RGB & 0xFF;
-                a = Math.min(glow, 254);
+                /* LabPBR reserves 255 for "no emission" (that is what a texture without alpha
+                 * reads as), so strength 0 has to be written as 255, not 0. */
+                a = glow <= 0 ? 255 : Math.min(glow, 254);
             }
             case 2 -> {
                 r = 128;
