@@ -622,16 +622,10 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
 
         this.bbspp_cml$outlineOverlay = data.getBool("outline_overlay");
         this.bbspp_cml$overlayColor.set(data.getInt("overlay_color", 0xFFFFFFFF));
+        /* Read as-is: the width key shipped with the overlay itself, so a missing key already falls
+         * back to the default. Rewriting a stored 1F to 4F quietly clamped a width the user picked. */
         this.bbspp_cml$overlayWidth = data.has("overlay_width")
             ? data.getFloat("overlay_width") : BoneOutlineHolder.DEFAULT_OVERLAY_WIDTH;
-
-        /* Saves written before the overlay default was widened stored the old 1/4-pixel thickness
-         * unconditionally. Honouring it would keep those bones looking like the toggle does
-         * nothing, so it is read back as the new default unless the user actually tweaked it. */
-        if (this.bbspp_cml$overlayWidth == BoneOutlineHolder.LEGACY_OVERLAY_WIDTH)
-        {
-            this.bbspp_cml$overlayWidth = BoneOutlineHolder.DEFAULT_OVERLAY_WIDTH;
-        }
         this.bbspp_cml$overlayGlow = data.has("overlay_glow")
             ? data.getFloat("overlay_glow") : BoneOutlineHolder.DEFAULT_GLOW;
         this.bbspp_cml$overlayVanillaGlow = data.has("overlay_vanilla_glow")
@@ -724,18 +718,16 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             hash = 31 * hash + face;
         }
 
-        if (this.bbspp_cml$outlineOverlay)
-        {
-            hash = 31 * hash + this.bbspp_cml$overlayColor.getARGBColor();
-            hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$overlayWidth);
-            hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$overlayGlow);
-            hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$overlayVanillaGlow);
-            hash = 31 * hash + Boolean.hashCode(this.bbspp_cml$overlayFaceCull);
+        hash = 31 * hash + Boolean.hashCode(this.bbspp_cml$outlineOverlay);
+        hash = 31 * hash + this.bbspp_cml$overlayColor.getARGBColor();
+        hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$overlayWidth);
+        hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$overlayGlow);
+        hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$overlayVanillaGlow);
+        hash = 31 * hash + Boolean.hashCode(this.bbspp_cml$overlayFaceCull);
 
-            for (int face : this.bbspp_cml$overlayFaces)
-            {
-                hash = 31 * hash + face;
-            }
+        for (int face : this.bbspp_cml$overlayFaces)
+        {
+            hash = 31 * hash + face;
         }
 
         cir.setReturnValue(hash);
@@ -815,7 +807,10 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             }
         }
 
-        if (cir.getReturnValueZ() && obj instanceof BoneOutlineHolder holder && this.bbspp_cml$outlineOverlay)
+        /* Always compared: gating these behind the overlay switch made equality asymmetric
+         * (DEFAULT.equals(x) skipped them) and let an overlay-only transform count as default,
+         * after which Pose.copy()/toData()/fromData() dropped it. */
+        if (cir.getReturnValueZ() && obj instanceof BoneOutlineHolder holder)
         {
             if (this.bbspp_cml$overlayColor.getARGBColor() != holder.bbspp_cml$getOverlayColor().getARGBColor()
                 || this.bbspp_cml$overlayWidth != holder.bbspp_cml$getOverlayWidth()
@@ -826,6 +821,72 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
                 cir.setReturnValue(false);
             }
         }
+    }
+
+    /**
+     * {@code Pose.copy()}, {@code Pose.toData()} and {@code Pose.fromData()} drop every transform
+     * whose {@code isDefault()} is true, and {@code isDefault()} is just {@code equals(DEFAULT)}.
+     * The equals hook only runs while the vanilla fields already compare equal and has to be kept
+     * in sync by hand, so a forgotten field disappears on the next copy or save. Treating "carries
+     * any extended data" as "not default" keeps those entries alive.
+     */
+    @Inject(method = "isDefault", at = @At("RETURN"), cancellable = true, remap = false)
+    private void bbspp_cml$isDefaultWithExtras(CallbackInfoReturnable<Boolean> cir)
+    {
+        if (cir.getReturnValueZ() && this.bbspp_cml$hasExtraData())
+        {
+            cir.setReturnValue(false);
+        }
+    }
+
+    @Unique
+    private boolean bbspp_cml$hasExtraData()
+    {
+        if (this.bbspp_cml$texture != null || this.bbspp_cml$glint
+            || this.bbspp_cml$glintColor.getARGBColor() != 0xFFFFFFFF
+            || this.bbspp_cml$glintSpeed != GlintSettingsHolder.DEFAULT_SPEED
+            || this.bbspp_cml$glintBrightness != GlintSettingsHolder.DEFAULT_BRIGHTNESS)
+        {
+            return true;
+        }
+
+        if (this.bbspp_cml$pbrSmoothness != 0F || this.bbspp_cml$pbrMetallic != 0F
+            || this.bbspp_cml$pbrSss != 0F || this.bbspp_cml$pbrEmission != 0F
+            || this.bbspp_cml$pbrRelief != 0F)
+        {
+            return true;
+        }
+
+        if (this.bbspp_cml$outline || this.bbspp_cml$outlineColor.getARGBColor() != 0xFFFFFFFF
+            || this.bbspp_cml$outlineWidth != BoneOutlineHolder.DEFAULT_WIDTH
+            || this.bbspp_cml$outlineGlow != BoneOutlineHolder.DEFAULT_GLOW
+            || this.bbspp_cml$outlineVanillaGlow != BoneOutlineHolder.DEFAULT_VANILLA_GLOW
+            || this.bbspp_cml$outlineDecalSize != BoneOutlineHolder.DEFAULT_DECAL
+            || this.bbspp_cml$outlineFaceCull != BoneOutlineHolder.DEFAULT_FACE_CULL
+            || this.bbspp_cml$outlineOverlay)
+        {
+            return true;
+        }
+
+        if (this.bbspp_cml$overlayColor.getARGBColor() != 0xFFFFFFFF
+            || this.bbspp_cml$overlayWidth != BoneOutlineHolder.DEFAULT_OVERLAY_WIDTH
+            || this.bbspp_cml$overlayGlow != BoneOutlineHolder.DEFAULT_GLOW
+            || this.bbspp_cml$overlayVanillaGlow != BoneOutlineHolder.DEFAULT_VANILLA_GLOW
+            || this.bbspp_cml$overlayFaceCull != BoneOutlineHolder.DEFAULT_FACE_CULL)
+        {
+            return true;
+        }
+
+        for (int i = 0; i < BoneOutlineHolder.FACE_COUNT; i++)
+        {
+            if (this.bbspp_cml$outlineFaces[i] != BoneOutlineHolder.DEFAULT_FACE_COLOR
+                || this.bbspp_cml$overlayFaces[i] != BoneOutlineHolder.DEFAULT_FACE_COLOR)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Inject(method = "identity()V", at = @At("TAIL"), remap = false)

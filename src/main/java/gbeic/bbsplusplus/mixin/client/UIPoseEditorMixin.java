@@ -205,6 +205,10 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$glint = new UIToggle(L10n.lang("bbs.ui.pose.enchant_glint"), false, (t) ->
         {
             this.bbspp_cml$applyGlintToSelection(self, ((UIToggle) t).getValue());
+
+            /* 没有选中骨骼时上面的写入是空操作，这里按骨骼上的真实值回显，
+             * 免得开关亮着但数据没变（退出重进后又会变回去）。 */
+            this.bbspp_cml$syncGlintToggle();
         });
         this.bbspp_cml$glint.h(16);
 
@@ -264,6 +268,9 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$outline = new UIToggle(L10n.lang("bbs.ui.model_editor.outline.all"), false, (toggle) ->
         {
             this.bbspp_cml$applyOutlineToSelection(self, toggle.getValue());
+
+            /* 同上：按骨骼上的真实值回显，未选中骨骼时开关不会假装被打开。 */
+            this.bbspp_cml$syncOutlineControls();
         });
         this.bbspp_cml$outline.h(20);
 
@@ -281,8 +288,22 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             BoneOutlineHolder.DEFAULT_OVERLAY, (toggle) ->
         {
             this.bbspp_cml$applyOutlineOverlayToSelection(self, toggle.getValue());
-            this.bbspp_cml$outlineOverlayShown = toggle.getValue();
+
+            /* 只有真的写到骨骼上时才展开第二栏：没有选中骨骼时 writeToSelection() 是空操作，
+             * 而旧代码照样把开关点亮并插入第二栏 —— 于是用户在那一栏里拖的宽度全都写不进去，
+             * 退出再进就变回默认值，看起来正是"叠加宽度改了不生效"。 */
+            PoseTransform current = this.bbspp_cml$getCurrentPoseTransform(self);
+            boolean written = current instanceof BoneOutlineHolder holder
+                && holder.bbspp_cml$getOutlineOverlay() == toggle.getValue();
+
+            if (!written && toggle.getValue())
+            {
+                toggle.setValue(false);
+            }
+
+            this.bbspp_cml$outlineOverlayShown = written;
             this.bbspp_cml$attachAfterMaterial();
+            this.bbspp_cml$syncOutlineControls();
         });
         this.bbspp_cml$outlineOverlay.h(20);
         this.bbspp_cml$outlineOverlay.tooltip(
