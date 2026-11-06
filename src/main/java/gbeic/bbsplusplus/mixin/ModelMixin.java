@@ -49,7 +49,9 @@ public abstract class ModelMixin
             Link texture = ((BoneTextureHolder) transform).bbspp_cml$getTexture();
             Vector3f pivot = ((PivotHolder) transform).bbspp_cml$getPivot();
             boolean glint = ((GlintHolder) transform).bbspp_cml$getGlint();
-            boolean outline = ((BoneOutlineHolder) transform).bbspp_cml$getOutline();
+            BoneOutlineHolder boneOutline = (BoneOutlineHolder) transform;
+            boolean outline = boneOutline.bbspp_cml$hasOutlineLayer(0)
+                || boneOutline.bbspp_cml$hasOutlineLayer(1);
             boolean pivoted = pivot.x != 0F || pivot.y != 0F || pivot.z != 0F;
 
             /* PBR：任一值 > 0 即认为该骨骼有 PBR 覆盖。 */
@@ -104,19 +106,34 @@ public abstract class ModelMixin
                 groupPbr.bbspp_cml$setRelief(pbr.bbspp_cml$getRelief());
             }
 
-            /* 描边：只在开启时写入（关闭由 reset() 负责）。 */
+            /* 描边：两层各自独立，只写入开着的那层（关闭由 reset() 负责）。
+             * 逐面颜色表是整表拷贝：geometry 层按面索引取色，sentinel 表示跟随该层主色。 */
             if (outline)
             {
-                BoneOutlineHolder boneOutline = (BoneOutlineHolder) transform;
                 GroupOutlineHolder groupOutline = (GroupOutlineHolder) group;
 
-                groupOutline.bbspp_cml$setOutline(true);
-                groupOutline.bbspp_cml$setOutlineColor(boneOutline.bbspp_cml$getOutlineColor());
-                groupOutline.bbspp_cml$setOutlineWidth(boneOutline.bbspp_cml$getOutlineWidth());
-                groupOutline.bbspp_cml$setOutlineGlow(boneOutline.bbspp_cml$getOutlineGlow());
-                groupOutline.bbspp_cml$setOutlineVanillaGlow(boneOutline.bbspp_cml$getOutlineVanillaGlow());
+                for (int layer = 0; layer < 2; layer++)
+                {
+                    if (!boneOutline.bbspp_cml$hasOutlineLayer(layer))
+                    {
+                        continue;
+                    }
+
+                    groupOutline.bbspp_cml$setOutlineLayer(layer, true);
+                    groupOutline.bbspp_cml$setOutlineColor(layer, boneOutline.bbspp_cml$getOutlineColor(layer));
+                    groupOutline.bbspp_cml$setOutlineWidth(layer, boneOutline.bbspp_cml$getOutlineWidth(layer));
+                    groupOutline.bbspp_cml$setOutlineGlow(layer, boneOutline.bbspp_cml$getOutlineGlow(layer));
+                    groupOutline.bbspp_cml$setOutlineVanillaGlow(layer, boneOutline.bbspp_cml$getOutlineVanillaGlow(layer));
+                    groupOutline.bbspp_cml$setOutlineFaceCull(layer, boneOutline.bbspp_cml$getOutlineFaceCull(layer));
+
+                    for (int face = 0; face < BoneOutlineHolder.FACE_COUNT; face++)
+                    {
+                        groupOutline.bbspp_cml$setOutlineFaceColor(layer, face,
+                            boneOutline.bbspp_cml$getOutlineFaceColor(layer, face));
+                    }
+                }
+
                 groupOutline.bbspp_cml$setOutlineDecalSize(boneOutline.bbspp_cml$getOutlineDecalSize());
-                groupOutline.bbspp_cml$setOutlineFaceCull(boneOutline.bbspp_cml$getOutlineFaceCull());
             }
 
             if (pivoted)

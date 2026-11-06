@@ -1,6 +1,10 @@
 # Gradle
 .gradle/
+.gradle-user-home/
+.gradle-work/
 build/
+.build-work/
+.acl-recovery/
 
 # IDE
 .idea/

@@ -26,7 +26,6 @@ import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
 import mchorse.bbs_mod.ui.framework.elements.input.UISliderTrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
@@ -108,29 +107,53 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     @Unique
     private UISection bbspp_cml$pbrSection;
 
+    /* 描边栏内嵌的「高级选项」子栏：折叠状态独立于外层栏。 */
+
     @Unique
     private UISection bbspp_cml$outlineSection;
+
+    /**
+     * 第二层描边栏「描边叠加」。控件按 layer 下标与第一栏完全对称，
+     * 只有 {@link #bbspp_cml$outlineOverlay} 打开时才插进面板（见 {@link #bbspp_cml$attachAfterMaterial()}）。
+     */
+    @Unique
+    private UISection bbspp_cml$outlineOverlaySection;
+
+    /** 该栏当前是否已被插进面板；避免每次同步都重新增删一遍。 */
+    @Unique
+    private boolean bbspp_cml$outlineOverlayShown;
 
     @Unique
     private UIToggle bbspp_cml$outline;
 
     @Unique
-    private UIColor bbspp_cml$outlineColor;
+    private UIToggle bbspp_cml$outlineOverlay;
+
+    /* 两层共用同一套控件类型，只是数组下标不同：0 = 描边，1 = 描边叠加。 */
 
     @Unique
-    private UITrackpad bbspp_cml$outlineWidth;
+    private final UIColor[] bbspp_cml$outlineColors = new UIColor[2];
 
     @Unique
-    private UITrackpad bbspp_cml$outlineGlow;
+    private final UITrackpad[] bbspp_cml$outlineWidths = new UITrackpad[2];
 
     @Unique
-    private UIToggle bbspp_cml$outlineVanillaGlow;
+    private final UITrackpad[] bbspp_cml$outlineGlows = new UITrackpad[2];
+
+    @Unique
+    private final UIToggle[] bbspp_cml$outlineVanillaGlows = new UIToggle[2];
+
+    @Unique
+    private final UIToggle[] bbspp_cml$outlineFaceCulls = new UIToggle[2];
+
+    /** 逐面颜色选择器，下标先是层再是面（顺序见 {@code OutlineGeometry.FACE_*}）。 */
+    @Unique
+    private final UIColor[][] bbspp_cml$outlineFaces = new UIColor[2][BoneOutlineHolder.FACE_COUNT];
+
+    /* 不描边块尺寸是模型级属性，只有第一栏提供。 */
 
     @Unique
     private UITrackpad bbspp_cml$outlineDecal;
-
-    @Unique
-    private UIToggle bbspp_cml$outlineFaceCull;
 
     @Unique
     private UISection bbspp_cml$glintSection;
@@ -253,78 +276,30 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             });
         });
 
-        this.bbspp_cml$outlineColor = new UIColor((argb) ->
+        /* 叠加描边：打开后在描边栏正下方插进第二栏，两层的颜色与高级选项互不影响。 */
+        this.bbspp_cml$outlineOverlay = new UIToggle(L10n.lang("bbs.ui.model_editor.outline.overlay"),
+            BoneOutlineHolder.DEFAULT_OVERLAY, (toggle) ->
         {
-            this.bbspp_cml$applyOutlineColorToSelection(self, argb == null ? 0xFFFFFFFF : argb);
-            OutlineEmissiveTexture.invalidate();
+            this.bbspp_cml$applyOutlineOverlayToSelection(self, toggle.getValue());
+            this.bbspp_cml$outlineOverlayShown = toggle.getValue();
+            this.bbspp_cml$attachAfterMaterial();
         });
-        this.bbspp_cml$outlineColor.withAlpha().direction(Direction.LEFT);
-        this.bbspp_cml$outlineColor.h(20);
-
-        this.bbspp_cml$outlineColor.context((ContextMenuManager manager) ->
-        {
-            manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
-            {
-                this.bbspp_cml$applyOutlineColorToChildren(self);
-            });
-        });
-
-        this.bbspp_cml$outlineWidth = this.bbspp_cml$createOutlineTrackpad(self, 0D, 10D,
-            L10n.lang("bbs.ui.model_editor.outline.width.tooltip"),
-            (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineWidth(v));
-        this.bbspp_cml$outlineGlow = this.bbspp_cml$createOutlineTrackpad(self, 0D, 254D,
-            L10n.lang("bbs.ui.model_editor.outline.glow.tooltip"),
-            (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineGlow(v));
-        this.bbspp_cml$outlineVanillaGlow = new UIToggle(L10n.lang("bbs.ui.model_editor.outline.vanilla_glow"),
-            false, (toggle) ->
-        {
-            this.bbspp_cml$applyOutlineVanillaGlowToSelection(self, toggle.getValue());
-        });
-        this.bbspp_cml$outlineVanillaGlow.h(20);
-        this.bbspp_cml$outlineVanillaGlow.tooltip(
-            L10n.lang("bbs.ui.model_editor.outline.vanilla_glow.tooltip"), Direction.LEFT);
-
-        this.bbspp_cml$outlineVanillaGlow.context((ContextMenuManager manager) ->
+        this.bbspp_cml$outlineOverlay.h(20);
+        this.bbspp_cml$outlineOverlay.tooltip(
+            L10n.lang("bbs.ui.model_editor.outline.overlay.tooltip"), Direction.LEFT);
+        this.bbspp_cml$outlineOverlay.context((ContextMenuManager manager) ->
         {
             manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
             {
-                this.bbspp_cml$applyOutlineVanillaGlowToChildren(self,
-                    this.bbspp_cml$outlineVanillaGlow.getValue());
-            });
-        });
-        this.bbspp_cml$outlineDecal = this.bbspp_cml$createOutlineTrackpad(self, 0D, 16D,
-            L10n.lang("bbs.ui.model_editor.outline.decal_size.tooltip"),
-            (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineDecalSize(v));
-
-        this.bbspp_cml$outlineFaceCull = new UIToggle(L10n.lang("bbs.ui.model_editor.outline.face_cull"),
-            BoneOutlineHolder.DEFAULT_FACE_CULL, (toggle) ->
-        {
-            this.bbspp_cml$applyOutlineFaceCullToSelection(self, toggle.getValue());
-        });
-        this.bbspp_cml$outlineFaceCull.h(20);
-        this.bbspp_cml$outlineFaceCull.tooltip(
-            L10n.lang("bbs.ui.model_editor.outline.face_cull.tooltip"), Direction.LEFT);
-        this.bbspp_cml$outlineFaceCull.context((ContextMenuManager manager) ->
-        {
-            manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
-            {
-                this.bbspp_cml$applyOutlineFaceCullToChildren(self,
-                    this.bbspp_cml$outlineFaceCull.getValue());
+                this.bbspp_cml$applyOutlineOverlayToChildren(self,
+                    this.bbspp_cml$outlineOverlay.getValue());
             });
         });
 
-        this.bbspp_cml$outlineSection = new UISection(L10n.lang("bbs.ui.model_editor.outline"));
-        this.bbspp_cml$outlineSection.setExpanded(false);
-        this.bbspp_cml$outlineSection.fields.add(
-            UI.row(this.bbspp_cml$outline),
-            UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.color"), this.bbspp_cml$outlineColor),
-            UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.width"), this.bbspp_cml$outlineWidth),
-            UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.glow"), this.bbspp_cml$outlineGlow),
-            /* UIToggle 自带标签，套 labelRow 会把名字画两遍，所以独占一行。 */
-            UI.row(this.bbspp_cml$outlineVanillaGlow),
-            UI.row(this.bbspp_cml$outlineFaceCull),
-            UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.decal_size"), this.bbspp_cml$outlineDecal)
-        );
+        this.bbspp_cml$outlineSection = this.bbspp_cml$createOutlineSection(self, 0);
+        this.bbspp_cml$outlineOverlaySection = this.bbspp_cml$createOutlineSection(self, 1);
+
+        this.bbspp_cml$outlineOverlayShown = BoneOutlineHolder.DEFAULT_OVERLAY;
 
         /* ---- 附魔光效折叠栏（插在描边下方） ---- */
         this.bbspp_cml$glintSection = new UISection(L10n.lang("bbs.ui.pose.section_glint"));
@@ -411,7 +386,8 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
          * 这里再移除会把按钮从行里拽走。 */
         for (UIElement element : new UIElement[] {
             this.bbspp_cml$pbrSection, this.bbspp_cml$outlineSection,
-            this.bbspp_cml$glintSection, this.bbspp_cml$pickTexture
+            this.bbspp_cml$outlineOverlaySection, this.bbspp_cml$glintSection,
+            this.bbspp_cml$pickTexture
         })
         {
             if (element != null && element.getParent() != null
@@ -427,6 +403,14 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
 
         UIElement last = this.bbspp_cml$outlineSection;
 
+        /* 叠加栏紧跟在描边栏后面，这样两栏视觉上是一组；关掉时整栏不参与排版，
+         * 用 add/remove 而不是 setVisible —— 后者只改可见标记，行高仍会被父容器累加。 */
+        if (this.bbspp_cml$outlineOverlaySection != null && this.bbspp_cml$outlineOverlayShown)
+        {
+            parent.addAfter(last, this.bbspp_cml$outlineOverlaySection);
+            last = this.bbspp_cml$outlineOverlaySection;
+        }
+
         if (this.bbspp_cml$glintSection != null)
         {
             parent.addAfter(last, this.bbspp_cml$glintSection);
@@ -438,6 +422,8 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         {
             parent.addAfter(last, this.bbspp_cml$pickTexture);
         }
+
+        parent.resize();
     }
 
     @Inject(method = "selectBone(Ljava/lang/String;)V", at = @At("TAIL"), remap = false)
@@ -800,6 +786,190 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$syncOutlineControls();
     }
 
+    /**
+     * 按层建一个描边栏。两层的控件类型完全相同，区别只在读写走
+     * {@link BoneOutlineHolder} 的 layer 分派方法（0 = 描边，1 = 描边叠加）。
+     *
+     * <p>第一栏额外带「不描边块尺寸」与「叠加描边」两行——前者是模型级属性，
+     * 后者是第二栏的显隐开关；第二栏这两项都没有，它出现即代表该层已开启。</p>
+     */
+    @Unique
+    private UISection bbspp_cml$createOutlineSection(UIPoseEditor self, int layer)
+    {
+        boolean overlay = layer == 1;
+
+        this.bbspp_cml$outlineColors[layer] = new UIColor((argb) ->
+        {
+            this.bbspp_cml$applyOutlineColorToSelection(self, layer, argb == null ? 0xFFFFFFFF : argb);
+            OutlineEmissiveTexture.invalidate();
+        });
+        this.bbspp_cml$outlineColors[layer].withAlpha().direction(Direction.LEFT).h(20);
+        this.bbspp_cml$outlineColors[layer].context((ContextMenuManager manager) ->
+        {
+            manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
+            {
+                this.bbspp_cml$applyOutlineColorToChildren(self, layer);
+            });
+        });
+
+        /* 第二栏的宽度是"再向外扩出多少"，不是绝对半径，所以换一条说明文案。 */
+        this.bbspp_cml$outlineWidths[layer] = this.bbspp_cml$createOutlineTrackpad(self, 0D, 10D,
+            L10n.lang(overlay
+                ? "bbs.ui.model_editor.outline.width.tooltip_overlay"
+                : "bbs.ui.model_editor.outline.width.tooltip"),
+            (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineWidth(layer, v));
+        this.bbspp_cml$outlineGlows[layer] = this.bbspp_cml$createOutlineTrackpad(self, 0D, 254D,
+            L10n.lang("bbs.ui.model_editor.outline.glow.tooltip"),
+            (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineGlow(layer, v));
+
+        this.bbspp_cml$outlineVanillaGlows[layer] = new UIToggle(
+            L10n.lang("bbs.ui.model_editor.outline.vanilla_glow"), false, (toggle) ->
+        {
+            this.bbspp_cml$applyOutlineVanillaGlowToSelection(self, layer, toggle.getValue());
+        });
+        this.bbspp_cml$outlineVanillaGlows[layer].h(20);
+        this.bbspp_cml$outlineVanillaGlows[layer].tooltip(
+            L10n.lang("bbs.ui.model_editor.outline.vanilla_glow.tooltip"), Direction.LEFT);
+        this.bbspp_cml$outlineVanillaGlows[layer].context((ContextMenuManager manager) ->
+        {
+            manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
+            {
+                this.bbspp_cml$applyOutlineVanillaGlowToChildren(self, layer,
+                    this.bbspp_cml$outlineVanillaGlows[layer].getValue());
+            });
+        });
+
+        this.bbspp_cml$outlineFaceCulls[layer] = new UIToggle(
+            L10n.lang("bbs.ui.model_editor.outline.face_cull"),
+            BoneOutlineHolder.DEFAULT_FACE_CULL, (toggle) ->
+        {
+            this.bbspp_cml$applyOutlineFaceCullToSelection(self, layer, toggle.getValue());
+        });
+        this.bbspp_cml$outlineFaceCulls[layer].h(20);
+        this.bbspp_cml$outlineFaceCulls[layer].tooltip(
+            L10n.lang("bbs.ui.model_editor.outline.face_cull.tooltip"), Direction.LEFT);
+        this.bbspp_cml$outlineFaceCulls[layer].context((ContextMenuManager manager) ->
+        {
+            manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
+            {
+                this.bbspp_cml$applyOutlineFaceCullToChildren(self, layer,
+                    this.bbspp_cml$outlineFaceCulls[layer].getValue());
+            });
+        });
+
+        UISection section = new UISection(L10n.lang(overlay
+            ? "bbs.ui.model_editor.outline.overlay_section"
+            : "bbs.ui.model_editor.outline"));
+        section.setExpanded(false);
+
+        if (!overlay)
+        {
+            section.fields.add(UI.row(this.bbspp_cml$outline));
+        }
+
+        section.fields.add(
+            UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.color"), this.bbspp_cml$outlineColors[layer]),
+            UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.width"), this.bbspp_cml$outlineWidths[layer]),
+            UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.glow"), this.bbspp_cml$outlineGlows[layer]),
+            /* UIToggle 自带标签，套 labelRow 会把名字画两遍，所以独占一行。 */
+            UI.row(this.bbspp_cml$outlineVanillaGlows[layer]),
+            UI.row(this.bbspp_cml$outlineFaceCulls[layer])
+        );
+
+        if (!overlay)
+        {
+            this.bbspp_cml$outlineDecal = this.bbspp_cml$createOutlineTrackpad(self, 0D, 16D,
+                L10n.lang("bbs.ui.model_editor.outline.decal_size.tooltip"),
+                (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineDecalSize(v));
+
+            section.fields.add(
+                UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.decal_size"), this.bbspp_cml$outlineDecal),
+                /* 叠加开关常驻第一栏末尾：它决定的是"要不要再出现一栏"，不属于高级选项。 */
+                UI.row(this.bbspp_cml$outlineOverlay)
+            );
+        }
+
+        section.fields.add(this.bbspp_cml$createOutlineAdvancedSection(self, layer, section));
+
+        return section;
+    }
+
+    /**
+     * 描边栏内的「高级选项」子栏：六个面各自一个颜色选择器。
+     *
+     * <p>未设置过的面存的是 {@link BoneOutlineHolder#DEFAULT_FACE_COLOR} 这个哨兵值，
+     * 表示"跟随本层主色"，因此色块显示的是主色而不是黑色。</p>
+     *
+     * <p>{@code owner} 用于子栏折叠后通知外层栏重新排版——{@code UISection.setExpanded}
+     * 只刷新自己的直接父容器，跨一层就会留下空白。</p>
+     */
+    @Unique
+    private UISection bbspp_cml$createOutlineAdvancedSection(UIPoseEditor self, int layer, UISection owner)
+    {
+        /* 六个面的显示名，下标与 OutlineGeometry 的 FACE_* 常量一致。 */
+        String[] keys = {
+            "bbs.ui.model_editor.outline.face.front",  /* FACE_FRONT  = 0 */
+            "bbs.ui.model_editor.outline.face.right",  /* FACE_RIGHT  = 1 */
+            "bbs.ui.model_editor.outline.face.back",   /* FACE_BACK   = 2 */
+            "bbs.ui.model_editor.outline.face.left",   /* FACE_LEFT   = 3 */
+            "bbs.ui.model_editor.outline.face.top",    /* FACE_TOP    = 4 */
+            "bbs.ui.model_editor.outline.face.bottom"  /* FACE_BOTTOM = 5 */
+        };
+
+        UISection advanced = new UISection(L10n.lang("bbs.ui.model_editor.outline.advanced"));
+        advanced.setExpanded(false);
+
+        for (int face = 0; face < BoneOutlineHolder.FACE_COUNT; face++)
+        {
+            final int index = face;
+
+            this.bbspp_cml$outlineFaces[layer][face] = new UIColor((argb) ->
+            {
+                this.bbspp_cml$applyOutlineFaceColorToSelection(self, layer, index,
+                    argb == null ? BoneOutlineHolder.DEFAULT_FACE_COLOR : argb);
+                OutlineEmissiveTexture.invalidate();
+            });
+            this.bbspp_cml$outlineFaces[layer][face].withAlpha().direction(Direction.LEFT).h(16);
+            /* 并排六个色块时 UIColor 默认会画 #RRGGBB 文字，会糊成一团，所以关掉文字只留色块。 */
+            this.bbspp_cml$outlineFaces[layer][face].noLabel();
+
+            /* 右键把这个面的颜色铺给选中骨骼的所有子骨骼，省得逐根点。 */
+            this.bbspp_cml$outlineFaces[layer][face].context((ContextMenuManager manager) ->
+            {
+                manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
+                {
+                    this.bbspp_cml$applyOutlineFaceColorToChildren(self, layer, index);
+                });
+            });
+
+            advanced.fields.add(UI.labelRow(L10n.lang(keys[face]), 60,
+                this.bbspp_cml$outlineFaces[layer][face]));
+        }
+
+        UIButton sync = new UIButton(L10n.lang("bbs.ui.model_editor.outline.face_sync"), (b) ->
+        {
+            this.bbspp_cml$applyOutlineFaceColorSyncToSelection(self, layer);
+        });
+        sync.h(16);
+        sync.tooltip(L10n.lang("bbs.ui.model_editor.outline.face_sync.tooltip"), Direction.LEFT);
+        sync.context((ContextMenuManager manager) ->
+        {
+            manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
+            {
+                this.bbspp_cml$applyOutlineFaceColorSyncToChildren(self, layer);
+            });
+            manager.action(Icons.REFRESH, UIKeys.POSE_CONTEXT_APPLY, () ->
+            {
+                this.bbspp_cml$applyOutlineFaceColorResetToSelection(self, layer);
+            });
+        });
+        advanced.fields.add(UI.row(sync));
+
+        advanced.onToggle((s) -> owner.resizeParent());
+
+        return advanced;
+    }
+
     @Unique
     private void bbspp_cml$syncOutlineControls()
     {
@@ -813,22 +983,58 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         BoneOutlineHolder holder = current == null ? null : (BoneOutlineHolder) current;
 
         this.bbspp_cml$outline.setValue(holder != null && holder.bbspp_cml$getOutline());
-        this.bbspp_cml$outlineColor.setColor(holder == null
-            ? 0xFFFFFFFF
-            : holder.bbspp_cml$getOutlineColor().getARGBColor());
-        this.bbspp_cml$outlineWidth.setValue(holder == null
-            ? BoneOutlineHolder.DEFAULT_WIDTH
-            : holder.bbspp_cml$getOutlineWidth());
-        this.bbspp_cml$outlineGlow.setValue(holder == null
-            ? BoneOutlineHolder.DEFAULT_GLOW
-            : holder.bbspp_cml$getOutlineGlow());
-        this.bbspp_cml$outlineVanillaGlow.setValue(holder != null && holder.bbspp_cml$getOutlineVanillaGlow() > 0F);
+        this.bbspp_cml$outlineOverlay.setValue(holder != null && holder.bbspp_cml$getOutlineOverlay());
+
+        for (int layer = 0; layer < 2; layer++)
+        {
+            this.bbspp_cml$syncOutlineLayer(holder, layer);
+        }
+
         this.bbspp_cml$outlineDecal.setValue(holder == null
             ? BoneOutlineHolder.DEFAULT_DECAL
             : holder.bbspp_cml$getOutlineDecalSize());
-        this.bbspp_cml$outlineFaceCull.setValue(holder == null
+
+        /* 第二栏只在当前骨骼开了叠加描边时留在面板上；换骨骼后要跟着增删。 */
+        boolean shown = holder != null && holder.bbspp_cml$getOutlineOverlay();
+
+        if (shown != this.bbspp_cml$outlineOverlayShown)
+        {
+            this.bbspp_cml$outlineOverlayShown = shown;
+            this.bbspp_cml$attachAfterMaterial();
+        }
+    }
+
+    /** 把某一层的全部控件刷成 holder 的实际值；holder 为 null 时回到默认外观。 */
+    @Unique
+    private void bbspp_cml$syncOutlineLayer(BoneOutlineHolder holder, int layer)
+    {
+        this.bbspp_cml$outlineColors[layer].setColor(holder == null
+            ? 0xFFFFFFFF
+            : holder.bbspp_cml$getOutlineColor(layer).getARGBColor());
+        this.bbspp_cml$outlineWidths[layer].setValue(holder == null
+            ? (layer == 0 ? BoneOutlineHolder.DEFAULT_WIDTH : BoneOutlineHolder.DEFAULT_OVERLAY_WIDTH)
+            : holder.bbspp_cml$getOutlineWidth(layer));
+        this.bbspp_cml$outlineGlows[layer].setValue(holder == null
+            ? BoneOutlineHolder.DEFAULT_GLOW
+            : holder.bbspp_cml$getOutlineGlow(layer));
+        this.bbspp_cml$outlineVanillaGlows[layer].setValue(holder != null
+            && holder.bbspp_cml$getOutlineVanillaGlow(layer) > 0F);
+        this.bbspp_cml$outlineFaceCulls[layer].setValue(holder == null
             ? BoneOutlineHolder.DEFAULT_FACE_CULL
-            : holder.bbspp_cml$getOutlineFaceCull());
+            : holder.bbspp_cml$getOutlineFaceCull(layer));
+
+        int main = holder == null ? 0xFFFFFFFF : holder.bbspp_cml$getOutlineColor(layer).getARGBColor();
+
+        for (int face = 0; face < BoneOutlineHolder.FACE_COUNT; face++)
+        {
+            int argb = holder == null
+                ? BoneOutlineHolder.DEFAULT_FACE_COLOR
+                : holder.bbspp_cml$getOutlineFaceColor(layer, face);
+
+            /* 哨兵值代表"跟随本层主色"，色块就显示主色，免得六块全黑误导用户。 */
+            this.bbspp_cml$outlineFaces[layer][face].setColor(
+                argb == BoneOutlineHolder.DEFAULT_FACE_COLOR ? main : argb);
+        }
     }
 
     @Unique
@@ -841,12 +1047,54 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     }
 
     @Unique
-    private void bbspp_cml$applyOutlineColorToSelection(UIPoseEditor self, int argb)
+    private void bbspp_cml$applyOutlineOverlayToSelection(UIPoseEditor self, boolean value)
     {
         this.bbspp_cml$writeToSelection(self, (poseT) ->
         {
-            ((BoneOutlineHolder) poseT).bbspp_cml$getOutlineColor().set(argb);
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineOverlay(value);
         });
+    }
+
+    @Unique
+    private void bbspp_cml$applyOutlineColorToSelection(UIPoseEditor self, int layer, int argb)
+    {
+        this.bbspp_cml$writeToSelection(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$getOutlineColor(layer).set(argb);
+        });
+    }
+
+    @Unique
+    private void bbspp_cml$applyOutlineFaceColorToSelection(UIPoseEditor self, int layer, int face, int argb)
+    {
+        this.bbspp_cml$writeToSelection(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceColor(layer, face, argb);
+        });
+    }
+
+    /** 把某一层的六个面全部恢复成"跟随主色"。 */
+    @Unique
+    private void bbspp_cml$applyOutlineFaceColorSyncToSelection(UIPoseEditor self, int layer)
+    {
+        this.bbspp_cml$writeToSelection(self, (poseT) ->
+        {
+            for (int face = 0; face < BoneOutlineHolder.FACE_COUNT; face++)
+            {
+                ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceColor(
+                    layer, face, BoneOutlineHolder.DEFAULT_FACE_COLOR);
+            }
+        });
+
+        OutlineEmissiveTexture.invalidate();
+        this.bbspp_cml$syncOutlineControls();
+    }
+
+    /** 右键菜单项：对当前选中的骨骼自己重置，不做肢体链扩散。 */
+    @Unique
+    private void bbspp_cml$applyOutlineFaceColorResetToSelection(UIPoseEditor self, int layer)
+    {
+        this.bbspp_cml$applyOutlineFaceColorSyncToSelection(self, layer);
     }
 
     @Unique
@@ -859,58 +1107,110 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     }
 
     @Unique
-    private void bbspp_cml$applyOutlineVanillaGlowToSelection(UIPoseEditor self, boolean value)
+    private void bbspp_cml$applyOutlineOverlayToChildren(UIPoseEditor self, boolean value)
+    {
+        this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineOverlay(value);
+        });
+    }
+
+    @Unique
+    private void bbspp_cml$applyOutlineVanillaGlowToSelection(UIPoseEditor self, int layer, boolean value)
     {
         this.bbspp_cml$writeToSelection(self, (poseT) ->
         {
-            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineVanillaGlow(value
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineVanillaGlow(layer, value
                 ? BoneOutlineHolder.VANILLA_GLOW_ON
                 : BoneOutlineHolder.DEFAULT_VANILLA_GLOW);
         });
     }
 
     @Unique
-    private void bbspp_cml$applyOutlineVanillaGlowToChildren(UIPoseEditor self, boolean value)
+    private void bbspp_cml$applyOutlineVanillaGlowToChildren(UIPoseEditor self, int layer, boolean value)
     {
         float strength = value ? BoneOutlineHolder.VANILLA_GLOW_ON : BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
 
         this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
         {
-            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineVanillaGlow(strength);
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineVanillaGlow(layer, strength);
         });
     }
 
     @Unique
-    private void bbspp_cml$applyOutlineFaceCullToSelection(UIPoseEditor self, boolean value)
+    private void bbspp_cml$applyOutlineFaceCullToSelection(UIPoseEditor self, int layer, boolean value)
     {
         this.bbspp_cml$writeToSelection(self, (poseT) ->
         {
-            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceCull(value);
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceCull(layer, value);
         });
     }
 
     @Unique
-    private void bbspp_cml$applyOutlineFaceCullToChildren(UIPoseEditor self, boolean value)
+    private void bbspp_cml$applyOutlineFaceCullToChildren(UIPoseEditor self, int layer, boolean value)
     {
         this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
         {
-            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceCull(value);
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceCull(layer, value);
         });
     }
 
     @Unique
-    private void bbspp_cml$applyOutlineColorToChildren(UIPoseEditor self)
+    private void bbspp_cml$applyOutlineColorToChildren(UIPoseEditor self, int layer)
     {
-        if (this.bbspp_cml$outlineColor == null)
+        if (this.bbspp_cml$outlineColors[layer] == null)
         {
             return;
         }
 
-        int argb = this.bbspp_cml$outlineColor.picker.color.getARGBColor();
+        int argb = this.bbspp_cml$outlineColors[layer].picker.color.getARGBColor();
 
         this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
         {
-            ((BoneOutlineHolder) poseT).bbspp_cml$getOutlineColor().set(argb);
+            ((BoneOutlineHolder) poseT).bbspp_cml$getOutlineColor(layer).set(argb);
+        });
+
+        OutlineEmissiveTexture.invalidate();
+    }
+
+    /** 右键菜单项：把当前这个面控件上的颜色铺给所有子骨骼。 */
+    @Unique
+    private void bbspp_cml$applyOutlineFaceColorToChildren(UIPoseEditor self, int layer, int face)
+    {
+        if (this.bbspp_cml$outlineFaces[layer][face] == null)
+        {
+            return;
+        }
+
+        int argb = this.bbspp_cml$outlineFaces[layer][face].picker.color.getARGBColor();
+
+        /* 色块显示的是主色时，存的是哨兵值而不是主色本身，这里要还原成哨兵，
+         * 否则"跟随主色"会被固化成一份快照，之后改主色这些骨骼就不跟了。 */
+        int main = this.bbspp_cml$outlineColors[layer] == null
+            ? 0xFFFFFFFF
+            : this.bbspp_cml$outlineColors[layer].picker.color.getARGBColor();
+
+        int stored = argb == main ? BoneOutlineHolder.DEFAULT_FACE_COLOR : argb;
+
+        this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceColor(layer, face, stored);
+        });
+
+        OutlineEmissiveTexture.invalidate();
+    }
+
+    /** 右键菜单项：把"六个面全部跟随主色"铺给所有子骨骼。 */
+    @Unique
+    private void bbspp_cml$applyOutlineFaceColorSyncToChildren(UIPoseEditor self, int layer)
+    {
+        this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
+        {
+            for (int face = 0; face < BoneOutlineHolder.FACE_COUNT; face++)
+            {
+                ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceColor(
+                    layer, face, BoneOutlineHolder.DEFAULT_FACE_COLOR);
+            }
         });
 
         OutlineEmissiveTexture.invalidate();
@@ -1059,6 +1359,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         boolean material = false;
         boolean pbr = false;
         boolean outline = false;
+        boolean overlay = false;
         boolean glint = false;
 
         if (current != null)
@@ -1084,7 +1385,10 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
                 || outlineHolder.bbspp_cml$getOutlineGlow() != BoneOutlineHolder.DEFAULT_GLOW
                 || outlineHolder.bbspp_cml$getOutlineVanillaGlow() != BoneOutlineHolder.DEFAULT_VANILLA_GLOW
                 || outlineHolder.bbspp_cml$getOutlineDecalSize() != BoneOutlineHolder.DEFAULT_DECAL
-                || outlineHolder.bbspp_cml$getOutlineFaceCull() != BoneOutlineHolder.DEFAULT_FACE_CULL;
+                || outlineHolder.bbspp_cml$getOutlineFaceCull() != BoneOutlineHolder.DEFAULT_FACE_CULL
+                || outlineHolder.bbspp_cml$hasOutlineFaceColors(0)
+                /* 叠加层只要开了就该展开第一栏——第二栏是从它这里点开的。 */
+                || outlineHolder.bbspp_cml$getOutlineOverlay();
 
             GlintHolder glintHolder = (GlintHolder) current;
             GlintSettingsHolder glintSettings = (GlintSettingsHolder) current;
@@ -1092,6 +1396,16 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
                 || glintHolder.bbspp_cml$getGlintColor().getARGBColor() != 0xFFFFFFFF
                 || glintSettings.bbspp_cml$getGlintSpeed() != GlintSettingsHolder.DEFAULT_SPEED
                 || glintSettings.bbspp_cml$getGlintBrightness() != GlintSettingsHolder.DEFAULT_BRIGHTNESS;
+
+            /* 叠加层是否值得展开：开关本身已由上面的 outline 判据覆盖，
+             * 这里看的是它自己的那套参数有没有被改过。 */
+            overlay = outlineHolder.bbspp_cml$getOutlineOverlay()
+                && (outlineHolder.bbspp_cml$getOutlineColor(1).getARGBColor() != 0xFFFFFFFF
+                    || outlineHolder.bbspp_cml$getOutlineWidth(1) != BoneOutlineHolder.DEFAULT_OVERLAY_WIDTH
+                    || outlineHolder.bbspp_cml$getOutlineGlow(1) != BoneOutlineHolder.DEFAULT_GLOW
+                    || outlineHolder.bbspp_cml$getOutlineVanillaGlow(1) != BoneOutlineHolder.DEFAULT_VANILLA_GLOW
+                    || outlineHolder.bbspp_cml$getOutlineFaceCull(1) != BoneOutlineHolder.DEFAULT_FACE_CULL
+                    || outlineHolder.bbspp_cml$hasOutlineFaceColors(1));
         }
 
         if (self.material != null)
@@ -1107,6 +1421,11 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         if (this.bbspp_cml$outlineSection != null)
         {
             this.bbspp_cml$outlineSection.setExpanded(outline);
+        }
+
+        if (this.bbspp_cml$outlineOverlaySection != null && this.bbspp_cml$outlineOverlayShown)
+        {
+            this.bbspp_cml$outlineOverlaySection.setExpanded(overlay);
         }
 
         if (this.bbspp_cml$glintSection != null)

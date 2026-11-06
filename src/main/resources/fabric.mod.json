@@ -26,6 +26,7 @@
     "accessWidener": "bbsplusplus.accesswidener",
     "mixins": [
         "bbsplusplus.mixins.json",
+        "bbsplusplus-12111.mixins.json",
         "bbsplusplus-irlite.mixins.json",
         "bbsplusplus-shadercurves.mixins.json",
         "bbsplusplus-vfx.mixins.json",
@@ -42,7 +43,7 @@
     "breaks": {
         "aaa_particles": [
             "<2.2.0",
-            ">2.2.3"
+            ">2.3.4"
         ],
         "bbstools": "*",
         "bbspp": "*",

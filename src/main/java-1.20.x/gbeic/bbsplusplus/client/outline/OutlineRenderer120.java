@@ -58,6 +58,13 @@ public final class OutlineRenderer120
 {
     private static final Matrix4f IDENTITY = new Matrix4f();
 
+    /**
+     * Widest shell first: the shell writes no depth, so a narrow shell drawn after a wide one
+     * would be hidden wherever both cover the same pixel.
+     */
+    private static final java.util.Comparator<OutlineGeometry.Spec> WIDE_FIRST =
+        java.util.Comparator.comparingDouble(OutlineGeometry.Spec::width).reversed();
+
     /** HEAD/RETURN pairing for the cached path. Nested renders pair like a stack. */
     private record Prepared(Model model, ModelConfig config, OutlineShellCache.Entry entry, int generation, boolean skipDepth)
     {
@@ -144,14 +151,19 @@ public final class OutlineRenderer120
         Map<String, Float> decalSizes = OutlineGeometry.decalSizes(model);
         Set<ModelCube> decals = OutlineDecalFilter.find(model, decalSizes);
         List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model);
+
+        specs.sort(WIDE_FIRST);
+
         Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
         Map<Long, ResourceTexture> glowTextures = resolveGlowTextures(specs);
         List<OutlineGeometry.Spec> glow = new ArrayList<>(specs.size());
         List<OutlineGeometry.Spec> vanilla = new ArrayList<>(specs.size());
+        List<OutlineGeometry.Spec> main = new ArrayList<>(specs.size());
+        boolean overlay = false;
 
         for (OutlineGeometry.Spec spec : specs)
         {
-            if (glowTextures.containsKey(specKey(spec)))
+            if (hasGlowTexture(spec, glowTextures))
             {
                 glow.add(spec);
             }
@@ -160,10 +172,21 @@ public final class OutlineRenderer120
             {
                 vanilla.add(spec);
             }
+
+            if (spec.layer() == 0)
+            {
+                main.add(spec);
+            }
+            else
+            {
+                overlay = true;
+            }
         }
 
         entry.glowSpecs = glow;
         entry.vanillaSpecs = vanilla;
+        entry.mainSpecs = main;
+        entry.hasOverlayLayer = overlay;
         entry.faceRects = faceRects;
         entry.decals = decals;
 
@@ -273,23 +296,25 @@ public final class OutlineRenderer120
             drawVbo(entry.solidVbo, modelView, shader);
         }
 
-        if (!entry.glowSpecs.isEmpty() && BBSRendering.isIrisShadersEnabled())
+        if (entry.hasOverlayLayer && !entry.mainSpecs.isEmpty())
         {
-            /* LabPBR emission only exists inside a shader pack: without one the pass would just
-             * repaint the shell at full brightness, which is what the separate vanilla glow
-             * switch is for. Skipping it here keeps "emission" honest - no pack, no emission,
-             * and the rim stays exactly as the plain shell drew it. */
-            renderLabPBR(model, config, entry.glowSpecs, base, formAlpha,
-                entry.faceRects, entry.decals, materialVisible);
-        }
+            /* The overlay shell is the wider one, so its glow would paint straight over the parent
+             * rim. Run the wide layer's glow first, repaint the narrow layer, then run the narrow
+             * layer's glow, so the parent rim always ends up on top. */
+            drawGlowPasses(entry.glowSpecs, entry.vanillaSpecs, 1, model, config, base, formAlpha,
+                entry.faceRects, entry.decals, materialVisible, shaderColor);
 
-        if (!entry.vanillaSpecs.isEmpty())
+            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+            RenderSystem.setShaderColor(1F, 1F, 1F, formAlpha * shaderColor[3]);
+            draw(model, config, entry.mainSpecs, base, formAlpha, entry.faceRects, entry.decals, materialVisible);
+
+            drawGlowPasses(entry.glowSpecs, entry.vanillaSpecs, 0, model, config, base, formAlpha,
+                entry.faceRects, entry.decals, materialVisible, shaderColor);
+        }
+        else
         {
-            /* Put the incoming alpha back first: {@link #renderVanilla} folds {@code formAlpha}
-             * itself, so both the cached and the immediate path compute the same product. */
-            RenderSystem.setShaderColor(shaderColor[0], shaderColor[1], shaderColor[2], shaderColor[3]);
-            renderVanilla(model, config, entry.vanillaSpecs, base, formAlpha,
-                entry.faceRects, entry.decals, materialVisible);
+            drawGlowPasses(entry.glowSpecs, entry.vanillaSpecs, -1, model, config, base, formAlpha,
+                entry.faceRects, entry.decals, materialVisible, shaderColor);
         }
 
         RenderSystem.setShaderColor(shaderColor[0], shaderColor[1], shaderColor[2], shaderColor[3]);
@@ -309,6 +334,50 @@ public final class OutlineRenderer120
         {
             RenderSystem.disableCull();
         }
+    }
+
+    /**
+     * Runs the additive passes - LabPBR emission and the vanilla full-bright layer - for one
+     * outline layer; {@code layer < 0} means every layer, which is all models using only the main
+     * outline need. Splitting by layer is what lets {@link #drawColor} keep the narrow parent rim
+     * above the wide overlay's glow.
+     */
+    private static void drawGlowPasses(List<OutlineGeometry.Spec> glowSpecs, List<OutlineGeometry.Spec> vanillaSpecs,
+                                       int layer, Model model, ModelConfig config, Matrix4f base, float formAlpha,
+                                       Map<ModelCube, float[][]> faceRects, Set<ModelCube> decals,
+                                       Predicate<String> materialVisible, float[] shaderColor)
+    {
+        List<OutlineGeometry.Spec> glow = layer < 0 ? glowSpecs : filterLayer(glowSpecs, layer);
+        List<OutlineGeometry.Spec> vanilla = layer < 0 ? vanillaSpecs : filterLayer(vanillaSpecs, layer);
+
+        if (!glow.isEmpty() && BBSRendering.isIrisShadersEnabled())
+        {
+            /* LabPBR emission only exists inside a shader pack; without one this pass would just
+             * repaint the shell at full brightness, which is what the vanilla glow switch is for. */
+            renderLabPBR(model, config, glow, base, formAlpha, faceRects, decals, materialVisible);
+        }
+
+        if (!vanilla.isEmpty())
+        {
+            RenderSystem.setShaderColor(shaderColor[0], shaderColor[1], shaderColor[2], shaderColor[3]);
+            renderVanilla(model, config, vanilla, base, formAlpha, faceRects, decals, materialVisible);
+        }
+    }
+
+    /** Returns the specs of one layer, keeping the wide-first order they were sorted into. */
+    private static List<OutlineGeometry.Spec> filterLayer(List<OutlineGeometry.Spec> specs, int layer)
+    {
+        List<OutlineGeometry.Spec> matches = new ArrayList<>(specs.size());
+
+        for (OutlineGeometry.Spec spec : specs)
+        {
+            if (spec.layer() == layer)
+            {
+                matches.add(spec);
+            }
+        }
+
+        return matches;
     }
 
     private static void drawVbo(VertexBuffer vbo, Matrix4f modelView, ShaderProgram shader)
@@ -413,15 +482,20 @@ public final class OutlineRenderer120
         Map<String, Float> decalSizes = OutlineGeometry.decalSizes(model);
         Set<ModelCube> decals = OutlineDecalFilter.find(model, decalSizes);
         List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model);
+
+        specs.sort(WIDE_FIRST);
+
         Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
         Matrix4f base = new Matrix4f(stack.peek().getPositionMatrix());
         Map<Long, ResourceTexture> glowTextures = resolveGlowTextures(specs);
         List<OutlineGeometry.Spec> glow = new ArrayList<>(specs.size());
         List<OutlineGeometry.Spec> vanilla = new ArrayList<>(specs.size());
+        List<OutlineGeometry.Spec> main = new ArrayList<>(specs.size());
+        boolean overlay = false;
 
         for (OutlineGeometry.Spec spec : specs)
         {
-            if (glowTextures.containsKey(specKey(spec)))
+            if (hasGlowTexture(spec, glowTextures))
             {
                 glow.add(spec);
             }
@@ -430,18 +504,36 @@ public final class OutlineRenderer120
             {
                 vanilla.add(spec);
             }
+
+            if (spec.layer() == 0)
+            {
+                main.add(spec);
+            }
+            else
+            {
+                overlay = true;
+            }
         }
 
         drawSolid(model, config, specs, base, color.a, faceRects, decals, materialVisible);
 
-        if (!glow.isEmpty() && BBSRendering.isIrisShadersEnabled())
-        {
-            renderLabPBR(model, config, glow, base, color.a, faceRects, decals, materialVisible);
-        }
+        float[] shaderColor = RenderSystem.getShaderColor().clone();
 
-        if (!vanilla.isEmpty())
+        if (overlay && !main.isEmpty())
         {
-            renderVanilla(model, config, vanilla, base, color.a, faceRects, decals, materialVisible);
+            /* Same layering rule as the cached path: the wide overlay's glow must not paint over
+             * the parent rim, so the narrow layer is repainted between the two glow passes. */
+            drawGlowPasses(glow, vanilla, 1, model, config, base, color.a, faceRects, decals, materialVisible, shaderColor);
+
+            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+            RenderSystem.setShaderColor(1F, 1F, 1F, color.a * shaderColor[3]);
+            draw(model, config, main, base, color.a, faceRects, decals, materialVisible);
+
+            drawGlowPasses(glow, vanilla, 0, model, config, base, color.a, faceRects, decals, materialVisible, shaderColor);
+        }
+        else
+        {
+            drawGlowPasses(glow, vanilla, -1, model, config, base, color.a, faceRects, decals, materialVisible, shaderColor);
         }
     }
 
@@ -507,15 +599,43 @@ public final class OutlineRenderer120
         return (int) Math.max(1L, Math.min(254L, Math.round(glow)));
     }
 
-    private static long specKey(OutlineGeometry.Spec spec)
+    /**
+     * Whether at least one of the spec's face colours has a companion emissive texture.
+     *
+     * <p>Checking the layer colour alone would drop a bone whose six faces are all customised,
+     * because the layer colour itself is then not painted anywhere.</p>
+     */
+    private static boolean hasGlowTexture(OutlineGeometry.Spec spec,
+                                          Map<Long, ResourceTexture> textures)
     {
-        return ((long) spec.argb() << 32) | (glowAlpha(spec.glow()) & 0xFFFFFFFFL);
+        if (textures.isEmpty() || spec.a() <= 0F)
+        {
+            return false;
+        }
+
+        int glow = glowAlpha(spec.glow());
+
+        if (glow <= 0)
+        {
+            return false;
+        }
+
+        for (int color : OutlineGeometry.effectiveFaceColors(spec))
+        {
+            if (textures.containsKey(glowKey(color, glow)))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
-     * Resolves one generated LabPBR texture per distinct glow group. The plain shell is drawn
-     * separately for every spec, so a spec whose companion texture cannot be created simply
-     * loses its emission instead of losing its rim.
+     * Resolves one generated LabPBR texture per (face colour, glow) pair. Walked per face colour,
+     * not just per layer colour, because the emission pass draws one batch per colour and each of
+     * those batches needs its own 1x1 diffuse. A spec whose companion texture cannot be created
+     * only loses its emission, never its rim.
      */
     private static Map<Long, ResourceTexture> resolveGlowTextures(List<OutlineGeometry.Spec> specs)
     {
@@ -542,22 +662,30 @@ public final class OutlineRenderer120
                 continue;
             }
 
-            long key = specKey(spec);
-
-            if (textures.containsKey(key))
+            for (int color : OutlineGeometry.effectiveFaceColors(spec))
             {
-                continue;
-            }
+                long key = glowKey(color, glow);
 
-            ResourceTexture texture = OutlineEmissiveTexture.getDiffuseTexture(spec.argb(), glow);
+                if (textures.containsKey(key))
+                {
+                    continue;
+                }
 
-            if (texture != null)
-            {
-                textures.put(key, texture);
+                ResourceTexture texture = OutlineEmissiveTexture.getDiffuseTexture(color, glow);
+
+                if (texture != null)
+                {
+                    textures.put(key, texture);
+                }
             }
         }
 
         return textures;
+    }
+
+    private static long glowKey(int argb, int glow)
+    {
+        return ((long) argb << 32) | (glow & 0xFFFFFFFFL);
     }
 
     /**
@@ -583,21 +711,29 @@ public final class OutlineRenderer120
         {
             int glow = glowAlpha(spec.glow());
 
-            if (glow <= 0 || spec.a() * formAlpha <= 0F)
+            /* The layer-wide alpha is not used here: every face carries its own after
+             * {@code pickFace}, so a transparent layer with one opaque custom face must still
+             * reach the vertex stage. */
+            if (glow <= 0 || formAlpha <= 0F)
             {
                 continue;
             }
 
-            long key = ((long) spec.argb() << 32) | (glow & 0xFFFFFFFFL);
-            GlowBatch batch = batches.get(key);
-
-            if (batch == null)
+            /* One batch per face colour: each colour needs its own 1x1 emissive diffuse, so a
+             * single batch keyed on the layer colour would flatten every face to the layer tint. */
+            for (int color : OutlineGeometry.effectiveFaceColors(spec))
             {
-                batch = new GlowBatch(spec.argb(), glow, new ArrayList<>());
-                batches.put(key, batch);
-            }
+                long key = glowKey(color, glow);
+                GlowBatch batch = batches.get(key);
 
-            batch.specs().add(spec);
+                if (batch == null)
+                {
+                    batch = new GlowBatch(color, glow, new ArrayList<>());
+                    batches.put(key, batch);
+                }
+
+                batch.specs().add(spec);
+            }
         }
 
         if (batches.isEmpty())
@@ -605,19 +741,27 @@ public final class OutlineRenderer120
             return;
         }
 
-        List<GlowBatch> ordered = new ArrayList<>(batches.values());
-        List<ResourceTexture> textures = new ArrayList<>(ordered.size());
+        List<GlowBatch> ordered = new ArrayList<>(batches.size());
+        List<ResourceTexture> textures = new ArrayList<>(batches.size());
 
-        for (GlowBatch batch : ordered)
+        for (GlowBatch batch : batches.values())
         {
             ResourceTexture texture = OutlineEmissiveTexture.getDiffuseTexture(batch.argb(), batch.glow());
 
+            /* Drop the batches that got no companion texture instead of giving up on the whole
+             * layer: the other colours still have a valid diffuse and should keep glowing. */
             if (texture == null)
             {
-                return;
+                continue;
             }
 
+            ordered.add(batch);
             textures.add(texture);
+        }
+
+        if (ordered.isEmpty())
+        {
+            return;
         }
 
         int sampler0 = RenderSystem.getShaderTexture(0);
@@ -664,13 +808,13 @@ public final class OutlineRenderer120
                         }
 
                         builder.vertex(x, y, z)
-                            .color(1F, 1F, 1F, formAlpha)
+                            .color(1F, 1F, 1F, a)
                             .texture(0F, 0F)
                             .overlay(OverlayTexture.DEFAULT_UV)
                             .light(LightmapTextureManager.MAX_LIGHT_COORDINATE)
                             .normal(nx, ny, nz)
                             .next();
-                    }, faceRects, decals, materialVisible, true);
+                    }, faceRects, decals, materialVisible, true, ordered.get(i).argb());
 
                 if (!began[0])
                 {
@@ -815,6 +959,9 @@ public final class OutlineRenderer120
         Map<String, Float> decalSizes = OutlineGeometry.decalSizes(model);
         Set<ModelCube> decals = OutlineDecalFilter.find(model, decalSizes);
         List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model);
+
+        specs.sort(WIDE_FIRST);
+
         Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
         Matrix4f base = new Matrix4f(stack.peek().getPositionMatrix());
 

@@ -77,6 +77,13 @@ if (mcVer == null) {
 
 def minecraftVersion = mcVer.minecraft_version
 
+// AAA Particles 2.3.4 未发布到 Modrinth，编译/开发运行优先使用仓库内本地 jar；
+// 该文件缺失时回退到 gradle.properties 中的 Modrinth 坐标（2.2.3）。
+// 必须用 orElse 而不是 get()：IDEA 的 Gradle 同步不会带上 -P 参数，get() 会让整个配置阶段
+// 直接失败（"Cannot query the value of Gradle property ... because it has no value available"）。
+def aaaLocalJarFile = file(providers.gradleProperty("aaa_particles_local_jar")
+        .getOrElse("libs/aaa_particles-fabric-1.20.1-2.3.4.jar"))
+
 // 按目标 MC 版本覆盖 fabric.mod.json 中声明的兼容范围（BBS 自身 1.21.11 用 ~1.21.11）
 def versionRanges = [
         "1.20.1" : [mc: ">=1.20.1 <=1.20.4", loader: ">=0.15.0", java: ">=17 <22"],
@@ -141,6 +148,15 @@ processResources {
                 from "src/main/resources-shared/shaders-1.21.11"
                 into "$buildDir/resources/main"
             }
+            // 反向保险：非 1.21.11 构建会从这个共享输出目录里删掉 1.21.11 专属着色器
+            // （见下面的 else 分支）。两个目标共用 build/resources/main，如果 Gradle 把本次
+            // processResources 判成 UP-TO-DATE，那些文件就补不回来、jar 里会缺 shader。
+            // 这里无条件再拷一遍，让「先 build1201 再 build12111」的顺序不影响产物。
+            copy {
+                from "src/main/resources/assets/bbsplusplus/shaders/core"
+                include "model_grade.vsh", "model_grade.fsh", "model_glint.vsh", "model_glint.fsh"
+                into "$buildDir/resources/main/assets/bbsplusplus/shaders/core"
+            }
             // 1.21.5+ 新 RenderPipeline 不再通过 assets/<ns>/shaders/core/*.json 注册管线，
             // 旧版 model.json 会让 shader 加载器自动声明 Light0_Direction/Light1_Direction/
             // FogStart/FogEnd/FogShape 等已废弃 uniform，与 light.glsl/fog.glsl 中的声明冲突
@@ -177,6 +193,38 @@ processResources {
                 f.text = text
             }
             println "Removed ${totalRemoved} excluded mixins from all mixins.json files"
+        }
+    } else {
+        // 1.21.11 专属 mixin 配置只在 1.21.11 构建里有效：其他版本没有 java-1.21.11 源码目录，
+        // 类不存在，Loader 会在启动阶段直接崩。这里删掉配置文件与 fabric.mod.json 里的引用。
+        doLast {
+            def configFile = file("$buildDir/resources/main/bbsplusplus-12111.mixins.json")
+            def modJson = file("$buildDir/resources/main/fabric.mod.json")
+
+            if (configFile.exists()) {
+                configFile.delete()
+            }
+
+            // 同理：1.21.11 的 RenderPipeline 版着色器在 1.20.x 没有任何引用（那边用的是
+            // assets/bbspp/shaders/core/*_texture_grade.*），留在产物里只是 9 KB 死重量，
+            // 还会让「1.20.1 产物里不该出现 model_grade/model_glint」这条核验误报。
+            ["model_grade.vsh", "model_grade.fsh", "model_glint.vsh", "model_glint.fsh"].each { name ->
+                def shader = file("$buildDir/resources/main/assets/bbsplusplus/shaders/core/${name}")
+                if (shader.exists()) {
+                    shader.delete()
+                    println "Removed 1.21.11-only shader for non 1.21.11 target: ${name}"
+                }
+            }
+
+            if (modJson.exists()) {
+                def text = modJson.getText("UTF-8")
+                def cleaned = text.replaceAll("\\s*\"bbsplusplus-12111\\.mixins\\.json\",?", "")
+
+                if (cleaned != text) {
+                    modJson.setText(cleaned, "UTF-8")
+                    println "Removed bbsplusplus-12111.mixins.json reference for non 1.21.11 target"
+                }
+            }
         }
     }
 }
@@ -227,7 +275,15 @@ dependencies {
     modCompileOnly "maven.modrinth:iris:${mcVer.iris}"
 
     // AAA Particles 依赖（1.20.4 / 1.21.11 无对应版本：仅编译期，运行时功能自动禁用）
-    if (mcVer.aaa_as_compile_only) {
+    // 2.3.4 尚未发布到 Modrinth：优先使用仓库内 libs/ 下的本地 jar（1.20.1 下同时作为 dev 运行时依赖），
+    // 文件缺失时回退到 Modrinth 坐标，保证未携带该 jar 的克隆仍能构建。
+    if (aaaLocalJarFile.exists()) {
+        if (mcVer.aaa_as_compile_only) {
+            modCompileOnly files(aaaLocalJarFile)
+        } else {
+            modImplementation files(aaaLocalJarFile)
+        }
+    } else if (mcVer.aaa_as_compile_only) {
         modCompileOnly "maven.modrinth:aaa-particles:${mcVer.aaa_particles}"
     } else {
         modImplementation "maven.modrinth:aaa-particles:${mcVer.aaa_particles}"

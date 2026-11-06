@@ -82,6 +82,18 @@ final class OutlineShellCache
         /** Specs with {@code vanillaGlow > 0}: submitted again as a full-bright overlay. */
         List<OutlineGeometry.Spec> vanillaSpecs = List.of();
 
+        /**
+         * Specs that belong to the main (narrow) layer.
+         *
+         * <p>When a bone also carries the overlay layer the renderer paints the wide layer's
+         * glow first and then repaints these specs on top, so the parent rim is never buried
+         * under the wider layer's additive pass.</p>
+         */
+        List<OutlineGeometry.Spec> mainSpecs = List.of();
+
+        /** True when at least one spec comes from the overlay (wide) layer. */
+        boolean hasOverlayLayer;
+
         Map<ModelCube, float[][]> faceRects;
         Set<ModelCube> decals = Collections.emptySet();
 

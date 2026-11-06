@@ -61,6 +61,13 @@ public final class OutlineRenderer121
 {
     private static final RenderPipeline.Snippet POSITION_COLOR_SNIPPET = RenderPipelines.POSITION_COLOR_SNIPPET;
 
+    /**
+     * Widest shell first: the shell writes no depth, so a narrow shell drawn after a wide one
+     * would be hidden wherever both cover the same pixel.
+     */
+    private static final java.util.Comparator<OutlineGeometry.Spec> WIDE_FIRST =
+        java.util.Comparator.comparingDouble(OutlineGeometry.Spec::width).reversed();
+
     private static final RenderPipeline COLOR_PIPELINE = RenderPipelines.register(
         RenderPipeline.builder(POSITION_COLOR_SNIPPET)
             .withLocation(Identifier.of("bbsplusplus", "pipeline/outline_color"))
@@ -163,10 +170,35 @@ public final class OutlineRenderer121
 
         drawCached(entry, color.a, COLOR_LAYER);
 
-        if (entry.vanillaVertexCount > 0)
+        if (entry.mainVertices.length > 0)
+        {
+            /* The overlay shell is the wider one, so its full-bright pass would paint over the
+             * parent rim. Run the wide layer first, repaint the narrow layer, then run the narrow
+             * layer, so the parent outline always ends up on top. */
+            drawVanilla(entry, color.a);
+            drawArray(entry.mainVertices, entry.mainVertices.length / 7, color.a, COLOR_LAYER);
+            drawArray(entry.mainVanillaVertices, entry.mainVanillaVertices.length / 7, color.a, VANILLA_LAYER);
+        }
+        else if (entry.vanillaVertexCount > 0)
         {
             drawVanilla(entry, color.a);
         }
+    }
+
+    /** Returns the specs of one layer, keeping the wide-first order they were sorted into. */
+    private static List<OutlineGeometry.Spec> filterLayer(List<OutlineGeometry.Spec> specs, int layer)
+    {
+        List<OutlineGeometry.Spec> matches = new ArrayList<>(specs.size());
+
+        for (OutlineGeometry.Spec spec : specs)
+        {
+            if (spec.layer() == layer)
+            {
+                matches.add(spec);
+            }
+        }
+
+        return matches;
     }
 
     private static void pushPrepared(Model model, ModelConfig config, OutlineShellCache121.Entry entry)
@@ -198,14 +230,28 @@ public final class OutlineRenderer121
         Map<String, Float> decalSizes = OutlineGeometry.decalSizes(model);
         Set<ModelCube> decals = OutlineDecalFilter.find(model, decalSizes);
         List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model);
+
+        specs.sort(WIDE_FIRST);
+
         Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
         List<OutlineGeometry.Spec> vanilla = new ArrayList<>(specs.size());
+        List<OutlineGeometry.Spec> main = new ArrayList<>(specs.size());
+        boolean overlay = false;
 
         for (OutlineGeometry.Spec spec : specs)
         {
             if (spec.vanillaGlow() > 0F)
             {
                 vanilla.add(spec);
+            }
+
+            if (spec.layer() == 0)
+            {
+                main.add(spec);
+            }
+            else
+            {
+                overlay = true;
             }
         }
 
@@ -217,9 +263,26 @@ public final class OutlineRenderer121
         entry.vertices = data.trim();
         entry.vertexCount = data.count;
 
-        /* The overlay is baked once per strength group: the strength rides on the vertex alpha,
-         * so replaying it stays a single array copy instead of a per-frame geometry walk. */
-        entry.vanillaVertices = bakeVanilla(model, config, vanilla, base, faceRects, decals, materialVisible);
+        if (overlay && !main.isEmpty())
+        {
+            /* Both layers are on: bake the narrow layer separately so it can be replayed after the
+             * wide layer's full-bright pass (see render). */
+            OutlineShellCache121.VertexData mainData = new OutlineShellCache121.VertexData();
+
+            OutlineGeometry.emit(model, config, main, base, 1F, mainData::vertex,
+                faceRects, decals, materialVisible, false);
+
+            entry.mainVertices = mainData.trim();
+            entry.mainVanillaVertices = bakeVanilla(model, config, main, base, faceRects, decals, materialVisible);
+            entry.vanillaVertices = bakeVanilla(model, config, filterLayer(vanilla, 1), base, faceRects, decals, materialVisible);
+        }
+        else
+        {
+            entry.mainVertices = new float[0];
+            entry.mainVanillaVertices = new float[0];
+            entry.vanillaVertices = bakeVanilla(model, config, vanilla, base, faceRects, decals, materialVisible);
+        }
+
         entry.vanillaVertexCount = entry.vanillaVertices.length / 7;
         entry.baseHash = baseHash;
         entry.bytes = OutlineShellCache121.bytesOf(data.count + entry.vanillaVertexCount);
@@ -327,15 +390,25 @@ public final class OutlineRenderer121
 
     private static void drawCached(OutlineShellCache121.Entry entry, float formAlpha, RenderLayer layer)
     {
-        if (entry.vertexCount <= 0)
+        drawArray(entry.vertices, entry.vertexCount, formAlpha, layer);
+    }
+
+    private static void drawVanilla(OutlineShellCache121.Entry entry, float formAlpha)
+    {
+        drawArray(entry.vanillaVertices, entry.vanillaVertexCount, formAlpha, VANILLA_LAYER);
+    }
+
+    /** Replays a baked {@code x, y, z, r, g, b, a} array through one pipeline. */
+    private static void drawArray(float[] vertices, int count, float formAlpha, RenderLayer layer)
+    {
+        if (count <= 0)
         {
             return;
         }
 
         BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
-        float[] vertices = entry.vertices;
 
-        for (int i = 0; i < entry.vertexCount; i++)
+        for (int i = 0; i < count; i++)
         {
             int offset = i * 7;
 
@@ -351,32 +424,6 @@ public final class OutlineRenderer121
         }
     }
 
-    private static void drawVanilla(OutlineShellCache121.Entry entry, float formAlpha)
-    {
-        if (entry.vanillaVertexCount <= 0)
-        {
-            return;
-        }
-
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
-        float[] vertices = entry.vanillaVertices;
-
-        for (int i = 0; i < entry.vanillaVertexCount; i++)
-        {
-            int offset = i * 7;
-
-            builder.vertex(vertices[offset], vertices[offset + 1], vertices[offset + 2])
-                .color(vertices[offset + 3], vertices[offset + 4], vertices[offset + 5], vertices[offset + 6] * formAlpha);
-        }
-
-        BuiltBuffer built = builder.endNullable();
-
-        if (built != null)
-        {
-            VANILLA_LAYER.draw(built);
-        }
-    }
-
     /** Fallback per-frame path used when the cached shell cannot be built. */
     private static void renderImmediate(MatrixStack stack, Model model, ModelConfig config,
                                         Color color, Link textureLink, Predicate<String> materialVisible)
@@ -384,6 +431,9 @@ public final class OutlineRenderer121
         Map<String, Float> decalSizes = OutlineGeometry.decalSizes(model);
         Set<ModelCube> decals = OutlineDecalFilter.find(model, decalSizes);
         List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model);
+
+        specs.sort(WIDE_FIRST);
+
         Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
         Matrix4f base = new Matrix4f(stack.peek().getPositionMatrix());
         List<OutlineGeometry.Spec> vanilla = new ArrayList<>(specs.size());
@@ -441,6 +491,9 @@ public final class OutlineRenderer121
         Map<String, Float> decalSizes = OutlineGeometry.decalSizes(model);
         Set<ModelCube> decals = OutlineDecalFilter.find(model, decalSizes);
         List<OutlineGeometry.Spec> specs = OutlineGeometry.collect(model);
+
+        specs.sort(WIDE_FIRST);
+
         Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
 
         drawImmediate(model, config, specs, new Matrix4f(stack.peek().getPositionMatrix()), color.a,

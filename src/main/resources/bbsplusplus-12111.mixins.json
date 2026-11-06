@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "gbeic.bbsplusplus.mixin12111",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "client": [
+    "CubicCubeRendererUvEmitMixin121",
+    "ModelInstanceUvContextMixin121",
+    "FormTranslucentQueueGradeMixin121",
+    "RenderLayerPreviewGradeMixin121",
+    "UIFormEditorPickingMixin121",
+    "StencilPickFixMixin121",
+    "PickerDrawFixMixin121"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

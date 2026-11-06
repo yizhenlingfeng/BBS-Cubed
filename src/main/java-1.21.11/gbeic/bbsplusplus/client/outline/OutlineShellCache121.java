@@ -69,6 +69,16 @@ final class OutlineShellCache121
         float[] vanillaVertices = EMPTY;
         int vanillaVertexCount;
 
+        /**
+         * Colour-only vertices of the narrow (main) layer, baked separately so the renderer can
+         * repaint the parent rim after the wide overlay's full-bright pass instead of letting that
+         * pass wash it out.
+         */
+        float[] mainVertices = EMPTY;
+
+        /** The narrow layer's own full-bright overlay, baked like {@link #vanillaVertices}. */
+        float[] mainVanillaVertices = EMPTY;
+
         private Entry(Model model)
         {
             this.model = model;

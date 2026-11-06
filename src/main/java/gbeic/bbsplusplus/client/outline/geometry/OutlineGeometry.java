@@ -1,5 +1,6 @@
 package gbeic.bbsplusplus.client.outline.geometry;
 
+import gbeic.bbsplusplus.api.BoneOutlineHolder;
 import gbeic.bbsplusplus.api.GroupOutlineHolder;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelCube;
@@ -50,6 +51,9 @@ public final class OutlineGeometry
     /** Shell face -> the cube face it really covers (the shell points the other way). */
     private static final int[] SHELL_TO_CUBE_FACE = { FACE_BACK, FACE_LEFT, FACE_FRONT, FACE_RIGHT, FACE_BOTTOM, FACE_TOP };
 
+    /** Passed to {@link #emit} as the face filter to mean "do not filter, draw every face". */
+    public static final int FACE_FILTER_ALL = -1;
+
     /**
      * Rendered extent below which an axis counts as flat, in blocks (the same unit as the
      * {@code realMin}/{@code realMax} bounds, which are already divided by 16).
@@ -76,13 +80,19 @@ public final class OutlineGeometry
     /**
      * One draw: a group, its outline colour/width/glow and the colour already split into floats.
      *
-     * <p>{@code glow} is the LabPBR emission strength (0..254) and only ever reaches the shader
-     * through the {@code _s} companion texture. {@code vanillaGlow} is the strength of the plain
-     * full-bright overlay (0 = off, 255 = full), which does not need Iris at all; the editor
-     * exposes it as a on/off switch.</p>
+     * <p>{@code glow} is the LabPBR emission strength (0..254) and only reaches the shader through
+     * the {@code _s} companion texture. {@code vanillaGlow} is the strength of the plain full-bright
+     * overlay (0 = off, 255 = full), which needs no shader pack.</p>
+     *
+     * <p>{@code faceArgb} holds one ARGB entry per {@code FACE_*} index, or is {@code null} when the
+     * whole shell uses {@code argb}. An entry of {@link BoneOutlineHolder#DEFAULT_FACE_COLOR} means
+     * "follow {@code argb}" for that face.</p>
+     *
+     * <p>{@code layer} is 0 for the plain outline and 1 for the overlay ring. Both go into the same
+     * buffers; the renderer draws the wider spec first so the two read as nested rings.</p>
      */
     public record Spec(ModelGroup group, int argb, float width, float glow, float vanillaGlow,
-        float r, float g, float b, float a, boolean faceCull)
+        float r, float g, float b, float a, boolean faceCull, int[] faceArgb, int layer)
     {
     }
 
@@ -94,12 +104,12 @@ public final class OutlineGeometry
     }
 
     /**
-     * Collects the visible groups that have their own outline enabled.
+     * Collects the visible groups that have at least one active outline layer.
      *
-     * <p>Outline settings now live on the bone's {@code PoseTransform} (see
-     * {@link GroupOutlineHolder}) and are mirrored onto {@link ModelGroup} whenever a pose is
-     * applied. There is no model-wide toggle: every bone decides for itself, which is what makes
-     * the settings animatable and keeps them out of the model config.</p>
+     * <p>Outline settings live on the bone's {@code PoseTransform} (see {@link GroupOutlineHolder})
+     * and are mirrored onto {@link ModelGroup} whenever a pose is applied. There is no model-wide
+     * toggle: every bone decides for itself. A bone with both layers on yields two specs sharing
+     * one group.</p>
      */
     public static List<Spec> collect(Model model)
     {
@@ -119,24 +129,29 @@ public final class OutlineGeometry
 
             GroupOutlineHolder holder = (GroupOutlineHolder) group;
 
-            if (!holder.bbspp_cml$getOutline())
+            for (int layer = 0; layer < 2; layer++)
             {
-                continue;
+                if (!holder.bbspp_cml$hasOutlineLayer(layer))
+                {
+                    continue;
+                }
+
+                float width = holder.bbspp_cml$getOutlineShellWidth(layer);
+
+                if (width <= 0F)
+                {
+                    continue;
+                }
+
+                int argb = holder.bbspp_cml$getOutlineColor(layer).getARGBColor();
+                int[] faces = holder.bbspp_cml$hasOutlineFaceColors(layer)
+                    ? holder.bbspp_cml$getOutlineFaceColors(layer) : null;
+
+                specs.add(new Spec(group, argb, width, holder.bbspp_cml$getOutlineGlow(layer),
+                    holder.bbspp_cml$getOutlineVanillaGlow(layer),
+                    channel(argb, 16), channel(argb, 8), channel(argb, 0), channel(argb, 24),
+                    holder.bbspp_cml$getOutlineFaceCull(layer), faces, layer));
             }
-
-            float width = holder.bbspp_cml$getOutlineWidth();
-
-            if (width <= 0F)
-            {
-                continue;
-            }
-
-            int argb = holder.bbspp_cml$getOutlineColor().getARGBColor();
-
-            specs.add(new Spec(group, argb, width, holder.bbspp_cml$getOutlineGlow(),
-                holder.bbspp_cml$getOutlineVanillaGlow(),
-                channel(argb, 16), channel(argb, 8), channel(argb, 0), channel(argb, 24),
-                holder.bbspp_cml$getOutlineFaceCull()));
         }
 
         return specs;
@@ -159,9 +174,12 @@ public final class OutlineGeometry
 
             GroupOutlineHolder holder = (GroupOutlineHolder) group;
 
-            if (holder.bbspp_cml$getOutline() && holder.bbspp_cml$getOutlineWidth() > 0F)
+            for (int layer = 0; layer < 2; layer++)
             {
-                return true;
+                if (holder.bbspp_cml$hasOutlineLayer(layer) && holder.bbspp_cml$getOutlineShellWidth(layer) > 0F)
+                {
+                    return true;
+                }
             }
         }
 
@@ -190,8 +208,13 @@ public final class OutlineGeometry
 
             GroupOutlineHolder holder = (GroupOutlineHolder) group;
 
-            if (holder.bbspp_cml$getOutline() && holder.bbspp_cml$getOutlineWidth() > 0F
-                && holder.bbspp_cml$getOutlineDecalSize() > 0F)
+            /* One threshold per model, but either layer being active is enough: a bone running
+             * only the overlay layer needs its decals filtered too. */
+            boolean active = holder.bbspp_cml$getOutlineDecalSize() > 0F
+                && ((holder.bbspp_cml$hasOutlineLayer(0) && holder.bbspp_cml$getOutlineShellWidth(0) > 0F)
+                    || (holder.bbspp_cml$hasOutlineLayer(1) && holder.bbspp_cml$getOutlineShellWidth(1) > 0F));
+
+            if (active)
             {
                 sizes.put(group.id, holder.bbspp_cml$getOutlineDecalSize());
             }
@@ -203,6 +226,62 @@ public final class OutlineGeometry
     private static float channel(int argb, int shift)
     {
         return ((argb >> shift) & 0xFF) / 255F;
+    }
+
+    /** Whether any face of a table overrides the shell colour, i.e. the early-out must not fire. */
+    private static boolean hasVisibleFace(int[] faceArgb)
+    {
+        if (faceArgb == null)
+        {
+            return false;
+        }
+
+        for (int argb : faceArgb)
+        {
+            if (argb != BoneOutlineHolder.DEFAULT_FACE_COLOR && (argb >>> 24) != 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Every distinct colour the faces of one spec resolve to (its own entry, or the layer colour
+     * when the entry is the "follow the layer" sentinel). The glow pass needs this because it draws
+     * one batch per colour so each face gets the matching emissive texture. Built in face order so
+     * the batches keep a stable draw order between frames.
+     */
+    public static List<Integer> effectiveFaceColors(Spec spec)
+    {
+        int[] faces = spec.faceArgb();
+
+        if (faces == null)
+        {
+            return Collections.singletonList(spec.argb());
+        }
+
+        List<Integer> colors = new ArrayList<>(2);
+
+        for (int argb : faces)
+        {
+            /* A face the user never touched keeps following the layer colour, so it belongs to
+             * the layer's batch rather than to a batch of its own. */
+            int color = argb == BoneOutlineHolder.DEFAULT_FACE_COLOR ? spec.argb() : argb;
+
+            if (!colors.contains(color))
+            {
+                colors.add(color);
+            }
+        }
+
+        if (colors.isEmpty())
+        {
+            colors.add(spec.argb());
+        }
+
+        return colors;
     }
 
     /**
@@ -220,6 +299,21 @@ public final class OutlineGeometry
                             VertexSink sink, Map<ModelCube, float[][]> faceRects, Set<ModelCube> decalCubes,
                             Predicate<String> materialVisible, boolean needsNormals)
     {
+        emit(model, config, specs, base, formAlpha, sink, faceRects, decalCubes, materialVisible, needsNormals,
+            FACE_FILTER_ALL);
+    }
+
+    /**
+     * Emits the shell, optionally restricted to the faces that resolve to one colour.
+     *
+     * <p>{@code faceFilter} is used by the emission passes, which draw one batch per colour so a
+     * per-face colour can be painted with the matching emissive texture. Passing
+     * {@link #FACE_FILTER_ALL} emits every face, which is what the plain shell wants.</p>
+     */
+    public static void emit(Model model, ModelConfig config, List<Spec> specs, Matrix4f base, float formAlpha,
+                            VertexSink sink, Map<ModelCube, float[][]> faceRects, Set<ModelCube> decalCubes,
+                            Predicate<String> materialVisible, boolean needsNormals, int faceFilter)
+    {
         if (model == null || config == null || specs == null || specs.isEmpty() || sink == null)
         {
             return;
@@ -234,7 +328,7 @@ public final class OutlineGeometry
             collectGroupMatrices(group, root, matrices);
         }
 
-        Emitter emitter = new Emitter(sink, needsNormals);
+        Emitter emitter = new Emitter(sink, needsNormals, faceFilter);
         Set<ModelCube> skip = decalCubes == null ? Collections.emptySet() : decalCubes;
         Map<String, Set<String>> welds = weldTable(config);
 
@@ -250,7 +344,7 @@ public final class OutlineGeometry
             Set<String> welded = welds.getOrDefault(spec.group().id, Collections.emptySet());
             float alpha = spec.a() * formAlpha;
 
-            if (alpha <= 0F)
+            if (alpha <= 0F && !hasVisibleFace(spec.faceArgb()))
             {
                 continue;
             }
@@ -263,8 +357,8 @@ public final class OutlineGeometry
                     continue;
                 }
 
-                emitter.cube(groupMatrix, cube, spec.width(), spec.r(), spec.g(), spec.b(), alpha, welded,
-                    faceRects == null ? null : faceRects.get(cube), spec.faceCull());
+                emitter.cube(groupMatrix, cube, spec.width(), spec.r(), spec.g(), spec.b(), alpha, formAlpha, welded,
+                    faceRects == null ? null : faceRects.get(cube), spec.faceCull(), spec.faceArgb(), spec.argb());
             }
         }
     }
@@ -465,14 +559,67 @@ public final class OutlineGeometry
         private final float[] corners = new float[12];
         private boolean doubleSided;
 
-        private Emitter(VertexSink sink, boolean needsNormals)
+        /* Colour of the face about to be emitted. cube() sets these right before each quad() call,
+         * so one set of scratch fields is enough. */
+        private float faceR;
+        private float faceG;
+        private float faceB;
+        private float faceA;
+        private int faceEffective;
+
+        /* When not FACE_FILTER_ALL only the faces that resolved to this exact ARGB are emitted, so
+         * one glow batch does not redraw every face of the shell. */
+        private final int faceFilter;
+
+        private Emitter(VertexSink sink, boolean needsNormals, int faceFilter)
         {
             this.sink = sink;
             this.needsNormals = needsNormals;
+            this.faceFilter = faceFilter;
+        }
+
+        private boolean wantsFace()
+        {
+            return this.faceFilter == FACE_FILTER_ALL || this.faceFilter == this.faceEffective;
+        }
+
+        /**
+         * Resolves the colour of one shell face. {@code faceArgb} is either {@code null} (the whole
+         * shell uses the layer colour) or a table of six ARGB entries, where an entry equal to
+         * {@link BoneOutlineHolder#DEFAULT_FACE_COLOR} keeps following the layer colour. The alpha
+         * is multiplied by the form opacity here because each face may carry its own.
+         */
+        private void pickFace(int[] faceArgb, int layerArgb, int face, float r, float g, float b, float a,
+                              float formAlpha)
+        {
+            this.faceR = r;
+            this.faceG = g;
+            this.faceB = b;
+            this.faceA = a;
+            this.faceEffective = layerArgb;
+
+            if (faceArgb == null)
+            {
+                return;
+            }
+
+            int argb = faceArgb[face];
+
+            if (argb == BoneOutlineHolder.DEFAULT_FACE_COLOR)
+            {
+                return;
+            }
+
+            this.faceEffective = argb;
+            this.faceR = channel(argb, 16);
+            this.faceG = channel(argb, 8);
+            this.faceB = channel(argb, 0);
+            this.faceA = channel(argb, 24) * formAlpha;
         }
 
         private void cube(Matrix4f parent, ModelCube cube, float width, float r, float g, float b, float a,
-                          Set<String> welded, float[][] faceRects, boolean faceCull)
+                          float formAlpha, Set<String> welded, float[][] faceRects, boolean faceCull,
+                          int[] faceArgb, int layerArgb)
         {
             float off = 0.25F * width / 16F;
             float inflate = cube.inflate;
@@ -532,38 +679,68 @@ public final class OutlineGeometry
 
             if (!welded.contains("front") && cube.back != null && hasXY)
             {
-                this.quad(faceRects, FACE_FRONT, 0F, 0F, -1F, r, g, b, a,
-                    maxX, minY, minZ, minX, minY, minZ, minX, maxY, minZ, maxX, maxY, minZ);
+                this.pickFace(faceArgb, layerArgb, FACE_FRONT, r, g, b, a, formAlpha);
+
+                if (this.wantsFace())
+                {
+                    this.quad(faceRects, FACE_FRONT, 0F, 0F, -1F, this.faceR, this.faceG, this.faceB, this.faceA,
+                        maxX, minY, minZ, minX, minY, minZ, minX, maxY, minZ, maxX, maxY, minZ);
+                }
             }
 
             if (!welded.contains("right") && cube.left != null && hasYZ)
             {
-                this.quad(faceRects, FACE_RIGHT, 1F, 0F, 0F, r, g, b, a,
-                    maxX, minY, maxZ, maxX, minY, minZ, maxX, maxY, minZ, maxX, maxY, maxZ);
+                this.pickFace(faceArgb, layerArgb, FACE_RIGHT, r, g, b, a, formAlpha);
+
+                if (this.wantsFace())
+                {
+                    this.quad(faceRects, FACE_RIGHT, 1F, 0F, 0F, this.faceR, this.faceG, this.faceB, this.faceA,
+                        maxX, minY, maxZ, maxX, minY, minZ, maxX, maxY, minZ, maxX, maxY, maxZ);
+                }
             }
 
             if (!welded.contains("back") && cube.front != null && hasXY)
             {
-                this.quad(faceRects, FACE_BACK, 0F, 0F, 1F, r, g, b, a,
-                    minX, minY, maxZ, maxX, minY, maxZ, maxX, maxY, maxZ, minX, maxY, maxZ);
+                this.pickFace(faceArgb, layerArgb, FACE_BACK, r, g, b, a, formAlpha);
+
+                if (this.wantsFace())
+                {
+                    this.quad(faceRects, FACE_BACK, 0F, 0F, 1F, this.faceR, this.faceG, this.faceB, this.faceA,
+                        minX, minY, maxZ, maxX, minY, maxZ, maxX, maxY, maxZ, minX, maxY, maxZ);
+                }
             }
 
             if (!welded.contains("left") && cube.right != null && hasYZ)
             {
-                this.quad(faceRects, FACE_LEFT, -1F, 0F, 0F, r, g, b, a,
-                    minX, minY, minZ, minX, minY, maxZ, minX, maxY, maxZ, minX, maxY, minZ);
+                this.pickFace(faceArgb, layerArgb, FACE_LEFT, r, g, b, a, formAlpha);
+
+                if (this.wantsFace())
+                {
+                    this.quad(faceRects, FACE_LEFT, -1F, 0F, 0F, this.faceR, this.faceG, this.faceB, this.faceA,
+                        minX, minY, minZ, minX, minY, maxZ, minX, maxY, maxZ, minX, maxY, minZ);
+                }
             }
 
             if (!welded.contains("top") && cube.bottom != null && hasXZ)
             {
-                this.quad(faceRects, FACE_TOP, 0F, 1F, 0F, r, g, b, a,
-                    maxX, maxY, minZ, minX, maxY, minZ, minX, maxY, maxZ, maxX, maxY, maxZ);
+                this.pickFace(faceArgb, layerArgb, FACE_TOP, r, g, b, a, formAlpha);
+
+                if (this.wantsFace())
+                {
+                    this.quad(faceRects, FACE_TOP, 0F, 1F, 0F, this.faceR, this.faceG, this.faceB, this.faceA,
+                        maxX, maxY, minZ, minX, maxY, minZ, minX, maxY, maxZ, maxX, maxY, maxZ);
+                }
             }
 
             if (!welded.contains("bottom") && cube.top != null && hasXZ)
             {
-                this.quad(faceRects, FACE_BOTTOM, 0F, -1F, 0F, r, g, b, a,
-                    minX, minY, minZ, maxX, minY, minZ, maxX, minY, maxZ, minX, minY, maxZ);
+                this.pickFace(faceArgb, layerArgb, FACE_BOTTOM, r, g, b, a, formAlpha);
+
+                if (this.wantsFace())
+                {
+                    this.quad(faceRects, FACE_BOTTOM, 0F, -1F, 0F, this.faceR, this.faceG, this.faceB, this.faceA,
+                        minX, minY, minZ, maxX, minY, minZ, maxX, minY, maxZ, minX, minY, maxZ);
+                }
             }
         }
 
@@ -571,6 +748,13 @@ public final class OutlineGeometry
                           float x0, float y0, float z0, float x1, float y1, float z1,
                           float x2, float y2, float z2, float x3, float y3, float z3)
         {
+            /* A face painted with a fully transparent colour is simply not drawn; without this
+             * check it would still cost six vertices (twelve when double sided). */
+            if (a <= 0F)
+            {
+                return;
+            }
+
             float[] rects = faceRects == null ? null : faceRects[face];
 
             if (rects != null && rects.length == 0)

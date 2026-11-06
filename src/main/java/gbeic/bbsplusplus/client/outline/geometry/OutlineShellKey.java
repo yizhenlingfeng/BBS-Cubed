@@ -66,13 +66,11 @@ public final class OutlineShellKey
             GroupOutlineHolder holder = (GroupOutlineHolder) group;
 
             outline = outline * 31 + stringHash(group.id);
-            outline = outline * 31 + (holder.bbspp_cml$getOutline() ? 1 : 0);
-            outline = outline * 31 + holder.bbspp_cml$getOutlineColor().getARGBColor();
-            outline = outline * 31 + Float.floatToIntBits(holder.bbspp_cml$getOutlineWidth());
-            outline = outline * 31 + Float.floatToIntBits(holder.bbspp_cml$getOutlineGlow());
-            outline = outline * 31 + Float.floatToIntBits(holder.bbspp_cml$getOutlineVanillaGlow());
+            outline = layerHash(outline, holder, 0);
+            outline = layerHash(outline, holder, 1);
+            /* Decal filtering is model-wide (one set of hidden cubes per model), so it only ever
+             * reads the main layer's threshold and is hashed once. */
             outline = outline * 31 + Float.floatToIntBits(holder.bbspp_cml$getOutlineDecalSize());
-            outline = outline * 31 + (holder.bbspp_cml$getOutlineFaceCull() ? 1 : 0);
 
             geometry = geometry * 31 + stringHash(group.id);
 
@@ -135,6 +133,31 @@ public final class OutlineShellKey
         hash = hash * 31 + Float.floatToIntBits(matrix.m32());
 
         return hash * 31 + Float.floatToIntBits(matrix.m33());
+    }
+
+    /**
+     * Mixes one outline layer into the key.
+     *
+     * <p>Every value the geometry or the baked vertex colours depend on has to be here, or editing
+     * it would leave the old VBO on screen until something unrelated forces a rebuild. The face
+     * table is stored as a <em>copied-out</em> view, so the per-face colours are hashed even when
+     * only one of them differs.</p>
+     */
+    private static long layerHash(long hash, GroupOutlineHolder holder, int layer)
+    {
+        hash = hash * 31 + (holder.bbspp_cml$hasOutlineLayer(layer) ? 1 : 0);
+        hash = hash * 31 + holder.bbspp_cml$getOutlineColor(layer).getARGBColor();
+        hash = hash * 31 + Float.floatToIntBits(holder.bbspp_cml$getOutlineShellWidth(layer));
+        hash = hash * 31 + Float.floatToIntBits(holder.bbspp_cml$getOutlineGlow(layer));
+        hash = hash * 31 + Float.floatToIntBits(holder.bbspp_cml$getOutlineVanillaGlow(layer));
+        hash = hash * 31 + (holder.bbspp_cml$getOutlineFaceCull(layer) ? 1 : 0);
+
+        for (int face = 0; face < gbeic.bbsplusplus.api.BoneOutlineHolder.FACE_COUNT; face++)
+        {
+            hash = hash * 31 + holder.bbspp_cml$getOutlineFaceColor(layer, face);
+        }
+
+        return hash;
     }
 
     private static long cubeHash(long hash, ModelCube cube, Map<String, Boolean> visibility,

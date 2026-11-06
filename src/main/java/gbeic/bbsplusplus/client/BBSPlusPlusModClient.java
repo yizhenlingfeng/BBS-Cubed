@@ -32,6 +32,7 @@ public class BBSPlusPlusModClient implements ClientModInitializer
             BBSMod.setupConfig(Icons.DUPE, "bbspp", BBSMod.getSettingsPath("bbspp.json"),
                 BBSPlusPlusSettings::register);
             ModelCullingConfigManager.onClientStarted();
+            runTextureGradeSelfCheck();
         });
 
         registerAutoGameModeHooks();
@@ -293,6 +294,26 @@ public class BBSPlusPlusModClient implements ClientModInitializer
         catch (Throwable e)
         {
             BBSPlusPlusMod.LOGGER.warn("VFX 破坏魔杖注册失败", e);
+        }
+    }
+    /**
+     * 1.21.11 专属：纹理分级注入自检（类只存在于 {@code java-1.21.11} 源码集，1.20.x 下找不到就跳过）。
+     */
+    private static void runTextureGradeSelfCheck()
+    {
+        try
+        {
+            Class<?> selfCheck = Class.forName("gbeic.bbsplusplus.client.grade.GradeSelfCheck");
+
+            selfCheck.getMethod("verify").invoke(null);
+        }
+        catch (ClassNotFoundException ignored)
+        {
+            /* 1.20.x：没有这个类，属预期 */
+        }
+        catch (Throwable e)
+        {
+            BBSPlusPlusMod.LOGGER.warn("纹理分级注入自检执行失败", e);
         }
     }
 }
