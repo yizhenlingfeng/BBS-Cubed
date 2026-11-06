@@ -145,7 +145,13 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 - Each section ends with a collapsible "Advanced" subsection that colors the front / right / back / left / top / bottom faces individually. Faces that were never set follow the layer color, and "Follow Main Colour" hands all six back in one click. Face colors are picked as whole blocks and never interpolated, so keyframes cannot blend into colors nobody chose.
 - Per-face colors drive both the shell itself and the emission layer: the LabPBR pass is batched per face color, so a shader pack no longer repaints all six faces with the layer color and "vanilla glow" is not needed to see them.
 - Every face swatch in the Advanced subsection has an "Apply to child bones" context entry; "Follow Main Colour" additionally offers "Apply to child bones" (hands all six back on every child) and "Reset this bone".
-- On 1.21.11, solid-color outlines, vanilla glow and depth write-back are supported, while LabPBR emission is still being adapted.
+- The mode icon at the far left of the colour row switches between solid and gradient. Turning the gradient on seeds both stops with the current colour, so the look does not change until the strip is edited; the swatch slot becomes a direction button that toggles a vertical or horizontal ramp, and a gradient strip expands below the colour row.
+- The swatch at the left of the strip edits the selected stop; drag a stop to move it, or right-click the strip to add or remove stops (at least one remains). Stop positions and colours are saved with the bone pose and written to keyframes.
+- Main-colour gradients project over the model's bounding box: vertical follows Y and horizontal follows X. Per-face gradients use each face's own horizontal / vertical axes — X / Y on the front, back, left and right faces, X / Z on the top and bottom — so a ramp keeps its orientation on that face when the model turns.
+- Precedence is "face gradient > face colour > main gradient > main colour": a face with its own gradient or colour stops following the main gradient, while unset faces keep following the layer.
+- The "Apply to child bones" button at the far left of the pose editor's colour row copies the current solid colour or gradient to every child bone, matching the active mode; in solid mode it also clears any leftover gradient on the children so they do not keep showing the old ramp.
+- "Follow Main Colour" also clears the six face gradients.
+- On 1.21.11, solid and gradient outlines, vanilla glow and depth write-back are supported, while LabPBR emission is still being adapted.
 - The "Enchant Glint" section below the same panel has also been merged into a collapsible section with the glint toggle, color, flow speed and brightness, so both can be managed together.
 - Migration note: outlines no longer read the legacy outline keys in the model's `config.json`; existing projects must re-enable them per bone in the pose editor, and "Apply to child bones" can be used to spread them quickly. Bones whose legacy "glow" was on get "Vanilla Glow" enabled automatically, preserving the previous look.
 
@@ -233,6 +239,16 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 - This project is an extension plugin for [BBSFS](https://github.com/Wemppy4/bbs-fs), implemented via Mixin
 
 ### Mod Changelog
+
+#### 3.6.7 (Outline gradients and apply to child bones)
+* **Gradient outlines**: the colour row starts with a mode icon that switches between solid and gradient. Turning it on seeds both stops with the current colour, so nothing jumps; the swatch slot becomes a direction button for vertical / horizontal ramps, and a gradient strip expands below the row
+* **Gradient strip**: the swatch edits the selected stop, dragging moves it, and right-clicking adds or removes stops (at least one remains). Stops are stored in bone pose data and written to keyframes
+* **Projection**: main-colour gradients project over the model bounding box (vertical along Y, horizontal along X); per-face gradients use each face's own axes — X / Y on front, back, left and right, X / Z on top and bottom — so a ramp keeps its orientation when the model turns
+* **Precedence**: face gradient > face colour > main gradient > main colour
+* **Apply to child bones**: the new leftmost button on the pose editor's colour row copies the active colour or gradient to all child bones; in solid mode it also clears the children's leftover gradients
+* **Overlay and per-face**: the overlay layer supports gradients too, "Follow Main Colour" clears the six face gradients, and auto-expansion accounts for gradient settings
+* **Save compatibility**: old projects without gradient keys load as solid
+* **Multi-version**: on 1.20.1 / 1.20.4, LabPBR emission samples a 64×1 gradient strip per pixel; 1.21.11 gets gradients through vertex colours
 
 #### 3.6.6 (Outline overlay and per-face colors, 1.21.11 rendering, Bedrock step keyframe fix)
 * **Emission now drives LabPBR**: the old "glow" value was effectively a switch, since every value from `1` to `255` painted the same result. It now writes the alpha of the LabPBR emissive channel directly: `0` emits nothing and `1`–`254` ramp linearly, with `255` left unused because the standard reserves it for "no emission". The channel is only read by a shader pack that declares the `normals` / `specular` samplers, so without shaders the outline stays a solid shell

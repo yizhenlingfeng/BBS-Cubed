@@ -5,6 +5,7 @@ import gbeic.bbsplusplus.api.BonePbrHolder;
 import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.GlintSettingsHolder;
+import gbeic.bbsplusplus.api.OutlineGradient;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
@@ -115,6 +116,19 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
 
     @Unique
     private final int[] bbspp_cml$overlayFaces = new int[BoneOutlineHolder.FACE_COUNT];
+
+    /* 渐变描边：null = 纯色。主色与六面各有独立渐变，叠加层同理。 */
+    @Unique
+    private OutlineGradient bbspp_cml$outlineGradient;
+
+    @Unique
+    private final OutlineGradient[] bbspp_cml$outlineFaceGradients = new OutlineGradient[BoneOutlineHolder.FACE_COUNT];
+
+    @Unique
+    private OutlineGradient bbspp_cml$overlayGradient;
+
+    @Unique
+    private final OutlineGradient[] bbspp_cml$overlayFaceGradients = new OutlineGradient[BoneOutlineHolder.FACE_COUNT];
 
     @Override
     public Link bbspp_cml$getTexture()
@@ -445,6 +459,56 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         }
     }
 
+    /* ---- gradient getters / setters ---- */
+
+    @Override
+    public OutlineGradient bbspp_cml$getOutlineGradient(int layer)
+    {
+        return layer == 0 ? this.bbspp_cml$outlineGradient : this.bbspp_cml$overlayGradient;
+    }
+
+    @Override
+    public void bbspp_cml$setOutlineGradient(int layer, OutlineGradient gradient)
+    {
+        if (layer == 0)
+        {
+            this.bbspp_cml$outlineGradient = gradient;
+        }
+        else
+        {
+            this.bbspp_cml$overlayGradient = gradient;
+        }
+    }
+
+    @Override
+    public OutlineGradient bbspp_cml$getOutlineFaceGradient(int layer, int face)
+    {
+        if (face < 0 || face >= BoneOutlineHolder.FACE_COUNT)
+        {
+            return null;
+        }
+
+        return layer == 0 ? this.bbspp_cml$outlineFaceGradients[face] : this.bbspp_cml$overlayFaceGradients[face];
+    }
+
+    @Override
+    public void bbspp_cml$setOutlineFaceGradient(int layer, int face, OutlineGradient gradient)
+    {
+        if (face < 0 || face >= BoneOutlineHolder.FACE_COUNT)
+        {
+            return;
+        }
+
+        if (layer == 0)
+        {
+            this.bbspp_cml$outlineFaceGradients[face] = gradient;
+        }
+        else
+        {
+            this.bbspp_cml$overlayFaceGradients[face] = gradient;
+        }
+    }
+
     @Inject(method = "toData", at = @At("TAIL"), remap = false)
     private void bbspp_cml$writeTexture(MapType data, CallbackInfo ci)
     {
@@ -482,7 +546,9 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             || this.bbspp_cml$outlineGlow != BoneOutlineHolder.DEFAULT_GLOW
             || this.bbspp_cml$outlineVanillaGlow != BoneOutlineHolder.DEFAULT_VANILLA_GLOW
             || this.bbspp_cml$outlineDecalSize != BoneOutlineHolder.DEFAULT_DECAL
-            || this.bbspp_cml$outlineFaceCull != BoneOutlineHolder.DEFAULT_FACE_CULL;
+            || this.bbspp_cml$outlineFaceCull != BoneOutlineHolder.DEFAULT_FACE_CULL
+            || bbspp_cml$hasFaces(this.bbspp_cml$outlineFaces)
+            || bbspp_cml$hasGradients(0);
 
         if (outlineData)
         {
@@ -505,6 +571,8 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             }
 
             bbspp_cml$writeFaces(data, "outline_face_", this.bbspp_cml$outlineFaces);
+            bbspp_cml$writeGradients(data, "outline_gradient", "outline_face_gradient_",
+                this.bbspp_cml$outlineGradient, this.bbspp_cml$outlineFaceGradients);
         }
 
         boolean overlayData = this.bbspp_cml$outlineOverlay
@@ -513,7 +581,8 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             || this.bbspp_cml$overlayGlow != BoneOutlineHolder.DEFAULT_GLOW
             || this.bbspp_cml$overlayVanillaGlow != BoneOutlineHolder.DEFAULT_VANILLA_GLOW
             || this.bbspp_cml$overlayFaceCull != BoneOutlineHolder.DEFAULT_FACE_CULL
-            || bbspp_cml$hasFaces(this.bbspp_cml$overlayFaces);
+            || bbspp_cml$hasFaces(this.bbspp_cml$overlayFaces)
+            || bbspp_cml$hasGradients(1);
 
         if (overlayData)
         {
@@ -533,7 +602,50 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             }
 
             bbspp_cml$writeFaces(data, "overlay_face_", this.bbspp_cml$overlayFaces);
+            bbspp_cml$writeGradients(data, "overlay_gradient", "overlay_face_gradient_",
+                this.bbspp_cml$overlayGradient, this.bbspp_cml$overlayFaceGradients);
         }
+    }
+
+    /**
+     * Writes the main ramp and the per-face ramps. Only faces that actually carry one get a key,
+     * which keeps a save without gradients byte-identical to the pre-gradient format.
+     */
+    @Unique
+    private static void bbspp_cml$writeGradients(MapType data, String mainKey, String facePrefix,
+                                                 OutlineGradient main, OutlineGradient[] faces)
+    {
+        if (main != null)
+        {
+            data.put(mainKey, main.toData());
+        }
+
+        for (int i = 0; i < faces.length; i++)
+        {
+            if (faces[i] != null)
+            {
+                data.put(facePrefix + i, faces[i].toData());
+            }
+        }
+    }
+
+    @Unique
+    private boolean bbspp_cml$hasGradients(int layer)
+    {
+        if (this.bbspp_cml$getOutlineGradient(layer) != null)
+        {
+            return true;
+        }
+
+        for (int i = 0; i < BoneOutlineHolder.FACE_COUNT; i++)
+        {
+            if (this.bbspp_cml$getOutlineFaceGradient(layer, i) != null)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -619,6 +731,8 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         this.bbspp_cml$outlineFaceCull = data.has("outline_face_cull")
             ? data.getBool("outline_face_cull") : BoneOutlineHolder.DEFAULT_FACE_CULL;
         bbspp_cml$readFaces(data, "outline_face_", this.bbspp_cml$outlineFaces);
+        this.bbspp_cml$outlineGradient = bbspp_cml$readGradient(data, "outline_gradient");
+        bbspp_cml$readFaceGradients(data, "outline_face_gradient_", this.bbspp_cml$outlineFaceGradients);
 
         this.bbspp_cml$outlineOverlay = data.getBool("outline_overlay");
         this.bbspp_cml$overlayColor.set(data.getInt("overlay_color", 0xFFFFFFFF));
@@ -633,6 +747,23 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         this.bbspp_cml$overlayFaceCull = data.has("overlay_face_cull")
             ? data.getBool("overlay_face_cull") : BoneOutlineHolder.DEFAULT_FACE_CULL;
         bbspp_cml$readFaces(data, "overlay_face_", this.bbspp_cml$overlayFaces);
+        this.bbspp_cml$overlayGradient = bbspp_cml$readGradient(data, "overlay_gradient");
+        bbspp_cml$readFaceGradients(data, "overlay_face_gradient_", this.bbspp_cml$overlayFaceGradients);
+    }
+
+    @Unique
+    private static OutlineGradient bbspp_cml$readGradient(MapType data, String key)
+    {
+        return data.get(key) instanceof MapType tag ? OutlineGradient.fromData(tag) : null;
+    }
+
+    @Unique
+    private static void bbspp_cml$readFaceGradients(MapType data, String prefix, OutlineGradient[] faces)
+    {
+        for (int i = 0; i < faces.length; i++)
+        {
+            faces[i] = bbspp_cml$readGradient(data, prefix + i);
+        }
     }
 
     @Inject(method = "copy(Lmchorse/bbs_mod/utils/pose/Transform;)V", at = @At("TAIL"), remap = false)
@@ -686,7 +817,24 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             this.bbspp_cml$overlayGlow = holder.bbspp_cml$getOverlayGlow();
             this.bbspp_cml$overlayVanillaGlow = holder.bbspp_cml$getOverlayVanillaGlow();
             this.bbspp_cml$overlayFaceCull = holder.bbspp_cml$getOverlayFaceCull();
+
+            /* Gradients are mutable, so they are deep copied rather than shared: two keyframes
+             * holding the same instance would edit each other's stops. */
+            this.bbspp_cml$outlineGradient = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineGradient(0));
+            this.bbspp_cml$overlayGradient = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineGradient(1));
+
+            for (int i = 0; i < BoneOutlineHolder.FACE_COUNT; i++)
+            {
+                this.bbspp_cml$outlineFaceGradients[i] = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineFaceGradient(0, i));
+                this.bbspp_cml$overlayFaceGradients[i] = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineFaceGradient(1, i));
+            }
         }
+    }
+
+    @Unique
+    private static OutlineGradient bbspp_cml$copyGradient(OutlineGradient gradient)
+    {
+        return gradient == null ? null : gradient.copy();
     }
 
     /**
@@ -718,6 +866,8 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             hash = 31 * hash + face;
         }
 
+        hash = 31 * hash + Long.hashCode(this.bbspp_cml$getOutlineGradientHash(0));
+
         hash = 31 * hash + Boolean.hashCode(this.bbspp_cml$outlineOverlay);
         hash = 31 * hash + this.bbspp_cml$overlayColor.getARGBColor();
         hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$overlayWidth);
@@ -729,6 +879,8 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         {
             hash = 31 * hash + face;
         }
+
+        hash = 31 * hash + Long.hashCode(this.bbspp_cml$getOutlineGradientHash(1));
 
         cir.setReturnValue(hash);
     }
@@ -797,12 +949,22 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
                 for (int i = 0; i < BoneOutlineHolder.FACE_COUNT; i++)
                 {
                     if (this.bbspp_cml$outlineFaces[i] != holder.bbspp_cml$getOutlineFaceColor(i)
-                        || this.bbspp_cml$overlayFaces[i] != holder.bbspp_cml$getOverlayFaceColor(i))
+                        || this.bbspp_cml$overlayFaces[i] != holder.bbspp_cml$getOverlayFaceColor(i)
+                        || !OutlineGradient.equal(this.bbspp_cml$outlineFaceGradients[i],
+                            holder.bbspp_cml$getOutlineFaceGradient(0, i))
+                        || !OutlineGradient.equal(this.bbspp_cml$overlayFaceGradients[i],
+                            holder.bbspp_cml$getOutlineFaceGradient(1, i)))
                     {
                         cir.setReturnValue(false);
 
                         break;
                     }
+                }
+
+                if (!OutlineGradient.equal(this.bbspp_cml$outlineGradient, holder.bbspp_cml$getOutlineGradient(0))
+                    || !OutlineGradient.equal(this.bbspp_cml$overlayGradient, holder.bbspp_cml$getOutlineGradient(1)))
+                {
+                    cir.setReturnValue(false);
                 }
             }
         }
@@ -880,13 +1042,15 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         for (int i = 0; i < BoneOutlineHolder.FACE_COUNT; i++)
         {
             if (this.bbspp_cml$outlineFaces[i] != BoneOutlineHolder.DEFAULT_FACE_COLOR
-                || this.bbspp_cml$overlayFaces[i] != BoneOutlineHolder.DEFAULT_FACE_COLOR)
+                || this.bbspp_cml$overlayFaces[i] != BoneOutlineHolder.DEFAULT_FACE_COLOR
+                || this.bbspp_cml$outlineFaceGradients[i] != null
+                || this.bbspp_cml$overlayFaceGradients[i] != null)
             {
                 return true;
             }
         }
 
-        return false;
+        return this.bbspp_cml$outlineGradient != null || this.bbspp_cml$overlayGradient != null;
     }
 
     @Inject(method = "identity()V", at = @At("TAIL"), remap = false)
@@ -919,6 +1083,11 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         this.bbspp_cml$overlayVanillaGlow = BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
         this.bbspp_cml$overlayFaceCull = BoneOutlineHolder.DEFAULT_FACE_CULL;
         Arrays.fill(this.bbspp_cml$overlayFaces, BoneOutlineHolder.DEFAULT_FACE_COLOR);
+
+        this.bbspp_cml$outlineGradient = null;
+        this.bbspp_cml$overlayGradient = null;
+        Arrays.fill(this.bbspp_cml$outlineFaceGradients, null);
+        Arrays.fill(this.bbspp_cml$overlayFaceGradients, null);
     }
 
     @Inject(
@@ -973,6 +1142,7 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
 
         /* 描边开关按最近关键帧，颜色/宽度/辉光/细化可插值。 */
         this.bbspp_cml$outline = bbspp_cml$closestOutline(a, b, x);
+        this.bbspp_cml$applyClosestGradients(a, b, x);
         this.bbspp_cml$outlineFaceCull = bbspp_cml$closestOutlineFaceCull(a, b, x);
 
         if (preA instanceof BoneOutlineHolder preO && a instanceof BoneOutlineHolder curO
@@ -1006,6 +1176,20 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             bbspp_cml$lerpOverlay(interp, x, preO, curO, nextO, postO);
             bbspp_cml$closestFaces(a, b, x, this.bbspp_cml$outlineFaces, this.bbspp_cml$overlayFaces);
         }
+    }
+
+    /** Copies the closest keyframe's ramps onto this transform in place (see closestGradients). */
+    @Unique
+    private void bbspp_cml$applyClosestGradients(mchorse.bbs_mod.utils.pose.Transform a,
+        mchorse.bbs_mod.utils.pose.Transform b, float x)
+    {
+        OutlineGradient[] mains = new OutlineGradient[2];
+
+        bbspp_cml$closestGradients(a, b, x,
+            this.bbspp_cml$outlineFaceGradients, this.bbspp_cml$overlayFaceGradients, mains);
+
+        this.bbspp_cml$outlineGradient = mains[0];
+        this.bbspp_cml$overlayGradient = mains[1];
     }
 
     /**
@@ -1128,6 +1312,7 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
 
         /* 描边开关按最近关键帧，颜色/宽度/辉光/细化可插值。 */
         this.bbspp_cml$outline = bbspp_cml$closestOutline(a, b, x);
+        this.bbspp_cml$applyClosestGradients(a, b, x);
         this.bbspp_cml$outlineFaceCull = bbspp_cml$closestOutlineFaceCull(a, b, x);
 
         if (preA instanceof BoneOutlineHolder preO && a instanceof BoneOutlineHolder curO
@@ -1233,7 +1418,10 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             for (int i = 0; i < BoneOutlineHolder.FACE_COUNT; i++)
             {
                 this.bbspp_cml$outlineFaces[i] = holder.bbspp_cml$getOutlineFaceColor(i);
+                this.bbspp_cml$outlineFaceGradients[i] = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineFaceGradient(0, i));
             }
+
+            this.bbspp_cml$outlineGradient = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineGradient(0));
         }
 
         /* 叠加描边层同理：源打开了第二层才覆盖，且第二层可以独立于第一层存续。 */
@@ -1249,7 +1437,10 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             for (int i = 0; i < BoneOutlineHolder.FACE_COUNT; i++)
             {
                 this.bbspp_cml$overlayFaces[i] = holder.bbspp_cml$getOverlayFaceColor(i);
+                this.bbspp_cml$overlayFaceGradients[i] = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineFaceGradient(1, i));
             }
+
+            this.bbspp_cml$overlayGradient = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineGradient(1));
         }
     }
 
@@ -1317,6 +1508,36 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         {
             outlineFaces[i] = holder.bbspp_cml$getOutlineFaceColor(i);
             overlayFaces[i] = holder.bbspp_cml$getOverlayFaceColor(i);
+        }
+    }
+
+    /**
+     * Gradients are taken from the closest keyframe as a whole, for the same reason the face table
+     * is: two ramps with different stop layouts cannot be mixed into anything meaningful. Blending a
+     * two-stop ramp with a five-stop one would invent colours neither keyframe was authored with.
+     */
+    @Unique
+    private static void bbspp_cml$closestGradients(mchorse.bbs_mod.utils.pose.Transform a, mchorse.bbs_mod.utils.pose.Transform b,
+        float x, OutlineGradient[] outlineFaces, OutlineGradient[] overlayFaces, OutlineGradient[] mains)
+    {
+        mchorse.bbs_mod.utils.pose.Transform closest = x < 0.5F ? a : b;
+
+        if (!(closest instanceof BoneOutlineHolder holder))
+        {
+            Arrays.fill(outlineFaces, null);
+            Arrays.fill(overlayFaces, null);
+            Arrays.fill(mains, null);
+
+            return;
+        }
+
+        mains[0] = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineGradient(0));
+        mains[1] = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineGradient(1));
+
+        for (int i = 0; i < BoneOutlineHolder.FACE_COUNT; i++)
+        {
+            outlineFaces[i] = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineFaceGradient(0, i));
+            overlayFaces[i] = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineFaceGradient(1, i));
         }
     }
 }

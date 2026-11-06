@@ -52,6 +52,8 @@ public abstract class ModelMixin
             BoneOutlineHolder boneOutline = (BoneOutlineHolder) transform;
             boolean outline = boneOutline.bbspp_cml$hasOutlineLayer(0)
                 || boneOutline.bbspp_cml$hasOutlineLayer(1);
+            boolean gradients = boneOutline.bbspp_cml$hasOutlineGradients(0)
+                || boneOutline.bbspp_cml$hasOutlineGradients(1);
             boolean pivoted = pivot.x != 0F || pivot.y != 0F || pivot.z != 0F;
 
             /* PBR：任一值 > 0 即认为该骨骼有 PBR 覆盖。 */
@@ -61,7 +63,7 @@ public abstract class ModelMixin
                 || pbr.bbspp_cml$getRelief() > 0F;
 
             /* glint / outline 必须计入这个提前跳过判断，否则"只开光效/描边"的骨骼会被整段忽略。 */
-            if (texture == null && !pivoted && !glint && !hasPbr && !outline)
+            if (texture == null && !pivoted && !glint && !hasPbr && !outline && !gradients)
             {
                 continue;
             }
@@ -130,7 +132,15 @@ public abstract class ModelMixin
                     {
                         groupOutline.bbspp_cml$setOutlineFaceColor(layer, face,
                             boneOutline.bbspp_cml$getOutlineFaceColor(layer, face));
+                        /* Ramp references are shared, not copied: the group only ever reads them and
+                         * ModelGroup.reset() drops them every frame, so a per-frame deep copy would
+                         * allocate for nothing. The editor edits the bone's ramp in place. */
+                        groupOutline.bbspp_cml$setOutlineFaceGradient(layer, face,
+                            boneOutline.bbspp_cml$getOutlineFaceGradient(layer, face));
                     }
+
+                    groupOutline.bbspp_cml$setOutlineGradient(layer,
+                        boneOutline.bbspp_cml$getOutlineGradient(layer));
                 }
 
                 groupOutline.bbspp_cml$setOutlineDecalSize(boneOutline.bbspp_cml$getOutlineDecalSize());

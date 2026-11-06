@@ -157,6 +157,10 @@ public final class OutlineShellKey
             hash = hash * 31 + holder.bbspp_cml$getOutlineFaceColor(layer, face);
         }
 
+        /* Ramps change the baked vertex colours (and the emissive batch id), so they belong in the
+         * key exactly like the colours do; a null ramp hashes to a stable zero. */
+        hash = hash * 31 + holder.bbspp_cml$getOutlineGradientHash(layer);
+
         return hash;
     }
 

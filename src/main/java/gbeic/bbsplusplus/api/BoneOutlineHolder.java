@@ -334,4 +334,70 @@ public interface BoneOutlineHolder
 
         return faces;
     }
+
+    /* ------------------------------------------------------------------ gradients */
+
+    /**
+     * Ramp of a layer's main colour, or {@code null} when the layer is a plain solid colour.
+     *
+     * <p>Solid is the absence of a gradient rather than a separate flag, so anything that predates
+     * gradients (old saves, call sites that never touch them) keeps rendering exactly as before just
+     * by returning {@code null} here.</p>
+     */
+    default OutlineGradient bbspp_cml$getOutlineGradient(int layer)
+    {
+        return null;
+    }
+
+    default void bbspp_cml$setOutlineGradient(int layer, OutlineGradient gradient)
+    {}
+
+    /**
+     * Ramp of one face. A face gradient replaces both the face colour and the layer's main gradient;
+     * {@code null} means the face falls back to {@code getOutlineFaceColor()} and then to the layer
+     * main colour/gradient.
+     */
+    default OutlineGradient bbspp_cml$getOutlineFaceGradient(int layer, int face)
+    {
+        return null;
+    }
+
+    default void bbspp_cml$setOutlineFaceGradient(int layer, int face, OutlineGradient gradient)
+    {}
+
+    /** Whether a layer needs gradient sampling at all; used to skip per-vertex work in the hot path. */
+    default boolean bbspp_cml$hasOutlineGradients(int layer)
+    {
+        if (this.bbspp_cml$getOutlineGradient(layer) != null)
+        {
+            return true;
+        }
+
+        for (int i = 0; i < FACE_COUNT; i++)
+        {
+            if (this.bbspp_cml$getOutlineFaceGradient(layer, i) != null)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Everything that changes how a gradient renders, packed into one long. Cache keys and
+     * {@code contentHash} mix this in, so editing a stop colour rebuilds the shell rather than
+     * silently reusing the previous mesh.
+     */
+    default long bbspp_cml$getOutlineGradientHash(int layer)
+    {
+        long hash = OutlineGradient.hashOf(this.bbspp_cml$getOutlineGradient(layer));
+
+        for (int i = 0; i < FACE_COUNT; i++)
+        {
+            hash = hash * 31L + OutlineGradient.hashOf(this.bbspp_cml$getOutlineFaceGradient(layer, i));
+        }
+
+        return hash;
+    }
 }

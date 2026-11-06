@@ -6,6 +6,7 @@ import gbeic.bbsplusplus.api.GroupGlintHolder;
 import gbeic.bbsplusplus.api.GroupOutlineHolder;
 import gbeic.bbsplusplus.api.GroupPbrHolder;
 import gbeic.bbsplusplus.api.GroupTextureHolder;
+import gbeic.bbsplusplus.api.OutlineGradient;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.colors.Color;
@@ -106,6 +107,18 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder, Gl
 
     @Unique
     private final int[] bbspp_cml$overlayFaces = new int[BoneOutlineHolder.FACE_COUNT];
+
+    @Unique
+    private OutlineGradient bbspp_cml$outlineGradient;
+
+    @Unique
+    private final OutlineGradient[] bbspp_cml$outlineFaceGradients = new OutlineGradient[BoneOutlineHolder.FACE_COUNT];
+
+    @Unique
+    private OutlineGradient bbspp_cml$overlayGradient;
+
+    @Unique
+    private final OutlineGradient[] bbspp_cml$overlayFaceGradients = new OutlineGradient[BoneOutlineHolder.FACE_COUNT];
 
     @Override
     public Link bbspp_cml$getTextureOverride()
@@ -428,6 +441,57 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder, Gl
         }
     }
 
+    /* Gradients are mirrored exactly like the colours: ModelMixin pushes the bone's ramp onto the
+     * group every frame, and the geometry pass reads it from here. */
+
+    @Override
+    public OutlineGradient bbspp_cml$getOutlineGradient(int layer)
+    {
+        return layer == 0 ? this.bbspp_cml$outlineGradient : this.bbspp_cml$overlayGradient;
+    }
+
+    @Override
+    public void bbspp_cml$setOutlineGradient(int layer, OutlineGradient gradient)
+    {
+        if (layer == 0)
+        {
+            this.bbspp_cml$outlineGradient = gradient;
+        }
+        else
+        {
+            this.bbspp_cml$overlayGradient = gradient;
+        }
+    }
+
+    @Override
+    public OutlineGradient bbspp_cml$getOutlineFaceGradient(int layer, int face)
+    {
+        if (face < 0 || face >= BoneOutlineHolder.FACE_COUNT)
+        {
+            return null;
+        }
+
+        return layer == 0 ? this.bbspp_cml$outlineFaceGradients[face] : this.bbspp_cml$overlayFaceGradients[face];
+    }
+
+    @Override
+    public void bbspp_cml$setOutlineFaceGradient(int layer, int face, OutlineGradient gradient)
+    {
+        if (face < 0 || face >= BoneOutlineHolder.FACE_COUNT)
+        {
+            return;
+        }
+
+        if (layer == 0)
+        {
+            this.bbspp_cml$outlineFaceGradients[face] = gradient;
+        }
+        else
+        {
+            this.bbspp_cml$overlayFaceGradients[face] = gradient;
+        }
+    }
+
     @Inject(method = "reset()V", at = @At("TAIL"), remap = false)
     private void bbspp_cml$clearTextureOverride(CallbackInfo ci)
     {
@@ -458,5 +522,10 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder, Gl
         this.bbspp_cml$overlayVanillaGlow = BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
         this.bbspp_cml$overlayFaceCull = BoneOutlineHolder.DEFAULT_FACE_CULL;
         Arrays.fill(this.bbspp_cml$overlayFaces, BoneOutlineHolder.DEFAULT_FACE_COLOR);
+
+        this.bbspp_cml$outlineGradient = null;
+        this.bbspp_cml$overlayGradient = null;
+        Arrays.fill(this.bbspp_cml$outlineFaceGradients, null);
+        Arrays.fill(this.bbspp_cml$overlayFaceGradients, null);
     }
 }

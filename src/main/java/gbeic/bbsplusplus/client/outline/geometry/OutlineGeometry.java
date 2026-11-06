@@ -2,6 +2,7 @@ package gbeic.bbsplusplus.client.outline.geometry;
 
 import gbeic.bbsplusplus.api.BoneOutlineHolder;
 import gbeic.bbsplusplus.api.GroupOutlineHolder;
+import gbeic.bbsplusplus.api.OutlineGradient;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelCube;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
@@ -51,8 +52,34 @@ public final class OutlineGeometry
     /** Shell face -> the cube face it really covers (the shell points the other way). */
     private static final int[] SHELL_TO_CUBE_FACE = { FACE_BACK, FACE_LEFT, FACE_FRONT, FACE_RIGHT, FACE_BOTTOM, FACE_TOP };
 
-    /** Passed to {@link #emit} as the face filter to mean "do not filter, draw every face". */
-    public static final int FACE_FILTER_ALL = -1;
+    /**
+     * In-plane axes of every cube face, as {@code {axis, sign}} with axis 0=X, 1=Y, 2=Z and the
+     * sign pointing along the face's on-screen "right" / "up".
+     *
+     * <p>A per-face ramp cannot use model X/Y for all six faces, because a face's up and right flip
+     * around the cube: the front face sees -X as its right, the back face sees +X, and so on. A
+     * negative sign makes {@link #rampT} measure from the max side instead, so the ramp still starts
+     * at the face's own top-left corner.</p>
+     */
+    private static final int[][] FACE_H_AXIS =
+    {
+        { 0, -1 }, /* FRONT: -X */
+        { 2, -1 }, /* RIGHT: -Z */
+        { 0, 1 },  /* BACK: +X */
+        { 2, 1 },  /* LEFT: +Z */
+        { 0, 1 },  /* TOP: +X */
+        { 0, -1 }, /* BOTTOM: -X */
+    };
+
+    private static final int[][] FACE_V_AXIS =
+    {
+        { 1, 1 },  /* FRONT: +Y */
+        { 1, 1 },  /* RIGHT: +Y */
+        { 1, 1 },  /* BACK: +Y */
+        { 1, 1 },  /* LEFT: +Y */
+        { 2, -1 }, /* TOP: -Z */
+        { 2, -1 }, /* BOTTOM: -Z */
+    };
 
     /**
      * Rendered extent below which an axis counts as flat, in blocks (the same unit as the
@@ -92,8 +119,27 @@ public final class OutlineGeometry
      * buffers; the renderer draws the wider spec first so the two read as nested rings.</p>
      */
     public record Spec(ModelGroup group, int argb, float width, float glow, float vanillaGlow,
-        float r, float g, float b, float a, boolean faceCull, int[] faceArgb, int layer)
+        float r, float g, float b, float a, boolean faceCull, int[] faceArgb, int layer,
+        OutlineGradient gradient, OutlineGradient[] faceGradients)
     {
+        /** Whether any of the six faces carries its own ramp (the face table beats the layer ramp). */
+        public boolean hasFaceRamp()
+        {
+            if (this.faceGradients == null)
+            {
+                return false;
+            }
+
+            for (OutlineGradient gradient : this.faceGradients)
+            {
+                if (gradient != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     /** Receives vertices in the frame supplied by the {@code base} matrix. */
@@ -101,6 +147,46 @@ public final class OutlineGeometry
     public interface VertexSink
     {
         void vertex(float x, float y, float z, float nx, float ny, float nz, float r, float g, float b, float a);
+
+        /**
+         * Same, plus the ramp coordinate. The LabPBR gradient pass binds a 64x1 ramp texture and
+         * needs {@code u} to read it; every other sink keeps the plain overload and drops it.
+         */
+        default void vertex(float x, float y, float z, float nx, float ny, float nz, float u, float v,
+                            float r, float g, float b, float a)
+        {
+            vertex(x, y, z, nx, ny, nz, r, g, b, a);
+        }
+    }
+
+    /**
+     * One emissive batch identity: either a solid ARGB or a whole ramp.
+     *
+     * <p>The LabPBR pass has to bind one diffuse texture per batch, so a gradient cannot be split
+     * into its per-vertex colours the way the colour passes are. Instead the ramp itself is the
+     * batch and the vertices carry a {@code u} coordinate.</p>
+     */
+    public record FacePaint(int argb, OutlineGradient gradient)
+    {
+        public static FacePaint solid(int argb)
+        {
+            return new FacePaint(argb, null);
+        }
+
+        public static FacePaint ramp(OutlineGradient gradient)
+        {
+            return new FacePaint(0, gradient);
+        }
+
+        public boolean isRamp()
+        {
+            return this.gradient != null;
+        }
+
+        public long id()
+        {
+            return this.gradient != null ? this.gradient.hash() : this.argb;
+        }
     }
 
     /**
@@ -146,11 +232,25 @@ public final class OutlineGeometry
                 int argb = holder.bbspp_cml$getOutlineColor(layer).getARGBColor();
                 int[] faces = holder.bbspp_cml$hasOutlineFaceColors(layer)
                     ? holder.bbspp_cml$getOutlineFaceColors(layer) : null;
+                OutlineGradient gradient = holder.bbspp_cml$getOutlineGradient(layer);
+                OutlineGradient[] faceGradients = null;
+
+                /* Only materialise the per-face table when at least one face actually has a ramp,
+                 * so the common solid-colour shell allocates nothing extra. */
+                if (holder.bbspp_cml$hasOutlineGradients(layer))
+                {
+                    faceGradients = new OutlineGradient[BoneOutlineHolder.FACE_COUNT];
+
+                    for (int face = 0; face < BoneOutlineHolder.FACE_COUNT; face++)
+                    {
+                        faceGradients[face] = holder.bbspp_cml$getOutlineFaceGradient(layer, face);
+                    }
+                }
 
                 specs.add(new Spec(group, argb, width, holder.bbspp_cml$getOutlineGlow(layer),
                     holder.bbspp_cml$getOutlineVanillaGlow(layer),
                     channel(argb, 16), channel(argb, 8), channel(argb, 0), channel(argb, 24),
-                    holder.bbspp_cml$getOutlineFaceCull(layer), faces, layer));
+                    holder.bbspp_cml$getOutlineFaceCull(layer), faces, layer, gradient, faceGradients));
             }
         }
 
@@ -248,40 +348,58 @@ public final class OutlineGeometry
     }
 
     /**
-     * Every distinct colour the faces of one spec resolve to (its own entry, or the layer colour
-     * when the entry is the "follow the layer" sentinel). The glow pass needs this because it draws
-     * one batch per colour so each face gets the matching emissive texture. Built in face order so
-     * the batches keep a stable draw order between frames.
+     * Every distinct paint the faces of one spec resolve to: this face's ramp, this face's colour,
+     * or the layer's ramp / colour for the "follow the layer" sentinel. The emission pass needs this
+     * because it draws one batch per paint so each face gets the matching emissive texture. Built in
+     * face order so the batches keep a stable draw order between frames.
      */
-    public static List<Integer> effectiveFaceColors(Spec spec)
+    public static List<FacePaint> effectiveFacePaints(Spec spec)
     {
         int[] faces = spec.faceArgb();
+        OutlineGradient[] ramps = spec.faceGradients();
 
-        if (faces == null)
+        if (faces == null && ramps == null)
         {
-            return Collections.singletonList(spec.argb());
+            return Collections.singletonList(paintOf(spec.gradient(), spec.argb()));
         }
 
-        List<Integer> colors = new ArrayList<>(2);
+        List<FacePaint> paints = new ArrayList<>(2);
 
-        for (int argb : faces)
+        for (int face = 0; face < 6; face++)
         {
-            /* A face the user never touched keeps following the layer colour, so it belongs to
-             * the layer's batch rather than to a batch of its own. */
-            int color = argb == BoneOutlineHolder.DEFAULT_FACE_COLOR ? spec.argb() : argb;
+            FacePaint paint;
 
-            if (!colors.contains(color))
+            if (ramps != null && ramps[face] != null)
             {
-                colors.add(color);
+                paint = FacePaint.ramp(ramps[face]);
+            }
+            else
+            {
+                /* A face the user never touched keeps following the layer, so it belongs to the
+                 * layer's batch rather than to a batch of its own. */
+                int argb = faces == null ? BoneOutlineHolder.DEFAULT_FACE_COLOR : faces[face];
+                boolean own = argb != BoneOutlineHolder.DEFAULT_FACE_COLOR;
+
+                paint = own ? FacePaint.solid(argb) : paintOf(spec.gradient(), spec.argb());
+            }
+
+            if (!paints.contains(paint))
+            {
+                paints.add(paint);
             }
         }
 
-        if (colors.isEmpty())
+        if (paints.isEmpty())
         {
-            colors.add(spec.argb());
+            paints.add(paintOf(spec.gradient(), spec.argb()));
         }
 
-        return colors;
+        return paints;
+    }
+
+    private static FacePaint paintOf(OutlineGradient gradient, int argb)
+    {
+        return gradient == null ? FacePaint.solid(argb) : FacePaint.ramp(gradient);
     }
 
     /**
@@ -300,19 +418,19 @@ public final class OutlineGeometry
                             Predicate<String> materialVisible, boolean needsNormals)
     {
         emit(model, config, specs, base, formAlpha, sink, faceRects, decalCubes, materialVisible, needsNormals,
-            FACE_FILTER_ALL);
+            null);
     }
 
     /**
-     * Emits the shell, optionally restricted to the faces that resolve to one colour.
+     * Emits the shell, optionally restricted to the faces that resolve to one paint.
      *
-     * <p>{@code faceFilter} is used by the emission passes, which draw one batch per colour so a
-     * per-face colour can be painted with the matching emissive texture. Passing
-     * {@link #FACE_FILTER_ALL} emits every face, which is what the plain shell wants.</p>
+     * <p>{@code faceFilter} is used by the emission passes, which draw one batch per paint so a
+     * per-face colour or a ramp can be painted with the matching emissive texture. Passing
+     * {@code null} emits every face, which is what the plain shell wants.</p>
      */
     public static void emit(Model model, ModelConfig config, List<Spec> specs, Matrix4f base, float formAlpha,
                             VertexSink sink, Map<ModelCube, float[][]> faceRects, Set<ModelCube> decalCubes,
-                            Predicate<String> materialVisible, boolean needsNormals, int faceFilter)
+                            Predicate<String> materialVisible, boolean needsNormals, FacePaint faceFilter)
     {
         if (model == null || config == null || specs == null || specs.isEmpty() || sink == null)
         {
@@ -331,6 +449,7 @@ public final class OutlineGeometry
         Emitter emitter = new Emitter(sink, needsNormals, faceFilter);
         Set<ModelCube> skip = decalCubes == null ? Collections.emptySet() : decalCubes;
         Map<String, Set<String>> welds = weldTable(config);
+        float[] bounds = needsBounds(specs) ? computeBounds(specs, matrices) : null;
 
         for (Spec spec : specs)
         {
@@ -344,7 +463,7 @@ public final class OutlineGeometry
             Set<String> welded = welds.getOrDefault(spec.group().id, Collections.emptySet());
             float alpha = spec.a() * formAlpha;
 
-            if (alpha <= 0F && !hasVisibleFace(spec.faceArgb()))
+            if (alpha <= 0F && !hasVisibleFace(spec.faceArgb()) && !hasVisibleRamp(spec))
             {
                 continue;
             }
@@ -358,9 +477,134 @@ public final class OutlineGeometry
                 }
 
                 emitter.cube(groupMatrix, cube, spec.width(), spec.r(), spec.g(), spec.b(), alpha, formAlpha, welded,
-                    faceRects == null ? null : faceRects.get(cube), spec.faceCull(), spec.faceArgb(), spec.argb());
+                    faceRects == null ? null : faceRects.get(cube), spec.faceCull(), spec.faceArgb(), spec.argb(),
+                    spec.gradient(), spec.faceGradients(), bounds);
             }
         }
+    }
+
+    /** Whether any spec carries a ramp, i.e. whether the model bounds are worth computing. */
+    private static boolean needsBounds(List<Spec> specs)
+    {
+        for (Spec spec : specs)
+        {
+            if (spec.gradient() != null || spec.hasFaceRamp())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Model-root AABB of everything the shell covers, used to normalise the gradient parameter.
+     *
+     * <p>{@code t} has to be a property of the model, not of one cube: a bone made of three cubes
+     * must show one continuous ramp across all of them. The bounds therefore come from the whole
+     * spec list, measured in the same frame the sink receives (group matrices applied, the caller's
+     * {@code base} not). Authoring the ramp in model space also keeps it stable while the model
+     * animates: rotating a bone moves its geometry through the ramp instead of dragging it along.</p>
+     */
+    private static float[] computeBounds(List<Spec> specs, Map<ModelGroup, Matrix4f> matrices)
+    {
+        float[] bounds = { Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE,
+            -Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE };
+        Matrix4f local = new Matrix4f();
+        Vector3f corner = new Vector3f();
+        Set<ModelCube> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+
+        for (Spec spec : specs)
+        {
+            Matrix4f groupMatrix = matrices.get(spec.group());
+
+            if (groupMatrix == null)
+            {
+                continue;
+            }
+
+            for (ModelCube cube : spec.group().cubes)
+            {
+                if (cube == null || cube.origin == null || cube.size == null || !seen.add(cube))
+                {
+                    continue;
+                }
+
+                cubeMatrix(local, groupMatrix, cube);
+                float inflate = cube.inflate;
+
+                for (int i = 0; i < 8; i++)
+                {
+                    corner.set(
+                        ((i & 1) == 0 ? cube.origin.x - inflate : cube.origin.x + cube.size.x + inflate) / 16F,
+                        ((i & 2) == 0 ? cube.origin.y - inflate : cube.origin.y + cube.size.y + inflate) / 16F,
+                        ((i & 4) == 0 ? cube.origin.z - inflate : cube.origin.z + cube.size.z + inflate) / 16F);
+                    local.transformPosition(corner);
+
+                    bounds[0] = Math.min(bounds[0], corner.x);
+                    bounds[1] = Math.min(bounds[1], corner.y);
+                    bounds[2] = Math.min(bounds[2], corner.z);
+                    bounds[3] = Math.max(bounds[3], corner.x);
+                    bounds[4] = Math.max(bounds[4], corner.y);
+                    bounds[5] = Math.max(bounds[5], corner.z);
+                }
+            }
+        }
+
+        if (bounds[0] > bounds[3])
+        {
+            /* No geometry at all: a collapsed box keeps every parameter at 0.5. */
+            return new float[] { 0F, 0F, 0F, 0F, 0F, 0F };
+        }
+
+        return bounds;
+    }
+
+    /** Group matrix composed with the cube's own pivot rotation, matching what {@code cube()} uses. */
+    private static void cubeMatrix(Matrix4f out, Matrix4f parent, ModelCube cube)
+    {
+        out.set(parent);
+
+        Vector3f pivot = cube.pivot;
+
+        out.translate(pivot.x / 16F, pivot.y / 16F, pivot.z / 16F);
+
+        Vector3f rotate = cube.rotate;
+
+        if (rotate != null && (rotate.x != 0F || rotate.y != 0F || rotate.z != 0F))
+        {
+            out.rotateZ((float) Math.toRadians(rotate.z));
+            out.rotateY((float) Math.toRadians(rotate.y));
+            out.rotateX((float) Math.toRadians(rotate.x));
+        }
+
+        out.translate(-pivot.x / 16F, -pivot.y / 16F, -pivot.z / 16F);
+    }
+
+    /** Whether any face of the spec resolves to a ramp, which keeps a transparent layer alive. */
+    private static boolean hasVisibleRamp(Spec spec)
+    {
+        if (spec.gradient() != null)
+        {
+            return true;
+        }
+
+        OutlineGradient[] faces = spec.faceGradients();
+
+        if (faces == null)
+        {
+            return false;
+        }
+
+        for (OutlineGradient gradient : faces)
+        {
+            if (gradient != null)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void collectGroupMatrices(ModelGroup group, Matrix4f parent, Map<ModelGroup, Matrix4f> out)
@@ -567,11 +811,25 @@ public final class OutlineGeometry
         private float faceA;
         private int faceEffective;
 
-        /* When not FACE_FILTER_ALL only the faces that resolved to this exact ARGB are emitted, so
-         * one glow batch does not redraw every face of the shell. */
-        private final int faceFilter;
+        /* Ramp of the face about to be emitted, if any. When it is set, vertex() samples it instead
+         * of using the flat face colour, and the sampled u doubles as the LabPBR texture coordinate. */
+        private OutlineGradient faceRamp;
+        private boolean faceAxisRamp;
+        private int faceHAxis;
+        private int faceVAxis;
+        private float faceHSign;
+        private float faceVSign;
+        private final float[] rampScratch = new float[4];
+        private float[] rampBounds;
 
-        private Emitter(VertexSink sink, boolean needsNormals, int faceFilter)
+        /* Form opacity, needed by vertex() to scale a sampled ramp alpha. */
+        private float formAlpha = 1F;
+
+        /* When not null only the faces that resolve to this paint are emitted, so one glow batch
+         * does not redraw every face of the shell. */
+        private final FacePaint faceFilter;
+
+        private Emitter(VertexSink sink, boolean needsNormals, FacePaint faceFilter)
         {
             this.sink = sink;
             this.needsNormals = needsNormals;
@@ -580,7 +838,20 @@ public final class OutlineGeometry
 
         private boolean wantsFace()
         {
-            return this.faceFilter == FACE_FILTER_ALL || this.faceFilter == this.faceEffective;
+            if (this.faceFilter == null)
+            {
+                return true;
+            }
+
+            if (this.faceFilter.isRamp())
+            {
+                /* A whole ramp is one batch: every face painted with that same ramp belongs to it. */
+                return this.faceRamp != null && this.faceRamp.hash() == this.faceFilter.gradient().hash();
+            }
+
+            /* A solid batch never paints a face that has its own ramp - the ramp wins over the
+             * layer colour, and drawing both would double-blend the rim. */
+            return this.faceRamp == null && this.faceFilter.argb() == this.faceEffective;
         }
 
         /**
@@ -588,8 +859,13 @@ public final class OutlineGeometry
          * shell uses the layer colour) or a table of six ARGB entries, where an entry equal to
          * {@link BoneOutlineHolder#DEFAULT_FACE_COLOR} keeps following the layer colour. The alpha
          * is multiplied by the form opacity here because each face may carry its own.
+         *
+         * <p>Precedence, highest first: this face's ramp, this face's solid colour, the layer's ramp,
+         * the layer's solid colour. A face ramp therefore keeps painting over a face colour, and a
+         * face colour stops the layer ramp on that face.</p>
          */
-        private void pickFace(int[] faceArgb, int layerArgb, int face, float r, float g, float b, float a,
+        private void pickFace(int[] faceArgb, OutlineGradient[] faceGradients, int layerArgb,
+                              OutlineGradient layerGradient, int face, float r, float g, float b, float a,
                               float formAlpha)
         {
             this.faceR = r;
@@ -597,29 +873,102 @@ public final class OutlineGeometry
             this.faceB = b;
             this.faceA = a;
             this.faceEffective = layerArgb;
+            this.faceRamp = null;
+            this.faceAxisRamp = false;
 
-            if (faceArgb == null)
+            OutlineGradient ownRamp = faceGradients == null ? null : faceGradients[face];
+            int argb = faceArgb == null ? BoneOutlineHolder.DEFAULT_FACE_COLOR : faceArgb[face];
+            boolean hasOwnSolid = argb != BoneOutlineHolder.DEFAULT_FACE_COLOR;
+
+            if (hasOwnSolid)
             {
-                return;
+                this.faceEffective = argb;
+                this.faceR = channel(argb, 16);
+                this.faceG = channel(argb, 8);
+                this.faceB = channel(argb, 0);
+                this.faceA = channel(argb, 24) * formAlpha;
             }
 
-            int argb = faceArgb[face];
-
-            if (argb == BoneOutlineHolder.DEFAULT_FACE_COLOR)
+            if (ownRamp != null)
             {
-                return;
+                this.faceRamp = ownRamp;
+                this.faceAxisRamp = true;
+
+                int[] h = FACE_H_AXIS[face];
+                int[] v = FACE_V_AXIS[face];
+
+                this.faceHAxis = h[0];
+                this.faceHSign = h[1];
+                this.faceVAxis = v[0];
+                this.faceVSign = v[1];
+            }
+            else if (!hasOwnSolid && layerGradient != null)
+            {
+                this.faceRamp = layerGradient;
             }
 
-            this.faceEffective = argb;
-            this.faceR = channel(argb, 16);
-            this.faceG = channel(argb, 8);
-            this.faceB = channel(argb, 0);
-            this.faceA = channel(argb, 24) * formAlpha;
+            if (this.faceRamp != null)
+            {
+                /* quad() early-outs on a transparent face; a ramp only counts as transparent when
+                 * every stop is, so one opaque stop keeps the face alive. */
+                this.faceA = maxAlpha(this.faceRamp) * formAlpha;
+            }
+        }
+
+        private static float maxAlpha(OutlineGradient gradient)
+        {
+            float alpha = 0F;
+
+            for (OutlineGradient.Stop stop : gradient.getStops())
+            {
+                alpha = Math.max(alpha, channel(stop.argb, 24));
+            }
+
+            return alpha;
+        }
+
+        /** Position of {@code t} along the ramp, from the model-root AABB the shell covers. */
+        private float rampT(float x, float y, float z)
+        {
+            float[] bounds = this.rampBounds;
+
+            if (this.faceRamp == null || bounds == null)
+            {
+                return 0.5F;
+            }
+
+            boolean vertical = this.faceRamp.getAxis() == OutlineGradient.Axis.VERTICAL;
+
+            int axis;
+            float sign;
+
+            if (this.faceAxisRamp)
+            {
+                /* Six-face ramps run along the face's own two in-plane axes, because a face's
+                 * "up" and "right" on screen depend on where that face sits on the cube. */
+                axis = vertical ? this.faceVAxis : this.faceHAxis;
+                sign = vertical ? this.faceVSign : this.faceHSign;
+            }
+            else
+            {
+                /* The layer ramp is model-wide: vertical means model Y, horizontal means model X,
+                 * so one ramp runs continuously from the lowest bone to the highest. */
+                axis = vertical ? 1 : 0;
+                sign = 1F;
+            }
+
+            float lo = bounds[axis];
+            float hi = bounds[axis + 3];
+            float coord = axis == 0 ? x : (axis == 1 ? y : z);
+            float t = hi - lo <= 1.0E-6F ? 0.5F : (coord - lo) / (hi - lo);
+
+            return sign < 0F ? 1F - t : t;
         }
 
         private void cube(Matrix4f parent, ModelCube cube, float width, float r, float g, float b, float a,
                           float formAlpha, Set<String> welded, float[][] faceRects, boolean faceCull,
-                          int[] faceArgb, int layerArgb)
+                          int[] faceArgb, int layerArgb, OutlineGradient layerGradient,
+                          OutlineGradient[] faceGradients, float[] bounds)
         {
             float off = 0.25F * width / 16F;
             float inflate = cube.inflate;
@@ -677,9 +1026,13 @@ public final class OutlineGeometry
                 this.normalMatrix.set(this.matrix).invert().transpose();
             }
 
+            /* The ramp runs across the whole model, so every face reads the same box. */
+            this.rampBounds = bounds;
+            this.formAlpha = formAlpha;
+
             if (!welded.contains("front") && cube.back != null && hasXY)
             {
-                this.pickFace(faceArgb, layerArgb, FACE_FRONT, r, g, b, a, formAlpha);
+                this.pickFace(faceArgb, faceGradients, layerArgb, layerGradient, FACE_FRONT, r, g, b, a, formAlpha);
 
                 if (this.wantsFace())
                 {
@@ -690,7 +1043,7 @@ public final class OutlineGeometry
 
             if (!welded.contains("right") && cube.left != null && hasYZ)
             {
-                this.pickFace(faceArgb, layerArgb, FACE_RIGHT, r, g, b, a, formAlpha);
+                this.pickFace(faceArgb, faceGradients, layerArgb, layerGradient, FACE_RIGHT, r, g, b, a, formAlpha);
 
                 if (this.wantsFace())
                 {
@@ -701,7 +1054,7 @@ public final class OutlineGeometry
 
             if (!welded.contains("back") && cube.front != null && hasXY)
             {
-                this.pickFace(faceArgb, layerArgb, FACE_BACK, r, g, b, a, formAlpha);
+                this.pickFace(faceArgb, faceGradients, layerArgb, layerGradient, FACE_BACK, r, g, b, a, formAlpha);
 
                 if (this.wantsFace())
                 {
@@ -712,7 +1065,7 @@ public final class OutlineGeometry
 
             if (!welded.contains("left") && cube.right != null && hasYZ)
             {
-                this.pickFace(faceArgb, layerArgb, FACE_LEFT, r, g, b, a, formAlpha);
+                this.pickFace(faceArgb, faceGradients, layerArgb, layerGradient, FACE_LEFT, r, g, b, a, formAlpha);
 
                 if (this.wantsFace())
                 {
@@ -723,7 +1076,7 @@ public final class OutlineGeometry
 
             if (!welded.contains("top") && cube.bottom != null && hasXZ)
             {
-                this.pickFace(faceArgb, layerArgb, FACE_TOP, r, g, b, a, formAlpha);
+                this.pickFace(faceArgb, faceGradients, layerArgb, layerGradient, FACE_TOP, r, g, b, a, formAlpha);
 
                 if (this.wantsFace())
                 {
@@ -734,7 +1087,7 @@ public final class OutlineGeometry
 
             if (!welded.contains("bottom") && cube.top != null && hasXZ)
             {
-                this.pickFace(faceArgb, layerArgb, FACE_BOTTOM, r, g, b, a, formAlpha);
+                this.pickFace(faceArgb, faceGradients, layerArgb, layerGradient, FACE_BOTTOM, r, g, b, a, formAlpha);
 
                 if (this.wantsFace())
                 {
@@ -850,6 +1203,21 @@ public final class OutlineGeometry
             this.position.set(x, y, z);
             this.matrix.transformPosition(this.position);
 
+            /* A ramp replaces the flat face colour: its position along the ramp is measured in
+             * model space, which is exactly the space the vertex now sits in. The sampled alpha is
+             * multiplied by the form opacity, since a ramp can fade on its own too. */
+            float u = 0F;
+
+            if (this.faceRamp != null)
+            {
+                u = this.rampT(this.position.x, this.position.y, this.position.z);
+                this.faceRamp.sample(u, this.rampScratch);
+                r = this.rampScratch[0];
+                g = this.rampScratch[1];
+                b = this.rampScratch[2];
+                a = this.rampScratch[3] * this.formAlpha;
+            }
+
             if (this.needsNormals)
             {
                 this.normal.set(nx, ny, nz);
@@ -861,11 +1229,11 @@ public final class OutlineGeometry
                 }
 
                 this.sink.vertex(this.position.x, this.position.y, this.position.z,
-                    this.normal.x, this.normal.y, this.normal.z, r, g, b, a);
+                    this.normal.x, this.normal.y, this.normal.z, u, 0F, r, g, b, a);
             }
             else
             {
-                this.sink.vertex(this.position.x, this.position.y, this.position.z, 0F, 0F, 0F, r, g, b, a);
+                this.sink.vertex(this.position.x, this.position.y, this.position.z, 0F, 0F, 0F, u, 0F, r, g, b, a);
             }
         }
     }

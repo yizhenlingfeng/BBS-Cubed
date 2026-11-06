@@ -6,8 +6,11 @@ import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.GlintSettingsHolder;
 import gbeic.bbsplusplus.api.ModelFormUvSectionHolder;
+import gbeic.bbsplusplus.api.OutlineGradient;
 import gbeic.bbsplusplus.api.PickTextureButtonHolder;
 import gbeic.bbsplusplus.client.outline.OutlineEmissiveTexture;
+import gbeic.bbsplusplus.client.ui.outline.UIOutlineColorControl;
+import gbeic.bbsplusplus.client.ui.outline.UIOutlineGradientEditor;
 import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.cubic.IBoneHierarchy;
 import mchorse.bbs_mod.l10n.L10n;
@@ -149,6 +152,22 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     /** 逐面颜色选择器，下标先是层再是面（顺序见 {@code OutlineGeometry.FACE_*}）。 */
     @Unique
     private final UIColor[][] bbspp_cml$outlineFaces = new UIColor[2][BoneOutlineHolder.FACE_COUNT];
+
+    /* 渐变模式：主色与每个面各有一个「模式图标 + 色块/方向按钮」组合控件，下方再挂渐变条。 */
+
+    @Unique
+    private final UIOutlineColorControl[] bbspp_cml$outlineColorControls = new UIOutlineColorControl[2];
+
+    @Unique
+    private final UIOutlineColorControl[][] bbspp_cml$outlineFaceControls =
+        new UIOutlineColorControl[2][BoneOutlineHolder.FACE_COUNT];
+
+    @Unique
+    private final UIOutlineGradientEditor[] bbspp_cml$outlineGradientEditors = new UIOutlineGradientEditor[2];
+
+    @Unique
+    private final UIOutlineGradientEditor[][] bbspp_cml$outlineFaceGradientEditors =
+        new UIOutlineGradientEditor[2][BoneOutlineHolder.FACE_COUNT];
 
     /* 不描边块尺寸是模型级属性，只有第一栏提供。 */
 
@@ -819,12 +838,27 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     {
         boolean overlay = layer == 1;
 
-        this.bbspp_cml$outlineColors[layer] = new UIColor((argb) ->
-        {
-            this.bbspp_cml$applyOutlineColorToSelection(self, layer, argb == null ? 0xFFFFFFFF : argb);
-            OutlineEmissiveTexture.invalidate();
-        });
-        this.bbspp_cml$outlineColors[layer].withAlpha().direction(Direction.LEFT).h(20);
+        this.bbspp_cml$outlineColorControls[layer] = new UIOutlineColorControl(
+            () -> this.bbspp_cml$getOutlineColorArgb(self, layer),
+            () -> this.bbspp_cml$getOutlineGradient(self, layer),
+            (argb) ->
+            {
+                this.bbspp_cml$applyOutlineColorToSelection(self, layer, argb == null ? 0xFFFFFFFF : argb);
+                OutlineEmissiveTexture.invalidate();
+            },
+            (gradient) -> this.bbspp_cml$applyOutlineGradientToSelection(self, layer, gradient),
+            () ->
+            {
+                if (this.bbspp_cml$getOutlineGradient(self, layer) != null)
+                {
+                    this.bbspp_cml$applyOutlineGradientToChildren(self, layer);
+                }
+                else
+                {
+                    this.bbspp_cml$applyOutlineColorToChildren(self, layer);
+                }
+            });
+        this.bbspp_cml$outlineColors[layer] = this.bbspp_cml$outlineColorControls[layer].getSolidColor();
         this.bbspp_cml$outlineColors[layer].context((ContextMenuManager manager) ->
         {
             manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
@@ -889,7 +923,8 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         }
 
         section.fields.add(
-            UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.color"), this.bbspp_cml$outlineColors[layer]),
+            UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.color"), this.bbspp_cml$outlineColorControls[layer]),
+            this.bbspp_cml$createOutlineGradientEditor(self, layer, -1),
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.width"), this.bbspp_cml$outlineWidths[layer]),
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.glow"), this.bbspp_cml$outlineGlows[layer]),
             /* UIToggle 自带标签，套 labelRow 会把名字画两遍，所以独占一行。 */
@@ -944,13 +979,28 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         {
             final int index = face;
 
-            this.bbspp_cml$outlineFaces[layer][face] = new UIColor((argb) ->
-            {
-                this.bbspp_cml$applyOutlineFaceColorToSelection(self, layer, index,
-                    argb == null ? BoneOutlineHolder.DEFAULT_FACE_COLOR : argb);
-                OutlineEmissiveTexture.invalidate();
-            });
-            this.bbspp_cml$outlineFaces[layer][face].withAlpha().direction(Direction.LEFT).h(16);
+            this.bbspp_cml$outlineFaceControls[layer][face] = new UIOutlineColorControl(
+                () -> this.bbspp_cml$getOutlineFaceColorArgb(self, layer, index),
+                () -> this.bbspp_cml$getOutlineFaceGradient(self, layer, index),
+                (argb) ->
+                {
+                    this.bbspp_cml$applyOutlineFaceColorToSelection(self, layer, index,
+                        argb == null ? BoneOutlineHolder.DEFAULT_FACE_COLOR : argb);
+                    OutlineEmissiveTexture.invalidate();
+                },
+                (gradient) -> this.bbspp_cml$applyOutlineFaceGradientToSelection(self, layer, index, gradient),
+                () ->
+                {
+                    if (this.bbspp_cml$getOutlineFaceGradient(self, layer, index) != null)
+                    {
+                        this.bbspp_cml$applyOutlineFaceGradientToChildren(self, layer, index);
+                    }
+                    else
+                    {
+                        this.bbspp_cml$applyOutlineFaceColorToChildren(self, layer, index);
+                    }
+                });
+            this.bbspp_cml$outlineFaces[layer][face] = this.bbspp_cml$outlineFaceControls[layer][face].getSolidColor();
             /* 并排六个色块时 UIColor 默认会画 #RRGGBB 文字，会糊成一团，所以关掉文字只留色块。 */
             this.bbspp_cml$outlineFaces[layer][face].noLabel();
 
@@ -963,8 +1013,10 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
                 });
             });
 
-            advanced.fields.add(UI.labelRow(L10n.lang(keys[face]), 60,
-                this.bbspp_cml$outlineFaces[layer][face]));
+            advanced.fields.add(
+                UI.labelRow(L10n.lang(keys[face]), 90, this.bbspp_cml$outlineFaceControls[layer][face]),
+                this.bbspp_cml$createOutlineGradientEditor(self, layer, face)
+            );
         }
 
         UIButton sync = new UIButton(L10n.lang("bbs.ui.model_editor.outline.face_sync"), (b) ->
@@ -1029,9 +1081,11 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     @Unique
     private void bbspp_cml$syncOutlineLayer(BoneOutlineHolder holder, int layer)
     {
-        this.bbspp_cml$outlineColors[layer].setColor(holder == null
-            ? 0xFFFFFFFF
-            : holder.bbspp_cml$getOutlineColor(layer).getARGBColor());
+        if (this.bbspp_cml$outlineColorControls[layer] != null)
+        {
+            this.bbspp_cml$outlineColorControls[layer].refresh();
+        }
+
         this.bbspp_cml$outlineWidths[layer].setValue(holder == null
             ? (layer == 0 ? BoneOutlineHolder.DEFAULT_WIDTH : BoneOutlineHolder.DEFAULT_OVERLAY_WIDTH)
             : holder.bbspp_cml$getOutlineWidth(layer));
@@ -1044,17 +1098,26 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             ? BoneOutlineHolder.DEFAULT_FACE_CULL
             : holder.bbspp_cml$getOutlineFaceCull(layer));
 
-        int main = holder == null ? 0xFFFFFFFF : holder.bbspp_cml$getOutlineColor(layer).getARGBColor();
+        if (this.bbspp_cml$outlineGradientEditors[layer] != null)
+        {
+            this.bbspp_cml$outlineGradientEditors[layer].setVisible(
+                holder != null && holder.bbspp_cml$getOutlineGradient(layer) != null);
+            this.bbspp_cml$outlineGradientEditors[layer].refresh();
+        }
 
         for (int face = 0; face < BoneOutlineHolder.FACE_COUNT; face++)
         {
-            int argb = holder == null
-                ? BoneOutlineHolder.DEFAULT_FACE_COLOR
-                : holder.bbspp_cml$getOutlineFaceColor(layer, face);
+            if (this.bbspp_cml$outlineFaceControls[layer][face] != null)
+            {
+                this.bbspp_cml$outlineFaceControls[layer][face].refresh();
+            }
 
-            /* 哨兵值代表"跟随本层主色"，色块就显示主色，免得六块全黑误导用户。 */
-            this.bbspp_cml$outlineFaces[layer][face].setColor(
-                argb == BoneOutlineHolder.DEFAULT_FACE_COLOR ? main : argb);
+            if (this.bbspp_cml$outlineFaceGradientEditors[layer][face] != null)
+            {
+                this.bbspp_cml$outlineFaceGradientEditors[layer][face].setVisible(
+                    holder != null && holder.bbspp_cml$getOutlineFaceGradient(layer, face) != null);
+                this.bbspp_cml$outlineFaceGradientEditors[layer][face].refresh();
+            }
         }
     }
 
@@ -1094,16 +1157,129 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         });
     }
 
-    /** 把某一层的六个面全部恢复成"跟随主色"。 */
+    /* ---- 渐变模式：读取、控件创建与写回 ---- */
+
+    @Unique
+    private int bbspp_cml$getOutlineColorArgb(UIPoseEditor self, int layer)
+    {
+        PoseTransform current = this.bbspp_cml$getCurrentPoseTransform(self);
+
+        return current == null
+            ? 0xFFFFFFFF
+            : ((BoneOutlineHolder) current).bbspp_cml$getOutlineColor(layer).getARGBColor();
+    }
+
+    @Unique
+    private OutlineGradient bbspp_cml$getOutlineGradient(UIPoseEditor self, int layer)
+    {
+        PoseTransform current = this.bbspp_cml$getCurrentPoseTransform(self);
+
+        return current == null ? null : ((BoneOutlineHolder) current).bbspp_cml$getOutlineGradient(layer);
+    }
+
+    @Unique
+    private int bbspp_cml$getOutlineFaceColorArgb(UIPoseEditor self, int layer, int face)
+    {
+        PoseTransform current = this.bbspp_cml$getCurrentPoseTransform(self);
+
+        if (current == null)
+        {
+            return 0xFFFFFFFF;
+        }
+
+        BoneOutlineHolder holder = (BoneOutlineHolder) current;
+        int argb = holder.bbspp_cml$getOutlineFaceColor(layer, face);
+
+        /* 哨兵值代表"跟随本层主色"，色块就显示主色，免得六块全黑误导用户。 */
+        return argb == BoneOutlineHolder.DEFAULT_FACE_COLOR
+            ? holder.bbspp_cml$getOutlineColor(layer).getARGBColor()
+            : argb;
+    }
+
+    @Unique
+    private OutlineGradient bbspp_cml$getOutlineFaceGradient(UIPoseEditor self, int layer, int face)
+    {
+        PoseTransform current = this.bbspp_cml$getCurrentPoseTransform(self);
+
+        return current == null ? null : ((BoneOutlineHolder) current).bbspp_cml$getOutlineFaceGradient(layer, face);
+    }
+
+    /**
+     * 建一行渐变编辑器（主色或某个面）。它默认隐藏，由 {@link #bbspp_cml$syncOutlineLayer}
+     * 按 holder 里是否存了渐变来显隐。
+     *
+     * @param face -1 表示本层主色，0..5 表示具体的一个面
+     */
+    @Unique
+    private UIOutlineGradientEditor bbspp_cml$createOutlineGradientEditor(UIPoseEditor self, int layer, int face)
+    {
+        UIOutlineGradientEditor editor = new UIOutlineGradientEditor(
+            () -> face < 0
+                ? this.bbspp_cml$getOutlineGradient(self, layer)
+                : this.bbspp_cml$getOutlineFaceGradient(self, layer, face),
+            (gradient) ->
+            {
+                if (face < 0)
+                {
+                    this.bbspp_cml$applyOutlineGradientToSelection(self, layer, gradient);
+                }
+                else
+                {
+                    this.bbspp_cml$applyOutlineFaceGradientToSelection(self, layer, face, gradient);
+                }
+            });
+
+        editor.setVisible(false);
+
+        if (face < 0)
+        {
+            this.bbspp_cml$outlineGradientEditors[layer] = editor;
+        }
+        else
+        {
+            this.bbspp_cml$outlineFaceGradientEditors[layer][face] = editor;
+        }
+
+        return editor;
+    }
+
+    @Unique
+    private void bbspp_cml$applyOutlineGradientToSelection(UIPoseEditor self, int layer, OutlineGradient gradient)
+    {
+        this.bbspp_cml$writeToSelection(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineGradient(layer,
+                gradient == null ? null : gradient.copy());
+        });
+
+        /* 非 valuePose 宿主不会触发同步监听器，这里主动刷一次显隐。 */
+        this.bbspp_cml$syncOutlineControls();
+    }
+
+    @Unique
+    private void bbspp_cml$applyOutlineFaceGradientToSelection(UIPoseEditor self, int layer, int face, OutlineGradient gradient)
+    {
+        this.bbspp_cml$writeToSelection(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceGradient(layer, face,
+                gradient == null ? null : gradient.copy());
+        });
+
+        this.bbspp_cml$syncOutlineControls();
+    }
+
+    /** 把某一层的六个面全部恢复成"跟随主色"。渐变模式下也一并清掉面渐变。 */
     @Unique
     private void bbspp_cml$applyOutlineFaceColorSyncToSelection(UIPoseEditor self, int layer)
     {
         this.bbspp_cml$writeToSelection(self, (poseT) ->
         {
+            BoneOutlineHolder holder = (BoneOutlineHolder) poseT;
+
             for (int face = 0; face < BoneOutlineHolder.FACE_COUNT; face++)
             {
-                ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceColor(
-                    layer, face, BoneOutlineHolder.DEFAULT_FACE_COLOR);
+                holder.bbspp_cml$setOutlineFaceColor(layer, face, BoneOutlineHolder.DEFAULT_FACE_COLOR);
+                holder.bbspp_cml$setOutlineFaceGradient(layer, face, null);
             }
         });
 
@@ -1188,7 +1364,11 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
 
         this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
         {
-            ((BoneOutlineHolder) poseT).bbspp_cml$getOutlineColor(layer).set(argb);
+            BoneOutlineHolder holder = (BoneOutlineHolder) poseT;
+
+            holder.bbspp_cml$getOutlineColor(layer).set(argb);
+            /* 应用纯色时清掉子骨骼自己的渐变，否则渐变会盖住刚铺下去的颜色。 */
+            holder.bbspp_cml$setOutlineGradient(layer, null);
         });
 
         OutlineEmissiveTexture.invalidate();
@@ -1215,22 +1395,66 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
 
         this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
         {
-            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceColor(layer, face, stored);
+            BoneOutlineHolder holder = (BoneOutlineHolder) poseT;
+
+            holder.bbspp_cml$setOutlineFaceColor(layer, face, stored);
+            /* 纯色面上不应残留子骨骼自己的面渐变。 */
+            holder.bbspp_cml$setOutlineFaceGradient(layer, face, null);
         });
 
         OutlineEmissiveTexture.invalidate();
     }
 
-    /** 右键菜单项：把"六个面全部跟随主色"铺给所有子骨骼。 */
+    /** 「应用到子集」按钮（渐变模式）：把本层当前渐变复制给选中骨骼的所有子骨骼。 */
+    @Unique
+    private void bbspp_cml$applyOutlineGradientToChildren(UIPoseEditor self, int layer)
+    {
+        OutlineGradient gradient = this.bbspp_cml$getOutlineGradient(self, layer);
+
+        if (gradient == null)
+        {
+            return;
+        }
+
+        this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineGradient(layer, gradient.copy());
+        });
+
+        OutlineEmissiveTexture.invalidate();
+    }
+
+    /** 「应用到子集」按钮（某个面的渐变）：把该面的渐变复制给子骨骼的同一个面。 */
+    @Unique
+    private void bbspp_cml$applyOutlineFaceGradientToChildren(UIPoseEditor self, int layer, int face)
+    {
+        OutlineGradient gradient = this.bbspp_cml$getOutlineFaceGradient(self, layer, face);
+
+        if (gradient == null)
+        {
+            return;
+        }
+
+        this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceGradient(layer, face, gradient.copy());
+        });
+
+        OutlineEmissiveTexture.invalidate();
+    }
+
+    /** 右键菜单项：把"六个面全部跟随主色"铺给所有子骨骼。渐变模式下也一并清掉面渐变。 */
     @Unique
     private void bbspp_cml$applyOutlineFaceColorSyncToChildren(UIPoseEditor self, int layer)
     {
         this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
         {
+            BoneOutlineHolder holder = (BoneOutlineHolder) poseT;
+
             for (int face = 0; face < BoneOutlineHolder.FACE_COUNT; face++)
             {
-                ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceColor(
-                    layer, face, BoneOutlineHolder.DEFAULT_FACE_COLOR);
+                holder.bbspp_cml$setOutlineFaceColor(layer, face, BoneOutlineHolder.DEFAULT_FACE_COLOR);
+                holder.bbspp_cml$setOutlineFaceGradient(layer, face, null);
             }
         });
 
@@ -1408,6 +1632,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
                 || outlineHolder.bbspp_cml$getOutlineDecalSize() != BoneOutlineHolder.DEFAULT_DECAL
                 || outlineHolder.bbspp_cml$getOutlineFaceCull() != BoneOutlineHolder.DEFAULT_FACE_CULL
                 || outlineHolder.bbspp_cml$hasOutlineFaceColors(0)
+                || outlineHolder.bbspp_cml$hasOutlineGradients(0)
                 /* 叠加层只要开了就该展开第一栏——第二栏是从它这里点开的。 */
                 || outlineHolder.bbspp_cml$getOutlineOverlay();
 
@@ -1426,7 +1651,8 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
                     || outlineHolder.bbspp_cml$getOutlineGlow(1) != BoneOutlineHolder.DEFAULT_GLOW
                     || outlineHolder.bbspp_cml$getOutlineVanillaGlow(1) != BoneOutlineHolder.DEFAULT_VANILLA_GLOW
                     || outlineHolder.bbspp_cml$getOutlineFaceCull(1) != BoneOutlineHolder.DEFAULT_FACE_CULL
-                    || outlineHolder.bbspp_cml$hasOutlineFaceColors(1));
+                    || outlineHolder.bbspp_cml$hasOutlineFaceColors(1)
+                    || outlineHolder.bbspp_cml$hasOutlineGradients(1));
         }
 
         if (self.material != null)

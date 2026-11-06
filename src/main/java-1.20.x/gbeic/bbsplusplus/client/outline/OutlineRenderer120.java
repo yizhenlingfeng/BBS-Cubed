@@ -579,8 +579,8 @@ public final class OutlineRenderer120
         }
     }
 
-    /** One LabPBR texture/draw per distinct (argb, glow) pair. */
-    private record GlowBatch(int argb, int glow, List<OutlineGeometry.Spec> specs)
+    /** One LabPBR texture/draw per distinct (paint, glow) pair. */
+    private record GlowBatch(OutlineGeometry.FacePaint paint, int glow, List<OutlineGeometry.Spec> specs)
     {
     }
 
@@ -620,9 +620,9 @@ public final class OutlineRenderer120
             return false;
         }
 
-        for (int color : OutlineGeometry.effectiveFaceColors(spec))
+        for (OutlineGeometry.FacePaint paint : OutlineGeometry.effectiveFacePaints(spec))
         {
-            if (textures.containsKey(glowKey(color, glow)))
+            if (textures.containsKey(paintId(paint, glow)))
             {
                 return true;
             }
@@ -632,10 +632,10 @@ public final class OutlineRenderer120
     }
 
     /**
-     * Resolves one generated LabPBR texture per (face colour, glow) pair. Walked per face colour,
-     * not just per layer colour, because the emission pass draws one batch per colour and each of
-     * those batches needs its own 1x1 diffuse. A spec whose companion texture cannot be created
-     * only loses its emission, never its rim.
+     * Resolves one generated LabPBR texture per paint (solid colour or whole ramp) and glow pair.
+     * Walked per paint, not just per layer colour, because the emission pass draws one batch per
+     * paint and each of those batches needs its own diffuse. A spec whose companion texture cannot
+     * be created only loses its emission, never its rim.
      */
     private static Map<Long, ResourceTexture> resolveGlowTextures(List<OutlineGeometry.Spec> specs)
     {
@@ -662,16 +662,18 @@ public final class OutlineRenderer120
                 continue;
             }
 
-            for (int color : OutlineGeometry.effectiveFaceColors(spec))
+            for (OutlineGeometry.FacePaint paint : OutlineGeometry.effectiveFacePaints(spec))
             {
-                long key = glowKey(color, glow);
+                long key = paintId(paint, glow);
 
                 if (textures.containsKey(key))
                 {
                     continue;
                 }
 
-                ResourceTexture texture = OutlineEmissiveTexture.getDiffuseTexture(color, glow);
+                ResourceTexture texture = paint.isRamp()
+                    ? OutlineEmissiveTexture.getGradientTexture(paint.gradient(), glow)
+                    : OutlineEmissiveTexture.getDiffuseTexture(paint.argb(), glow);
 
                 if (texture != null)
                 {
@@ -683,9 +685,10 @@ public final class OutlineRenderer120
         return textures;
     }
 
-    private static long glowKey(int argb, int glow)
+    /** Batch key of a paint: the ramp hash and the solid ARGB share one number space. */
+    private static long paintId(OutlineGeometry.FacePaint paint, int glow)
     {
-        return ((long) argb << 32) | (glow & 0xFFFFFFFFL);
+        return (paint.id() << 32) | (glow & 0xFFFFFFFFL);
     }
 
     /**
@@ -719,16 +722,17 @@ public final class OutlineRenderer120
                 continue;
             }
 
-            /* One batch per face colour: each colour needs its own 1x1 emissive diffuse, so a
-             * single batch keyed on the layer colour would flatten every face to the layer tint. */
-            for (int color : OutlineGeometry.effectiveFaceColors(spec))
+            /* One batch per paint: a solid colour needs its own 1x1 emissive diffuse, and a ramp
+             * needs its own 64x1 one, so a single batch keyed on the layer colour would flatten
+             * every face to the layer tint. */
+            for (OutlineGeometry.FacePaint paint : OutlineGeometry.effectiveFacePaints(spec))
             {
-                long key = glowKey(color, glow);
+                long key = paintId(paint, glow);
                 GlowBatch batch = batches.get(key);
 
                 if (batch == null)
                 {
-                    batch = new GlowBatch(color, glow, new ArrayList<>());
+                    batch = new GlowBatch(paint, glow, new ArrayList<>());
                     batches.put(key, batch);
                 }
 
@@ -746,7 +750,10 @@ public final class OutlineRenderer120
 
         for (GlowBatch batch : batches.values())
         {
-            ResourceTexture texture = OutlineEmissiveTexture.getDiffuseTexture(batch.argb(), batch.glow());
+            OutlineGeometry.FacePaint paint = batch.paint();
+            ResourceTexture texture = paint.isRamp()
+                ? OutlineEmissiveTexture.getGradientTexture(paint.gradient(), batch.glow())
+                : OutlineEmissiveTexture.getDiffuseTexture(paint.argb(), batch.glow());
 
             /* Drop the batches that got no companion texture instead of giving up on the whole
              * layer: the other colours still have a valid diffuse and should keep glowing. */
@@ -799,22 +806,36 @@ public final class OutlineRenderer120
                 boolean[] began = { false };
 
                 OutlineGeometry.emit(model, config, ordered.get(i).specs(), base, formAlpha,
-                    (x, y, z, nx, ny, nz, r, g, b, a) ->
+                    new OutlineGeometry.VertexSink()
                     {
-                        if (!began[0])
+                        @Override
+                        public void vertex(float x, float y, float z, float nx, float ny, float nz,
+                                           float r, float g, float b, float a)
                         {
-                            builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
-                            began[0] = true;
+                            vertex(x, y, z, nx, ny, nz, 0F, 0F, r, g, b, a);
                         }
 
-                        builder.vertex(x, y, z)
-                            .color(1F, 1F, 1F, a)
-                            .texture(0F, 0F)
-                            .overlay(OverlayTexture.DEFAULT_UV)
-                            .light(LightmapTextureManager.MAX_LIGHT_COORDINATE)
-                            .normal(nx, ny, nz)
-                            .next();
-                    }, faceRects, decals, materialVisible, true, ordered.get(i).argb());
+                        @Override
+                        public void vertex(float x, float y, float z, float nx, float ny, float nz, float u, float v,
+                                           float r, float g, float b, float a)
+                        {
+                            if (!began[0])
+                            {
+                                builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+                                began[0] = true;
+                            }
+
+                            /* The diffuse is a 64x1 ramp laid out along u; a solid colour is a 1x1
+                             * texture, where u simply lands in its only texel. */
+                            builder.vertex(x, y, z)
+                                .color(1F, 1F, 1F, a)
+                                .texture(u, 0.5F)
+                                .overlay(OverlayTexture.DEFAULT_UV)
+                                .light(LightmapTextureManager.MAX_LIGHT_COORDINATE)
+                                .normal(nx, ny, nz)
+                                .next();
+                        }
+                    }, faceRects, decals, materialVisible, true, ordered.get(i).paint());
 
                 if (!began[0])
                 {

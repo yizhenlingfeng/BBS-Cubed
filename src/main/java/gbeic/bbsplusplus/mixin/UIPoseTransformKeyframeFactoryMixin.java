@@ -4,7 +4,10 @@ import gbeic.bbsplusplus.api.BoneOutlineHolder;
 import gbeic.bbsplusplus.api.BonePbrHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.GlintSettingsHolder;
+import gbeic.bbsplusplus.api.OutlineGradient;
 import gbeic.bbsplusplus.client.outline.OutlineEmissiveTexture;
+import gbeic.bbsplusplus.client.ui.outline.UIOutlineColorControl;
+import gbeic.bbsplusplus.client.ui.outline.UIOutlineGradientEditor;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -79,13 +82,18 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
     @Unique private boolean bbspp$outlineOverlayShown;
     @Unique private UIToggle bbspp$outline;
     @Unique private UIToggle bbspp$outlineOverlay;
-    @Unique private final UIColor[] bbspp$outlineColors = new UIColor[2];
     @Unique private final UITrackpad[] bbspp$outlineWidths = new UITrackpad[2];
     @Unique private final UITrackpad[] bbspp$outlineGlows = new UITrackpad[2];
     @Unique private final UIToggle[] bbspp$outlineVanillaGlows = new UIToggle[2];
     @Unique private final UIToggle[] bbspp$outlineFaceCulls = new UIToggle[2];
-    @Unique private final UIColor[][] bbspp$outlineFaces = new UIColor[2][BoneOutlineHolder.FACE_COUNT];
     @Unique private UITrackpad bbspp$outlineDecal;
+
+    @Unique private final UIOutlineColorControl[] bbspp$outlineColorControls = new UIOutlineColorControl[2];
+    @Unique private final UIOutlineColorControl[][] bbspp$outlineFaceControls =
+        new UIOutlineColorControl[2][BoneOutlineHolder.FACE_COUNT];
+    @Unique private final UIOutlineGradientEditor[] bbspp$outlineGradientEditors = new UIOutlineGradientEditor[2];
+    @Unique private final UIOutlineGradientEditor[][] bbspp$outlineFaceGradientEditors =
+        new UIOutlineGradientEditor[2][BoneOutlineHolder.FACE_COUNT];
 
     @Unique private UISection bbspp$glintSection;
     @Unique private UIToggle bbspp$glint;
@@ -219,14 +227,17 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
     {
         boolean overlay = layer == 1;
 
-        this.bbspp$outlineColors[layer] = new UIColor((argb) ->
-        {
-            int value = argb == null ? 0xFFFFFFFF : argb;
+        this.bbspp$outlineColorControls[layer] = new UIOutlineColorControl(
+            () -> this.bbspp$getOutlineColorArgb(layer),
+            () -> this.bbspp$getOutlineGradient(layer),
+            (argb) ->
+            {
+                int value = argb == null ? 0xFFFFFFFF : argb;
 
-            this.bbspp$write((poseT) -> ((BoneOutlineHolder) poseT).bbspp_cml$getOutlineColor(layer).set(value));
-            OutlineEmissiveTexture.invalidate();
-        });
-        this.bbspp$outlineColors[layer].withAlpha().direction(Direction.LEFT).h(20);
+                this.bbspp$write((poseT) -> ((BoneOutlineHolder) poseT).bbspp_cml$getOutlineColor(layer).set(value));
+                OutlineEmissiveTexture.invalidate();
+            },
+            (gradient) -> this.bbspp$applyOutlineGradient(layer, gradient));
 
         this.bbspp$outlineWidths[layer] = this.bbspp$createTrackpad(0D, 10D, 1D,
             L10n.lang(overlay
@@ -270,7 +281,8 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
         }
 
         section.fields.add(
-            UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.color"), this.bbspp$outlineColors[layer]),
+            UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.color"), this.bbspp$outlineColorControls[layer]),
+            this.bbspp$createOutlineGradientEditor(layer, -1),
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.width"), this.bbspp$outlineWidths[layer]),
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.glow"), this.bbspp$outlineGlows[layer]),
             /* UIToggle 自带标签，套 labelRow 会把名字画两遍，所以独占一行。 */
@@ -319,27 +331,35 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
         {
             final int index = face;
 
-            this.bbspp$outlineFaces[layer][face] = new UIColor((argb) ->
-            {
-                int value = argb == null ? BoneOutlineHolder.DEFAULT_FACE_COLOR : argb;
+            this.bbspp$outlineFaceControls[layer][face] = new UIOutlineColorControl(
+                () -> this.bbspp$getOutlineFaceColorArgb(layer, index),
+                () -> this.bbspp$getOutlineFaceGradient(layer, index),
+                (argb) ->
+                {
+                    int value = argb == null ? BoneOutlineHolder.DEFAULT_FACE_COLOR : argb;
 
-                this.bbspp$write((poseT) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceColor(layer, index, value));
-                OutlineEmissiveTexture.invalidate();
-            });
-            this.bbspp$outlineFaces[layer][face].withAlpha().direction(Direction.LEFT).h(16);
-            this.bbspp$outlineFaces[layer][face].noLabel();
+                    this.bbspp$write((poseT) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceColor(layer, index, value));
+                    OutlineEmissiveTexture.invalidate();
+                },
+                (gradient) -> this.bbspp$applyOutlineFaceGradient(layer, index, gradient));
+            this.bbspp$outlineFaceControls[layer][face].getSolidColor().noLabel();
 
-            advanced.fields.add(UI.labelRow(L10n.lang(keys[face]), 60, this.bbspp$outlineFaces[layer][face]));
+            advanced.fields.add(
+                UI.labelRow(L10n.lang(keys[face]), 90, this.bbspp$outlineFaceControls[layer][face]),
+                this.bbspp$createOutlineGradientEditor(layer, face)
+            );
         }
 
         UIButton sync = new UIButton(L10n.lang("bbs.ui.model_editor.outline.face_sync"), (b) ->
         {
             this.bbspp$write((poseT) ->
             {
+                BoneOutlineHolder holder = (BoneOutlineHolder) poseT;
+
                 for (int face = 0; face < BoneOutlineHolder.FACE_COUNT; face++)
                 {
-                    ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceColor(
-                        layer, face, BoneOutlineHolder.DEFAULT_FACE_COLOR);
+                    holder.bbspp_cml$setOutlineFaceColor(layer, face, BoneOutlineHolder.DEFAULT_FACE_COLOR);
+                    holder.bbspp_cml$setOutlineFaceGradient(layer, face, null);
                 }
             });
 
@@ -469,9 +489,11 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
     @Unique
     private void bbspp$syncOutlineLayer(BoneOutlineHolder outline, int layer)
     {
-        this.bbspp$outlineColors[layer].setColor(outline == null
-            ? 0xFFFFFFFF
-            : outline.bbspp_cml$getOutlineColor(layer).getARGBColor());
+        if (this.bbspp$outlineColorControls[layer] != null)
+        {
+            this.bbspp$outlineColorControls[layer].refresh();
+        }
+
         this.bbspp$outlineWidths[layer].setValue(outline == null
             ? (layer == 0 ? BoneOutlineHolder.DEFAULT_WIDTH : BoneOutlineHolder.DEFAULT_OVERLAY_WIDTH)
             : outline.bbspp_cml$getOutlineWidth(layer));
@@ -484,18 +506,128 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
             ? BoneOutlineHolder.DEFAULT_FACE_CULL
             : outline.bbspp_cml$getOutlineFaceCull(layer));
 
-        int main = outline == null
-            ? 0xFFFFFFFF
-            : outline.bbspp_cml$getOutlineColor(layer).getARGBColor();
+        if (this.bbspp$outlineGradientEditors[layer] != null)
+        {
+            this.bbspp$outlineGradientEditors[layer].setVisible(
+                outline != null && outline.bbspp_cml$getOutlineGradient(layer) != null);
+            this.bbspp$outlineGradientEditors[layer].refresh();
+        }
 
         for (int face = 0; face < BoneOutlineHolder.FACE_COUNT; face++)
         {
-            int argb = outline == null
-                ? BoneOutlineHolder.DEFAULT_FACE_COLOR
-                : outline.bbspp_cml$getOutlineFaceColor(layer, face);
+            if (this.bbspp$outlineFaceControls[layer][face] != null)
+            {
+                this.bbspp$outlineFaceControls[layer][face].refresh();
+            }
 
-            this.bbspp$outlineFaces[layer][face].setColor(
-                argb == BoneOutlineHolder.DEFAULT_FACE_COLOR ? main : argb);
+            if (this.bbspp$outlineFaceGradientEditors[layer][face] != null)
+            {
+                this.bbspp$outlineFaceGradientEditors[layer][face].setVisible(
+                    outline != null && outline.bbspp_cml$getOutlineFaceGradient(layer, face) != null);
+                this.bbspp$outlineFaceGradientEditors[layer][face].refresh();
+            }
         }
+    }
+
+    /* ---- 渐变模式：读取、控件创建与写回 ---- */
+
+    @Unique
+    private PoseTransform bbspp$getPose()
+    {
+        return this.keyframe == null ? null : this.keyframe.getValue();
+    }
+
+    @Unique
+    private int bbspp$getOutlineColorArgb(int layer)
+    {
+        PoseTransform poseT = this.bbspp$getPose();
+
+        return poseT == null ? 0xFFFFFFFF
+            : ((BoneOutlineHolder) poseT).bbspp_cml$getOutlineColor(layer).getARGBColor();
+    }
+
+    @Unique
+    private OutlineGradient bbspp$getOutlineGradient(int layer)
+    {
+        PoseTransform poseT = this.bbspp$getPose();
+
+        return poseT == null ? null : ((BoneOutlineHolder) poseT).bbspp_cml$getOutlineGradient(layer);
+    }
+
+    @Unique
+    private int bbspp$getOutlineFaceColorArgb(int layer, int face)
+    {
+        PoseTransform poseT = this.bbspp$getPose();
+
+        if (poseT == null)
+        {
+            return 0xFFFFFFFF;
+        }
+
+        BoneOutlineHolder holder = (BoneOutlineHolder) poseT;
+        int argb = holder.bbspp_cml$getOutlineFaceColor(layer, face);
+
+        return argb == BoneOutlineHolder.DEFAULT_FACE_COLOR
+            ? holder.bbspp_cml$getOutlineColor(layer).getARGBColor()
+            : argb;
+    }
+
+    @Unique
+    private OutlineGradient bbspp$getOutlineFaceGradient(int layer, int face)
+    {
+        PoseTransform poseT = this.bbspp$getPose();
+
+        return poseT == null ? null : ((BoneOutlineHolder) poseT).bbspp_cml$getOutlineFaceGradient(layer, face);
+    }
+
+    @Unique
+    private UIOutlineGradientEditor bbspp$createOutlineGradientEditor(int layer, int face)
+    {
+        UIOutlineGradientEditor editor = new UIOutlineGradientEditor(
+            () -> face < 0
+                ? this.bbspp$getOutlineGradient(layer)
+                : this.bbspp$getOutlineFaceGradient(layer, face),
+            (gradient) ->
+            {
+                if (face < 0)
+                {
+                    this.bbspp$applyOutlineGradient(layer, gradient);
+                }
+                else
+                {
+                    this.bbspp$applyOutlineFaceGradient(layer, face, gradient);
+                }
+            });
+
+        editor.setVisible(false);
+
+        if (face < 0)
+        {
+            this.bbspp$outlineGradientEditors[layer] = editor;
+        }
+        else
+        {
+            this.bbspp$outlineFaceGradientEditors[layer][face] = editor;
+        }
+
+        return editor;
+    }
+
+    @Unique
+    private void bbspp$applyOutlineGradient(int layer, OutlineGradient gradient)
+    {
+        this.bbspp$write((poseT) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineGradient(layer,
+            gradient == null ? null : gradient.copy()));
+
+        this.bbspp$syncExtraSections();
+    }
+
+    @Unique
+    private void bbspp$applyOutlineFaceGradient(int layer, int face, OutlineGradient gradient)
+    {
+        this.bbspp$write((poseT) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineFaceGradient(layer, face,
+            gradient == null ? null : gradient.copy()));
+
+        this.bbspp$syncExtraSections();
     }
 }
