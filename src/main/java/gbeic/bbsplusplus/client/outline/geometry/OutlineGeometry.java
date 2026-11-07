@@ -15,6 +15,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,24 +55,19 @@ public final class OutlineGeometry
 
     /*
      * Screen frame of the current render pass, in the same space the shell vertices are emitted in:
-     * { upX, upY, upZ, rightX, rightY, rightZ }. The layer ramp runs along these instead of the
-     * model axes, so the gradient follows the camera and never collapses on a face that is edge-on
-     * to a model axis. Null falls back to the model-space axes.
+     * { upX, upY, upZ, rightX, rightY, rightZ }. Layer ramps run along these instead of the model
+     * axes, so the gradient follows the camera; null falls back to the model-space axes.
      */
     private static float[] screenFrame;
     private static long screenFrameHash;
 
-    /** Hash of the frame the shells currently in the cache were baked with. */
+    /** Hash of the frame the cached shells were baked with. */
     public static long screenFrameHash()
     {
         return screenFrameHash;
     }
 
-    /**
-     * Records where the camera's screen up/right point in model space. Called once per render pass
-     * by the outline renderers; the value only changes as the camera turns, which is exactly when
-     * the screen-space ramp has to be baked again.
-     */
+    /** Records where the camera's screen up/right point in model space. */
     public static void updateScreenFrame(Matrix4f view, Matrix4f base)
     {
         Matrix3f rotation = new Matrix3f(new Matrix4f(view)).mul(new Matrix3f(base)).invert();
@@ -84,7 +80,7 @@ public final class OutlineGeometry
         float[] frame = { quantize(up.x), quantize(up.y), quantize(up.z),
             quantize(right.x), quantize(right.y), quantize(right.z) };
 
-        if (screenFrame != null && sameFrame(screenFrame, frame))
+        if (Arrays.equals(screenFrame, frame))
         {
             return;
         }
@@ -96,19 +92,6 @@ public final class OutlineGeometry
     private static float quantize(float value)
     {
         return Math.round(value * 128F) / 128F;
-    }
-
-    private static boolean sameFrame(float[] a, float[] b)
-    {
-        for (int i = 0; i < a.length; i++)
-        {
-            if (a[i] != b[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private static long hashFrame(float[] frame)
@@ -1011,7 +994,6 @@ public final class OutlineGeometry
             return alpha;
         }
 
-        /** Position of {@code t} along the ramp, from the model-root AABB the shell covers. */
         /** Projects the model bounds onto the screen axes so {@link #rampT} only has to dot. */
         private void projectBounds(float[] bounds)
         {
@@ -1041,6 +1023,7 @@ public final class OutlineGeometry
             this.rampRightHi = rightHi;
         }
 
+        /** Position of {@code t} along the ramp, from the model-root AABB the shell covers. */
         private float rampT(float x, float y, float z)
         {
             float[] bounds = this.rampBounds;

@@ -249,7 +249,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 * **Apply to child bones**: the new icon on the pose editor's colour row (shown in gradient mode) copies the current gradient to all child bones and clears their leftover gradients
 * **Overlay and per-face**: the overlay layer supports gradients too, "Follow Main Colour" clears the six face gradients, and auto-expansion accounts for gradient settings
 * **Save compatibility**: old projects without gradient keys load as solid
-* **Multi-version**: on 1.20.1 / 1.20.4, LabPBR emission samples a 64×1 gradient strip per pixel; 1.21.11 gets gradients through vertex colours
+* **Multi-version**: on 1.20.1 / 1.20.4, LabPBR emission samples a 64×1 gradient strip per pixel; 1.21.11 gets gradients through vertex colours (the screen-space projection applies to 1.20.x only — the 1.21.11 port still samples in model space)
 * **Apply All to Children**: a full-width text button above "Outline" copies both layers of the current bone's outline (colors, gradients, widths, emission, vanilla glow, face culling, per-face colors and gradients) onto every child bone in one click, so nothing has to be right-clicked item by item
 * **Colour row layout**: solid mode hides the "apply to child bones" icon (the swatch's right-click covers it); in gradient mode the direction button is pinned to the swatch's left edge so the three icons sit next to each other, and the gradient strip gains a wider gap to the stop swatch
 * **Trimmed context menu**: "Follow Main Colour" keeps only the "apply to child bones" entry on its right-click menu; the redundant "Reset this bone" entry is gone
