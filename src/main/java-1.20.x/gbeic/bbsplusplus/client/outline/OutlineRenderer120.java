@@ -105,6 +105,10 @@ public final class OutlineRenderer120
             return;
         }
 
+        /* Ramp layers follow the camera, so the frame has to be known before the key is looked up:
+         * the key carries it, which rebuilds the shell exactly when the camera turns. */
+        OutlineGeometry.updateScreenFrame(RenderSystem.getModelViewMatrix(), new Matrix4f(stack.peek().getPositionMatrix()));
+
         OutlineShellKey.Key key = OutlineShellKey.of(model, config, textureLink, materialVisible);
         OutlineShellCache.Entry entry = OutlineShellCache.getOrBuild(model, key,
             cached -> buildEntry(cached, key, model, config, textureLink, materialVisible));

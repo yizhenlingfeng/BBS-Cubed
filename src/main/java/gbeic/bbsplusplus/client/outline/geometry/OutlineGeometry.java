@@ -52,6 +52,77 @@ public final class OutlineGeometry
     /** Shell face -> the cube face it really covers (the shell points the other way). */
     private static final int[] SHELL_TO_CUBE_FACE = { FACE_BACK, FACE_LEFT, FACE_FRONT, FACE_RIGHT, FACE_BOTTOM, FACE_TOP };
 
+    /*
+     * Screen frame of the current render pass, in the same space the shell vertices are emitted in:
+     * { upX, upY, upZ, rightX, rightY, rightZ }. The layer ramp runs along these instead of the
+     * model axes, so the gradient follows the camera and never collapses on a face that is edge-on
+     * to a model axis. Null falls back to the model-space axes.
+     */
+    private static float[] screenFrame;
+    private static long screenFrameHash;
+
+    /** Hash of the frame the shells currently in the cache were baked with. */
+    public static long screenFrameHash()
+    {
+        return screenFrameHash;
+    }
+
+    /**
+     * Records where the camera's screen up/right point in model space. Called once per render pass
+     * by the outline renderers; the value only changes as the camera turns, which is exactly when
+     * the screen-space ramp has to be baked again.
+     */
+    public static void updateScreenFrame(Matrix4f view, Matrix4f base)
+    {
+        Matrix3f rotation = new Matrix3f(new Matrix4f(view)).mul(new Matrix3f(base)).invert();
+        Vector3f up = rotation.transform(new Vector3f(0F, 1F, 0F));
+        Vector3f right = rotation.transform(new Vector3f(1F, 0F, 0F));
+
+        up.normalize();
+        right.normalize();
+
+        float[] frame = { quantize(up.x), quantize(up.y), quantize(up.z),
+            quantize(right.x), quantize(right.y), quantize(right.z) };
+
+        if (screenFrame != null && sameFrame(screenFrame, frame))
+        {
+            return;
+        }
+
+        screenFrame = frame;
+        screenFrameHash = hashFrame(frame);
+    }
+
+    private static float quantize(float value)
+    {
+        return Math.round(value * 128F) / 128F;
+    }
+
+    private static boolean sameFrame(float[] a, float[] b)
+    {
+        for (int i = 0; i < a.length; i++)
+        {
+            if (a[i] != b[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static long hashFrame(float[] frame)
+    {
+        long hash = 17L;
+
+        for (float value : frame)
+        {
+            hash = hash * 31L + Float.floatToIntBits(value);
+        }
+
+        return hash;
+    }
+
     /**
      * In-plane axes of every cube face, as {@code {axis, sign}} with axis 0=X, 1=Y, 2=Z and the
      * sign pointing along the face's on-screen "right" / "up".
@@ -826,6 +897,14 @@ public final class OutlineGeometry
         private final float[] rampScratch = new float[4];
         private float[] rampBounds;
 
+        /* Screen-aligned ramp frame captured when this emitter was created, plus the bounds
+         * projected onto its two axes (screen up / screen right). */
+        private final float[] rampFrame = OutlineGeometry.screenFrame;
+        private float rampUpLo;
+        private float rampUpHi;
+        private float rampRightLo;
+        private float rampRightHi;
+
         /* Form opacity, needed by vertex() to scale a sampled ramp alpha. */
         private float formAlpha = 1F;
 
@@ -933,6 +1012,35 @@ public final class OutlineGeometry
         }
 
         /** Position of {@code t} along the ramp, from the model-root AABB the shell covers. */
+        /** Projects the model bounds onto the screen axes so {@link #rampT} only has to dot. */
+        private void projectBounds(float[] bounds)
+        {
+            float[] frame = this.rampFrame;
+            float upLo = Float.MAX_VALUE;
+            float upHi = -Float.MAX_VALUE;
+            float rightLo = Float.MAX_VALUE;
+            float rightHi = -Float.MAX_VALUE;
+
+            for (int corner = 0; corner < 8; corner++)
+            {
+                float x = (corner & 1) == 0 ? bounds[0] : bounds[3];
+                float y = (corner & 2) == 0 ? bounds[1] : bounds[4];
+                float z = (corner & 4) == 0 ? bounds[2] : bounds[5];
+                float up = x * frame[0] + y * frame[1] + z * frame[2];
+                float right = x * frame[3] + y * frame[4] + z * frame[5];
+
+                upLo = Math.min(upLo, up);
+                upHi = Math.max(upHi, up);
+                rightLo = Math.min(rightLo, right);
+                rightHi = Math.max(rightHi, right);
+            }
+
+            this.rampUpLo = upLo;
+            this.rampUpHi = upHi;
+            this.rampRightLo = rightLo;
+            this.rampRightHi = rightHi;
+        }
+
         private float rampT(float x, float y, float z)
         {
             float[] bounds = this.rampBounds;
@@ -953,6 +1061,23 @@ public final class OutlineGeometry
                  * "up" and "right" on screen depend on where that face sits on the cube. */
                 axis = vertical ? this.faceVAxis : this.faceHAxis;
                 sign = vertical ? this.faceVSign : this.faceHSign;
+            }
+            else if (this.rampFrame != null)
+            {
+                /* Screen-space layer ramp: measure along the camera's up/right axis, so the ramp
+                 * keeps running on screen no matter where the model is turned. Projecting onto the
+                 * screen axes also means no face is ever edge-on to the ramp - which is what made
+                 * the rim collapse to a single colour when looking along a model axis. */
+                float[] frame = this.rampFrame;
+                int offset = vertical ? 0 : 3;
+                float dirX = frame[offset];
+                float dirY = frame[offset + 1];
+                float dirZ = frame[offset + 2];
+                float lo = vertical ? this.rampUpLo : this.rampRightLo;
+                float hi = vertical ? this.rampUpHi : this.rampRightHi;
+                float coord = x * dirX + y * dirY + z * dirZ;
+
+                return hi - lo <= 1.0E-6F ? 0.5F : Math.max(0F, Math.min(1F, (coord - lo) / (hi - lo)));
             }
             else
             {
@@ -1046,6 +1171,12 @@ public final class OutlineGeometry
 
             /* The ramp runs across the whole model, so every face reads the same box. */
             this.rampBounds = bounds;
+
+            if (this.rampFrame != null && bounds != null)
+            {
+                this.projectBounds(bounds);
+            }
+
             this.formAlpha = formAlpha;
 
             if (!welded.contains("front") && cube.back != null && hasXY)

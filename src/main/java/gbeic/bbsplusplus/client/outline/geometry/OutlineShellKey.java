@@ -161,6 +161,14 @@ public final class OutlineShellKey
          * key exactly like the colours do; a null ramp hashes to a stable zero. */
         hash = hash * 31 + holder.bbspp_cml$getOutlineGradientHash(layer);
 
+        /* A ramped layer is sampled along the camera's screen axes, so its vertices only hold for
+         * the frame they were baked in: including that frame here rebuilds the shell as the camera
+         * turns and leaves it alone while it does not. Solid layers never see this value. */
+        if (holder.bbspp_cml$hasOutlineGradients(layer))
+        {
+            hash = hash * 31 + OutlineGeometry.screenFrameHash();
+        }
+
         return hash;
     }
 

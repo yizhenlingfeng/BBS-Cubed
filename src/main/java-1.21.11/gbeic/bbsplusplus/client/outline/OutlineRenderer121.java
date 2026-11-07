@@ -153,6 +153,9 @@ public final class OutlineRenderer121
         }
 
         Matrix4f base = new Matrix4f(stack.peek().getPositionMatrix());
+
+        /* 1.21.11 has no readable model-view matrix (the pipeline owns it), so this port keeps the
+         * model-space ramp; the screen-space sampling only runs on the 1.20.x renderer. */
         OutlineShellKey.Key shared = OutlineShellKey.of(model, config, textureLink, materialVisible);
         long baseHash = OutlineShellKey.baseHash(base);
         OutlineShellKey.Key key = new OutlineShellKey.Key(shared.value() * 31 + baseHash, shared.geometryHash());
