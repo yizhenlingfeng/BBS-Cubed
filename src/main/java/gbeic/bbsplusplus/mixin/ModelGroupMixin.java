@@ -71,9 +71,6 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder, Gl
     private float bbspp_cml$outlineGlow = BoneOutlineHolder.DEFAULT_GLOW;
 
     @Unique
-    private float bbspp_cml$outlineVanillaGlow = BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
-
-    @Unique
     private float bbspp_cml$outlineDecalSize = BoneOutlineHolder.DEFAULT_DECAL;
 
     @Unique
@@ -98,9 +95,6 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder, Gl
 
     @Unique
     private float bbspp_cml$overlayGlow = BoneOutlineHolder.DEFAULT_GLOW;
-
-    @Unique
-    private float bbspp_cml$overlayVanillaGlow = BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
 
     @Unique
     private boolean bbspp_cml$overlayFaceCull = BoneOutlineHolder.DEFAULT_FACE_CULL;
@@ -299,18 +293,6 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder, Gl
     }
 
     @Override
-    public float bbspp_cml$getOutlineVanillaGlow()
-    {
-        return this.bbspp_cml$outlineVanillaGlow;
-    }
-
-    @Override
-    public void bbspp_cml$setOutlineVanillaGlow(float glow)
-    {
-        this.bbspp_cml$outlineVanillaGlow = glow;
-    }
-
-    @Override
     public float bbspp_cml$getOutlineDecalSize()
     {
         return this.bbspp_cml$outlineDecalSize;
@@ -399,18 +381,6 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder, Gl
     public void bbspp_cml$setOverlayGlow(float glow)
     {
         this.bbspp_cml$overlayGlow = glow;
-    }
-
-    @Override
-    public float bbspp_cml$getOverlayVanillaGlow()
-    {
-        return this.bbspp_cml$overlayVanillaGlow;
-    }
-
-    @Override
-    public void bbspp_cml$setOverlayVanillaGlow(float glow)
-    {
-        this.bbspp_cml$overlayVanillaGlow = glow;
     }
 
     @Override
@@ -510,7 +480,6 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder, Gl
         this.bbspp_cml$outlineColor.set(0xFFFFFFFF);
         this.bbspp_cml$outlineWidth = BoneOutlineHolder.DEFAULT_WIDTH;
         this.bbspp_cml$outlineGlow = BoneOutlineHolder.DEFAULT_GLOW;
-        this.bbspp_cml$outlineVanillaGlow = BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
         this.bbspp_cml$outlineDecalSize = BoneOutlineHolder.DEFAULT_DECAL;
         this.bbspp_cml$outlineFaceCull = BoneOutlineHolder.DEFAULT_FACE_CULL;
         Arrays.fill(this.bbspp_cml$outlineFaces, BoneOutlineHolder.DEFAULT_FACE_COLOR);
@@ -519,7 +488,6 @@ public class ModelGroupMixin implements GroupTextureHolder, GroupGlintHolder, Gl
         this.bbspp_cml$overlayColor.set(0xFFFFFFFF);
         this.bbspp_cml$overlayWidth = BoneOutlineHolder.DEFAULT_OVERLAY_WIDTH;
         this.bbspp_cml$overlayGlow = BoneOutlineHolder.DEFAULT_GLOW;
-        this.bbspp_cml$overlayVanillaGlow = BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
         this.bbspp_cml$overlayFaceCull = BoneOutlineHolder.DEFAULT_FACE_CULL;
         Arrays.fill(this.bbspp_cml$overlayFaces, BoneOutlineHolder.DEFAULT_FACE_COLOR);
 

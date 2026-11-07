@@ -125,7 +125,6 @@ public abstract class ModelMixin
                     groupOutline.bbspp_cml$setOutlineColor(layer, boneOutline.bbspp_cml$getOutlineColor(layer));
                     groupOutline.bbspp_cml$setOutlineWidth(layer, boneOutline.bbspp_cml$getOutlineWidth(layer));
                     groupOutline.bbspp_cml$setOutlineGlow(layer, boneOutline.bbspp_cml$getOutlineGlow(layer));
-                    groupOutline.bbspp_cml$setOutlineVanillaGlow(layer, boneOutline.bbspp_cml$getOutlineVanillaGlow(layer));
                     groupOutline.bbspp_cml$setOutlineFaceCull(layer, boneOutline.bbspp_cml$getOutlineFaceCull(layer));
 
                     for (int face = 0; face < BoneOutlineHolder.FACE_COUNT; face++)

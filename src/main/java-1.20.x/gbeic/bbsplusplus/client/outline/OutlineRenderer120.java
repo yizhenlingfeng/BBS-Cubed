@@ -32,6 +32,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,11 +49,10 @@ import java.util.function.Predicate;
  *
  * <p>The solid colour and depth halves of both passes are now baked once into
  * {@link VertexBuffer}s in model-root space (see {@link OutlineShellCache}); a cache hit costs
- * two draws and no per-cube work at all. The two additive layers on top of the shell - LabPBR
- * emission and the vanilla full-bright glow - are drawn separately and never change the baked
- * shell: the emission layer rebuilds its vertices once per frame because the vanilla entity
- * shader consumes world-space normals, which cannot be shared across poses, while the vanilla
- * layer reuses the same geometry walk at its own strength.</p>
+ * two draws and no per-cube work at all. The additive LabPBR emission layer on top of the shell
+ * is drawn separately and never changes the baked shell: it rebuilds its vertices once per frame
+ * because the vanilla entity shader consumes world-space normals, which cannot be shared across
+ * poses.</p>
  */
 public final class OutlineRenderer120
 {
@@ -77,9 +77,9 @@ public final class OutlineRenderer120
     }
 
     /**
-     * Draws the rim at HEAD: the plain shell first, then the additive LabPBR emission and
-     * vanilla full-bright layers on top of it. Every outlined spec is part of the shell, so
-     * turning either layer on never changes the silhouette.
+     * Draws the rim at HEAD: the plain shell first, then the additive LabPBR emission on top of
+     * it. Every outlined spec is part of the shell, so turning emission on never changes the
+     * silhouette.
      */
     public static void render(MatrixStack stack, Model model, ModelConfig config,
                               Color color, Link textureLink, Predicate<String> materialVisible)
@@ -106,8 +106,13 @@ public final class OutlineRenderer120
         }
 
         /* Ramp layers follow the camera, so the frame has to be known before the key is looked up:
-         * the key carries it, which rebuilds the shell exactly when the camera turns. */
-        OutlineGeometry.updateScreenFrame(RenderSystem.getModelViewMatrix(), new Matrix4f(stack.peek().getPositionMatrix()));
+         * the key carries it, which rebuilds the shell exactly when the camera turns. Solid shells
+         * never read the value, so skip the matrix invert and the temporary objects entirely for
+         * the common case. */
+        if (OutlineGeometry.hasAnyOutlineGradient(model))
+        {
+            OutlineGeometry.updateScreenFrame(RenderSystem.getModelViewMatrix(), new Matrix4f(stack.peek().getPositionMatrix()));
+        }
 
         OutlineShellKey.Key key = OutlineShellKey.of(model, config, textureLink, materialVisible);
         OutlineShellCache.Entry entry = OutlineShellCache.getOrBuild(model, key,
@@ -161,7 +166,6 @@ public final class OutlineRenderer120
         Map<ModelCube, float[][]> faceRects = buildAlphaMask(model, textureLink);
         Map<Long, ResourceTexture> glowTextures = resolveGlowTextures(specs);
         List<OutlineGeometry.Spec> glow = new ArrayList<>(specs.size());
-        List<OutlineGeometry.Spec> vanilla = new ArrayList<>(specs.size());
         List<OutlineGeometry.Spec> main = new ArrayList<>(specs.size());
         boolean overlay = false;
 
@@ -170,11 +174,6 @@ public final class OutlineRenderer120
             if (hasGlowTexture(spec, glowTextures))
             {
                 glow.add(spec);
-            }
-
-            if (spec.vanillaGlow() > 0F)
-            {
-                vanilla.add(spec);
             }
 
             if (spec.layer() == 0)
@@ -188,14 +187,13 @@ public final class OutlineRenderer120
         }
 
         entry.glowSpecs = glow;
-        entry.vanillaSpecs = vanilla;
         entry.mainSpecs = main;
         entry.hasOverlayLayer = overlay;
         entry.faceRects = faceRects;
         entry.decals = decals;
 
-        /* The plain shell always holds every spec: emission and the vanilla full-bright layer are
-         * additive on top, so turning either on never changes the silhouette or the base colour. */
+        /* The plain shell always holds every spec: emission is additive on top, so turning it on
+         * never changes the silhouette or the base colour. */
         Uploaded solidBuild = upload(entry.solidVbo, model, config, specs, faceRects, decals, materialVisible);
         entry.solidVbo = solidBuild.vbo;
         entry.solidVertices = solidBuild.vertices;
@@ -305,20 +303,20 @@ public final class OutlineRenderer120
             /* The overlay shell is the wider one, so its glow would paint straight over the parent
              * rim. Run the wide layer's glow first, repaint the narrow layer, then run the narrow
              * layer's glow, so the parent rim always ends up on top. */
-            drawGlowPasses(entry.glowSpecs, entry.vanillaSpecs, 1, model, config, base, formAlpha,
-                entry.faceRects, entry.decals, materialVisible, shaderColor);
+            drawGlowPasses(entry.glowSpecs, 1, model, config, base, formAlpha,
+                entry.faceRects, entry.decals, materialVisible);
 
             RenderSystem.setShader(GameRenderer::getPositionColorProgram);
             RenderSystem.setShaderColor(1F, 1F, 1F, formAlpha * shaderColor[3]);
             draw(model, config, entry.mainSpecs, base, formAlpha, entry.faceRects, entry.decals, materialVisible);
 
-            drawGlowPasses(entry.glowSpecs, entry.vanillaSpecs, 0, model, config, base, formAlpha,
-                entry.faceRects, entry.decals, materialVisible, shaderColor);
+            drawGlowPasses(entry.glowSpecs, 0, model, config, base, formAlpha,
+                entry.faceRects, entry.decals, materialVisible);
         }
         else
         {
-            drawGlowPasses(entry.glowSpecs, entry.vanillaSpecs, -1, model, config, base, formAlpha,
-                entry.faceRects, entry.decals, materialVisible, shaderColor);
+            drawGlowPasses(entry.glowSpecs, -1, model, config, base, formAlpha,
+                entry.faceRects, entry.decals, materialVisible);
         }
 
         RenderSystem.setShaderColor(shaderColor[0], shaderColor[1], shaderColor[2], shaderColor[3]);
@@ -341,30 +339,28 @@ public final class OutlineRenderer120
     }
 
     /**
-     * Runs the additive passes - LabPBR emission and the vanilla full-bright layer - for one
-     * outline layer; {@code layer < 0} means every layer, which is all models using only the main
-     * outline need. Splitting by layer is what lets {@link #drawColor} keep the narrow parent rim
-     * above the wide overlay's glow.
+     * Runs the LabPBR emission pass for one outline layer; {@code layer < 0} means every layer,
+     * which is all models using only the main outline need. Splitting by layer is what lets
+     * {@link #drawColor} keep the narrow parent rim above the wide overlay's glow.
      */
-    private static void drawGlowPasses(List<OutlineGeometry.Spec> glowSpecs, List<OutlineGeometry.Spec> vanillaSpecs,
+    private static void drawGlowPasses(List<OutlineGeometry.Spec> glowSpecs,
                                        int layer, Model model, ModelConfig config, Matrix4f base, float formAlpha,
                                        Map<ModelCube, float[][]> faceRects, Set<ModelCube> decals,
-                                       Predicate<String> materialVisible, float[] shaderColor)
+                                       Predicate<String> materialVisible)
     {
-        List<OutlineGeometry.Spec> glow = layer < 0 ? glowSpecs : filterLayer(glowSpecs, layer);
-        List<OutlineGeometry.Spec> vanilla = layer < 0 ? vanillaSpecs : filterLayer(vanillaSpecs, layer);
-
-        if (!glow.isEmpty() && BBSRendering.isIrisShadersEnabled())
+        /* Most models have emission off; skip the per-layer list copy entirely in that case. */
+        if (glowSpecs.isEmpty() || !BBSRendering.isIrisShadersEnabled())
         {
-            /* LabPBR emission only exists inside a shader pack; without one this pass would just
-             * repaint the shell at full brightness, which is what the vanilla glow switch is for. */
-            renderLabPBR(model, config, glow, base, formAlpha, faceRects, decals, materialVisible);
+            return;
         }
 
-        if (!vanilla.isEmpty())
+        List<OutlineGeometry.Spec> glow = layer < 0 ? glowSpecs : filterLayer(glowSpecs, layer);
+
+        if (!glow.isEmpty())
         {
-            RenderSystem.setShaderColor(shaderColor[0], shaderColor[1], shaderColor[2], shaderColor[3]);
-            renderVanilla(model, config, vanilla, base, formAlpha, faceRects, decals, materialVisible);
+            /* LabPBR emission only exists inside a shader pack; without one this pass would just
+             * repaint the shell at full brightness. */
+            renderLabPBR(model, config, glow, base, formAlpha, faceRects, decals, materialVisible);
         }
     }
 
@@ -400,20 +396,15 @@ public final class OutlineRenderer120
             return;
         }
 
-        Prepared prepared = PREPARED.poll();
+        Prepared prepared = pollPrepared(model, config);
 
         if (color.a <= 0F)
         {
             return;
         }
 
-        if (prepared == null || prepared.model != model || prepared.config != config)
+        if (prepared == null)
         {
-            if (prepared != null)
-            {
-                PREPARED.clear();
-            }
-
             renderDepthImmediate(stack, model, config, color, textureLink, materialVisible);
 
             return;
@@ -432,6 +423,31 @@ public final class OutlineRenderer120
         }
 
         drawDepth(prepared.entry, new Matrix4f(stack.peek().getPositionMatrix()));
+    }
+
+    /**
+     * Removes the newest HEAD entry for this model. Searching instead of polling keeps one
+     * out-of-order model from clearing the entries of every other model in the frame; those
+     * stale entries would otherwise force the expensive immediate depth path for the rest of
+     * the frame.
+     */
+    private static Prepared pollPrepared(Model model, ModelConfig config)
+    {
+        Iterator<Prepared> iterator = PREPARED.descendingIterator();
+
+        while (iterator.hasNext())
+        {
+            Prepared prepared = iterator.next();
+
+            if (prepared.model == model && prepared.config == config)
+            {
+                iterator.remove();
+
+                return prepared;
+            }
+        }
+
+        return null;
     }
 
     private static void drawDepth(OutlineShellCache.Entry entry, Matrix4f base)
@@ -459,8 +475,7 @@ public final class OutlineRenderer120
         Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(base);
         ShaderProgram shader = RenderSystem.getShader();
 
-        /* The solid buffer carries every outlined spec, so it already covers the emission and
-         * full-bright layers; depth only has to be written once. */
+        /* The solid buffer carries every outlined spec, so depth only has to be written once. */
         drawVbo(entry.solidVbo, modelView, shader);
 
         RenderSystem.colorMask(true, true, true, true);
@@ -493,7 +508,6 @@ public final class OutlineRenderer120
         Matrix4f base = new Matrix4f(stack.peek().getPositionMatrix());
         Map<Long, ResourceTexture> glowTextures = resolveGlowTextures(specs);
         List<OutlineGeometry.Spec> glow = new ArrayList<>(specs.size());
-        List<OutlineGeometry.Spec> vanilla = new ArrayList<>(specs.size());
         List<OutlineGeometry.Spec> main = new ArrayList<>(specs.size());
         boolean overlay = false;
 
@@ -502,11 +516,6 @@ public final class OutlineRenderer120
             if (hasGlowTexture(spec, glowTextures))
             {
                 glow.add(spec);
-            }
-
-            if (spec.vanillaGlow() > 0F)
-            {
-                vanilla.add(spec);
             }
 
             if (spec.layer() == 0)
@@ -527,17 +536,17 @@ public final class OutlineRenderer120
         {
             /* Same layering rule as the cached path: the wide overlay's glow must not paint over
              * the parent rim, so the narrow layer is repainted between the two glow passes. */
-            drawGlowPasses(glow, vanilla, 1, model, config, base, color.a, faceRects, decals, materialVisible, shaderColor);
+            drawGlowPasses(glow, 1, model, config, base, color.a, faceRects, decals, materialVisible);
 
             RenderSystem.setShader(GameRenderer::getPositionColorProgram);
             RenderSystem.setShaderColor(1F, 1F, 1F, color.a * shaderColor[3]);
             draw(model, config, main, base, color.a, faceRects, decals, materialVisible);
 
-            drawGlowPasses(glow, vanilla, 0, model, config, base, color.a, faceRects, decals, materialVisible, shaderColor);
+            drawGlowPasses(glow, 0, model, config, base, color.a, faceRects, decals, materialVisible);
         }
         else
         {
-            drawGlowPasses(glow, vanilla, -1, model, config, base, color.a, faceRects, decals, materialVisible, shaderColor);
+            drawGlowPasses(glow, -1, model, config, base, color.a, faceRects, decals, materialVisible);
         }
     }
 
@@ -867,97 +876,6 @@ public final class OutlineRenderer120
             RenderSystem.defaultBlendFunc();
             RenderSystem.depthMask(depthMask);
             RenderSystem.depthFunc(depthFunc);
-
-            if (!depthTest)
-            {
-                RenderSystem.disableDepthTest();
-            }
-
-            if (!blend)
-            {
-                RenderSystem.disableBlend();
-            }
-
-            if (!cull)
-            {
-                RenderSystem.disableCull();
-            }
-        }
-    }
-
-    /**
-     * The vanilla full-bright overlay. It is a plain unlit {@code position_color} pass with
-     * additive blending, so it works without Iris and without a shader pack that declares PBR
-     * samplers. The trade-off is that a shader pack which replaces the entity shader usually
-     * washes the layer out, which is what the tooltip warns about.
-     */
-    private static void renderVanilla(Model model, ModelConfig config, List<OutlineGeometry.Spec> specs,
-                                      Matrix4f base, float formAlpha, Map<ModelCube, float[][]> faceRects,
-                                      Set<ModelCube> decals, Predicate<String> materialVisible)
-    {
-        if (formAlpha <= 0F)
-        {
-            return;
-        }
-
-        /* One draw per distinct strength: the strength rides on the shader colour, so two specs
-         * that only differ in vanilla glow cannot share a batch. */
-        Map<Integer, List<OutlineGeometry.Spec>> groups = new LinkedHashMap<>();
-
-        for (OutlineGeometry.Spec spec : specs)
-        {
-            int strength = Math.round(Math.max(0F, Math.min(255F, spec.vanillaGlow())));
-
-            if (strength <= 0 || spec.a() * formAlpha <= 0F)
-            {
-                continue;
-            }
-
-            groups.computeIfAbsent(strength, key -> new ArrayList<>()).add(spec);
-        }
-
-        if (groups.isEmpty())
-        {
-            return;
-        }
-
-        boolean blend = GL11.glIsEnabled(GL11.GL_BLEND);
-        boolean cull = GL11.glIsEnabled(GL11.GL_CULL_FACE);
-        boolean depthTest = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
-        boolean depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
-        int depthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
-        float[] shaderColor = RenderSystem.getShaderColor().clone();
-        /* The caller restored the incoming shader colour before calling in, so the form fade has
-         * to be applied here; the strength then only scales that one product. */
-        float baseAlpha = formAlpha * shaderColor[3];
-
-        try
-        {
-            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
-            RenderSystem.enableBlend();
-            /* Additive, so the layer brightens what the plain shell already put down instead of
-             * re-blending the same colour. The strength still scales the alpha, so a value between
-             * the two switch positions would render as a partial overlay. */
-            RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
-            RenderSystem.enableDepthTest();
-            RenderSystem.depthFunc(GL11.GL_LEQUAL);
-            RenderSystem.depthMask(false);
-            RenderSystem.enableCull();
-
-            for (Map.Entry<Integer, List<OutlineGeometry.Spec>> group : groups.entrySet())
-            {
-                float strength = group.getKey() / 255F;
-
-                RenderSystem.setShaderColor(1F, 1F, 1F, baseAlpha * strength);
-                draw(model, config, group.getValue(), base, 1F, faceRects, decals, materialVisible);
-            }
-        }
-        finally
-        {
-            RenderSystem.defaultBlendFunc();
-            RenderSystem.depthMask(depthMask);
-            RenderSystem.depthFunc(depthFunc);
-            RenderSystem.setShaderColor(shaderColor[0], shaderColor[1], shaderColor[2], shaderColor[3]);
 
             if (!depthTest)
             {

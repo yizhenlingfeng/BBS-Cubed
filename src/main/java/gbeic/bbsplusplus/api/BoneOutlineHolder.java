@@ -26,22 +26,6 @@ public interface BoneOutlineHolder
      */
     public static final float DEFAULT_GLOW = 0F;
 
-    /**
-     * Vanilla full-bright overlay strength, 0..255. This is the additive layer that reproduces the
-     * old "glow" look without any shader pack; keep it separate from {@link #DEFAULT_GLOW}, which
-     * only ever feeds the LabPBR emission channel.
-     *
-     * <p>The editor exposes it as a plain on/off switch, because the layer reads as either
-     * "there" or "not there" and a continuous slider only produced two perceptible states.</p>
-     */
-    public static final float DEFAULT_VANILLA_GLOW = 0F;
-
-    /** The strength the switch writes when it is turned on. */
-    public static final float VANILLA_GLOW_ON = 255F;
-
-    /** The value legacy saves fall back to, so the pre-split "glow on" look survives the upgrade. */
-    public static final float LEGACY_VANILLA_GLOW = VANILLA_GLOW_ON;
-
     public static final float DEFAULT_DECAL = 4F;
 
     /**
@@ -102,10 +86,6 @@ public interface BoneOutlineHolder
 
     void bbspp_cml$setOutlineGlow(float glow);
 
-    float bbspp_cml$getOutlineVanillaGlow();
-
-    void bbspp_cml$setOutlineVanillaGlow(float glow);
-
     float bbspp_cml$getOutlineDecalSize();
 
     void bbspp_cml$setOutlineDecalSize(float size);
@@ -144,10 +124,6 @@ public interface BoneOutlineHolder
     float bbspp_cml$getOverlayGlow();
 
     void bbspp_cml$setOverlayGlow(float glow);
-
-    float bbspp_cml$getOverlayVanillaGlow();
-
-    void bbspp_cml$setOverlayVanillaGlow(float glow);
 
     boolean bbspp_cml$getOverlayFaceCull();
 
@@ -257,23 +233,6 @@ public interface BoneOutlineHolder
         }
     }
 
-    default float bbspp_cml$getOutlineVanillaGlow(int layer)
-    {
-        return layer == 0 ? this.bbspp_cml$getOutlineVanillaGlow() : this.bbspp_cml$getOverlayVanillaGlow();
-    }
-
-    default void bbspp_cml$setOutlineVanillaGlow(int layer, float glow)
-    {
-        if (layer == 0)
-        {
-            this.bbspp_cml$setOutlineVanillaGlow(glow);
-        }
-        else
-        {
-            this.bbspp_cml$setOverlayVanillaGlow(glow);
-        }
-    }
-
     default boolean bbspp_cml$getOutlineFaceCull(int layer)
     {
         return layer == 0 ? this.bbspp_cml$getOutlineFaceCull() : this.bbspp_cml$getOverlayFaceCull();
@@ -344,7 +303,6 @@ public interface BoneOutlineHolder
             this.bbspp_cml$getOutlineColor(layer).copy(other.bbspp_cml$getOutlineColor(layer));
             this.bbspp_cml$setOutlineWidth(layer, other.bbspp_cml$getOutlineWidth(layer));
             this.bbspp_cml$setOutlineGlow(layer, other.bbspp_cml$getOutlineGlow(layer));
-            this.bbspp_cml$setOutlineVanillaGlow(layer, other.bbspp_cml$getOutlineVanillaGlow(layer));
             this.bbspp_cml$setOutlineFaceCull(layer, other.bbspp_cml$getOutlineFaceCull(layer));
 
             OutlineGradient gradient = other.bbspp_cml$getOutlineGradient(layer);

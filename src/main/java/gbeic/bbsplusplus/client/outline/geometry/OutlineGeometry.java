@@ -162,8 +162,7 @@ public final class OutlineGeometry
      * One draw: a group, its outline colour/width/glow and the colour already split into floats.
      *
      * <p>{@code glow} is the LabPBR emission strength (0..254) and only reaches the shader through
-     * the {@code _s} companion texture. {@code vanillaGlow} is the strength of the plain full-bright
-     * overlay (0 = off, 255 = full), which needs no shader pack.</p>
+     * the {@code _s} companion texture.</p>
      *
      * <p>{@code faceArgb} holds one ARGB entry per {@code FACE_*} index, or is {@code null} when the
      * whole shell uses {@code argb}. An entry of {@link BoneOutlineHolder#DEFAULT_FACE_COLOR} means
@@ -172,7 +171,7 @@ public final class OutlineGeometry
      * <p>{@code layer} is 0 for the plain outline and 1 for the overlay ring. Both go into the same
      * buffers; the renderer draws the wider spec first so the two read as nested rings.</p>
      */
-    public record Spec(ModelGroup group, int argb, float width, float glow, float vanillaGlow,
+    public record Spec(ModelGroup group, int argb, float width, float glow,
         float r, float g, float b, float a, boolean faceCull, int[] faceArgb, int layer,
         OutlineGradient gradient, OutlineGradient[] faceGradients)
     {
@@ -302,13 +301,46 @@ public final class OutlineGeometry
                 }
 
                 specs.add(new Spec(group, argb, width, holder.bbspp_cml$getOutlineGlow(layer),
-                    holder.bbspp_cml$getOutlineVanillaGlow(layer),
                     channel(argb, 16), channel(argb, 8), channel(argb, 0), channel(argb, 24),
                     holder.bbspp_cml$getOutlineFaceCull(layer), faces, layer, gradient, faceGradients));
             }
         }
 
         return specs;
+    }
+
+    /**
+     * True when at least one visible, non-empty bone has an active ramped layer. Only those
+     * layers depend on the camera's screen axes and need {@link #updateScreenFrame}.
+     */
+    public static boolean hasAnyOutlineGradient(Model model)
+    {
+        if (model == null)
+        {
+            return false;
+        }
+
+        for (ModelGroup group : model.getAllGroups())
+        {
+            if (group == null || !group.isVisible() || group.cubes == null || group.cubes.isEmpty())
+            {
+                continue;
+            }
+
+            GroupOutlineHolder holder = (GroupOutlineHolder) group;
+
+            for (int layer = 0; layer < 2; layer++)
+            {
+                if (holder.bbspp_cml$hasOutlineLayer(layer)
+                    && holder.bbspp_cml$getOutlineShellWidth(layer) > 0F
+                    && holder.bbspp_cml$hasOutlineGradients(layer))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /** Cheap pre-check so a model without any outlined bone does not build an empty entry. */

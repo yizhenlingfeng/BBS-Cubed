@@ -131,20 +131,19 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 
 ### Model Outlines
 
-- Outline settings live in a collapsible "Outline" section below the "PBR" section in the pose editor and are configured per bone. Expand it to enable an outline for the current bone and adjust its color, width, emission, vanilla glow, face culling and "non-outlined block size".
+- Outline settings live in a collapsible "Outline" section below the "PBR" section in the pose editor and are configured per bone. Expand it to enable an outline for the current bone and adjust its color, width, emission, face culling and "non-outlined block size".
 - In the film editor, the keyframe inspector for limb tracks also provides an "Outline" section for configuring outlines per bone directly on the film timeline.
 - Like PBR and Enchant Glint, outline values are stored in bone pose data, support keyframe interpolation and are no longer written to the model's `config.json`.
 - Only the outer edge of each bone's silhouette is drawn: transparent texture areas produce no outline, welded faces are skipped automatically, and small decorative blocks fully enclosed by larger blocks can be filtered out with "non-outlined block size".
 - "Non-outlined block size" is measured in model pixels; `0` disables filtering. Width is measured in quarter model pixels, so `4` is roughly one model pixel.
-- Right-click the outline toggle, the color, vanilla glow, face culling or any parameter slider and choose "Apply to child bones" to spread the setting to all descendants of the bone.
-- A full-width "Apply All to Children" button sits right above "Outline": one click copies both layers of the current bone's outline (colors, gradients, widths, emission, vanilla glow, face culling, per-face colors and gradients) onto every child bone, instead of right-clicking item by item.
+- Right-click the outline toggle, the color, face culling or any parameter slider and choose "Apply to child bones" to spread the setting to all descendants of the bone.
+- A full-width "Apply All to Children" button sits right above "Outline": one click copies both layers of the current bone's outline (colors, gradients, widths, emission, face culling, per-face colors and gradients) onto every child bone, instead of right-clicking item by item.
 - "Emission" drives the LabPBR emissive channel: `0` emits nothing, and `1`–`254` ramp linearly along that channel. It requires Iris plus a shader pack that declares the `normals` / `specular` samplers; otherwise the outline is still a solid shell, just without emission.
-- "Vanilla Glow" is a separate additive overlay toggle that needs no shader pack and reproduces the older, uniformly brighter rim. It clashes with most shader packs because they take over the entity shader, so prefer "Emission" when the two overlap.
 - "Face Culling" is enabled by default. Turning it off draws the shell double-sided, so flat planes and decals keep their outline from every angle, at the cost of twice the vertices.
-- The layers are independent: the solid shell always contains every outlined bone, and emission and vanilla glow only add brightness on top of it without changing the silhouette or the base color.
-- The "Outline Overlay" toggle sits on the last row of the Outline section. Enabling it wraps a second outline around the current one and opens an "Overlay Outline" section below with the exact same controls: the two layers keep independent color, width, emission, vanilla glow, face culling and per-face colors, and neither overrides the other. The second layer's width means "how much further out to extend" and defaults to `4` (one model pixel); shells are drawn widest first so the inner ring always covers the middle of the wider one, forming a double ring.
+- The layers are independent: the solid shell always contains every outlined bone, and emission only adds brightness on top of it without changing the silhouette or the base color.
+- The "Outline Overlay" toggle sits on the last row of the Outline section. Enabling it wraps a second outline around the current one and opens an "Overlay Outline" section below with the exact same controls: the two layers keep independent color, width, emission, face culling and per-face colors, and neither overrides the other. The second layer's width means "how much further out to extend" and defaults to `4` (one model pixel); shells are drawn widest first so the inner ring always covers the middle of the wider one, forming a double ring.
 - Each section ends with a collapsible "Advanced" subsection that colors the front / right / back / left / top / bottom faces individually. Faces that were never set follow the layer color, and "Follow Main Colour" hands all six back in one click. Face colors are picked as whole blocks and never interpolated, so keyframes cannot blend into colors nobody chose.
-- Per-face colors drive both the shell itself and the emission layer: the LabPBR pass is batched per face color, so a shader pack no longer repaints all six faces with the layer color and "vanilla glow" is not needed to see them.
+- Per-face colors drive both the shell itself and the emission layer: the LabPBR pass is batched per face color, so a shader pack no longer repaints all six faces with the layer color.
 - Every face swatch in the Advanced subsection has an "Apply to child bones" context entry; "Follow Main Colour" offers the same single entry on its own right-click menu (hands all six back on every child).
 - The mode icon in the colour row's icon group switches between solid and gradient. Solid mode shows only that icon next to the swatch; turning the gradient on seeds both stops with the current colour, so the look does not change until the strip is edited, adds the "apply to child bones" icon on the left, and turns the swatch slot into a direction button pinned to the swatch's left edge so the three icons sit next to each other. A gradient strip expands below the colour row, with a wider gap to the stop swatch on its left.
 - The swatch at the left of the strip edits the selected stop; drag a stop to move it, or right-click the strip to add or remove stops (at least one remains). Stop positions and colours are saved with the bone pose and written to keyframes.
@@ -152,9 +151,9 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 - Precedence is "face gradient > face colour > main gradient > main colour": a face with its own gradient or colour stops following the main gradient, while unset faces keep following the layer.
 - The "Apply to child bones" icon on the left of the colour row (gradient mode only) copies the current gradient to every child bone and clears any leftover ramp so the children do not keep showing the old one; in solid mode the same action is available from the swatch's right-click menu.
 - "Follow Main Colour" also clears the six face gradients.
-- On 1.21.11, solid and gradient outlines, vanilla glow and depth write-back are supported, while LabPBR emission is still being adapted.
+- On 1.21.11, solid and gradient outlines and depth write-back are supported, while LabPBR emission is still being adapted.
 - The "Enchant Glint" section below the same panel has also been merged into a collapsible section with the glint toggle, color, flow speed and brightness, so both can be managed together.
-- Migration note: outlines no longer read the legacy outline keys in the model's `config.json`; existing projects must re-enable them per bone in the pose editor, and "Apply to child bones" can be used to spread them quickly. Bones whose legacy "glow" was on get "Vanilla Glow" enabled automatically, preserving the previous look.
+- Migration note: outlines no longer read the legacy outline keys in the model's `config.json`; existing projects must re-enable them per bone in the pose editor, and "Apply to child bones" can be used to spread them quickly.
 
 ### UV Transform
 
@@ -240,6 +239,12 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 - This project is an extension plugin for [BBSFS](https://github.com/Wemppy4/bbs-fs), implemented via Mixin
 
 ### Mod Changelog
+
+#### 3.6.8 (Remove vanilla glow, outline performance cleanup)
+* **Vanilla Glow removed**: the toggle, its additive layer and the related API are gone. Outlines now consist only of the solid / gradient shell and LabPBR emission. Legacy `outline_vanilla_glow` / `overlay_vanilla_glow` keys are ignored and do not affect the outline itself
+* **No more per-frame rebuilds on static models**: pose values are quantised to 1/4096 in the shell cache key, so sub-pixel jitter from IK, physics or constraint settling no longer invalidates the whole shell
+* **Gradient cost**: the screen-space frame is updated only when an active gradient layer exists, so solid outlines skip the matrix inversion entirely
+* **Safer cache fallback**: a failed shell build is logged once and falls back to immediate rendering; the depth pass pairs entries by model and config instead of clearing the whole frame queue on one mismatch
 
 #### 3.6.7 (Outline gradients and apply to child bones)
 * **Gradient outlines**: the colour row gains a mode icon that switches between solid and gradient. Turning it on seeds both stops with the current colour, so nothing jumps; the swatch slot becomes a direction button for vertical / horizontal ramps, and a gradient strip expands below the row

@@ -1,5 +1,6 @@
 package gbeic.bbsplusplus.client.outline;
 
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.client.outline.geometry.OutlineGeometry;
 import gbeic.bbsplusplus.client.outline.geometry.OutlineShellKey;
 import mchorse.bbs_mod.cubic.data.model.Model;
@@ -28,11 +29,9 @@ import java.util.function.Consumer;
  * animated model keeps one slot for the previous pose as well. LRU eviction happens inside the
  * model's list first, then across models, with a global byte budget on top.</p>
  *
- * <p>Only the solid colour pass and the depth pass are cached. The two additive layers on top of
- * the shell - LabPBR emission and the vanilla full-bright glow - are rebuilt from their spec
- * lists every frame: emission needs world-space normals (the vanilla entity shader consumes them
- * without a normal matrix), and the vanilla layer is cheap enough to re-emit rather than bake a
- * second buffer per strength.</p>
+ * <p>The solid colour pass and the depth pass are cached. LabPBR emission is rebuilt from its
+ * spec list every frame because it needs world-space normals (the vanilla entity shader consumes
+ * them without a normal matrix).</p>
  *
  * <p>All access happens on the render thread.</p>
  */
@@ -47,6 +46,7 @@ final class OutlineShellCache
     private static final Map<Model, ModelEntries> ENTRIES = new IdentityHashMap<>();
     private static long tick;
     private static long totalBytes;
+    private static long lastFailureLogNanos;
 
     private OutlineShellCache()
     {
@@ -70,17 +70,14 @@ final class OutlineShellCache
 
         /**
          * The plain colour shell. It always holds every outlined spec, so the rim itself never
-         * depends on Iris or on a LabPBR shader pack being present; the glow layers below are
-         * purely additive on top of it.
+         * depends on Iris or on a LabPBR shader pack being present; the emission specs below are
+         * drawn additively on top of it.
          */
         VertexBuffer solidVbo;
         int solidVertices;
 
         /** Specs with {@code glow > 0}: submitted again through the LabPBR entity pass. */
         List<OutlineGeometry.Spec> glowSpecs = List.of();
-
-        /** Specs with {@code vanillaGlow > 0}: submitted again as a full-bright overlay. */
-        List<OutlineGeometry.Spec> vanillaSpecs = List.of();
 
         /**
          * Specs that belong to the main (narrow) layer.
@@ -166,7 +163,6 @@ final class OutlineShellCache
         entry.valid = false;
         entry.solidVertices = 0;
         entry.glowSpecs = List.of();
-        entry.vanillaSpecs = List.of();
         entry.bytes = 0;
 
         try
@@ -176,8 +172,19 @@ final class OutlineShellCache
         catch (Throwable throwable)
         {
             /* A failed bake must not break the model render; the caller falls back to the
-             * immediate path below. */
+             * immediate path below. Rate-limit the log: a bake that fails every frame would
+             * otherwise flood the log at 60+ lines per second. */
             entry.valid = false;
+
+            long now = System.nanoTime();
+
+            if (now - lastFailureLogNanos > 1_000_000_000L)
+            {
+                lastFailureLogNanos = now;
+                BBSPlusPlusMod.LOGGER.error(
+                    "Outline shell build failed for model {} (key {}); falling back to immediate rendering",
+                    model, key.value(), throwable);
+            }
         }
 
         entry.recalcBytes();
@@ -290,7 +297,7 @@ final class OutlineShellCache
         }
 
         entry.solidVertices = 0;
+
         entry.glowSpecs = List.of();
-        entry.vanillaSpecs = List.of();
     }
 }

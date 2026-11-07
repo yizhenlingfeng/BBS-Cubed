@@ -82,9 +82,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
     private float bbspp_cml$outlineGlow = BoneOutlineHolder.DEFAULT_GLOW;
 
     @Unique
-    private float bbspp_cml$outlineVanillaGlow = BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
-
-    @Unique
     private float bbspp_cml$outlineDecalSize = BoneOutlineHolder.DEFAULT_DECAL;
 
     @Unique
@@ -107,9 +104,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
 
     @Unique
     private float bbspp_cml$overlayGlow = BoneOutlineHolder.DEFAULT_GLOW;
-
-    @Unique
-    private float bbspp_cml$overlayVanillaGlow = BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
 
     @Unique
     private boolean bbspp_cml$overlayFaceCull = BoneOutlineHolder.DEFAULT_FACE_CULL;
@@ -315,18 +309,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
     }
 
     @Override
-    public float bbspp_cml$getOutlineVanillaGlow()
-    {
-        return this.bbspp_cml$outlineVanillaGlow;
-    }
-
-    @Override
-    public void bbspp_cml$setOutlineVanillaGlow(float glow)
-    {
-        this.bbspp_cml$outlineVanillaGlow = glow;
-    }
-
-    @Override
     public float bbspp_cml$getOutlineDecalSize()
     {
         return this.bbspp_cml$outlineDecalSize;
@@ -417,18 +399,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
     public void bbspp_cml$setOverlayGlow(float glow)
     {
         this.bbspp_cml$overlayGlow = glow;
-    }
-
-    @Override
-    public float bbspp_cml$getOverlayVanillaGlow()
-    {
-        return this.bbspp_cml$overlayVanillaGlow;
-    }
-
-    @Override
-    public void bbspp_cml$setOverlayVanillaGlow(float glow)
-    {
-        this.bbspp_cml$overlayVanillaGlow = glow;
     }
 
     @Override
@@ -544,7 +514,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             || this.bbspp_cml$outlineColor.getARGBColor() != 0xFFFFFFFF
             || this.bbspp_cml$outlineWidth != BoneOutlineHolder.DEFAULT_WIDTH
             || this.bbspp_cml$outlineGlow != BoneOutlineHolder.DEFAULT_GLOW
-            || this.bbspp_cml$outlineVanillaGlow != BoneOutlineHolder.DEFAULT_VANILLA_GLOW
             || this.bbspp_cml$outlineDecalSize != BoneOutlineHolder.DEFAULT_DECAL
             || this.bbspp_cml$outlineFaceCull != BoneOutlineHolder.DEFAULT_FACE_CULL
             || bbspp_cml$hasFaces(this.bbspp_cml$outlineFaces)
@@ -560,7 +529,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             data.putInt("outline_color", this.bbspp_cml$outlineColor.getARGBColor());
             data.putFloat("outline_width", this.bbspp_cml$outlineWidth);
             data.putFloat("outline_glow", this.bbspp_cml$outlineGlow);
-            data.putFloat("outline_vanilla_glow", this.bbspp_cml$outlineVanillaGlow);
             data.putFloat("outline_decal", this.bbspp_cml$outlineDecalSize);
 
             /* Only written when it differs from the default: an old save can then keep reading
@@ -579,7 +547,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             || this.bbspp_cml$overlayColor.getARGBColor() != 0xFFFFFFFF
             || this.bbspp_cml$overlayWidth != BoneOutlineHolder.DEFAULT_OVERLAY_WIDTH
             || this.bbspp_cml$overlayGlow != BoneOutlineHolder.DEFAULT_GLOW
-            || this.bbspp_cml$overlayVanillaGlow != BoneOutlineHolder.DEFAULT_VANILLA_GLOW
             || this.bbspp_cml$overlayFaceCull != BoneOutlineHolder.DEFAULT_FACE_CULL
             || bbspp_cml$hasFaces(this.bbspp_cml$overlayFaces)
             || bbspp_cml$hasGradients(1);
@@ -594,7 +561,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             data.putInt("overlay_color", this.bbspp_cml$overlayColor.getARGBColor());
             data.putFloat("overlay_width", this.bbspp_cml$overlayWidth);
             data.putFloat("overlay_glow", this.bbspp_cml$overlayGlow);
-            data.putFloat("overlay_vanilla_glow", this.bbspp_cml$overlayVanillaGlow);
 
             if (!this.bbspp_cml$overlayFaceCull)
             {
@@ -719,13 +685,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             ? data.getFloat("outline_width") : BoneOutlineHolder.DEFAULT_WIDTH;
         this.bbspp_cml$outlineGlow = data.has("outline_glow")
             ? data.getFloat("outline_glow") : BoneOutlineHolder.DEFAULT_GLOW;
-        /* 老存档没有这个键：旧版"发光"其实是一条全亮叠加层，所以按旧发光值是否开启来回填，
-         * 让升级前的观感原样保留。 */
-        this.bbspp_cml$outlineVanillaGlow = data.has("outline_vanilla_glow")
-            ? data.getFloat("outline_vanilla_glow")
-            : (this.bbspp_cml$outlineGlow > 0F
-                ? BoneOutlineHolder.LEGACY_VANILLA_GLOW
-                : BoneOutlineHolder.DEFAULT_VANILLA_GLOW);
         this.bbspp_cml$outlineDecalSize = data.has("outline_decal")
             ? data.getFloat("outline_decal") : BoneOutlineHolder.DEFAULT_DECAL;
         this.bbspp_cml$outlineFaceCull = data.has("outline_face_cull")
@@ -742,8 +701,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             ? data.getFloat("overlay_width") : BoneOutlineHolder.DEFAULT_OVERLAY_WIDTH;
         this.bbspp_cml$overlayGlow = data.has("overlay_glow")
             ? data.getFloat("overlay_glow") : BoneOutlineHolder.DEFAULT_GLOW;
-        this.bbspp_cml$overlayVanillaGlow = data.has("overlay_vanilla_glow")
-            ? data.getFloat("overlay_vanilla_glow") : BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
         this.bbspp_cml$overlayFaceCull = data.has("overlay_face_cull")
             ? data.getBool("overlay_face_cull") : BoneOutlineHolder.DEFAULT_FACE_CULL;
         bbspp_cml$readFaces(data, "overlay_face_", this.bbspp_cml$overlayFaces);
@@ -801,7 +758,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             this.bbspp_cml$outlineColor.copy(holder.bbspp_cml$getOutlineColor());
             this.bbspp_cml$outlineWidth = holder.bbspp_cml$getOutlineWidth();
             this.bbspp_cml$outlineGlow = holder.bbspp_cml$getOutlineGlow();
-            this.bbspp_cml$outlineVanillaGlow = holder.bbspp_cml$getOutlineVanillaGlow();
             this.bbspp_cml$outlineDecalSize = holder.bbspp_cml$getOutlineDecalSize();
             this.bbspp_cml$outlineFaceCull = holder.bbspp_cml$getOutlineFaceCull();
 
@@ -815,7 +771,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             this.bbspp_cml$overlayColor.copy(holder.bbspp_cml$getOverlayColor());
             this.bbspp_cml$overlayWidth = holder.bbspp_cml$getOverlayWidth();
             this.bbspp_cml$overlayGlow = holder.bbspp_cml$getOverlayGlow();
-            this.bbspp_cml$overlayVanillaGlow = holder.bbspp_cml$getOverlayVanillaGlow();
             this.bbspp_cml$overlayFaceCull = holder.bbspp_cml$getOverlayFaceCull();
 
             /* Gradients are mutable, so they are deep copied rather than shared: two keyframes
@@ -850,9 +805,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         hash = 31 * hash + this.bbspp_cml$glintColor.getARGBColor();
         hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$glintSpeed);
         hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$glintBrightness);
-        /* The outline shell cache keys off this hash, so a slider-only edit has to change it —
-         * otherwise the baked vanilla glow overlay keeps the strength it was built with. */
-        hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$outlineVanillaGlow);
         hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$outlineGlow);
         hash = 31 * hash + Boolean.hashCode(this.bbspp_cml$outlineFaceCull);
         hash = 31 * hash + this.bbspp_cml$outlineColor.getARGBColor();
@@ -872,7 +824,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         hash = 31 * hash + this.bbspp_cml$overlayColor.getARGBColor();
         hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$overlayWidth);
         hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$overlayGlow);
-        hash = 31 * hash + Float.floatToIntBits(this.bbspp_cml$overlayVanillaGlow);
         hash = 31 * hash + Boolean.hashCode(this.bbspp_cml$overlayFaceCull);
 
         for (int face : this.bbspp_cml$overlayFaces)
@@ -937,7 +888,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
                 || this.bbspp_cml$outlineColor.getARGBColor() != holder.bbspp_cml$getOutlineColor().getARGBColor()
                 || this.bbspp_cml$outlineWidth != holder.bbspp_cml$getOutlineWidth()
                 || this.bbspp_cml$outlineGlow != holder.bbspp_cml$getOutlineGlow()
-                || this.bbspp_cml$outlineVanillaGlow != holder.bbspp_cml$getOutlineVanillaGlow()
                 || this.bbspp_cml$outlineDecalSize != holder.bbspp_cml$getOutlineDecalSize()
                 || this.bbspp_cml$outlineFaceCull != holder.bbspp_cml$getOutlineFaceCull()
                 || this.bbspp_cml$outlineOverlay != holder.bbspp_cml$getOutlineOverlay())
@@ -977,7 +927,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             if (this.bbspp_cml$overlayColor.getARGBColor() != holder.bbspp_cml$getOverlayColor().getARGBColor()
                 || this.bbspp_cml$overlayWidth != holder.bbspp_cml$getOverlayWidth()
                 || this.bbspp_cml$overlayGlow != holder.bbspp_cml$getOverlayGlow()
-                || this.bbspp_cml$overlayVanillaGlow != holder.bbspp_cml$getOverlayVanillaGlow()
                 || this.bbspp_cml$overlayFaceCull != holder.bbspp_cml$getOverlayFaceCull())
             {
                 cir.setReturnValue(false);
@@ -1022,7 +971,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         if (this.bbspp_cml$outline || this.bbspp_cml$outlineColor.getARGBColor() != 0xFFFFFFFF
             || this.bbspp_cml$outlineWidth != BoneOutlineHolder.DEFAULT_WIDTH
             || this.bbspp_cml$outlineGlow != BoneOutlineHolder.DEFAULT_GLOW
-            || this.bbspp_cml$outlineVanillaGlow != BoneOutlineHolder.DEFAULT_VANILLA_GLOW
             || this.bbspp_cml$outlineDecalSize != BoneOutlineHolder.DEFAULT_DECAL
             || this.bbspp_cml$outlineFaceCull != BoneOutlineHolder.DEFAULT_FACE_CULL
             || this.bbspp_cml$outlineOverlay)
@@ -1033,7 +981,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         if (this.bbspp_cml$overlayColor.getARGBColor() != 0xFFFFFFFF
             || this.bbspp_cml$overlayWidth != BoneOutlineHolder.DEFAULT_OVERLAY_WIDTH
             || this.bbspp_cml$overlayGlow != BoneOutlineHolder.DEFAULT_GLOW
-            || this.bbspp_cml$overlayVanillaGlow != BoneOutlineHolder.DEFAULT_VANILLA_GLOW
             || this.bbspp_cml$overlayFaceCull != BoneOutlineHolder.DEFAULT_FACE_CULL)
         {
             return true;
@@ -1071,7 +1018,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         this.bbspp_cml$outlineColor.set(0xFFFFFFFF);
         this.bbspp_cml$outlineWidth = BoneOutlineHolder.DEFAULT_WIDTH;
         this.bbspp_cml$outlineGlow = BoneOutlineHolder.DEFAULT_GLOW;
-        this.bbspp_cml$outlineVanillaGlow = BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
         this.bbspp_cml$outlineDecalSize = BoneOutlineHolder.DEFAULT_DECAL;
         this.bbspp_cml$outlineFaceCull = BoneOutlineHolder.DEFAULT_FACE_CULL;
         Arrays.fill(this.bbspp_cml$outlineFaces, BoneOutlineHolder.DEFAULT_FACE_COLOR);
@@ -1080,7 +1026,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         this.bbspp_cml$overlayColor.set(0xFFFFFFFF);
         this.bbspp_cml$overlayWidth = BoneOutlineHolder.DEFAULT_OVERLAY_WIDTH;
         this.bbspp_cml$overlayGlow = BoneOutlineHolder.DEFAULT_GLOW;
-        this.bbspp_cml$overlayVanillaGlow = BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
         this.bbspp_cml$overlayFaceCull = BoneOutlineHolder.DEFAULT_FACE_CULL;
         Arrays.fill(this.bbspp_cml$overlayFaces, BoneOutlineHolder.DEFAULT_FACE_COLOR);
 
@@ -1166,9 +1111,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             this.bbspp_cml$outlineGlow = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(
                 preO.bbspp_cml$getOutlineGlow(), curO.bbspp_cml$getOutlineGlow(),
                 nextO.bbspp_cml$getOutlineGlow(), postO.bbspp_cml$getOutlineGlow(), x)), 0F, 255F);
-            this.bbspp_cml$outlineVanillaGlow = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(
-                preO.bbspp_cml$getOutlineVanillaGlow(), curO.bbspp_cml$getOutlineVanillaGlow(),
-                nextO.bbspp_cml$getOutlineVanillaGlow(), postO.bbspp_cml$getOutlineVanillaGlow(), x)), 0F, 255F);
             this.bbspp_cml$outlineDecalSize = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(
                 preO.bbspp_cml$getOutlineDecalSize(), curO.bbspp_cml$getOutlineDecalSize(),
                 nextO.bbspp_cml$getOutlineDecalSize(), postO.bbspp_cml$getOutlineDecalSize(), x)), 0F, 16F);
@@ -1220,9 +1162,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         this.bbspp_cml$overlayGlow = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(
             preO.bbspp_cml$getOverlayGlow(), curO.bbspp_cml$getOverlayGlow(),
             nextO.bbspp_cml$getOverlayGlow(), postO.bbspp_cml$getOverlayGlow(), x)), 0F, 255F);
-        this.bbspp_cml$overlayVanillaGlow = (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(
-            preO.bbspp_cml$getOverlayVanillaGlow(), curO.bbspp_cml$getOverlayVanillaGlow(),
-            nextO.bbspp_cml$getOverlayVanillaGlow(), postO.bbspp_cml$getOverlayVanillaGlow(), x)), 0F, 255F);
     }
 
     /** AutoBezier twin of {@link #bbspp_cml$lerpOverlay}. */
@@ -1251,10 +1190,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         this.bbspp_cml$overlayGlow = (float) MathUtils.clamp(AutoBezier.get(
             preO.bbspp_cml$getOverlayGlow(), curO.bbspp_cml$getOverlayGlow(),
             nextO.bbspp_cml$getOverlayGlow(), postO.bbspp_cml$getOverlayGlow(),
-            pt, at, bt, qt, clamped, x), 0F, 255F);
-        this.bbspp_cml$overlayVanillaGlow = (float) MathUtils.clamp(AutoBezier.get(
-            preO.bbspp_cml$getOverlayVanillaGlow(), curO.bbspp_cml$getOverlayVanillaGlow(),
-            nextO.bbspp_cml$getOverlayVanillaGlow(), postO.bbspp_cml$getOverlayVanillaGlow(),
             pt, at, bt, qt, clamped, x), 0F, 255F);
     }
 
@@ -1338,10 +1273,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
                 preO.bbspp_cml$getOutlineGlow(), curO.bbspp_cml$getOutlineGlow(),
                 nextO.bbspp_cml$getOutlineGlow(), postO.bbspp_cml$getOutlineGlow(),
                 pt, at, bt, qt, clamped, x), 0F, 255F);
-            this.bbspp_cml$outlineVanillaGlow = (float) MathUtils.clamp(AutoBezier.get(
-                preO.bbspp_cml$getOutlineVanillaGlow(), curO.bbspp_cml$getOutlineVanillaGlow(),
-                nextO.bbspp_cml$getOutlineVanillaGlow(), postO.bbspp_cml$getOutlineVanillaGlow(),
-                pt, at, bt, qt, clamped, x), 0F, 255F);
             this.bbspp_cml$outlineDecalSize = (float) MathUtils.clamp(AutoBezier.get(
                 preO.bbspp_cml$getOutlineDecalSize(), curO.bbspp_cml$getOutlineDecalSize(),
                 nextO.bbspp_cml$getOutlineDecalSize(), postO.bbspp_cml$getOutlineDecalSize(),
@@ -1411,7 +1342,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             this.bbspp_cml$outlineColor.copy(holder.bbspp_cml$getOutlineColor());
             this.bbspp_cml$outlineWidth = holder.bbspp_cml$getOutlineWidth();
             this.bbspp_cml$outlineGlow = holder.bbspp_cml$getOutlineGlow();
-            this.bbspp_cml$outlineVanillaGlow = holder.bbspp_cml$getOutlineVanillaGlow();
             this.bbspp_cml$outlineDecalSize = holder.bbspp_cml$getOutlineDecalSize();
             this.bbspp_cml$outlineFaceCull = holder.bbspp_cml$getOutlineFaceCull();
 
@@ -1431,7 +1361,6 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
             this.bbspp_cml$overlayColor.copy(holder.bbspp_cml$getOverlayColor());
             this.bbspp_cml$overlayWidth = holder.bbspp_cml$getOverlayWidth();
             this.bbspp_cml$overlayGlow = holder.bbspp_cml$getOverlayGlow();
-            this.bbspp_cml$overlayVanillaGlow = holder.bbspp_cml$getOverlayVanillaGlow();
             this.bbspp_cml$overlayFaceCull = holder.bbspp_cml$getOverlayFaceCull();
 
             for (int i = 0; i < BoneOutlineHolder.FACE_COUNT; i++)

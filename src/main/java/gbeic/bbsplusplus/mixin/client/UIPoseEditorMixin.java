@@ -148,9 +148,6 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     private final UITrackpad[] bbspp_cml$outlineGlows = new UITrackpad[2];
 
     @Unique
-    private final UIToggle[] bbspp_cml$outlineVanillaGlows = new UIToggle[2];
-
-    @Unique
     private final UIToggle[] bbspp_cml$outlineFaceCulls = new UIToggle[2];
 
     /** 逐面颜色选择器，下标先是层再是面（顺序见 {@code OutlineGeometry.FACE_*}）。 */
@@ -891,23 +888,6 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             L10n.lang("bbs.ui.model_editor.outline.glow.tooltip"),
             (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineGlow(layer, v));
 
-        this.bbspp_cml$outlineVanillaGlows[layer] = new UIToggle(
-            L10n.lang("bbs.ui.model_editor.outline.vanilla_glow"), false, (toggle) ->
-        {
-            this.bbspp_cml$applyOutlineVanillaGlowToSelection(self, layer, toggle.getValue());
-        });
-        this.bbspp_cml$outlineVanillaGlows[layer].h(20);
-        this.bbspp_cml$outlineVanillaGlows[layer].tooltip(
-            L10n.lang("bbs.ui.model_editor.outline.vanilla_glow.tooltip"), Direction.LEFT);
-        this.bbspp_cml$outlineVanillaGlows[layer].context((ContextMenuManager manager) ->
-        {
-            manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
-            {
-                this.bbspp_cml$applyOutlineVanillaGlowToChildren(self, layer,
-                    this.bbspp_cml$outlineVanillaGlows[layer].getValue());
-            });
-        });
-
         this.bbspp_cml$outlineFaceCulls[layer] = new UIToggle(
             L10n.lang("bbs.ui.model_editor.outline.face_cull"),
             BoneOutlineHolder.DEFAULT_FACE_CULL, (toggle) ->
@@ -943,7 +923,6 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.width"), this.bbspp_cml$outlineWidths[layer]),
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.glow"), this.bbspp_cml$outlineGlows[layer]),
             /* UIToggle 自带标签，套 labelRow 会把名字画两遍，所以独占一行。 */
-            UI.row(this.bbspp_cml$outlineVanillaGlows[layer]),
             UI.row(this.bbspp_cml$outlineFaceCulls[layer])
         );
 
@@ -1103,8 +1082,6 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$outlineGlows[layer].setValue(holder == null
             ? BoneOutlineHolder.DEFAULT_GLOW
             : holder.bbspp_cml$getOutlineGlow(layer));
-        this.bbspp_cml$outlineVanillaGlows[layer].setValue(holder != null
-            && holder.bbspp_cml$getOutlineVanillaGlow(layer) > 0F);
         this.bbspp_cml$outlineFaceCulls[layer].setValue(holder == null
             ? BoneOutlineHolder.DEFAULT_FACE_CULL
             : holder.bbspp_cml$getOutlineFaceCull(layer));
@@ -1337,28 +1314,6 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         });
 
         OutlineEmissiveTexture.invalidate();
-    }
-
-    @Unique
-    private void bbspp_cml$applyOutlineVanillaGlowToSelection(UIPoseEditor self, int layer, boolean value)
-    {
-        this.bbspp_cml$writeToSelection(self, (poseT) ->
-        {
-            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineVanillaGlow(layer, value
-                ? BoneOutlineHolder.VANILLA_GLOW_ON
-                : BoneOutlineHolder.DEFAULT_VANILLA_GLOW);
-        });
-    }
-
-    @Unique
-    private void bbspp_cml$applyOutlineVanillaGlowToChildren(UIPoseEditor self, int layer, boolean value)
-    {
-        float strength = value ? BoneOutlineHolder.VANILLA_GLOW_ON : BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
-
-        this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
-        {
-            ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineVanillaGlow(layer, strength);
-        });
     }
 
     @Unique
@@ -1655,7 +1610,6 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
                 || outlineHolder.bbspp_cml$getOutlineColor().getARGBColor() != 0xFFFFFFFF
                 || outlineHolder.bbspp_cml$getOutlineWidth() != BoneOutlineHolder.DEFAULT_WIDTH
                 || outlineHolder.bbspp_cml$getOutlineGlow() != BoneOutlineHolder.DEFAULT_GLOW
-                || outlineHolder.bbspp_cml$getOutlineVanillaGlow() != BoneOutlineHolder.DEFAULT_VANILLA_GLOW
                 || outlineHolder.bbspp_cml$getOutlineDecalSize() != BoneOutlineHolder.DEFAULT_DECAL
                 || outlineHolder.bbspp_cml$getOutlineFaceCull() != BoneOutlineHolder.DEFAULT_FACE_CULL
                 || outlineHolder.bbspp_cml$hasOutlineFaceColors(0)
@@ -1676,7 +1630,6 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
                 && (outlineHolder.bbspp_cml$getOutlineColor(1).getARGBColor() != 0xFFFFFFFF
                     || outlineHolder.bbspp_cml$getOutlineWidth(1) != BoneOutlineHolder.DEFAULT_OVERLAY_WIDTH
                     || outlineHolder.bbspp_cml$getOutlineGlow(1) != BoneOutlineHolder.DEFAULT_GLOW
-                    || outlineHolder.bbspp_cml$getOutlineVanillaGlow(1) != BoneOutlineHolder.DEFAULT_VANILLA_GLOW
                     || outlineHolder.bbspp_cml$getOutlineFaceCull(1) != BoneOutlineHolder.DEFAULT_FACE_CULL
                     || outlineHolder.bbspp_cml$hasOutlineFaceColors(1)
                     || outlineHolder.bbspp_cml$hasOutlineGradients(1));

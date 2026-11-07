@@ -42,7 +42,7 @@ import java.util.function.Consumer;
  * <p>本 Mixin 在该面板构造完成后，于原版材质栏之后依次追加三个折叠栏：</p>
  * <ol>
  *   <li><b>PBR</b> —— 光泽度 / 金属度 / 散射 / 自发光 / 凹凸（0~1）；</li>
- *   <li><b>描边</b> —— 开关 / 颜色 / 宽度 / 发光 / 原版辉光 / 面剔除 / 不描边块尺寸；</li>
+ *   <li><b>描边</b> —— 开关 / 颜色 / 宽度 / 发光 / 面剔除 / 不描边块尺寸；</li>
  *   <li><b>附魔光效</b> —— 开关 / 颜色 / 流动速度 / 亮度。</li>
  * </ol>
  *
@@ -84,7 +84,6 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
     @Unique private UIToggle bbspp$outlineOverlay;
     @Unique private final UITrackpad[] bbspp$outlineWidths = new UITrackpad[2];
     @Unique private final UITrackpad[] bbspp$outlineGlows = new UITrackpad[2];
-    @Unique private final UIToggle[] bbspp$outlineVanillaGlows = new UIToggle[2];
     @Unique private final UIToggle[] bbspp$outlineFaceCulls = new UIToggle[2];
     @Unique private UITrackpad bbspp$outlineDecal;
 
@@ -248,19 +247,6 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
             L10n.lang("bbs.ui.model_editor.outline.glow.tooltip"),
             (poseT, v) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineGlow(layer, v));
 
-        this.bbspp$outlineVanillaGlows[layer] = new UIToggle(
-            L10n.lang("bbs.ui.model_editor.outline.vanilla_glow"), false, (toggle) ->
-        {
-            float strength = toggle.getValue()
-                ? BoneOutlineHolder.VANILLA_GLOW_ON
-                : BoneOutlineHolder.DEFAULT_VANILLA_GLOW;
-
-            this.bbspp$write((poseT) -> ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineVanillaGlow(layer, strength));
-        });
-        this.bbspp$outlineVanillaGlows[layer].h(20);
-        this.bbspp$outlineVanillaGlows[layer].tooltip(
-            L10n.lang("bbs.ui.model_editor.outline.vanilla_glow.tooltip"), Direction.LEFT);
-
         this.bbspp$outlineFaceCulls[layer] = new UIToggle(
             L10n.lang("bbs.ui.model_editor.outline.face_cull"), BoneOutlineHolder.DEFAULT_FACE_CULL, (toggle) ->
         {
@@ -286,7 +272,6 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.width"), this.bbspp$outlineWidths[layer]),
             UI.labelRow(L10n.lang("bbs.ui.model_editor.outline.glow"), this.bbspp$outlineGlows[layer]),
             /* UIToggle 自带标签，套 labelRow 会把名字画两遍，所以独占一行。 */
-            UI.row(this.bbspp$outlineVanillaGlows[layer]),
             UI.row(this.bbspp$outlineFaceCulls[layer])
         );
 
@@ -500,8 +485,6 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
         this.bbspp$outlineGlows[layer].setValue(outline == null
             ? BoneOutlineHolder.DEFAULT_GLOW
             : outline.bbspp_cml$getOutlineGlow(layer));
-        this.bbspp$outlineVanillaGlows[layer].setValue(
-            outline != null && outline.bbspp_cml$getOutlineVanillaGlow(layer) > 0F);
         this.bbspp$outlineFaceCulls[layer].setValue(outline == null
             ? BoneOutlineHolder.DEFAULT_FACE_CULL
             : outline.bbspp_cml$getOutlineFaceCull(layer));
