@@ -186,7 +186,9 @@ public final class OutlineEmissiveTexture
             }
         }
 
-        return store(path, encodePng(1, 1, new int[] { r, g, b, a }, 1));
+        /* RGBA, not grayscale: the colour channels are what the emissive pass tints the rim by, and
+         * alpha carries the strength. A single-channel PNG threw the hue away and bleached the rim. */
+        return store(path, encodePng(1, 1, new int[] { r, g, b, a }, 4));
     }
 
     /**
