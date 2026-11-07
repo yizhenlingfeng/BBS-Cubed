@@ -819,6 +819,10 @@ public final class OutlineGeometry
         private int faceVAxis;
         private float faceHSign;
         private float faceVSign;
+
+        /* Index (0..5) of the face being emitted. The layer ramp uses it to notice that a face lies
+         * across the ramp axis and therefore has no extent to measure along it. */
+        private int faceIndex;
         private final float[] rampScratch = new float[4];
         private float[] rampBounds;
 
@@ -875,6 +879,7 @@ public final class OutlineGeometry
             this.faceEffective = layerArgb;
             this.faceRamp = null;
             this.faceAxisRamp = false;
+            this.faceIndex = face;
 
             OutlineGradient ownRamp = faceGradients == null ? null : faceGradients[face];
             int argb = faceArgb == null ? BoneOutlineHolder.DEFAULT_FACE_COLOR : faceArgb[face];
@@ -955,6 +960,19 @@ public final class OutlineGeometry
                  * so one ramp runs continuously from the lowest bone to the highest. */
                 axis = vertical ? 1 : 0;
                 sign = 1F;
+
+                /* A face lying across the ramp axis - the top and bottom of a vertical ramp, the
+                 * left and right of a horizontal one - has no extent to measure, so all of its
+                 * vertices land on the same end colour and the face reads as a flat patch as soon
+                 * as the camera looks along the ramp. Such a face samples the other model axis
+                 * instead, which keeps the rim showing the gradient from every angle. */
+                boolean across = vertical ? (this.faceIndex == FACE_TOP || this.faceIndex == FACE_BOTTOM)
+                                          : (this.faceIndex == FACE_LEFT || this.faceIndex == FACE_RIGHT);
+
+                if (across)
+                {
+                    axis = vertical ? 0 : 1;
+                }
             }
 
             float lo = bounds[axis];
