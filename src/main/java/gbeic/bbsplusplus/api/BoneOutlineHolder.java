@@ -335,6 +335,37 @@ public interface BoneOutlineHolder
         return faces;
     }
 
+    /** Copies both outline layers (colours, gradients, widths, glow, face culling, face ramps) onto this holder. */
+    default void bbspp_cml$copyOutline(BoneOutlineHolder other)
+    {
+        for (int layer = 0; layer < 2; layer++)
+        {
+            this.bbspp_cml$setOutlineLayer(layer, other.bbspp_cml$hasOutlineLayer(layer));
+            this.bbspp_cml$getOutlineColor(layer).copy(other.bbspp_cml$getOutlineColor(layer));
+            this.bbspp_cml$setOutlineWidth(layer, other.bbspp_cml$getOutlineWidth(layer));
+            this.bbspp_cml$setOutlineGlow(layer, other.bbspp_cml$getOutlineGlow(layer));
+            this.bbspp_cml$setOutlineVanillaGlow(layer, other.bbspp_cml$getOutlineVanillaGlow(layer));
+            this.bbspp_cml$setOutlineFaceCull(layer, other.bbspp_cml$getOutlineFaceCull(layer));
+
+            OutlineGradient gradient = other.bbspp_cml$getOutlineGradient(layer);
+
+            this.bbspp_cml$setOutlineGradient(layer, gradient == null ? null : gradient.copy());
+
+            for (int face = 0; face < FACE_COUNT; face++)
+            {
+                this.bbspp_cml$setOutlineFaceColor(layer, face, other.bbspp_cml$getOutlineFaceColor(layer, face));
+
+                OutlineGradient faceGradient = other.bbspp_cml$getOutlineFaceGradient(layer, face);
+
+                this.bbspp_cml$setOutlineFaceGradient(layer, face,
+                    faceGradient == null ? null : faceGradient.copy());
+            }
+        }
+
+        /* The decal size is a model-wide value, but it is stored per bone, so it travels with them. */
+        this.bbspp_cml$setOutlineDecalSize(other.bbspp_cml$getOutlineDecalSize());
+    }
+
     /* ------------------------------------------------------------------ gradients */
 
     /**

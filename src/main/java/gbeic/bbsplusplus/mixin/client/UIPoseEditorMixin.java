@@ -132,6 +132,10 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     @Unique
     private UIToggle bbspp_cml$outlineOverlay;
 
+    /** 「全部应用到子集」按钮：把两层描边整套复制给所有子骨骼。 */
+    @Unique
+    private UIButton bbspp_cml$outlineApplyAll;
+
     /* 两层共用同一套控件类型，只是数组下标不同：0 = 描边，1 = 描边叠加。 */
 
     @Unique
@@ -301,6 +305,16 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
                 this.bbspp_cml$applyOutlineToChildren(self, this.bbspp_cml$outline.getValue());
             });
         });
+
+        /* 整层应用到子骨骼：独占一行放在「启用描边」上方，省得对每项分别右键。 */
+        this.bbspp_cml$outlineApplyAll = new UIButton(
+            L10n.lang("bbs.ui.model_editor.outline.apply_all"), (b) ->
+        {
+            this.bbspp_cml$applyOutlineAllToChildren(self);
+        });
+        this.bbspp_cml$outlineApplyAll.h(20);
+        this.bbspp_cml$outlineApplyAll.tooltip(
+            L10n.lang("bbs.ui.model_editor.outline.apply_all.tooltip"), Direction.LEFT);
 
         /* 叠加描边：打开后在描边栏正下方插进第二栏，两层的颜色与高级选项互不影响。 */
         this.bbspp_cml$outlineOverlay = new UIToggle(L10n.lang("bbs.ui.model_editor.outline.overlay"),
@@ -919,6 +933,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
 
         if (!overlay)
         {
+            section.fields.add(UI.row(this.bbspp_cml$outlineApplyAll));
             section.fields.add(UI.row(this.bbspp_cml$outline));
         }
 
@@ -1030,10 +1045,6 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             manager.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
             {
                 this.bbspp_cml$applyOutlineFaceColorSyncToChildren(self, layer);
-            });
-            manager.action(Icons.REFRESH, UIKeys.POSE_CONTEXT_APPLY, () ->
-            {
-                this.bbspp_cml$applyOutlineFaceColorResetToSelection(self, layer);
             });
         });
         advanced.fields.add(UI.row(sync));
@@ -1287,13 +1298,6 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         this.bbspp_cml$syncOutlineControls();
     }
 
-    /** 右键菜单项：对当前选中的骨骼自己重置，不做肢体链扩散。 */
-    @Unique
-    private void bbspp_cml$applyOutlineFaceColorResetToSelection(UIPoseEditor self, int layer)
-    {
-        this.bbspp_cml$applyOutlineFaceColorSyncToSelection(self, layer);
-    }
-
     @Unique
     private void bbspp_cml$applyOutlineToChildren(UIPoseEditor self, boolean value)
     {
@@ -1310,6 +1314,29 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
         {
             ((BoneOutlineHolder) poseT).bbspp_cml$setOutlineOverlay(value);
         });
+    }
+
+    /** 「全部应用到子集」：把当前骨骼的整层描边（两层）一次性铺给它的所有子骨骼。 */
+    @Unique
+    private void bbspp_cml$applyOutlineAllToChildren(UIPoseEditor self)
+    {
+        PoseTransform current = this.bbspp_cml$getCurrentPoseTransform(self);
+
+        if (current == null)
+        {
+            return;
+        }
+
+        /* 先拍一份快照再往子骨骼里写：边读边写时后写的骨骼会读到被前面的写入改过的数据。 */
+        PoseTransform snapshot = new PoseTransform();
+        ((BoneOutlineHolder) snapshot).bbspp_cml$copyOutline((BoneOutlineHolder) current);
+
+        this.bbspp_cml$forEachSelectedChildren(self, (poseT) ->
+        {
+            ((BoneOutlineHolder) poseT).bbspp_cml$copyOutline((BoneOutlineHolder) snapshot);
+        });
+
+        OutlineEmissiveTexture.invalidate();
     }
 
     @Unique

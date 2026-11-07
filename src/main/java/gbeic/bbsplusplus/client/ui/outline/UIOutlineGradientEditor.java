@@ -35,7 +35,8 @@ public class UIOutlineGradientEditor extends UIElement
         this.getGradient = getGradient;
         this.setGradient = setGradient;
 
-        this.h(UIConstants.CONTROL_HEIGHT).row(2).padding(0);
+        /* Wider than the default 2px so the selected stop's swatch and the ramp don't melt together. */
+        this.h(UIConstants.CONTROL_HEIGHT).row(8).padding(0);
 
         this.bar = new UIOutlineGradientBar();
         this.bar.setOnSelect(this::syncStopColor);

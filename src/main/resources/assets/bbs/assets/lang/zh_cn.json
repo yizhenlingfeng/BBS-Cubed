@@ -33,6 +33,8 @@
     "bbs.ui.model_editor.outline.gradient.mode": "颜色模式：纯色 / 渐变",
     "bbs.ui.model_editor.outline.gradient.direction": "渐变方向：上下 / 左右",
     "bbs.ui.model_editor.outline.apply_children": "将当前颜色或渐变应用到子骨骼",
+    "bbs.ui.model_editor.outline.apply_all": "全部应用到子集",
+    "bbs.ui.model_editor.outline.apply_all.tooltip": "把这一层的描边设置（颜色、渐变、宽度、发光、原版辉光、面剔除、逐面颜色与渐变，含描边叠加层）整套复制给所有子骨骼",
     "bbs.ui.camera.panels.curves.sun_path_rotation": "日月偏角",
     "bbs.ui.camera.panels.curves.chroma_sky_color": "色度天空颜色",
     "bbs.ui.camera.panels.curves.center_depth": "焦点",

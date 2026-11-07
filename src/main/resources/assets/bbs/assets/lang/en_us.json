@@ -33,6 +33,8 @@
     "bbs.ui.model_editor.outline.gradient.mode": "Colour mode: solid / gradient",
     "bbs.ui.model_editor.outline.gradient.direction": "Gradient direction: vertical / horizontal",
     "bbs.ui.model_editor.outline.apply_children": "Apply the current colour or gradient to child bones",
+    "bbs.ui.model_editor.outline.apply_all": "Apply All to Children",
+    "bbs.ui.model_editor.outline.apply_all.tooltip": "Copy the whole outline layer (colour, gradient, width, emission, vanilla glow, face culling, per-face colours and gradients, the overlay layer included) to every child bone",
     "bbs.ui.camera.panels.curves.sun_path_rotation": "Sun Path Rotation",
     "bbs.ui.camera.panels.curves.chroma_sky_color": "Chroma Sky Color",
     "bbs.ui.camera.panels.curves.center_depth": "Focus Point",

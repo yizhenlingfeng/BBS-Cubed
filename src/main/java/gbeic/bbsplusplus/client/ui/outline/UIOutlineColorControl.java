@@ -16,14 +16,14 @@ import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 /**
- * The compact colour control used by every outline row: an optional "apply to children" icon,
- * a mode icon, then a slot that shows either the colour swatch (solid mode) or a direction
- * button that fills the swatch's place (gradient mode).
+ * The compact colour control used by every outline row: an optional "apply to children" icon
+ * (gradient mode only), a mode icon, then a slot that shows either the colour swatch (solid mode)
+ * or the gradient's direction button (gradient mode).
  *
- * <p>Solid and gradient share one slot. Both children are always mounted at the slot's exact
- * box and only one of them draws/handles clicks, so toggling the mode never changes the row's
- * child set. That keeps the layout completely still: BBS' row resizers otherwise hand a
- * re-shown child a stale (zero) width and re-pin the whole row, which makes the buttons jump.</p>
+ * <p>Solid and gradient share one slot. Both children stay mounted inside it and only one of them
+ * draws/handles clicks, so toggling the mode never changes the row's child set.
+ * That keeps the layout completely still: BBS' row resizers otherwise hand a re-shown child a
+ * stale (zero) width and re-pin the whole row, which makes the buttons jump.</p>
  *
  * <p>Turning the gradient on seeds it with the colour the swatch currently shows
  * ({@link OutlineGradient#fromSolid}), so flipping the switch never changes how the outline
@@ -99,7 +99,6 @@ public class UIOutlineColorControl extends UIElement
         this.slot.add(this.solid, this.direction);
 
         this.add(this.apply, this.mode, this.slot);
-        this.apply.setVisible(this.applyToChildren != null);
 
         this.refresh();
     }
@@ -142,6 +141,15 @@ public class UIOutlineColorControl extends UIElement
         this.syncing = false;
 
         boolean shown = gradient != null;
+        boolean showApply = this.applyToChildren != null && shown;
+
+        /* Solid mode has nothing for this icon to apply (the swatch keeps its right-click entry), so
+         * it leaves the row; the row resizer skips invisible children, hence the local resize. */
+        if (showApply != this.apply.isVisible())
+        {
+            this.apply.setVisible(showApply);
+            this.resize();
+        }
 
         if (shown != this.gradientShown)
         {
@@ -204,7 +212,10 @@ public class UIOutlineColorControl extends UIElement
             super.resize();
 
             solid.area.set(this.area.x, this.area.y, this.area.w, this.area.h);
-            direction.area.set(this.area.x, this.area.y, this.area.w, this.area.h);
+
+            /* Pinned to the slot's left edge so it stays next to the mode icon instead of floating in
+             * the middle of the swatch's width. */
+            direction.area.set(this.area.x, this.area.y, ICON_WIDTH, this.area.h);
         }
     }
 
