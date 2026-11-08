@@ -27,7 +27,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 控件层级也不做任何改动，UI 面板始终盖在模型之上。</p>
  *
  * <p>鼠标键分工：左键走 BBS 原有的拾取（按住按键时模板缓冲区记录的就是实际肢体），
- * 右键在这里接管，用骨骼覆盖映射后的结果去选中。</p>
+ * 右键在这里接管，用骨骼覆盖映射后的结果去选中。动画态编辑器可见时不接管右键——那条路径
+ * 本来就靠右键插入关键帧，交给 BBS 自己的处理即可。</p>
  */
 @Mixin(value = UIPickableFormRenderer.class, remap = false)
 public class UIPickableFormRendererLimbPickMixin
@@ -48,6 +49,9 @@ public class UIPickableFormRendererLimbPickMixin
      * <p>BBS 原本右键不拾取（只用来取消骨骼拾取），所以这里自己读取模板缓冲区的
      * 拾取结果，再交给编辑器走正常的选中流程；正在「点选骨骼」时不接管，好让右键
      * 仍然能取消。</p>
+     *
+     * <p>动画态编辑器可见时不接管：那时右键的语义是「插入关键帧」，交给
+     * {@code UIReplaysEditorUtils#pickFormWithOffers} 的原生流程更合适。</p>
      */
     @Inject(method = "subMouseClicked", at = @At("HEAD"), cancellable = true)
     private void bbspp$limbPickRightClick(UIContext context, CallbackInfoReturnable<Boolean> cir)
@@ -60,6 +64,11 @@ public class UIPickableFormRendererLimbPickMixin
         UIFormEditor editor = this.formEditor;
 
         if (editor == null || editor.isBonePicking())
+        {
+            return;
+        }
+
+        if (editor.statesEditor != null && editor.statesEditor.isVisible())
         {
             return;
         }

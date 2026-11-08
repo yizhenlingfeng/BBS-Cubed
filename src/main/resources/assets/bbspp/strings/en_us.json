@@ -307,7 +307,7 @@
   "bbspp.ui.keyframes.item_transform": "Item transform",
   "bbspp.ui.keyframes.select_column": "Select keyframes at current time",
   "bbspp.ui.transforms.ignore_picking_override": "Limb selection",
-  "bbspp.ui.transforms.ignore_picking_override.desc": "Limb selection · hold to use\n1. Hold this key (E by default) to enter limb picking\n2. Left click a model: select the actual limb, ignoring bone picking overrides\n3. Right click a model: select through the bone picking overrides\n4. While held, the gizmo, axes, camera reference guide and IK debug overlay are hidden, and the model switches to vanilla rendering and draws in front of the other models\n5. Release the key to restore everything instantly, no settings are changed\nOnly works inside BBS screens (model / scene / film preview)",
+  "bbspp.ui.transforms.ignore_picking_override.desc": "Limb selection · hold to use\n1. Hold this key (E by default) to enter limb picking\n2. Left click a model: select the actual limb, ignoring bone picking overrides; when a keyframe editor is open this inserts a keyframe\n3. Right click a model: select through the bone picking overrides, also inserting a keyframe\n4. While held, the gizmo, axes, camera reference guide and IK debug overlay are hidden, and the model switches to vanilla rendering and draws in front of the other models\n5. Release the key to restore everything instantly, no settings are changed\nOnly works inside BBS screens (model / scene / film preview)",
   "bbspp.ui.mini_window.collapse": "Collapse / expand mini window",
   "bbspp.ui.mini_window.convert": "Convert to mini window",
   "bbspp.ui.mini_window.restore": "Restore window",
