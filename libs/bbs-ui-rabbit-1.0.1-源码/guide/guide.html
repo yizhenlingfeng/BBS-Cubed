@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>肉兔界面使用说明</title>
+<meta name="description" content="BBS UI Rabbit（肉兔界面）：BBS FS 2.7 的启动台、影片库、伪装界面、编辑器主页与材质包预设">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=ZCOOL+QingKe+HuangYou&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+{{CSS}}
+/* 截图：带编号标记，下面是对应说明；点图看大图 */
+figure.shot{margin:18px 0 6px}
+.shot .frame{position:relative;border:2px solid var(--shadow);border-radius:12px;box-shadow:5px 5px 0 var(--shadow);overflow:hidden;background:#111;cursor:zoom-in}
+.shot .frame img{display:block;width:100%;height:auto}
+.pin{position:absolute;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;background:var(--berry);color:#fff;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.5);font:700 13px/22px var(--f-mono);text-align:center;pointer-events:none;transition:transform .15s}
+.pin.hot{transform:translate(-50%,-50%) scale(1.35);background:#ffd23f;color:#1e1a24}
+@media (max-width:620px){.pin{width:20px;height:20px;font-size:11px;line-height:16px;border-width:2px}}
+.shot figcaption{font-size:13px;color:var(--muted);margin-top:10px}
+ol.pins{list-style:none;margin:12px 0 4px;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 18px}
+@media (max-width:620px){ol.pins{grid-template-columns:minmax(0,1fr)}}
+ol.pins li{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.6;padding:4px 6px;border-radius:8px}
+ol.pins li:hover{background:var(--grey-soft)}
+ol.pins .n{flex:none;width:22px;height:22px;margin-top:2px;border-radius:50%;background:var(--berry);color:#fff;font:700 12px/22px var(--f-mono);text-align:center}
+.trio{display:grid;grid-template-columns:minmax(0,1fr);gap:4px}
+.inline-shot{float:right;margin:4px 0 8px 16px;width:150px;border:2px solid var(--shadow);border-radius:10px;box-shadow:3px 3px 0 var(--shadow);overflow:hidden}
+.inline-shot img{display:block;width:100%;height:auto}
+@media (max-width:520px){.inline-shot{float:none;margin:8px 0}}
+.clear{clear:both}
+.lightbox{position:fixed;inset:0;z-index:50;background:rgba(10,8,12,.92);display:none;align-items:center;justify-content:center;padding:16px;cursor:zoom-out}
+.lightbox.on{display:flex}
+.lightbox img{max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.steps{margin:10px 0;padding-left:1.3em}
+.steps li{margin:4px 0}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="toc" aria-label="目录">
+  <div class="brand">
+    <div class="brand-mark"><img src="img:logo" alt=""></div>
+    <div><div class="brand-name">肉兔界面</div><div class="brand-sub">BBS UI Rabbit · 使用说明</div></div>
+  </div>
+  <label for="q" class="search-note" style="display:block;margin:0 2px 4px">搜功能、按键或按钮名</label>
+  <input id="q" class="search" type="search" placeholder="例如：封面、收藏、上色" autocomplete="off">
+  <div class="search-note" id="qnote"></div>
+  <ol id="tocList">
+    <li><a href="#install"><span class="n">00</span>安装与开关</a></li>
+    <li class="sep" aria-hidden="true"></li>
+    <li><a href="#launcher"><span class="n">01</span>启动台</a></li>
+    <li><a href="#library"><span class="n">02</span>影片库</a></li>
+    <li><a href="#morph"><span class="n">03</span>伪装界面</a></li>
+    <li><a href="#assets"><span class="n">04</span>编辑器主页</a></li>
+    <li><a href="#packs"><span class="n">05</span>材质包预设</a></li>
+    <li class="sep" aria-hidden="true"></li>
+    <li><a href="#settings"><span class="n">A</span>设置一览</a></li>
+    <li><a href="#files"><span class="n">B</span>文件存在哪</a></li>
+    <li><a href="#online"><span class="n">C</span>联机</a></li>
+    <li><a href="#faq"><span class="n">D</span>常见问题</a></li>
+  </ol>
+</nav>
+
+<main id="content">
+
+<header class="hero">
+  <div class="hero-top"><div class="hero-text"><div class="eyebrow">MC 1.20.1 · Fabric · BBS FS 2.7</div>
+  <h1>肉兔界面<br><span class="hl">BBS UI Rabbit</span></h1>
+  <p class="lede">一个只换界面的 BBS 插件：启动台、影片库、伪装界面、模型 / 粒子 / 音频编辑器的主页，外加材质包预设。不改影片和素材文件，每块界面都能单独关掉，关掉就是 BBS 原来的样子。</p>
+  <div class="meta"><span>版本 1.0.1</span><span>2026 年 11 月</span><span>只需要 BBS FS 2.7</span></div></div><div class="logo-plate"><img src="img:logo" alt="肉兔重工"></div></div>
+</header>
+
+<!-- 00 -->
+<section class="ch" id="install">
+  <div class="ch-head"><div class="ch-num">00</div><h2>安装与开关</h2></div>
+  <p class="ch-intro">放进 mods 文件夹就能用，不需要其他前置。</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>需要</th><th>版本</th></tr></thead>
+    <tbody>
+      <tr><td>Minecraft</td><td>1.20.1</td></tr>
+      <tr><td>Fabric Loader</td><td>0.15 或更新</td></tr>
+      <tr><td>Fabric API</td><td>1.20.1 对应版本</td></tr>
+      <tr><td>BBS FS</td><td>2.7</td></tr>
+      <tr><td>Java</td><td>17 或更新</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="feat"><h4>安装</h4>
+    <ol class="steps">
+      <li>把 <code>bbs-ui-rabbit-1.0.1+bbsfs2.7.jar</code> 放进这个版本的 <code>mods</code> 文件夹。</li>
+      <li>启动游戏，直接看到启动台就说明装好了。</li>
+      <li>想关掉某块界面：BBS 仪表盘 → 设置 → <b>肉兔界面</b>（全部开关见<a href="#settings">附录 A</a>）。</li>
+    </ol>
+  </div>
+  <div class="tip"><b>和 BBS++ 一起装</b>可以。只是 BBS++ 自己也带一套旧版的影片库和伪装界面：请在 BBS++ 的设置（BBS增强）里让「全新影片库界面」「全新伪装界面布局」保持关闭（默认就是关的），否则两套界面会抢着显示。</div>
+  <div class="tip"><b>卸载</b>把 jar 从 mods 里删掉即可，界面回到 BBS 原样，影片和素材不受影响。</div>
+</section>
+
+<!-- 01 -->
+<section class="ch" id="launcher">
+  <div class="ch-head"><div class="ch-num">01</div><h2>启动台</h2></div>
+  <p class="ch-intro">打开游戏就是启动台，代替原版的标题界面、选择世界和多人游戏。退出世界后也回到这里。</p>
+
+  <figure class="shot">
+    <div class="frame"><img src="img:launcher" alt="启动台：左侧导航，中间世界卡片，右侧世界详情，左下角小文绪" width="2000" height="1072">
+      <span class="pin" style="left:10%;top:22.7%">1</span>
+      <span class="pin" style="left:42%;top:4.1%">2</span>
+      <span class="pin" style="left:25%;top:19.6%">3</span>
+      <span class="pin" style="left:83.5%;top:5.5%">4</span>
+      <span class="pin" style="left:94.5%;top:45.2%">5</span>
+      <span class="pin" style="left:88%;top:48.6%">6</span>
+      <span class="pin" style="left:78.2%;top:89.8%">7</span>
+      <span class="pin" style="left:15%;top:72%">8</span>
+    </div>
+    <figcaption>启动台（深色）。点图可以看大图。</figcaption>
+  </figure>
+  <ol class="pins">
+    <li><span class="n">1</span><span><b>导航</b>：单人游戏（全部 / 最近游玩 / 收藏 / 有影片的）、你的标签、多人游戏（服务器 / 局域网 / Realms）。</span></li>
+    <li><span class="n">2</span><span><b>搜索、排序、新建世界</b>：世界名、标签、影片名都能搜；右边的小太阳切换深浅色。</span></li>
+    <li><span class="n">3</span><span><b>世界卡片</b>：图是这个世界最新影片的封面，角标是影片数量、游戏模式、标签。单击选中，双击进入。</span></li>
+    <li><span class="n">4</span><span><b>锁定封面</b>：锁住后以后有新影片也不换图。右下角「换封面」可选影片封面或图片。</span></li>
+    <li><span class="n">5</span><span><b>世界信息与标签</b>：「＋ 添加标签」输入后回车，点 × 删除。点世界名可以改名或起别名。</span></li>
+    <li><span class="n">6</span><span><b>这个世界的影片</b>：鼠标停在小图上弹出影片卡，轮播预览帧，显示时长和修改时间。</span></li>
+    <li><span class="n">7</span><span><b>进入世界</b>，下面是编辑、备份、文件夹、更多（重新创建、删除）。</span></li>
+    <li><span class="n">8</span><span><b>小文绪</b>：装饰动画，会看鼠标、对你的操作有反应，闲着会睡着。底下一排是原版按钮（模组、选项、语言、无障碍、退出）。</span></li>
+  </ol>
+
+  <h3 class="sub"><span class="k">1.1</span>单人游戏</h3>
+  <div class="feat"><h4>进入、编辑、整理世界</h4>
+    <dl class="g">
+      <dt>操作</dt><dd><ul>
+        <li><b>进世界</b>：单击卡片选中，右侧出详情；双击或 <kbd>Enter</kbd> 进入。</li>
+        <li><b>编辑</b>：打开原版的编辑世界界面（重命名、备份、优化、导出生成设置都在）。</li>
+        <li><b>改名和别名</b>：点详情里的世界名，选「改名」（改存档里的名字）或「起别名」（只在启动台显示，不动存档，随时能清除）。</li>
+        <li><b>标签</b>：侧栏的标签右键可以给所有世界一起改名，或从所有世界删除。超平坦世界自动带「超平坦」标签。</li>
+        <li><b>封面</b>：默认用最新影片的封面，没有影片就用世界图标。右键大图或点「换封面」：用某部影片的封面、选择图片（默认打开截图文件夹，<kbd>F2</kbd> 截的图直接能用）、恢复默认。</li>
+        <li><b>新建世界</b>：原版创建界面，或者模板「超平坦拍片地」（超平坦、创造、开作弊、关昼夜 / 天气 / 生物生成）。</li>
+      </ul></dd>
+      <dt>按键</dt><dd><kbd>↑↓←→</kbd> 选择，<kbd>Enter</kbd> 进入，<kbd>Ctrl</kbd>+<kbd>F</kbd> 搜索，<kbd>Delete</kbd> 删除，<kbd>F5</kbd> 刷新。</dd>
+      <dt class="t">何时用</dt><dd>存档多的时候用标签分项目（比如「第三集」「测试用」），用「有影片的」快速找到拍过东西的世界，用锁定封面让常用世界一眼认出来。</dd>
+      <dt>怎么调</dt><dd>设置 → 肉兔界面 →「启动台大小」默认 1.3。屏幕小、字太大就调到 1.0 左右，2K / 4K 屏可以调到 1.6 以上。</dd>
+    </dl>
+  </div>
+
+  <h3 class="sub"><span class="k">1.2</span>多人游戏</h3>
+  <div class="feat"><h4>服务器与局域网</h4>
+    <dl class="g">
+      <dt>操作</dt><dd><ul>
+        <li>服务器列表和原版共用同一个 <code>servers.dat</code>，打开时自动 Ping。</li>
+        <li>地址栏输入地址按回车 = 直接连接。添加 / 编辑用原版界面；「⋯」里可以上移、下移、复制地址、删除。</li>
+        <li>同一局域网里开放的世界会自动出现在「局域网」里。</li>
+      </ul></dd>
+    </dl>
+  </div>
+  <div class="tip"><b>启动台出错</b>会自动关掉并换回原版标题界面，这次游戏里不再出现。遇到时请把 <code>logs/latest.log</code> 发给作者。</div>
+</section>
+
+<!-- 02 -->
+<section class="ch" id="library">
+  <div class="ch-head"><div class="ch-num">02</div><h2>影片库</h2></div>
+  <p class="ch-intro">影片面板没有打开影片时，看到的就是影片库：文件夹、收藏、搜索、封面、悬停预览、颜色标签和影片详情。</p>
+
+  <figure class="shot">
+    <div class="frame"><img src="img:library" alt="影片库主页：左侧浏览、颜色标签和文件夹，中间影片网格，右侧选中影片的详情" width="2000" height="1061">
+      <span class="pin" style="left:16.2%;top:36.5%">1</span>
+      <span class="pin" style="left:16.2%;top:43.6%">2</span>
+      <span class="pin" style="left:16.2%;top:51%">3</span>
+      <span class="pin" style="left:40%;top:13.4%">4</span>
+      <span class="pin" style="left:65.3%;top:9%">5</span>
+      <span class="pin" style="left:23.5%;top:25%">6</span>
+      <span class="pin" style="left:82%;top:39.2%">7</span>
+      <span class="pin" style="left:80.5%;top:66.5%">8</span>
+      <span class="pin" style="left:73.2%;top:87.7%">9</span>
+    </div>
+    <figcaption>影片库主页（网格视图）。</figcaption>
+  </figure>
+  <ol class="pins">
+    <li><span class="n">1</span><span><b>浏览</b>：全部影片、最近使用、收藏。</span></li>
+    <li><span class="n">2</span><span><b>颜色标签筛选</b>：点一个色点只看这个颜色，再点一次显示全部。</span></li>
+    <li><span class="n">3</span><span><b>文件夹</b>：＋ 新建；右键新建子文件夹、重命名、删除（只能删空文件夹）。</span></li>
+    <li><span class="n">4</span><span><b>搜索与排序</b>：搜名称、路径、描述；按最近修改、名称、创建时间、时长、最近打开排序。</span></li>
+    <li><span class="n">5</span><span><b>新建影片</b>；下面一排是列表 / 网格切换和影片体检（感叹号）。</span></li>
+    <li><span class="n">6</span><span><b>影片卡</b>：封面、时长、颜色标签。鼠标左右移动逐帧预览，停住自动轮播。</span></li>
+    <li><span class="n">7</span><span><b>详情</b>：颜色标签、时长、修改 / 创建时间、回放数、摄像机剪辑数、编辑用时、描述。</span></li>
+    <li><span class="n">8</span><span><b>镜头时间轴</b>：这部影片的摄像机剪辑一览。</span></li>
+    <li><span class="n">9</span><span><b>打开影片</b>，下面是重命名、复制、更多。</span></li>
+  </ol>
+
+  <h3 class="sub"><span class="k">2.1</span>影片库主页</h3>
+  <div class="feat"><h4>找影片、开影片、整理影片</h4>
+    <div class="inline-shot"><img src="img:toolbar" alt="列表视图、网格视图、影片体检三个按钮" width="223" height="110"></div>
+    <dl class="g">
+      <dt>入口</dt><dd>仪表盘 → 影片面板，没有打开影片的标签页（或新开一个空标签页）。</dd>
+      <dt>操作</dt><dd><ul>
+        <li>单击选中看详情，双击或 <kbd>Enter</kbd> 打开。</li>
+        <li>默认是<b>网格视图</b>；右上角可以换成列表视图（见图），会记住你的选择。</li>
+        <li>影片右键：打开、重命名（<kbd>F2</kbd>）、复制、移动到…、删除（<kbd>Delete</kbd>，不可撤销）、收藏、封面…、颜色标签、打开所在文件夹、在数据管理器中显示。</li>
+        <li>点星标收藏；<kbd>Ctrl</kbd>+<kbd>F</kbd> 搜索，<kbd>Ctrl</kbd>+<kbd>N</kbd> 新建。</li>
+        <li>联机时（大家都装了 BBS Together），别人正打开的影片上会写「某某 正在编辑」。</li>
+      </ul></dd>
+      <dt class="t">何时用</dt><dd>一个世界里影片超过十几部时：按集数或场次建文件夹，在描述里写这一镜的内容，搜索时能搜到。</dd>
+    </dl>
+    <div class="clear"></div>
+  </div>
+
+  <h3 class="sub"><span class="k">2.2</span>封面、悬停预览、颜色标签</h3>
+  <div class="feat"><h4>每部影片自动有封面和 8 张预览帧</h4>
+    <dl class="g">
+      <dt>自动</dt><dd>在编辑器里打开影片、用影片相机看一遍，就会自动截封面（影片 30% 处）和 8 张分布在全片的预览帧。黑场不会当封面。</dd>
+      <dt>手动</dt><dd><ul>
+        <li>影片编辑器里<b>右键录制按钮 →「把当前画面设为影片封面」</b>：截的是不带编辑器界面的画面，会闪一下白光。</li>
+        <li>把图片文件直接<b>拖到影片库里的影片上</b>；或右键影片 → 封面… → 选择图片作为封面…</li>
+        <li>手动设的封面不会被自动覆盖；想回到自动封面，选「恢复自动封面」。</li>
+      </ul></dd>
+      <dt>颜色标签</dt><dd>右键影片 →「颜色标签」：红、橙、黄、绿、青、蓝、紫、粉。卡片会带上颜色描边，左侧可以按颜色筛选。</dd>
+      <dt class="t">何时用</dt><dd>用颜色标记进度，比如红色 = 待修、黄色 = 在做、绿色 = 已导出。</dd>
+      <dt>怎么调</dt><dd>设置 → 肉兔界面 →「影片库缩略图」（总开关）、「编辑时自动生成缩略图」、「影片库悬停预览」，默认都开。封面存在世界存档里（见<a href="#files">附录 B</a>），每部影片约 0.2 MB。</dd>
+    </dl>
+  </div>
+
+  <h3 class="sub"><span class="k">2.3</span>影片体检</h3>
+  <div class="feat"><h4>找出影片里缺的东西</h4>
+    <p class="what">一次检查这个世界的所有影片：打不开的文件、缺的模型 / 粒子 / 纹理 / 音频、没装插件的形态和关键帧，还会检查 BBS 自动备份是否完好。只读，不改任何东西。</p>
+    <dl class="g">
+      <dt>入口</dt><dd>影片库右上角「列表 / 网格」右边的感叹号。</dd>
+      <dt>操作</dt><dd>点开后自动扫描，结果按问题类型列出，点影片名直接打开那部影片去修。</dd>
+      <dt class="t">何时用</dt><dd>换电脑、整理或删除素材、导入别人发来的影片之后，以及正式导出前。</dd>
+      <dt>注意</dt><dd>联机时只有房主（或单人世界）能体检，因为影片存在房主电脑上。</dd>
+    </dl>
+  </div>
+
+  <h3 class="sub"><span class="k">2.4</span>打开影片的窗口</h3>
+  <div class="feat"><h4>全新影片库界面</h4>
+    <p class="what">影片编辑器里打开 / 管理影片的窗口，换成左边文件夹树、上面搜索框、可排序的布局。</p>
+    <dl class="g">
+      <dt>操作</dt><dd>左边点「全部影片」或某个文件夹；搜索时显示完整路径，<kbd>Esc</kbd> 清空搜索；右键文件夹可「设为默认打开」。</dd>
+      <dt>怎么调</dt><dd>设置 → 肉兔界面 →「全新影片库界面」。</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- 03 -->
+<section class="ch" id="morph">
+  <div class="ch-head"><div class="ch-num">03</div><h2>伪装界面</h2></div>
+  <p class="ch-intro">选形态的窗口换成：左边可折叠的目录树，中间所有分类连成的长列表，右边可收起的详情面板。目录可以自己整理、上色，只改显示，不动硬盘上的文件。</p>
+
+  <figure class="shot">
+    <div class="frame"><img src="img:morph" alt="伪装界面：左侧目录树（收藏、我的分类、粒子、杂项、模型），中间按分类排列的形态格子" width="2000" height="1092">
+      <span class="pin" style="left:50%;top:3.4%">1</span>
+      <span class="pin" style="left:92%;top:7%">2</span>
+      <span class="pin" style="left:9.5%;top:15.6%">3</span>
+      <span class="pin" style="left:9.5%;top:67.1%">4</span>
+      <span class="pin" style="left:25%;top:14.9%">5</span>
+      <span class="pin" style="left:32.5%;top:72%">6</span>
+    </div>
+    <figcaption>伪装界面（目录模式，详情面板收起）。</figcaption>
+  </figure>
+  <ol class="pins">
+    <li><span class="n">1</span><span><b>搜索</b>：左边每项显示命中数，回车选第一个结果，<kbd>Esc</kbd> 清空。</span></li>
+    <li><span class="n">2</span><span><b>顶栏按钮</b>：切换搜索范围（全部 / 仅当前分类）、切换目录 / 专注模式、详情面板等。</span></li>
+    <li><span class="n">3</span><span><b>目录树</b>：收藏、最近使用、我的分类、粒子和模型（按文件夹）、生物、杂项、其他插件的分类。点名字是跳转，点箭头才展开。</span></li>
+    <li><span class="n">4</span><span><b>上色</b>：右键 →「设置颜色...」，颜色会带到下级和中间列表对应的区域。</span></li>
+    <li><span class="n">5</span><span><b>分类标题</b>：中间长列表按左边目录的顺序排，滚动时左边跟着高亮。</span></li>
+    <li><span class="n">6</span><span><b>形态格子</b>：粒子悬停时实时播放；没起名的粒子显示文件名。</span></li>
+  </ol>
+
+  <h3 class="sub"><span class="k">3.1</span>选形态</h3>
+  <div class="feat"><h4>两种模式、收藏、详情</h4>
+    <dl class="g">
+      <dt>入口</dt><dd>回放编辑器 / 形态属性里点「选择」，或任何要选形态的地方。</dd>
+      <dt>操作</dt><dd><ul>
+        <li><b>两种模式</b>：目录模式显示全部，点左边只是滚到那里；专注模式只显示选中的那一枝。</li>
+        <li><b>收藏</b>：右键形态或按 <kbd>F</kbd>；多选后右键「收藏所选」。拖到「收藏」或「我的分类」里是复制。</li>
+        <li><b>详情面板</b>：3D 预览、名字、ID、所在分类；编辑、收藏、复制形态、复制伪装命令、打开模型文件夹、在模型编辑器中打开。</li>
+        <li><b>打开所在文件夹</b>：粒子、图片、挤出图片、视频的格子右键都有（模型用 BBS 自带的「打开模型文件夹」）。</li>
+        <li><b>记住位置</b>：关掉再点「选择」，会回到上次看到的地方（本次游戏内）。右键分类「设为默认打开」则每次都先跳到这里。</li>
+      </ul></dd>
+      <dt class="t">何时用</dt><dd>给一排演员挨个换模型时，选完一个换下一个回放再点「选择」，还停在刚才那一屏。</dd>
+      <dt>怎么调</dt><dd>设置 → 肉兔界面 →「全新伪装界面布局」。窗口很窄时左边会缩成一列图标。</dd>
+    </dl>
+  </div>
+
+  <h3 class="sub"><span class="k">3.2</span>整理目录</h3>
+  <div class="feat"><h4>排序、虚拟文件夹、隐藏、上色、换图标</h4>
+    <dl class="g">
+      <dt>操作</dt><dd><ul>
+        <li><b>排序 / 挂到别处</b>：按住左边的行上下拖；拖到另一项的中间就放进它下面。</li>
+        <li><b>虚拟文件夹</b>：右键「新建文件夹」，把分类或单个模型格子拖进去。右键模型「移回原位置」还原；「解散文件夹」把内容移回上一层。</li>
+        <li><b>隐藏</b>：右键「隐藏」；想找回来先右键「显示已隐藏项」，再「取消隐藏」。搜索时隐藏的也会出现。</li>
+        <li><b>上色 / 图标</b>：右键「设置颜色...」「更改图标...」。</li>
+        <li><b>还原</b>：右键「恢复默认排序」。</li>
+      </ul></dd>
+      <dt class="t">何时用</dt><dd>按项目整理：建一个「第三集」虚拟文件夹，把这一集要用的角色模型都拖进去；用不到的分类直接隐藏。</dd>
+      <dt>注意</dt><dd>这些都只改显示，模型和粒子在硬盘上的位置不变，贴图照常能找到。布局存在 <code>morph_layout.json</code>，换电脑时一起拷过去即可。</dd>
+    </dl>
+  </div>
+  <div class="feat"><h4>格子名字</h4>
+    <dl class="g">
+      <dt>操作</dt><dd>设置 → 肉兔界面 →「伪装格子名字」：模型、粒子、原版粒子、生物、方块、物品、图片、挤出图片、文字、结构、其他，各一个开关，默认全开。关掉后鼠标悬停仍会提示名字；没起名的原版粒子显示粒子类型（如 flame）。</dd>
+      <dt class="t">何时用</dt><dd>方块、物品这类一眼能认出的可以关掉名字，画面更干净。</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- 04 -->
+<section class="ch" id="assets">
+  <div class="ch-head"><div class="ch-num">04</div><h2>编辑器主页</h2></div>
+  <p class="ch-intro">模型编辑器、粒子编辑器、音频编辑器没打开文件时，显示资源工作台：文件夹树、收藏、搜索、最近打开、预览卡片。</p>
+
+  <figure class="shot">
+    <div class="frame"><img src="img:models" alt="模型编辑器主页：左侧文件夹树，最近打开一排，下面是全部模型的缩略图卡片" width="2000" height="1048">
+      <span class="pin" style="left:15.5%;top:9.4%">1</span>
+      <span class="pin" style="left:57%;top:8.6%">2</span>
+      <span class="pin" style="left:9%;top:15.5%">3</span>
+      <span class="pin" style="left:21.5%;top:16.6%">4</span>
+      <span class="pin" style="left:20%;top:41.5%">5</span>
+    </div>
+    <figcaption>模型编辑器主页。</figcaption>
+  </figure>
+  <ol class="pins">
+    <li><span class="n">1</span><span><b>标题</b>：资源总数和收藏数。</span></li>
+    <li><span class="n">2</span><span><b>搜索、按名称 / 最近排序、新建、打开文件夹、更多</b>（数据管理、教程、Wiki 等）。</span></li>
+    <li><span class="n">3</span><span><b>左侧</b>：收藏、全部、文件夹树（点箭头展开）。</span></li>
+    <li><span class="n">4</span><span><b>最近打开</b>：最近编辑过的放在最前面。</span></li>
+    <li><span class="n">5</span><span><b>全部</b>：带缩略图的卡片，下面一行灰字是所在文件夹。</span></li>
+  </ol>
+
+  <div class="trio">
+    <figure class="shot">
+      <div class="frame"><img src="img:particles" alt="粒子编辑器主页：粒子文件夹树和粒子效果卡片" width="2000" height="1074">
+        <span class="pin" style="left:6.8%;top:80.8%">1</span>
+        <span class="pin" style="left:22.5%;top:20.5%">2</span>
+      </div>
+      <figcaption>粒子编辑器主页：<b>1</b> 选中的文件夹，<b>2</b> 粒子卡片，鼠标停上去会实时播放这个粒子。</figcaption>
+    </figure>
+    <figure class="shot">
+      <div class="frame"><img src="img:audio" alt="音频编辑器主页：最近打开的波形卡片和带波形、格式、日期、大小、时长的音频列表" width="2000" height="1078">
+        <span class="pin" style="left:21%;top:17.6%">1</span>
+        <span class="pin" style="left:64%;top:46.5%">2</span>
+        <span class="pin" style="left:97.3%;top:46.5%">3</span>
+      </div>
+      <figcaption>音频编辑器主页：<b>1</b> 最近打开（画出波形），<b>2</b> 每行的波形，<b>3</b> 格式、日期、大小、时长。</figcaption>
+    </figure>
+  </div>
+
+  <div class="feat"><h4>资源工作台</h4>
+    <dl class="g">
+      <dt>入口</dt><dd>仪表盘 → 模型 / 粒子 / 音频编辑器，没打开文件的标签页。</dd>
+      <dt>操作</dt><dd><ul>
+        <li>双击打开编辑；卡片上的星标收藏。</li>
+        <li>右键：打开、复制 ID、收藏、在数据管理中显示、打开所在文件夹；模型还有「用它伪装」（把你自己的玩家直接伪装成这个模型）。</li>
+        <li><kbd>Ctrl</kbd>+滚轮调卡片大小。</li>
+      </ul></dd>
+      <dt class="t">何时用</dt><dd>素材多、记不住文件名时按缩略图找；试粒子时悬停就能看效果，不用一个个打开。</dd>
+      <dt>怎么调</dt><dd>设置 → 肉兔界面 →「资源面板主页（模型/粒子/音频）」，默认开。</dd>
+    </dl>
+  </div>
+  <div class="feat"><h4>粒子编辑器小改</h4>
+    <dl class="g">
+      <dt>操作</dt><dd>按 <kbd>R</kbd> 重启发射器（在文本框里打字时不会触发），调参数时随时重看一遍。顶栏的「重置布局」挪到了锁按钮的右键菜单里，不会再误点。</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- 05 -->
+<section class="ch" id="packs">
+  <div class="ch-head"><div class="ch-num">05</div><h2>材质包预设</h2></div>
+  <p class="ch-intro">把一套材质包组合（启用哪些、什么顺序）存成预设，一键切换。</p>
+  <div class="feat"><h4>存预设、切预设</h4>
+    <dl class="g">
+      <dt>入口</dt><dd>选项 → 资源包。界面下方多了一行：最多 4 个预设的快捷按钮 + 「预设…」按钮。启动台左下角的「选项」也能进。</dd>
+      <dt>操作</dt><dd><ol>
+        <li>先在原版界面把右栏的材质包排好。</li>
+        <li>点「预设…」→ 起个名字 →「保存当前组合」。</li>
+        <li>之后点快捷按钮（或预设界面里点名字）就换成这套并重新加载资源。</li>
+      </ol>
+      「覆盖」用当前右栏更新某个预设；「删除」要点两次确认。预设里有找不到的材质包会跳过并提示。</dd>
+      <dt class="t">何时用</dt><dd>拍不同题材要换整套风格时（比如「写实」「原版」「卡通」），或者编辑时用低分辨率材质、导出前换高清材质。</dd>
+      <dt>怎么调</dt><dd>设置 → 肉兔界面 →「材质包预设」，关掉后资源包界面不显示这一行。</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- A -->
+<section class="ch" id="settings">
+  <div class="ch-head"><div class="ch-num alt">A</div><h2>设置一览</h2></div>
+  <p class="ch-intro">BBS 仪表盘 → 设置 → <b>肉兔界面</b>。鼠标停在设置名上会显示完整说明。英文版游戏里显示英文。</p>
+  <div class="tbl"><table>
+    <thead><tr><th>分组</th><th>设置</th><th>默认</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td class="nowrap">启动台与材质包</td><td>BBS-Rabbit 启动台</td><td>开</td><td>关掉后恢复原版标题界面、选择世界、多人游戏</td></tr>
+      <tr><td class="nowrap">启动台与材质包</td><td>启动台大小</td><td>1.3</td><td>启动台比 BBS 界面大多少倍（0.75～2.5）</td></tr>
+      <tr><td class="nowrap">启动台与材质包</td><td>材质包预设</td><td>开</td><td>资源包界面下方的预设按钮</td></tr>
+      <tr><td class="nowrap">影片库</td><td>仪表盘影片库主页</td><td>开</td><td>影片面板空白页显示影片库</td></tr>
+      <tr><td class="nowrap">影片库</td><td>全新影片库界面</td><td>开</td><td>打开影片的窗口用文件夹树布局</td></tr>
+      <tr><td class="nowrap">影片库</td><td>影片库缩略图</td><td>开</td><td>封面、预览帧、颜色标签（总开关）</td></tr>
+      <tr><td class="nowrap">影片库</td><td>编辑时自动生成缩略图</td><td>开</td><td>编辑时自动截封面和预览帧</td></tr>
+      <tr><td class="nowrap">影片库</td><td>影片库悬停预览</td><td>开</td><td>鼠标停在影片卡上逐帧预览</td></tr>
+      <tr><td class="nowrap">伪装界面</td><td>全新伪装界面布局</td><td>开</td><td>关掉后用 BBS 原来的伪装界面</td></tr>
+      <tr><td class="nowrap">伪装格子名字</td><td>模型 / 粒子 / 原版粒子 / 生物 / 方块 / 物品 / 图片 / 挤出图片 / 文字 / 结构 / 其他</td><td>开</td><td>每种形态的格子显示不显示名字</td></tr>
+      <tr><td class="nowrap">编辑器面板</td><td>资源面板主页（模型/粒子/音频）</td><td>开</td><td>编辑器空白页显示资源工作台</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- B -->
+<section class="ch" id="files">
+  <div class="ch-head"><div class="ch-num alt">B</div><h2>文件存在哪</h2></div>
+  <p class="ch-intro">路径都相对游戏目录（<code>.minecraft</code> 或启动器里这个版本的文件夹）。想清空某个界面的个人设置，关掉游戏后删掉对应文件即可。</p>
+  <div class="tbl"><table>
+    <thead><tr><th>内容</th><th>位置</th></tr></thead>
+    <tbody>
+      <tr><td>本插件的设置</td><td><code>config/bbs/settings/bbs_ui_rabbit.json</code></td></tr>
+      <tr><td>启动台：收藏、标签、别名、封面选择</td><td><code>config/bbs_ui_rabbit/launcher.json</code></td></tr>
+      <tr><td>启动台：自选的世界封面</td><td><code>config/bbs_ui_rabbit/launcher_covers/</code></td></tr>
+      <tr><td>材质包预设</td><td><code>config/bbs_ui_rabbit/resource_pack_presets.json</code></td></tr>
+      <tr><td>伪装界面：目录整理、颜色</td><td><code>config/bbs/settings/bbs_ui_rabbit/morph_layout.json</code></td></tr>
+      <tr><td>伪装界面：收藏</td><td><code>config/bbs/settings/bbs_ui_rabbit/morph_favorites.json</code></td></tr>
+      <tr><td>伪装界面：分类图标</td><td><code>config/bbs/settings/bbs_ui_rabbit/morph_category_icons.json</code></td></tr>
+      <tr><td>编辑器主页：收藏、排序等</td><td><code>config/bbs/settings/bbs_ui_rabbit/asset_home.json</code></td></tr>
+      <tr><td>影片库：收藏、最近打开、视图</td><td><code>config/bbs_ui_rabbit/film_library.json</code></td></tr>
+      <tr><td>影片封面、预览帧、颜色标签</td><td><code>&lt;世界文件夹&gt;/bbs/bbspp_library/</code>（跟着存档走）</td></tr>
+      <tr><td>去别人服务器时的封面缓存</td><td><code>config/bbs_ui_rabbit/library/&lt;服务器地址&gt;/</code></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- C -->
+<section class="ch" id="online">
+  <div class="ch-head"><div class="ch-num alt">C</div><h2>联机</h2></div>
+  <div class="feat"><h4>封面怎么同步</h4>
+    <ul>
+      <li>封面、预览帧、颜色标签保存在<b>房主</b>的世界里。房主装了肉兔界面（或 BBS++）时，所有装了的玩家看到同一份，有人改了其他人马上能看到。</li>
+      <li>肉兔界面和 BBS++ 用的是同一套同步方式和同一个存放位置：朋友用 BBS++、你用肉兔界面，也能互相看到封面。</li>
+      <li>房主没装时，封面只保存在你自己电脑上。</li>
+      <li>没装的玩家照常玩，只是看不到这些界面，不会出错。</li>
+      <li>「某某 正在编辑」需要大家都装 BBS Together。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- D -->
+<section class="ch" id="faq">
+  <div class="ch-head"><div class="ch-num alt">D</div><h2>常见问题</h2></div>
+  <div class="feat"><h4>启动台太大 / 太小？</h4><p>设置 → 肉兔界面 →「启动台大小」。</p></div>
+  <div class="feat"><h4>只想要其中几块界面？</h4><p>每块界面都是单独的开关，把不要的关掉就行，比如关掉「BBS-Rabbit 启动台」，其他照常。</p></div>
+  <div class="feat"><h4>影片库没有封面？</h4><p>封面要在编辑器里用影片相机看过这部影片才会自动截（打开影片 1.5 秒后开始）。也可以右键录制按钮手动设。检查一下「影片库缩略图」和「编辑时自动生成缩略图」是不是开着。</p></div>
+  <div class="feat"><h4>伪装目录整理乱了？</h4><p>右键「恢复默认排序」；或者关掉游戏删掉 <code>morph_layout.json</code>，全部回到默认。</p></div>
+  <div class="feat"><h4>和其他插件冲突？</h4><p>本插件只依赖 BBS FS 2.7，可以和 BBS++ 一起装（注意上面<a href="#install">安装</a>里的提醒）。遇到问题请附上 <code>logs/latest.log</code>。</p></div>
+</section>
+
+<footer>
+  <p><b>许可</b>：LGPL-3.0-or-later，源码随发布一起提供（<code>bbs-ui-rabbit-1.0.1-源码.zip</code>）。</p>
+  <p><b>致谢</b>：影片库主页和新伪装界面最初来自 BBS++（作者 Gbeic），本插件在它的基础上重做和扩展，单独拆出来给只装 BBS FS 2.7 的人用。感谢 BBS FS 作者 mchorse 和 BBS 社区。界面风格与小文绪：肉兔重工。</p>
+</footer>
+
+</main>
+</div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-label="大图" tabindex="-1"><img alt=""></div>
+
+<script>
+(function(){
+  var q=document.getElementById('q'), note=document.getElementById('qnote');
+  var sections=[].slice.call(document.querySelectorAll('main section.ch'));
+  var links=[].slice.call(document.querySelectorAll('#tocList a'));
+  function filter(){
+    var term=(q.value||'').trim().toLowerCase();
+    var hits=0;
+    sections.forEach(function(sec){
+      var items=[].slice.call(sec.querySelectorAll('.feat, .tip, tbody tr, ol.pins > li'));
+      var secHit=false;
+      items.forEach(function(el){
+        var ok=!term||el.textContent.toLowerCase().indexOf(term)>=0;
+        el.classList.toggle('hidden-by-search',!ok);
+        if(ok&&term){hits++;secHit=true;}
+      });
+      var head=sec.querySelector('.ch-head h2');
+      if(term&&head&&head.textContent.toLowerCase().indexOf(term)>=0){secHit=true;items.forEach(function(el){el.classList.remove('hidden-by-search');});}
+      sec.querySelectorAll('h3.sub').forEach(function(h){
+        var n=h.nextElementSibling, any=false;
+        while(n&&!(n.matches&&n.matches('h3.sub'))){
+          if(n.matches&&n.matches('.feat,.tip')&&!n.classList.contains('hidden-by-search')){any=true;}
+          n=n.nextElementSibling;
+        }
+        h.classList.toggle('hidden-by-search',!!term&&!any);
+      });
+      sec.querySelectorAll('figure.shot').forEach(function(f){f.classList.toggle('hidden-by-search',!!term);});
+      sec.classList.toggle('hidden-by-search',!!term&&!secHit);
+    });
+    document.querySelector('.hero').classList.toggle('hidden-by-search',!!term);
+    note.textContent=term?(hits?('找到 '+hits+' 处'):'没有找到，换个说法试试'):'';
+  }
+  q.addEventListener('input',filter);
+  q.addEventListener('keydown',function(e){if(e.key==='Escape'){q.value='';filter();}});
+
+  /* 说明列表悬停时，图上对应的编号放大 */
+  [].slice.call(document.querySelectorAll('figure.shot')).forEach(function(fig){
+    var list=fig.nextElementSibling;
+    if(!list||!list.matches('ol.pins'))return;
+    var pins=[].slice.call(fig.querySelectorAll('.pin'));
+    [].slice.call(list.children).forEach(function(li,i){
+      li.addEventListener('mouseenter',function(){if(pins[i])pins[i].classList.add('hot');});
+      li.addEventListener('mouseleave',function(){if(pins[i])pins[i].classList.remove('hot');});
+    });
+  });
+
+  /* 点图看大图 */
+  var box=document.getElementById('lightbox'), big=box.querySelector('img');
+  [].slice.call(document.querySelectorAll('.shot .frame')).forEach(function(fr){
+    fr.addEventListener('click',function(){var im=fr.querySelector('img');big.src=im.src;big.alt=im.alt;box.classList.add('on');box.focus();});
+  });
+  function close(){box.classList.remove('on');big.removeAttribute('src');}
+  box.addEventListener('click',close);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&box.classList.contains('on'))close();});
+
+  if('IntersectionObserver' in window){
+    var map={};links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){links.forEach(function(a){a.classList.remove('on');});var a=map[e.target.id];if(a)a.classList.add('on');}
+      });
+    },{rootMargin:'-20% 0px -70% 0px'});
+    sections.forEach(function(s){io.observe(s);});
+  }
+})();
+</script>
+</body>
+</html>

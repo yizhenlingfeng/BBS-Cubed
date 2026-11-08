@@ -1,0 +1,41 @@
+{
+    "required": true,
+    "package": "routu.bbsuirabbit.mixin",
+    "compatibilityLevel": "JAVA_17",
+    "client": [
+        "BBSModClientLauncherScaleMixin",
+        "FilmCaptureHideControllerMixin",
+        "FilmCaptureHideMotionPathMixin",
+        "FilmCaptureHideRecorderMixin",
+        "FolderManagerFilmLibraryMixin",
+        "FolderManagerRepositoryAccessor",
+        "FormCellRendererMorphMixin",
+        "L10nRabbitMixin",
+        "MinecraftClientLauncherMixin",
+        "UICRUDDashboardPanelLibrarySizeMixin",
+        "UIDataDashboardPanelAccessor",
+        "UIDataOverlayPanelFilmLibraryMixin",
+        "UIDataPathListFilmLibraryMixin",
+        "UIEditorDashboardPanelAssetHomeMixin",
+        "UIEditorDashboardPanelFilmHomeMixin",
+        "UIElementContextAccessor",
+        "UIElementMixin",
+        "UIFilmOverlayLibraryLayoutMixin",
+        "UIFilmPanelFilmHomeMixin",
+        "UIFilmPreviewThumbnailMixin",
+        "UIFormCategoryMixin",
+        "UIFormEditorMixin",
+        "UIFormListAccessor",
+        "UIFormListMixin",
+        "UIFormPaletteMixin",
+        "UIModelRendererAccessor",
+        "UIParticleSchemePanelTweaksMixin",
+        "UIScreenFileDropMixin",
+        "UITextboxFilmLibrarySearchMixin",
+        "PackScreenPresetsMixin",
+        "PackOrganizerAccessor"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

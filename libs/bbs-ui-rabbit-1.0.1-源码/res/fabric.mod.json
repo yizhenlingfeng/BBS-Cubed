@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "bbs_ui_rabbit",
+  "version": "1.0.1+bbsfs2.7",
+  "name": "BBS UI Rabbit（肉兔界面）",
+  "description": "BBS FS 2.7 界面插件：BBS-Rabbit 启动台（世界/服务器）、影片库主页与封面、全新伪装界面、模型/粒子/音频编辑器资源主页。只需要 BBS FS 2.7。",
+  "authors": [
+    "肉兔重工"
+  ],
+  "contributors": [
+    "Gbeic（BBS++ 原作者：影片库与新伪装面板的最初版本）"
+  ],
+  "license": "LGPL-3.0-or-later",
+  "icon": "assets/bbs/assets/textures/bbs_ui_rabbit/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "routu.bbsuirabbit.client.RabbitClient"
+    ],
+    "bbs-client-addon": [
+      "routu.bbsuirabbit.client.RabbitClientAddon"
+    ]
+  },
+  "mixins": [
+    "bbs_ui_rabbit.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": "=1.20.1",
+    "java": ">=17",
+    "bbs": ">=2.7-1.20.1"
+  }
+}
