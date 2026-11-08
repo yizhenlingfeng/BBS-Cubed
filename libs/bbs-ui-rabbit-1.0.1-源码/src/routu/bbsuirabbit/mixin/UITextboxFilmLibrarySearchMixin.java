@@ -1,15 +1,3 @@
-/*
- * Decompiled with CFR 0.152.
- *
- * Could not load the following classes:
- *  mchorse.bbs_mod.ui.framework.UIContext
- *  mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox
- *  org.spongepowered.asm.mixin.Mixin
- *  org.spongepowered.asm.mixin.Unique
- *  org.spongepowered.asm.mixin.injection.At
- *  org.spongepowered.asm.mixin.injection.Inject
- *  org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
- */
 package routu.bbsuirabbit.mixin;
 
 import routu.bbsuirabbit.client.ui.film.IFilmLibrarySearchBox;

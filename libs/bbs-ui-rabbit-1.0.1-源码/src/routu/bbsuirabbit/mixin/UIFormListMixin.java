@@ -1,13 +1,3 @@
-/*
- * Decompiled with CFR 0.152.
- *
- * Could not load the following classes:
- *  mchorse.bbs_mod.ui.forms.UIFormList
- *  org.spongepowered.asm.mixin.Mixin
- *  org.spongepowered.asm.mixin.injection.At
- *  org.spongepowered.asm.mixin.injection.Inject
- *  org.spongepowered.asm.mixin.injection.callback.CallbackInfo
- */
 package routu.bbsuirabbit.mixin;
 
 import routu.bbsuirabbit.ui.morphing.UIBBSPPFormList;

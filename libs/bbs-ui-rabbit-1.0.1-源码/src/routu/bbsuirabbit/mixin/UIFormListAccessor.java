@@ -1,12 +1,3 @@
-/*
- * Decompiled with CFR 0.152.
- *
- * Could not load the following classes:
- *  mchorse.bbs_mod.ui.forms.UIFormList
- *  mchorse.bbs_mod.ui.forms.categories.UIFormCategory
- *  org.spongepowered.asm.mixin.Mixin
- *  org.spongepowered.asm.mixin.gen.Accessor
- */
 package routu.bbsuirabbit.mixin;
 
 import java.util.List;

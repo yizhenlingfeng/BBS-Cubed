@@ -1,21 +1,3 @@
-/*
- * Decompiled with CFR 0.152.
- *
- * Could not load the following classes:
- *  mchorse.bbs_mod.BBSSettings
- *  mchorse.bbs_mod.l10n.L10n
- *  mchorse.bbs_mod.ui.UIKeys
- *  mchorse.bbs_mod.ui.dashboard.list.UIDataPathList
- *  mchorse.bbs_mod.ui.framework.UIContext
- *  mchorse.bbs_mod.ui.framework.elements.UIElement
- *  mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox
- *  mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer
- *  mchorse.bbs_mod.ui.utils.Scroll
- *  mchorse.bbs_mod.ui.utils.icons.Icon
- *  mchorse.bbs_mod.ui.utils.icons.Icons
- *  mchorse.bbs_mod.utils.DataPath
- *  mchorse.bbs_mod.utils.NaturalOrderComparator
- */
 package routu.bbsuirabbit.client.ui.film;
 
 import routu.bbsuirabbit.client.ui.film.FilmLibraryDefaultLocation;

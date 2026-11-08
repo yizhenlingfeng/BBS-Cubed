@@ -1,9 +1,3 @@
-/*
- * Decompiled with CFR 0.152.
- *
- * Could not load the following classes:
- *  mchorse.bbs_mod.utils.DataPath
- */
 package routu.bbsuirabbit.client.ui.film;
 
 import java.util.Collection;

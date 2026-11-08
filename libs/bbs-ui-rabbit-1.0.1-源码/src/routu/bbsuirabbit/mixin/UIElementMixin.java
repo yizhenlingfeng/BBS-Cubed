@@ -1,21 +1,3 @@
-/*
- * Decompiled with CFR 0.152.
- *
- * Could not load the following classes:
- *  mchorse.bbs_mod.ui.UIKeys
- *  mchorse.bbs_mod.ui.forms.categories.UIFormCategory
- *  mchorse.bbs_mod.ui.framework.UIContext
- *  mchorse.bbs_mod.ui.framework.elements.IUIElement
- *  mchorse.bbs_mod.ui.framework.elements.UIElement
- *  mchorse.bbs_mod.ui.framework.elements.context.UIContextMenu
- *  mchorse.bbs_mod.ui.framework.elements.context.UISimpleContextMenu
- *  org.spongepowered.asm.mixin.Mixin
- *  org.spongepowered.asm.mixin.injection.At
- *  org.spongepowered.asm.mixin.injection.Inject
- *  org.spongepowered.asm.mixin.injection.Redirect
- *  org.spongepowered.asm.mixin.injection.callback.CallbackInfo
- *  org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
- */
 package routu.bbsuirabbit.mixin;
 
 import routu.bbsuirabbit.client.ui.film.IFilmLibraryLayoutToggle;

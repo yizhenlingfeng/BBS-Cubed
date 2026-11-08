@@ -1,22 +1,3 @@
-/*
- * Decompiled with CFR 0.152.
- *
- * Could not load the following classes:
- *  mchorse.bbs_mod.BBSModClient
- *  mchorse.bbs_mod.forms.FormCategories
- *  mchorse.bbs_mod.forms.forms.Form
- *  mchorse.bbs_mod.ui.forms.IUIFormList
- *  mchorse.bbs_mod.ui.forms.UIFormList
- *  mchorse.bbs_mod.ui.forms.UIFormPalette
- *  mchorse.bbs_mod.ui.framework.UIContext
- *  mchorse.bbs_mod.ui.framework.elements.IUIElement
- *  mchorse.bbs_mod.ui.framework.elements.UIElement
- *  org.spongepowered.asm.mixin.Mixin
- *  org.spongepowered.asm.mixin.Unique
- *  org.spongepowered.asm.mixin.injection.At
- *  org.spongepowered.asm.mixin.injection.Inject
- *  org.spongepowered.asm.mixin.injection.callback.CallbackInfo
- */
 package routu.bbsuirabbit.mixin;
 
 import routu.bbsuirabbit.RabbitSettings;

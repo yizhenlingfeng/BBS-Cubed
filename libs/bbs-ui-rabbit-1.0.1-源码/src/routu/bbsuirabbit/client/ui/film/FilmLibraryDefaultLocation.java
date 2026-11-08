@@ -1,11 +1,3 @@
-/*
- * Decompiled with CFR 0.152.
- *
- * Could not load the following classes:
- *  mchorse.bbs_mod.settings.Settings
- *  mchorse.bbs_mod.settings.values.base.BaseValue
- *  mchorse.bbs_mod.utils.DataPath
- */
 package routu.bbsuirabbit.client.ui.film;
 
 import routu.bbsuirabbit.RabbitSettings;
