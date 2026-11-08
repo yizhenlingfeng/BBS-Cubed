@@ -1,19 +1,15 @@
 package gbeic.bbsplusplus.mixin;
 
-import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
-import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.UIKeybind;
 import mchorse.bbs_mod.ui.utils.keys.KeyAction;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
-import mchorse.bbs_mod.utils.Direction;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.function.Consumer;
@@ -31,38 +27,9 @@ import java.util.function.Consumer;
 @Mixin(value = UIKeybind.class, remap = true)
 public class UIKeybindMixin
 {
-    /** 教程描述的提示框宽度（像素），够放一行完整的操作步骤。 */
-    private static final int DESCRIPTION_WIDTH = 260;
-
     @Shadow public KeyCombo combo;
     @Shadow public boolean reading;
     @Shadow public Consumer<KeyCombo> callback;
-
-    /**
-     * 给「肢体选择」这类按住式快捷键加上分步教程的悬停描述。
-     *
-     * <p>BBS 默认把快捷键所在那一行的 tooltip 设成快捷键自己的名字（等于把标题再重复一遍），
-     * 这里换成多行用法教程（文案里用 \n 分行，{@code LabelTooltip} 会逐行绘制）；
-     * 只针对这个快捷键，其它按键行不受影响。</p>
-     */
-    @Inject(method = "render", at = @At("HEAD"))
-    private void bbspp$limbPickDescription(UIContext context, CallbackInfo ci)
-    {
-        if (this.combo == null || !SnowUIKeys.IGNORE_PICKING_OVERRIDE_KEY.id.equals(this.combo.id))
-        {
-            return;
-        }
-
-        UIElement self = (UIElement) (Object) this;
-        UIElement parent = self.getParent();
-
-        self.tooltip(SnowUIKeys.IGNORE_PICKING_OVERRIDE_DESC, DESCRIPTION_WIDTH, Direction.BOTTOM);
-
-        if (parent != null)
-        {
-            parent.tooltip(SnowUIKeys.IGNORE_PICKING_OVERRIDE_DESC, DESCRIPTION_WIDTH, Direction.BOTTOM);
-        }
-    }
 
     /**
      * 在 subKeyPressed 的最开头拦截。

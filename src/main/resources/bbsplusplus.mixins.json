@@ -142,7 +142,8 @@
         "client.UIBaseMenuLimbPickMixin",
         "client.StencilFormFramebufferLimbPickMixin",
         "client.ModelFormRendererLimbPickMixin",
-        "client.ModelIKDebugLimbPickMixin"
+        "client.ModelIKDebugLimbPickMixin",
+    "client.UIValueMapLimbPickMixin"
     ],
     "injectors": {
         "defaultRequire": 0
