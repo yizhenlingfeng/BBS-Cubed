@@ -147,7 +147,7 @@ final class TextureTweenSourceCache
         }
         catch (Exception e)
         {
-            BBSPlusPlusMod.LOGGER.warn("无法读取纹理补间源贴图：{}", link, e);
+            BBSPlusPlusMod.LOGGER.warn("无法读取纹理补间的源纹理：{}", link, e);
             return null;
         }
         finally
@@ -174,7 +174,7 @@ final class TextureTweenSourceCache
 
             if (pixels.width != width || pixels.height != height)
             {
-                BBSPlusPlusMod.LOGGER.warn("忽略尺寸不匹配的 PBR 伴随贴图：{}（{}x{}，预期 {}x{}）",
+                BBSPlusPlusMod.LOGGER.warn("忽略尺寸不匹配的 PBR 伴随纹理：{}（{}x{}，预期 {}x{}）",
                     link, pixels.width, pixels.height, width, height);
                 return null;
             }

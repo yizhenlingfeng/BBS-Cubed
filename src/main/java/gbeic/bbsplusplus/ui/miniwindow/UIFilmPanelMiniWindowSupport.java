@@ -825,7 +825,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         }
         catch (Throwable t)
         {
-            ClientFeatures.LOGGER.warn("[MiniWindow] 维持浮动时间线可见性失败", t);
+            ClientFeatures.LOGGER.warn("[MiniWindow] 维持浮动时间轴可见性失败", t);
         }
     }
 

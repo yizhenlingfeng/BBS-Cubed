@@ -3,7 +3,7 @@
     "id": "${mod_id}",
     "version": "${version}",
     "name": "${mod_name}",
-    "description": "BBS Cubed 扩展功能插件 – 一阵泠风、Gbeic、snowstar 合作版本，为 BBS 模组增添更多实用功能（已合并 FSloveCML）",
+    "description": "BBS Cubed 扩展功能插件 — 一阵泠风、Gbeic、snowstar 合作版本，为 BBS 模组增添更多实用功能（已合并 FSloveCML）",
     "authors": ["一阵泠风", "Gbeic", "snowstar"],
     "contributors": ["WeiJinZhiBao (Shader Curves Fix, Structure Form)", "Twiap工作室, Sweatent (FSloveCML)"],
     "license": "${mod_license}",

@@ -9,7 +9,7 @@ import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.l10n.L10n;
 
 /**
- * 右键 Premiere 按钮时的快捷设置(与 BBS_snow 主设置项同步)。
+ * 右键 Premiere 按钮时的快捷设置（与 BBS Cubed 主设置项同步）。
  */
 public class UIPremiereExportSettingsOverlayPanel extends UIOverlayPanel
 {
@@ -27,7 +27,7 @@ public class UIPremiereExportSettingsOverlayPanel extends UIOverlayPanel
 
         this.filmPanel = filmPanel;
 
-        this.enabled = new UIToggle(L10n.lang("bbs.config.bbs_snow.premiere_export_enabled"), (b) ->
+        this.enabled = new UIToggle(L10n.lang("bbspp.config.export.premiere_export_enabled"), (b) ->
         {
             if (ModSettings.premiereExportEnabled != null)
             {
@@ -35,43 +35,43 @@ public class UIPremiereExportSettingsOverlayPanel extends UIOverlayPanel
                 this.bbspp_cml$updateButtonVisibility();
             }
         });
-        this.enabled.tooltip(L10n.lang("bbs.config.bbs_snow.premiere_export_enabled-comment"));
+        this.enabled.tooltip(L10n.lang("bbspp.config.export.premiere_export_enabled-comment"));
 
-        this.individualAudio = new UIToggle(L10n.lang("bbs.config.bbs_snow.premiere_export_individual_audio"), (b) ->
+        this.individualAudio = new UIToggle(L10n.lang("bbspp.config.export.premiere_export_individual_audio"), (b) ->
         {
             if (ModSettings.premiereExportIndividualAudio != null)
             {
                 ModSettings.premiereExportIndividualAudio.set(b.getValue());
             }
         });
-        this.individualAudio.tooltip(L10n.lang("bbs.config.bbs_snow.premiere_export_individual_audio-comment"));
+        this.individualAudio.tooltip(L10n.lang("bbspp.config.export.premiere_export_individual_audio-comment"));
 
-        this.audioOnly = new UIToggle(L10n.lang("bbs.config.bbs_snow.premiere_export_audio_only"), (b) ->
+        this.audioOnly = new UIToggle(L10n.lang("bbspp.config.export.premiere_export_audio_only"), (b) ->
         {
             if (ModSettings.premiereExportAudioOnly != null)
             {
                 ModSettings.premiereExportAudioOnly.set(b.getValue());
             }
         });
-        this.audioOnly.tooltip(L10n.lang("bbs.config.bbs_snow.premiere_export_audio_only-comment"));
+        this.audioOnly.tooltip(L10n.lang("bbspp.config.export.premiere_export_audio_only-comment"));
 
-        this.ntscFlag = new UIToggle(L10n.lang("bbs.config.bbs_snow.premiere_export_ntsc_flag"), (b) ->
+        this.ntscFlag = new UIToggle(L10n.lang("bbspp.config.export.premiere_export_ntsc_flag"), (b) ->
         {
             if (ModSettings.premiereExportNtscFlag != null)
             {
                 ModSettings.premiereExportNtscFlag.set(b.getValue());
             }
         });
-        this.ntscFlag.tooltip(L10n.lang("bbs.config.bbs_snow.premiere_export_ntsc_flag-comment"));
+        this.ntscFlag.tooltip(L10n.lang("bbspp.config.export.premiere_export_ntsc_flag-comment"));
 
-        this.exportSrt = new UIToggle(L10n.lang("bbs.config.bbs_snow.premiere_export_srt"), (b) ->
+        this.exportSrt = new UIToggle(L10n.lang("bbspp.config.export.premiere_export_srt"), (b) ->
         {
             if (ModSettings.premiereExportSrt != null)
             {
                 ModSettings.premiereExportSrt.set(b.getValue());
             }
         });
-        this.exportSrt.tooltip(L10n.lang("bbs.config.bbs_snow.premiere_export_srt-comment"));
+        this.exportSrt.tooltip(L10n.lang("bbspp.config.export.premiere_export_srt-comment"));
 
         UIScrollView editor = UI.scrollView(5, 6,
             this.enabled,

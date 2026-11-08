@@ -1,6 +1,6 @@
 # BBS FS 中文本地化术语表
 
-> **版本**：v1.1（2026-10-04，基于 BBS FS 2.8 更新内容维护）
+> **版本**：v1.2（2026-10-28，随 2.8 上游同步增补术语与译法规则）
 > **适用范围**：`lang.assets_strings.*.json` 及 BBS FS 后续所有 UI 字符串、文档、教程翻译
 > **参考依据**：`zh_cn_FS_2.7_strings.json`（既有译文风格）、`zh_cn_FS_2.8_strings.json`（2.8 新增/修订译文）、`BBS FS 2.6 Changelog.md`
 >
@@ -51,7 +51,7 @@
 | 原文 | 说明 | 示例 Key |
 |---|---|---|
 | Tick / Ticks | 游戏时间单位，不译作「刻」；与量词连用写作「N 个 Tick」 | `bbs.ui.film.markers.tick`、`bbs.ui.film.replay.bake_ik.range` |
-| IK | 反向动力学 | `bbs.ui.film.replay.bake_ik.title` |
+| IK | 反向动力学；缩写形式保留 IK 不译，仅全名 Inverse Kinematics 出现时译「反向动力学」 | `bbs.ui.film.replay.bake_ik.title` |
 | Spline IK | 样条反向动力学；Spline 可译「样条」，组合术语保留 IK 原文 | `bbs.ui.forms.editors.model.spline.title` |
 | CEM | OptiFine 自定义实体模型 | `bbs.ui.forms.editor.model.cem` |
 | PBR / LabPBR | 基于物理的渲染材质标准 | `bbs.ui.forms.editors.material.section_pbr` |
@@ -101,6 +101,7 @@
 |---|---|---|---|
 | Auto keyframe | 自动关键帧 | 2.6 核心功能 | `bbs.ui.film.auto_keyframe` |
 | Bake | 烘焙 | IK/动画固化到关键帧 | `bbs.ui.film.replay.bake_ik.bake` |
+| Camera | 摄像机 | 统一译「摄像机」，避免译作「相机」 | `bbs.config.camera.camera_smoothness` |
 | Chain | 链条 | IK 链；骨骼首尾相接的骨骼序列 | `bbs.ui.forms.editors.model.ik.chain_length` |
 | Detach | 分离 | 锚点解除挂接 | `bbs.ui.generic_keyframes.anchor.detach` |
 | Distribute | 分布 | 样条 IK 关节沿曲线分布 | `bbs.ui.forms.editors.model.spline.fit` |

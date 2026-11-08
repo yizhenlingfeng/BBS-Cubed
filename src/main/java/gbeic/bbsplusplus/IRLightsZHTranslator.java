@@ -215,7 +215,7 @@ public class IRLightsZHTranslator {
         LANG_KEY_MAP.put("bbs.config.irlite.show_guides-comment",
             "为世界中放置的点光源和聚光灯绘制线框。");
         LANG_KEY_MAP.put("bbs.config.irlite.shadow_quality-comment",
-            "阴影深度贴图分辨率。越高越清晰，但占用更多显存（低～40 MB……极高～2.5 GB）。");
+            "阴影深度贴图分辨率。越高越清晰，但占用更多显存（低约 40 MB...极高约 2.5 GB）。");
         LANG_KEY_MAP.put("bbs.config.irlite.shadow_cache-comment",
             "仅在灯光或遮挡物移动时重新烘焙阴影贴图。静态场景大幅提升帧率，如阴影有残影请关闭。");
         LANG_KEY_MAP.put("bbs.config.irlite.shadow_blocks-comment",
@@ -335,7 +335,7 @@ public class IRLightsZHTranslator {
 
         // —— 阴影分类设置项注释 ——
         LANG_KEY_MAP.put("irlights.config.shadows.shadow_quality-comment",
-            "阴影深度贴图的分辨率。越高越清晰，但占用更多显存（低约 40 MiB……极致约 2.5 GiB）。");
+            "阴影深度贴图的分辨率。越高越清晰，但占用更多显存（低约 40 MiB...极致约 2.5 GiB）。");
         LANG_KEY_MAP.put("irlights.config.shadows.shadow_blocks-comment",
             "让世界方块投射阴影：部分方块（台阶、楼梯、栅栏）按真实形状投影，镂空方块（树叶、栏杆、玻璃门）的透明像素不产生阴影。在逐灯缓存落地之前开销较大。");
         LANG_KEY_MAP.put("irlights.config.shadows.shadows_live-comment",

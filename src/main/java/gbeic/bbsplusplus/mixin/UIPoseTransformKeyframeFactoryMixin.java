@@ -309,11 +309,15 @@ public abstract class UIPoseTransformKeyframeFactoryMixin extends UIKeyframeFact
             "bbs.ui.model_editor.outline.face.bottom"
         };
 
+        /* 行的显示顺序：上面、下面、左面、右面、前面、后面（元素是 OutlineGeometry 的 FACE_* 常量）。 */
+        int[] order = { 4, 5, 3, 1, 0, 2 };
+
         UISection advanced = new UISection(L10n.lang("bbs.ui.model_editor.outline.advanced"));
         advanced.setExpanded(false);
 
-        for (int face = 0; face < BoneOutlineHolder.FACE_COUNT; face++)
+        for (int slot = 0; slot < BoneOutlineHolder.FACE_COUNT; slot++)
         {
+            final int face = order[slot];
             final int index = face;
 
             this.bbspp$outlineFaceControls[layer][face] = new UIOutlineColorControl(

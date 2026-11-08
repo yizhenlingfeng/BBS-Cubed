@@ -95,7 +95,7 @@ public class KeyframeLocalizer
         cn("item_chest", "胸甲");
         cn("item_legs", "护腿");
         cn("item_feet", "靴子");
-        cn("selected_slot", "选中的格子");
+        cn("selected_slot", "选中的槽位");
         cn("item_slot_", "快捷栏");
         cn("vX", "速度 X");
         cn("vY", "速度 Y");
@@ -191,8 +191,8 @@ public class KeyframeLocalizer
         cn("gi_strength", "GI 强度");
         cn("inner_cone", "内锥角");
         cn("outer_cone", "外锥角");
-        cn("noise_steps", "噪点步数");
-        cn("noise_jitter", "噪点抖动");
+        cn("noise_steps", "噪波步数");
+        cn("noise_jitter", "噪波抖动");
         cn("width", "宽度");
         cn("height", "高度");
         cn("softness", "柔和度");
@@ -223,7 +223,7 @@ public class KeyframeLocalizer
         /* VFX 插件注入到 BBS 原版 Form 上的增强轨道（拖影 / 混合 / 跟随偏移 / 文字增强等）。
            同时写入 CN 表兜底，避免运行时 VFX_LOADED 检测时机导致 localize() 阶段未翻译。 */
         cn("smear", "拖影");
-        cn("smear_frames", "涂抹帧");
+        cn("smear_frames", "拖影帧");
         cn("motion_lines", "动态线");
         cn("blend", "混合");
         cn("blend_mode", "混合模式");
@@ -256,14 +256,14 @@ public class KeyframeLocalizer
         cn("texture_tint", "纹理着色");
         cn("texture_whiten", "纹理泛白");
         cn("physicsSensitivity", "物理灵敏度");
-        cn("subdivisions", "细分度");
+        cn("subdivisions", "细分");
         cn("smoothShading", "平滑着色");
         cn("debug", "调试");
         cn("sizeX", "X 尺寸");
         cn("sizeY", "Y 尺寸");
         cn("sizeZ", "Z 尺寸");
         cn("fillBlock", "填充方块");
-        cn("waveAmplitude", "波浪幅度");
+        cn("waveAmplitude", "波浪振幅");
         cn("waveFrequency", "波浪频率");
         cn("surfaceTension", "表面张力");
         cn("dropSize", "水滴大小");
@@ -281,7 +281,7 @@ public class KeyframeLocalizer
         /* BBS 2.6 材质属性轨道（MaterialPropTrack） */
         cn("smoothness", "光泽度");
         cn("metallic", "金属度");
-        cn("sss", "次表面散射");
+        cn("sss", "散射");
         cn("pixel_emission", "自发光强度");
         cn("relief", "凹凸强度");
         cn("glow", "发光强度");
@@ -295,12 +295,12 @@ public class KeyframeLocalizer
         /* BBS 2.6 IK 轨道（ControlsTrack / BoneIKIO） */
         cn("ik", "IK 链");
         cn("ik_target", "IK 目标");
-        cn("pole", "极向量");
-        cn("pole_angle", "极角");
+        cn("pole", "极点目标");
+        cn("pole_angle", "极点角度");
         cn("weight", "权重");
         cn("stretch", "拉伸");
         cn("squash", "压缩");
-        cn("softness", "柔软度");
+        cn("softness", "柔和度");
         cn("chain_length", "链长");
         cn("joint", "关节活动度");
         cn("tip_rotation", "末端跟随");
@@ -362,7 +362,7 @@ public class KeyframeLocalizer
         itemSpray("rotationSpeedY", "Y 轴旋转速度");
         itemSpray("rotationSpeedZ", "Z 轴旋转速度");
         itemSpray("rotationRandomSpeed", "随机旋转速度");
-        itemSpray("billboard", "始终面向镜头");
+        itemSpray("billboard", "始终面向摄像机");
         itemSpray("itemScale", "缩放");
         itemSpray("scaleScatter", "缩放散布");
         itemSpray("scaleInTime", "缩放渐入时间");
@@ -432,7 +432,7 @@ public class KeyframeLocalizer
         vfx("follow_offset", "跟随偏移");
 
         /* 拖影与动态线（ModelFormSmearChannelsMixin / WholeFormSmearMixin / PoseTransformSmearMixin） */
-        vfx("smear_frames", "涂抹帧");
+        vfx("smear_frames", "拖影帧");
         vfx("motion_lines", "动态线");
         vfx("smear", "拖影");
         vfx("xavin_smear", "拖影");
@@ -798,7 +798,7 @@ public class KeyframeLocalizer
         vfx("relative", "相对");
         vfx("atBlock", "看向方块");
         vfx("forward", "朝向前方");
-        vfx("copy", "复制当前");
+        vfx("copy", "拷贝当前");
         vfx("absolute", "绝对");
         /* 追踪器 / 关键帧 */
         vfx("look_at", "看向目标");
@@ -911,7 +911,7 @@ public class KeyframeLocalizer
 
         /* CinematicClip 电影感效果 */
         cn("vintage", "复古");
-        cn("vhs", "VHS录像带");
+        cn("vhs", "VHS 录像带");
         cn("grain_strength", "噪点强度");
         cn("grain_size", "噪点大小");
         cn("lensDistortion", "镜头畸变");
@@ -926,8 +926,8 @@ public class KeyframeLocalizer
         cn("aberration_radius", "色差半径");
         cn("aberration_hardness", "色差硬度");
         cn("aberration_balance", "色差平衡");
-        cn("aberration_center_x", "色差中心X");
-        cn("aberration_center_y", "色差中心Y");
+        cn("aberration_center_x", "色差中心 X");
+        cn("aberration_center_y", "色差中心 Y");
         cn("aberration_green", "色差绿色通道");
         cn("aberration_spectrum", "色差光谱");
         cn("rain", "雨效");

@@ -28,7 +28,7 @@ public final class PovZHTranslator
         STRING_MAP.put("Cursor Layout", "光标布局");
         STRING_MAP.put("Cursor Visible", "光标可见");
         STRING_MAP.put("Cursor Item", "光标物品");
-        STRING_MAP.put("Selected Slot", "选中的格子");
+        STRING_MAP.put("Selected Slot", "选中的槽位");
         STRING_MAP.put("Inventory Slots", "物品栏槽位");
         STRING_MAP.put("Offhand", "副手");
         STRING_MAP.put("Health", "生命值");

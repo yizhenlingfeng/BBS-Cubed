@@ -30,7 +30,7 @@ import java.util.List;
 /**
  * 按键绑定设置界面的快捷键冲突提示。
  *
- * <p>仅在「BBS 增强」设置中开启本功能、且 UIKeybind 位于 UISettingsOverlayPanel 内时生效：
+ * <p>仅在「界面与交互」设置中启用本功能、且 UIKeybind 位于 UISettingsOverlayPanel 内时生效：
  * 重复的按键字体标黄，按键框左侧显示黄色叹号；悬停列出共用此键的全部功能；
  * 点击叹号跳转到冲突项（同分类滚动，跨分类自动切换并滚动到位）。</p>
  */

@@ -49,8 +49,8 @@ public class BBSPlusPlusAddon implements BBSAddonMod {
             /* 电影效果剪辑 */
             registerClip(factory, Link.bbs("cinematic"), CinematicClip.class, new ClipFactoryData(Icons.VIDEO_CAMERA, 0xffaa00), "电影效果剪辑 (CinematicClip)");
 
-            /* 重播是按所在图层读取下方摄像机剪辑的时间修饰剪辑 */
-            registerClip(factory, Link.bbs("replay"), ReplayClip.class, new ClipFactoryData(Icons.REFRESH, 0x4f8cff), "重播剪辑 (ReplayClip)");
+            /* 回放是按所在图层读取下方摄像机剪辑的时间修饰剪辑 */
+            registerClip(factory, Link.bbs("replay"), ReplayClip.class, new ClipFactoryData(Icons.REFRESH, 0x4f8cff), "回放剪辑 (ReplayClip)");
         } catch (Exception e) {
             BBSPlusPlusMod.LOGGER.error("[FSloveCML] 注册剪辑失败: {}", e.getMessage(), e);
         }
