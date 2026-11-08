@@ -12,16 +12,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * 肢体选择：让「当前选中的演员」在场景/影片预览里压在其他模型之前。
+ * 肢体选择：让当前选中的演员在场景 / 影片预览里压在其他模型之前。
  *
- * <p>做法是把这只模型的深度值压到视锥最前面的一小段（{@code glDepthRange(0, 0.001)}），
- * 而不是清空深度缓冲：</p>
- * <ul>
- *     <li>早于它绘制的模型，深度值都大于这段范围，于是它不再被遮挡；</li>
- *     <li>晚于它绘制的模型，会拿自己的深度和这段「最靠前」的深度比较，同样被它挡住；</li>
- *     <li>模型自己的各个部位仍在这 0.001 的深度区间内按远近比较，前后关系保持正常；</li>
- *     <li>整帧的深度缓冲不会被破坏，随后的粒子、天气、半透明方块不受影响。</li>
- * </ul>
+ * <p>做法是把这只模型的深度压到视锥最前面的一小段（{@code glDepthRange(0, 0.001)}）：先画的模型
+ * 盖不住它、后画的模型仍会被它挡住，它自己的各个部位照常按远近排序，而整帧的深度缓冲不受影响，
+ * 比清空深度缓冲安全得多。</p>
  */
 @Mixin(value = FormUtilsClient.class, remap = false)
 public class FormUtilsClientLimbPickMixin

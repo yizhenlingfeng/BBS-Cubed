@@ -5,7 +5,6 @@ import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.settings.values.numeric.ValueBoolean;
 import mchorse.bbs_mod.ui.forms.editors.UIFormEditor;
 import mchorse.bbs_mod.ui.forms.editors.utils.UIPickableFormRenderer;
-import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.GizmoInteraction;
 import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
@@ -20,15 +19,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * 肢体选择模式在表单预览里的表现。
+ * 肢体选择模式在表单预览里的表现：按住时隐藏命中框与操控器的读数叠加层，地面网格保持可见。
  *
- * <p>按住「肢体选择」按键时隐藏操控器、坐标轴与命中框（模型的着色器切换见
- * {@code ModelFormRendererLimbPickMixin}）。预览地面网格保持可见，它是判断模型站位的参照；
- * 控件层级也不做任何改动，UI 面板始终盖在模型之上。</p>
- *
- * <p>鼠标键分工：左键走 BBS 原有的拾取（按住按键时模板缓冲区记录的就是实际肢体），
- * 右键在这里接管，用骨骼覆盖映射后的结果去选中。动画态编辑器可见时不接管右键——那条路径
- * 本来就靠右键插入关键帧，交给 BBS 自己的处理即可。</p>
+ * <p>操控器本体与坐标轴由 {@code UIBaseMenuLimbPickMixin} 统一隐藏，着色器切换见
+ * {@code ModelFormRendererLimbPickMixin}。右键在这里接管为「按骨骼覆盖选中」（BBS 原本右键不拾取）；
+ * 正在点选骨骼或动画态编辑器可见时不接管，那时右键分别用于取消拾取与插入关键帧。</p>
  */
 @Mixin(value = UIPickableFormRenderer.class, remap = false)
 public class UIPickableFormRendererLimbPickMixin
@@ -43,16 +38,6 @@ public class UIPickableFormRendererLimbPickMixin
     @Unique
     private boolean bbspp$limbPickActive;
 
-    /**
-     * 右键 = 按骨骼覆盖选取。
-     *
-     * <p>BBS 原本右键不拾取（只用来取消骨骼拾取），所以这里自己读取模板缓冲区的
-     * 拾取结果，再交给编辑器走正常的选中流程；正在「点选骨骼」时不接管，好让右键
-     * 仍然能取消。</p>
-     *
-     * <p>动画态编辑器可见时不接管：那时右键的语义是「插入关键帧」，交给
-     * {@code UIReplaysEditorUtils#pickFormWithOffers} 的原生流程更合适。</p>
-     */
     @Inject(method = "subMouseClicked", at = @At("HEAD"), cancellable = true)
     private void bbspp$limbPickRightClick(UIContext context, CallbackInfoReturnable<Boolean> cir)
     {
@@ -94,33 +79,7 @@ public class UIPickableFormRendererLimbPickMixin
         this.bbspp$limbPickActive = LimbPickMode.held(context);
     }
 
-    /**
-     * 操控器的模板缓冲绘制：按住肢体选择按键时一并隐藏。
-     */
-    @Redirect(
-        method = "renderUserModel",
-        at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/ui/framework/UIBaseMenu;isHideGizmoHeld()Z")
-    )
-    private boolean bbspp$limbPickHideGizmo()
-    {
-        return this.bbspp$limbPickActive || UIBaseMenu.isHideGizmoHeld();
-    }
-
-    /**
-     * 预览里的坐标轴（含摄像机参考轴）：按住肢体选择按键时隐藏。
-     */
-    @Redirect(
-        method = "renderAxes",
-        at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/ui/framework/UIBaseMenu;shouldRenderAxes()Z")
-    )
-    private boolean bbspp$limbPickHideAxes()
-    {
-        return UIBaseMenu.shouldRenderAxes() && !this.bbspp$limbPickActive;
-    }
-
-    /**
-     * 命中框：按住肢体选择按键时不再绘制，免得挡住肢体。
-     */
+    /** 命中框：按住时不绘制，免得挡住肢体本身 */
     @Redirect(
         method = "renderUserModel",
         at = @At(value = "INVOKE", target = "Lmchorse/bbs_mod/settings/values/numeric/ValueBoolean;get()Ljava/lang/Object;")

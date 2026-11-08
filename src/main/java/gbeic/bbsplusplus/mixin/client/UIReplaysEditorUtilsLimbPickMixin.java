@@ -14,10 +14,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * 肢体选择：按住按键时左键也用来新建关键帧。
  *
- * <p>BBS 在 {@link UIReplaysEditorUtils#pickFormWithOffers} 里把左键当作「选中」、右键当作
- * 「插入关键帧」（{@code insert = context.mouseButton == 1}），所以在肢体选择模式下左键点肢体
- * 只会选中、不会插帧。这里在按住按键时把左键也按插入处理，骨骼身份仍由模板缓冲区决定：
- * 左键给实际肢体插帧、右键给骨骼覆盖指向的骨骼插帧。</p>
+ * <p>BBS 在 {@link UIReplaysEditorUtils#pickFormWithOffers} 里把左键当「选中」、右键当「插入关键帧」
+ * （{@code insert = context.mouseButton == 1}），所以肢体选择模式下左键点肢体只会选中。这里在按住
+ * 按键时把左键也按插入处理；具体给哪根骨骼插帧仍由模板缓冲区决定：左键是实际肢体，右键是骨骼覆盖
+ * 指向的骨骼。</p>
  */
 @Mixin(value = UIReplaysEditorUtils.class, remap = false)
 public class UIReplaysEditorUtilsLimbPickMixin

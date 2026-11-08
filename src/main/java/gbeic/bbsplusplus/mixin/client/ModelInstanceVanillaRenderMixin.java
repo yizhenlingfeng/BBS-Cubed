@@ -10,17 +10,13 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 /**
  * 肢体选择模式下「焊接（weld）」模型的原版着色器切换。
  *
- * <p>普通模型走 {@code ModelInstance.render}，着色器由 {@code ModelFormRenderer.render3D}
- * 决定（见 {@code ModelFormRendererLimbPickMixin}）；带焊接的模型走
- * {@code ModelInstance.renderHybrid}，那边会用 {@code explicitWeld} 再决定一次着色器：
- * UI 预览里 {@code renderingWorld} 为 false，于是它恒定把着色器换回 {@code BBSShaders.getModel()}。</p>
+ * <p>普通模型的着色器由 {@code ModelFormRenderer.render3D} 决定（见
+ * {@code ModelFormRendererLimbPickMixin}）；带焊接的模型还会在 {@code renderHybrid} 里按
+ * {@code explicitWeld} 再决定一次，而 UI 预览里 {@code renderingWorld} 为 false，于是恒定换回
+ * {@code BBSShaders.getModel()}。这里把这两处判断「骗」成世界渲染 + 开了光影即可沿用调用方的着色器。</p>
  *
- * <p>按住按键时把这两处判断「骗」成世界渲染 + 开了光影，让 {@code explicitWeld} 变成 false，
- * 于是它用调用方传进来的着色器（也就是切换到原版实体着色器后的那个）。</p>
- *
- * <p>注意：这里刻意不去动 {@code isVAORendered()}。把它改成 false 能把模型切到原版着色器，
- * 但那会同时把渲染从 GPU 的 VAO 快路径踢到每帧逐顶点 CPU 变换的立即模式，
- * 场景里演员一多就会严重掉帧。切着色器只需要换 program，不必放弃 VAO。</p>
+ * <p>刻意不动 {@code isVAORendered()}：它会同时把渲染从 GPU 的 VAO 快路径踢到逐顶点 CPU 变换的
+ * 立即模式，演员一多就严重掉帧，而切着色器只需要换 program。</p>
  */
 @Mixin(value = ModelInstance.class, remap = false)
 public abstract class ModelInstanceVanillaRenderMixin

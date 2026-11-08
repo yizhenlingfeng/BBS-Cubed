@@ -15,13 +15,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * 肢体选择模式下隐藏 IK 调试叠加层。
  *
- * <p>BBS 的 IK 叠加层（{@code ModelIKDebug}）是在 {@code ModelFormRenderer.renderModel}
- * 里、模型绘制完之后直接追加的，关闭深度测试时（{@code ikDebug.xray}）会压在回放里的
- * 演员模型之上；它同时还会往模板缓冲区里登记可拾取的 target/pole 标记，按住键选肢体时
- * 有可能先命中这些标记。</p>
- *
- * <p>所以按住「肢体选择」键时把两处都跳过：画面上不再有线条/小球挡住回放图层，
- * 拾取也只剩真正的骨骼。松开按键立刻恢复，不改任何设置项。</p>
+ * <p>{@code ModelIKDebug} 在模型绘制完之后追加叠加层，关闭深度测试时会压在回放图层之上，还会往
+ * 模板缓冲区登记可拾取的 target/pole 标记。按住按键时两处都跳过：画面干净，拾取只剩真正的骨骼。</p>
  */
 @Mixin(value = ModelIKDebug.class, remap = true)
 public abstract class ModelIKDebugLimbPickMixin

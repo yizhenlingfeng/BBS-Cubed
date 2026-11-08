@@ -12,12 +12,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * 肢体选择模式下拾取结果的骨骼覆盖映射。
  *
- * <p>按住「肢体选择」按键时，模板缓冲区一律记录点击到的实际肢体（原始骨骼），
- * 这样左键拾取天然就是「忽略覆盖」。用右键拾取时，才在这里把原始骨骼映射成
- * 模型的骨骼覆盖，得到与平常用左键一致的选中结果。</p>
- *
- * <p>把映射放在读取拾取结果这一刻（而不是渲染模板缓冲区那一刻），就不会因为
- * 模板缓冲区还停留在上一帧、或者渲染时还没按下鼠标键而选错骨骼。</p>
+ * <p>按住按键时模板缓冲区一律记录实际肢体，所以左键拾取天然就是「忽略覆盖」；右键拾取时在这里把
+ * 实际肢体映射成骨骼覆盖。映射放在读取结果这一刻，模板缓冲区停留在上一帧也不会选错骨骼。</p>
  */
 @Mixin(value = StencilFormFramebuffer.class, remap = false)
 public class StencilFormFramebufferLimbPickMixin

@@ -8,9 +8,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
- * 允许在模型编辑器中按住「肢体选择」按键（默认 E）跳过骨骼选取覆盖，
- * 直接选中实际点击的肢体。该按键仅做被动检测，不消费输入事件，
- * 且只在 BBS 界面打开时生效。
+ * 按住「肢体选择」按键时，模板缓冲区记录实际点击到的肢体，忽略骨骼选取覆盖。
+ *
+ * <p>按键仅做被动检测，不消费输入事件，且只在 BBS 界面内生效。想按覆盖选取时的映射见
+ * {@code StencilFormFramebufferLimbPickMixin}。</p>
  */
 @Mixin(value = ModelInstance.class, remap = false)
 public abstract class ModelInstancePickingOverrideMixin

@@ -16,11 +16,9 @@ import java.util.List;
 /**
  * 为「肢体选择」的按键绑定行提供分步教程的悬停描述。
  *
- * BBS 默认把这一行的 tooltip 设成快捷键自己的名字（等于把标题重复一遍），这里换成多行教程文案，
- * 只影响 {@code ignore_picking_override} 这一个选项。
- *
- * 不挂在 {@code UIKeybind} 上的原因：{@code setKeyCombo} 内部走 {@code KeyCombo.copy}，
- * 只复制按键组合、不复制 id 与 label，元素上拿不到选项身份；改在设置行构建完成时按 value id 匹配。
+ * <p>BBS 给这一行设的 tooltip 就是快捷键自己的名字，这里换成多行教程文案，只影响
+ * {@code ignore_picking_override} 一个选项。不挂在 {@code UIKeybind} 上的原因：{@code setKeyCombo}
+ * 内部走 {@code KeyCombo.copy}，只复制按键组合、不复制 id，元素上拿不到选项身份。</p>
  */
 @Mixin(value = UIValueMap.class, remap = false)
 public class UIValueMapLimbPickMixin
