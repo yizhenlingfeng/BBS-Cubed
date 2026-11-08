@@ -134,7 +134,15 @@
         "UIModelConfigEditorLimbCullingMixin",
         "client.UIKeyframeDopeSheetAccessor",
         "client.UIKeyframeDopeSheetMixin",
-        "client.UIFilmPreviewOverflowMixin"
+        "client.UIFilmPreviewOverflowMixin",
+        "client.UIPickableFormRendererLimbPickMixin",
+        "client.ModelInstanceVanillaRenderMixin",
+        "client.UIFilmControllerCameraReferenceMixin",
+        "client.FormUtilsClientLimbPickMixin",
+        "client.UIBaseMenuLimbPickMixin",
+        "client.StencilFormFramebufferLimbPickMixin",
+        "client.ModelFormRendererLimbPickMixin",
+        "client.ModelIKDebugLimbPickMixin"
     ],
     "injectors": {
         "defaultRequire": 0

@@ -2,6 +2,8 @@ package gbeic.bbsplusplus.mixin.client;
 
 import gbeic.bbsplusplus.api.ActionsTimelineEditorContext;
 import gbeic.bbsplusplus.client.ui.animations.UIAnimationPreviewTooltip;
+import gbeic.bbsplusplus.client.ui.utils.IListHeightGripHost;
+import gbeic.bbsplusplus.timeline.ui.ActionsListHeightGrips;
 import gbeic.bbsplusplus.timeline.ui.ActionsTimelineEditorSupport;
 import mchorse.bbs_mod.cubic.animation.ActionConfig;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
@@ -24,7 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 一行委托。@Shadow 私有成员经 Supplier 注入 support。
  */
 @Mixin(value = UIActionsConfigEditor.class, remap = false)
-public abstract class UIActionsConfigEditorMixin implements ActionsTimelineEditorContext
+public abstract class UIActionsConfigEditorMixin implements ActionsTimelineEditorContext, IListHeightGripHost
 {
     @Shadow
     private ActionsConfig configs;
@@ -49,6 +51,28 @@ public abstract class UIActionsConfigEditorMixin implements ActionsTimelineEdito
 
     @Unique
     private ActionsTimelineEditorSupport bbspp_cml$support;
+
+    @Unique
+    private ActionsListHeightGrips bbspp$listHeightGrips;
+
+    @Unique
+    private ActionsListHeightGrips bbspp$listHeightGrips()
+    {
+        if (this.bbspp$listHeightGrips == null)
+        {
+            UIActionsConfigEditor editor = (UIActionsConfigEditor) (Object) this;
+
+            this.bbspp$listHeightGrips = new ActionsListHeightGrips(editor, editor.actions, this.animations);
+        }
+
+        return this.bbspp$listHeightGrips;
+    }
+
+    @Override
+    public void bbspp$syncListHeightGrips()
+    {
+        this.bbspp$listHeightGrips().sync();
+    }
 
     @Unique
     private ActionsTimelineEditorSupport bbspp_cml$support()

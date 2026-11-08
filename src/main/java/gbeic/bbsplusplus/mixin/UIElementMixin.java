@@ -3,6 +3,7 @@ package gbeic.bbsplusplus.mixin;
 
 import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.client.ui.film.IFilmLibraryLayoutToggle;
+import gbeic.bbsplusplus.client.ui.utils.IListHeightGripHost;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -62,6 +63,20 @@ public class UIElementMixin
         if ((Object) this instanceof IFilmLibraryLayoutToggle toggle)
         {
             toggle.bbspp$syncFilmLibraryLayout();
+        }
+    }
+
+    /**
+     * 注入目标：{@link UIElement#render(UIContext)} 开始处。
+     * 注入原因：动作页两个列表的高度抓手需要在列表挂稳之后才安装，且关键帧弹窗重建子控件时会清掉。
+     * 修改后的行为：仅对实现了 {@link IListHeightGripHost} 的元素同步抓手，其它 UI 不受影响。
+     */
+    @Inject(method = "render", at = @At("HEAD"), remap = true)
+    private void bbspp$syncListHeightGripsOnRender(UIContext context, CallbackInfo ci)
+    {
+        if ((Object) this instanceof IListHeightGripHost host)
+        {
+            host.bbspp$syncListHeightGrips();
         }
     }
 

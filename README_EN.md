@@ -182,6 +182,14 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 - **Keyframe editor enhancements**: split view, embedded inspector, action timeline evaluation, PBR keyframe factory
 - **CML settings panel**: independent settings module with General, Appearance, Editor, Display, Fluid Simulation, Model Block, Pose Track Selection, Replay Editor, and other categories
 
+### Limb Selection
+
+- Hold `E` (remappable under the "Transformations" keybind category) to enter limb selection; release to leave. It only works inside BBS screens, yields while typing in a text field, and never consumes input events.
+- **Left / right click**: left click selects the actual limb you clicked (ignoring bone picking overrides); right click selects through the overrides, matching a normal click. The stencil buffer is rendered each frame while the pick result is read on click, so the override mapping happens at read time and a stale buffer can never cause the wrong bone to be picked.
+- **Focused picking**: while held, the gizmo, axes, camera reference guide and IK debug overlay are hidden and the hitbox is not drawn; the model switches to the vanilla entity shader and the selected actor is drawn in front of the other models. UI panels always stay above the model.
+- **Performance**: switching shaders keeps the GPU VAO render path instead of falling back to per-vertex CPU transforms, so scenes with many actors no longer drop frames.
+- Hover "Limb selection" in the keybinds page to read the step-by-step guide.
+
 ### Vanilla Enhancements
 
 | Feature                            | Description                                                                                                                                       |
@@ -209,7 +217,8 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 | ItemStack track improvements       | Adds transform support                                                                                                                            |
 | Auto-save presets                  | Model block presets gain an "auto-save" toggle. When enabled via the preset right-click menu on IK chains, physics bones, constraints, and pose pages, parameter changes are written to the current preset with 500ms debounce |
 | Configurable custom hotkeys        | Custom hotkeys such as Shift+W (select all keyframes at the current time) are integrated into BBS UI keybindings under the "Keyframe Editor" category and can be remapped |
-| Ignore picking override hotkey     | In the model editor, holding E (remappable under the "Transformations" keybind category) while clicking a limb skips the bone picking-override redirection and selects the actual clicked bone; this key is passively detected and does not consume input |
+| Limb selection                     | Hold E (remappable under the "Transformations" keybind category) to enter limb selection: left click picks the actual limb, right click picks through the bone overrides, and the gizmo and debug overlays are hidden while held — see "Limb Selection" above |
+| Actions page list height           | The Actions and Animations lists in the model editor's actions page can be resized by dragging their bottom edge; double-click to reset and the height is stored in the layout config |
 
 ### Vanilla Fixes
 
@@ -245,6 +254,11 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 * **No more per-frame rebuilds on static models**: pose values are quantised to 1/4096 in the shell cache key, so sub-pixel jitter from IK, physics or constraint settling no longer invalidates the whole shell
 * **Gradient cost**: the screen-space frame is updated only when an active gradient layer exists, so solid outlines skip the matrix inversion entirely
 * **Safer cache fallback**: a failed shell build is logged once and falls back to immediate rendering; the depth pass pairs entries by model and config instead of clearing the whole frame queue on one mismatch
+* **Limb selection**: the former "ignore picking override" hotkey became a held limb selection mode (E by default, remappable under the "Transformations" keybind category). Left click selects the actual limb, right click selects through the bone overrides; while held the gizmo, axes, camera reference guide and IK debug overlay are hidden, the model switches to the vanilla entity shader and is drawn in front of the other models. Releasing restores everything, and it only applies inside BBS screens
+* **Limb selection picking**: the stencil buffer always records the actual limb, and bone overrides are applied when the pick result is read, so a stale buffer can never select the wrong bone; the form editor never picked on right click before, so the preview renderer now handles it
+* **Limb selection performance**: switching to the vanilla shader keeps the VAO render path instead of falling back to per-vertex CPU transforms, fixing the frame drop while the key is held
+* **Limb selection tutorial**: hovering "Limb selection" in the keybinds page shows a step-by-step usage guide in both Chinese and English
+* **Actions page list height**: the Actions and Animations lists in the actions page gain a 6px drag band on their bottom edge (straddling the border so it does not steal clicks from the row below); drag to resize, double-click to reset, and the height is stored in the layout config
 
 #### 3.6.7 (Outline gradients and apply to child bones)
 * **Gradient outlines**: the colour row gains a mode icon that switches between solid and gradient. Turning it on seeds both stops with the current colour, so nothing jumps; the swatch slot becomes a direction button for vertical / horizontal ramps, and a gradient strip expands below the row

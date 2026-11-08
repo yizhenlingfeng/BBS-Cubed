@@ -18,6 +18,7 @@ public class SnowUIKeys
     public static final IKey MOLANG_SHARED_TOOLTIP = L10n.lang("bbspp.ui.actions.molang_shared_tooltip");
     public static final IKey ACTIONS_LOOP_BEYOND = L10n.lang("bbspp.ui.actions.loop_beyond");
     public static final IKey ACTIONS_LOOP_INTERVAL = L10n.lang("bbspp.ui.actions.loop_interval");
+    public static final IKey ACTIONS_LIST_RESIZE_HEIGHT = L10n.lang("bbspp.ui.actions.list_resize_height");
 
     public static final IKey AUDIO_IMPORT_STARTED = L10n.lang("bbspp.ui.audio_import.started");
     public static final IKey AUDIO_IMPORT_DONE = L10n.lang("bbspp.ui.audio_import.done");
@@ -58,8 +59,13 @@ public class SnowUIKeys
         GLFW.GLFW_KEY_F5
     ).categoryKey("film_controller");
 
-    /* Transformations: 按住时忽略骨骼选取覆盖，直接选中点击的肢体（默认 E，纯被动检测不占用按键） */
+    /*
+     * Transformations: 肢体选择（默认 E，纯被动检测不占用按键，只在 BBS 界面打开时生效）。
+     * 按住时：左键选中实际肢体（忽略骨骼选取覆盖），右键按骨骼选取覆盖选中；
+     * 同时隐藏操控器/坐标轴/摄像机参考线，模型改原版渲染并压在其他模型之前。
+     */
     public static final IKey IGNORE_PICKING_OVERRIDE = L10n.lang("bbspp.ui.transforms.ignore_picking_override");
+    public static final IKey IGNORE_PICKING_OVERRIDE_DESC = L10n.lang("bbspp.ui.transforms.ignore_picking_override.desc");
     public static final KeyCombo IGNORE_PICKING_OVERRIDE_KEY = new KeyCombo(
         "ignore_picking_override",
         IGNORE_PICKING_OVERRIDE,

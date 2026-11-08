@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
+import gbeic.bbsplusplus.client.ui.picking.LimbPickMode;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -8,8 +8,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
- * 允许在模型编辑器中按住指定按键（默认 E）跳过骨骼选取覆盖，
- * 直接选中实际点击的肢体。该按键仅做被动检测，不消费输入事件。
+ * 允许在模型编辑器中按住「肢体选择」按键（默认 E）跳过骨骼选取覆盖，
+ * 直接选中实际点击的肢体。该按键仅做被动检测，不消费输入事件，
+ * 且只在 BBS 界面打开时生效。
  */
 @Mixin(value = ModelInstance.class, remap = false)
 public abstract class ModelInstancePickingOverrideMixin
@@ -23,7 +24,7 @@ public abstract class ModelInstancePickingOverrideMixin
     )
     private String bbspp$ignorePickingOverride(ModelInstance instance, String bone)
     {
-        if (SnowUIKeys.IGNORE_PICKING_OVERRIDE_KEY.isHeld())
+        if (LimbPickMode.held())
         {
             return bone;
         }
