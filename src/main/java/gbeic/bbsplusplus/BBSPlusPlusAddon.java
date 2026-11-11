@@ -1,6 +1,7 @@
 package gbeic.bbsplusplus;
 
 
+import gbeic.bbsplusplus.compat.FrameOverlayCompat;
 import gbeic.bbsplusplus.settings.ModSettings;
 import gbeic.bbsplusplus.api.BBSPPFormValues;
 import gbeic.bbsplusplus.clips.HotbarClip;
@@ -11,6 +12,7 @@ import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
 import mchorse.bbs_mod.api.BBSAddonMod;
 import mchorse.bbs_mod.api.Subscribe;
+import mchorse.bbs_mod.api.client.events.RegisterFrameOverlaysEvent;
 import mchorse.bbs_mod.api.events.RegisterSettingsEvent;
 import mchorse.bbs_mod.forms.FormArchitect;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -33,6 +35,11 @@ public class BBSPlusPlusAddon implements BBSAddonMod {
     public void onRegisterSettings(RegisterSettingsEvent event) {
         registerCameraClips();
         registerFluidForm();
+    }
+
+    @Subscribe
+    public void onRegisterFrameOverlays(RegisterFrameOverlaysEvent event) {
+        FrameOverlayCompat.register(event);
     }
 
     private void registerCameraClips() {

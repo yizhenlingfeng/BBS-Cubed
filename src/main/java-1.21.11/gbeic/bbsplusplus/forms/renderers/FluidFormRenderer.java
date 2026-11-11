@@ -10,6 +10,9 @@ import mchorse.bbs_mod.forms.renderers.FormRenderer;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.forms.ITickable;
 import mchorse.bbs_mod.forms.entities.IEntity;
+import gbeic.bbsplusplus.client.grade.FluidGradeHook;
+import gbeic.bbsplusplus.client.grade.GradeParams;
+import gbeic.bbsplusplus.client.grade.ModelGradeResolver;
 import gbeic.bbsplusplus.forms.FluidForm;
 import mchorse.bbs_mod.forms.renderers.utils.MatrixCache;
 import mchorse.bbs_mod.forms.renderers.utils.MatrixCacheEntry;
@@ -217,8 +220,8 @@ public class FluidFormRenderer extends FormRenderer<FluidForm> implements ITicka
         }
 
         /* 1.21.11: GL state (blend, cull, depth, lightmap, overlay) is encoded in the pipeline,
-         * no manual RenderSystem toggles needed. TextureGradeRenderContext select hook is dropped
-         * for now — can be re-added as a pipeline variant if color grading is needed. */
+         * no manual RenderSystem toggles needed. 纹理调色/白化不换 shader，改由
+         * FluidGradeHook 接管缓冲、走 GradePass 那条自定义 pass（见文件末尾）。 */
 
         BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
 
@@ -244,7 +247,39 @@ public class FluidFormRenderer extends FormRenderer<FluidForm> implements ITicka
             renderDrop(builder, matrices, finalColor, overlay, light);
         }
 
-        flush(builder, getFluidLayer());
+        flushGraded(builder, matrices, texture);
+    }
+
+    /**
+     * 结束缓冲并提交：有纹理调色/白化时交给 {@link FluidGradeHook} 走分级 pass，
+     * 否则照旧走 BBS 的 model layer。
+     *
+     * <p>纹理判定必须用 {@code getLastBound()} 而不是上面的局部 {@code texture}：纹理解析失败
+     * 时绑的是 {@code WHITE_TEXTURE}，分级也要作用在这张白图上（1.20.x 的
+     * {@code TextureGradeRenderContext.select} 同样是看当前已绑定的那张）。</p>
+     */
+    private void flushGraded(BufferBuilder builder, MatrixStack matrices, Texture fallback)
+    {
+        BuiltBuffer built = builder.endNullable();
+
+        if (built == null)
+        {
+            return;
+        }
+
+        GradeParams params = ModelGradeResolver.resolveTint(this.form);
+
+        if (params.needBase())
+        {
+            Texture bound = BBSModClient.getTextures().getLastBound();
+
+            if (FluidGradeHook.handle(built, matrices, bound != null ? bound : fallback, params))
+            {
+                return;
+            }
+        }
+
+        getFluidLayer().draw(built);
     }
 
     private void renderProceduralOcean(BufferBuilder builder, MatrixStack matrices, Color color, int overlay, int light)

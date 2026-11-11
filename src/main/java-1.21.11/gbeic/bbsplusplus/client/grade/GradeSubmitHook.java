@@ -39,9 +39,6 @@ import org.joml.Vector3f;
  */
 public final class GradeSubmitHook
 {
-    private static boolean logged;
-    private static boolean loggedGlintOnly;
-
     /** 仅光效通道时，HEAD 暂存、{@code submit} RETURN 时消费的快照。 */
     private static final ThreadLocal<PendingGlint> PENDING = new ThreadLocal<>();
 
@@ -52,30 +49,6 @@ public final class GradeSubmitHook
 
     private GradeSubmitHook()
     {
-    }
-
-    /** 首次接管时打一条，方便实机确认注入真的命中了（mixin 都是 require = 0，静默失败看不出来）。 */
-    private static void logOnce()
-    {
-        if (logged)
-        {
-            return;
-        }
-
-        logged = true;
-        gbeic.bbsplusplus.BBSPlusPlusMod.LOGGER.info("[BBS++] 纹理分级已接管模型绘制（调色/白化/附魔光效生效）");
-    }
-
-    /** 首次走「仅光效」通道时打一条，实机可据此区分「参数没解析到」与「绘制没执行」。 */
-    private static void logGlintOnce()
-    {
-        if (loggedGlintOnly)
-        {
-            return;
-        }
-
-        loggedGlintOnly = true;
-        gbeic.bbsplusplus.BBSPlusPlusMod.LOGGER.info("[BBS++] 附魔光效已提交（仅光效通道，基础绘制保持原样）");
     }
 
     /**
@@ -157,7 +130,6 @@ public final class GradeSubmitHook
             /* 接管基础绘制时，两条命令都在这里入队：先基础（写深度），再光效（叠加、不写深度）。
              * 队列未开启时 add() 会立即 draw，顺序同样成立。 */
             FormTranslucentQueue.add(new GradeDrawCommand(glintOrigin, captured, modelView, textureId, params, variant.cull(), overlay));
-            logOnce();
 
             if (glint)
             {
@@ -174,7 +146,6 @@ public final class GradeSubmitHook
 
         /* 只要光效：基础绘制照旧走 BBS 的 layer，不 cancel；光效推迟到 submit RETURN 之后叠加。 */
         PENDING.set(deferred);
-        logGlintOnce();
         GradeDecisions.put(built, false);
 
         return false;

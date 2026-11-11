@@ -8,6 +8,15 @@
     "block.bbs.emissive_chroma_black": "Glowing Chroma Black Block",
     "block.bbs.emissive_chroma_white": "Glowing Chroma White Block",
 
+    "item.bbs.emissive_chroma_red": "Glowing Chroma Red Block",
+    "item.bbs.emissive_chroma_green": "Glowing Chroma Green Block",
+    "item.bbs.emissive_chroma_blue": "Glowing Chroma Blue Block",
+    "item.bbs.emissive_chroma_cyan": "Glowing Chroma Cyan Block",
+    "item.bbs.emissive_chroma_magenta": "Glowing Chroma Magenta Block",
+    "item.bbs.emissive_chroma_yellow": "Glowing Chroma Yellow Block",
+    "item.bbs.emissive_chroma_black": "Glowing Chroma Black Block",
+    "item.bbs.emissive_chroma_white": "Glowing Chroma White Block",
+
     "bbsplusplus.vfx_wand.selected": "Destruction Wand: area selected",
     "bbsplusplus.vfx_wand.cleared": "Destruction Wand: selection cleared",
     "bbsplusplus.vfx_wand.start_moved": "Destruction Wand: start point moved",

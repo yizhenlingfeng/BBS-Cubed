@@ -3,9 +3,9 @@
 /*
  * BBS++ 附魔光效顶点着色器，1.21.11 自定义 RenderPipeline 版。
  *
- * 与上游 assets/bbs/shaders/core/model.vsh 完全同构：顶点格式
- * POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL 的 UV1 指向 overlay swatch（逐骨骼调色），
- * UV2 指向 lightmap，光效那条 pass 只用到 Sampler0 的 UV，但为了让两条管线能共用同一套采样器绑定，这里照样声明 Sampler1/2。
+ * 顶点格式仍是 POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL，但光效这条 pass 只用到 Position/Color/UV0：
+ * 片元着色器只采 Sampler0，所以这里不再声明并采样 Sampler1/2 —— 声明了却不参与最终程序，
+ * 原版会在管线创建时打「shader program does not use sampler Sampler1」的 WARN。
  */
 
 #moj_import <minecraft:light.glsl>
@@ -16,18 +16,11 @@
 in vec3 Position;
 in vec4 Color;
 in vec2 UV0;
-in ivec2 UV1;
-in ivec2 UV2;
 in vec3 Normal;
-
-uniform sampler2D Sampler1;
-uniform sampler2D Sampler2;
 
 out float sphericalVertexDistance;
 out float cylindricalVertexDistance;
 out vec4 vertexColor;
-out vec4 lightMapColor;
-out vec4 overlayColor;
 out vec2 texCoord0;
 
 void main()
@@ -38,7 +31,5 @@ void main()
     cylindricalVertexDistance = fog_cylindrical_distance(Position);
 
     vertexColor = minecraft_mix_light(Light0_Direction, Light1_Direction, Normal, Color);
-    lightMapColor = texelFetch(Sampler2, UV2 / 16, 0);
-    overlayColor = texelFetch(Sampler1, UV1, 0);
     texCoord0 = UV0;
 }

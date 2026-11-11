@@ -39,6 +39,7 @@ public class UIAnimationPreviewTooltip implements ITooltip
     public void clear()
     {
         this.animation = null;
+        this.preview.deactivate();
     }
 
     @Override

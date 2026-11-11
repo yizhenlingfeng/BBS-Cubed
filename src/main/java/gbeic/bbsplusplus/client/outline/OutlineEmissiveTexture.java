@@ -276,11 +276,28 @@ public final class OutlineEmissiveTexture
      */
     public static ResourceTexture getDiffuseTexture(int argb, int glow)
     {
-        return getResource(location(FOLDER + NAME_PREFIX + argb + "_" + glow + ".png"));
+        return getResource(diffuseIdentifier(argb, glow));
+    }
+
+    /**
+     * The identifier {@link #getDiffuseTexture} registers under.
+     *
+     * <p>1.21.11 draws through immutable render layers, which are keyed on a texture identifier
+     * rather than a GL id — the emission pass needs the name, not just the texture.</p>
+     */
+    public static Identifier diffuseIdentifier(int argb, int glow)
+    {
+        return location(FOLDER + NAME_PREFIX + argb + "_" + glow + ".png");
     }
 
     /** Ramp equivalent of {@link #getDiffuseTexture}: a 64x1 diffuse sampled along {@code u}. */
     public static ResourceTexture getGradientTexture(OutlineGradient gradient, int glow)
+    {
+        return getResource(gradientIdentifier(gradient, glow));
+    }
+
+    /** The identifier {@link #getGradientTexture} registers under; {@code null} for no gradient. */
+    public static Identifier gradientIdentifier(OutlineGradient gradient, int glow)
     {
         if (gradient == null)
         {
@@ -294,7 +311,7 @@ public final class OutlineEmissiveTexture
          * from the hash when the bytes are served. */
         RAMP_STOPS.put(tag, gradient);
 
-        return getResource(location(FOLDER + NAME_PREFIX + RAMP_TAG + tag + "_" + glow + ".png"));
+        return location(FOLDER + NAME_PREFIX + RAMP_TAG + tag + "_" + glow + ".png");
     }
 
     private static ResourceTexture getResource(Identifier location)

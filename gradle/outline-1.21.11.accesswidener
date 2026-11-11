@@ -3,3 +3,10 @@ accessWidener v2 named
 # The outline backend needs the vanilla position-colour shader snippet to build
 # three custom render pipelines. It is private in 1.21.11, so widen it.
 accessible field net/minecraft/client/gl/RenderPipelines POSITION_COLOR_SNIPPET Lcom/mojang/blaze3d/pipeline/RenderPipeline$Snippet;
+
+# The LabPBR emission layer needs the entity emissive snippet: the stock
+# ENTITY_TRANSLUCENT_EMISSIVE pipeline writes no depth but leaves culling off, and
+# ENTITY_TRANSLUCENT writes depth (that hid the model behind the glow shell).
+# Building from the snippet lets the trim-shaped layer pick depthWrite=false + cull=true.
+accessible field net/minecraft/client/gl/RenderPipelines ENTITY_EMISSIVE_SNIPPET Lcom/mojang/blaze3d/pipeline/RenderPipeline$Snippet;
+

@@ -33,6 +33,7 @@ public class BBSPlusPlusModClient implements ClientModInitializer
                 BBSPlusPlusSettings::register);
             ModelCullingConfigManager.onClientStarted();
             runTextureGradeSelfCheck();
+            runMixinSelfCheck();
         });
 
         registerAutoGameModeHooks();
@@ -296,6 +297,78 @@ public class BBSPlusPlusModClient implements ClientModInitializer
             BBSPlusPlusMod.LOGGER.warn("VFX 破坏魔杖注册失败", e);
         }
     }
+
+    /**
+     * 1.21.11 专属 mixin 自检：确认 12111 配置仍被打包，且 18 个 mixin 类都在类路径上。
+     * <p>
+     * {@code defaultRequire: 0} 会让单个注入点失败静默跳过；这里至少把“配置丢失 /
+     * 类没编译进来”这类整批失效暴露在启动日志里。目标方法级别的失配由各功能冒烟覆盖。
+     * </p>
+     */
+    private static void runMixinSelfCheck()
+    {
+        String configName = "bbsplusplus-12111.mixins.json";
+
+        try (java.io.InputStream in = BBSPlusPlusModClient.class.getClassLoader().getResourceAsStream(configName))
+        {
+            if (in == null)
+            {
+                /* 1.20.x：processResources 会删掉 12111 配置，属预期 */
+                return;
+            }
+
+            String config = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            String[] mixins = {
+                "CubicCubeRendererUvEmitMixin121",
+                "ModelInstanceUvContextMixin121",
+                "BillboardFormRendererMixin121",
+                "TrailFormRendererMixin121",
+                "ExtrudedUvMixin121",
+                "ModelVAOMixin121",
+                "FormTranslucentQueueGradeMixin121",
+                "RenderLayerPreviewGradeMixin121",
+                "UIFormEditorPickingMixin121",
+                "StencilPickFixMixin121",
+                "PickerDrawFixMixin121",
+                "ParticleManagerGradeMixin121",
+                "BillboardParticleGradeMixin121",
+                "ModelFormRendererEquipmentMixin121",
+                "ModelGroupSubmitMixin121",
+                "ModelFormRendererAlbedoMixin121",
+                "FramebufferDepthCopyMixin121",
+                "UIScreenPreviewMixin121"
+            };
+            int configured = 0;
+            int classOk = 0;
+
+            for (String name : mixins)
+            {
+                if (config.contains("\"" + name + "\"")) configured++;
+
+                /* 用资源查找而不是 Class.forName：Mixin 类被 Mixin 服务接管，
+                 * 直接加载会抛 IllegalClassLoadError（Illegal classload request）。 */
+                if (BBSPlusPlusModClient.class.getClassLoader()
+                        .getResource("gbeic/bbsplusplus/mixin12111/" + name + ".class") != null)
+                {
+                    classOk++;
+                }
+                else
+                {
+                    BBSPlusPlusMod.LOGGER.warn("1.21.11 mixin 自检：类缺失 {}", name);
+                }
+            }
+
+            String message = String.format("1.21.11 mixin 自检：配置 %d/%d，类 %d/%d", configured, mixins.length, classOk, mixins.length);
+
+            if (configured == mixins.length && classOk == mixins.length) BBSPlusPlusMod.LOGGER.info(message);
+            else BBSPlusPlusMod.LOGGER.warn(message + "（检查 bbsplusplus-12111.mixins.json 与 java-1.21.11 源码集）");
+        }
+        catch (Throwable e)
+        {
+            BBSPlusPlusMod.LOGGER.warn("1.21.11 mixin 自检执行失败", e);
+        }
+    }
+
     /**
      * 1.21.11 专属：纹理分级注入自检（类只存在于 {@code java-1.21.11} 源码集，1.20.x 下找不到就跳过）。
      */

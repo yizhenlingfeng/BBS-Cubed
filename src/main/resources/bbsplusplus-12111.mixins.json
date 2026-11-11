@@ -7,11 +7,22 @@
   "client": [
     "CubicCubeRendererUvEmitMixin121",
     "ModelInstanceUvContextMixin121",
+    "BillboardFormRendererMixin121",
+    "TrailFormRendererMixin121",
+    "ExtrudedUvMixin121",
+    "ModelVAOMixin121",
     "FormTranslucentQueueGradeMixin121",
     "RenderLayerPreviewGradeMixin121",
     "UIFormEditorPickingMixin121",
     "StencilPickFixMixin121",
-    "PickerDrawFixMixin121"
+    "PickerDrawFixMixin121",
+    "ParticleManagerGradeMixin121",
+    "BillboardParticleGradeMixin121",
+    "ModelFormRendererEquipmentMixin121",
+    "ModelGroupSubmitMixin121",
+    "ModelFormRendererAlbedoMixin121",
+    "FramebufferDepthCopyMixin121",
+    "UIScreenPreviewMixin121"
   ],
   "injectors": {
     "defaultRequire": 0

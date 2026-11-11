@@ -81,7 +81,7 @@ public final class GradePass
     {
         RenderPipeline pipeline = gradePipeline(cull, worldForm());
 
-        return pipeline != null && draw(pipeline, captured, modelView, textureId, params);
+        return pipeline != null && draw(pipeline, captured, modelView, textureId, params, true);
     }
 
     /** 附魔光效：在基础绘制之后叠一层 ADDITIVE。 */
@@ -89,7 +89,8 @@ public final class GradePass
     {
         RenderPipeline pipeline = glintPipeline(worldForm());
 
-        return pipeline != null && draw(pipeline, captured, modelView, textureId, params);
+        /* 光效着色器只采 Sampler0，管线里也没有声明 Sampler1/2 —— 多绑会打运行期 WARN。 */
+        return pipeline != null && draw(pipeline, captured, modelView, textureId, params, false);
     }
 
     /**
@@ -139,7 +140,6 @@ public final class GradePass
 
     /** 上传用的直接缓冲区；不缓存的话每帧每个模型都要新建原生内存，GC 压力反而更大。 */
     private static ByteBuffer uploadScratch;
-    private static boolean loggedUploadCopy;
 
     /**
      * 把堆内 ByteBuffer 换成直接缓冲区再交给 GL。
@@ -177,16 +177,10 @@ public final class GradePass
         uploadScratch.put(data.duplicate());
         uploadScratch.flip();
 
-        if (!loggedUploadCopy)
-        {
-            loggedUploadCopy = true;
-            BBSPlusPlusMod.LOGGER.info("[BBS++] 纹理分级：BBS 快照是堆内缓冲区，已改为直接缓冲区上传（glNamedBufferStorage 崩溃修复生效）");
-        }
-
         return uploadScratch;
     }
 
-    private static boolean draw(RenderPipeline pipeline, FormRenderCapture.Captured captured, Matrix4f modelView, Identifier textureId, GradeParams params)
+    private static boolean draw(RenderPipeline pipeline, FormRenderCapture.Captured captured, Matrix4f modelView, Identifier textureId, GradeParams params, boolean overlaySamplers)
     {
         if (captured == null || textureId == null || params == null || modelView == null)
         {
@@ -235,27 +229,40 @@ public final class GradePass
          * overlay 贴图：它的 DEFAULT_UV 那一格本来就是中性白，UV1 也指向它，正是上游
          * useOverlay() 层的默认绑定，所以结果与没有调色板时一致。 */
         GpuTextureView overlayView = null;
+        GpuTextureView lightmapView = null;
 
-        try
+        /* 光效管线只声明了 Sampler0：解析/绑定 Sampler1、2 会被原版判成
+         * 「pipeline 定义了但程序没用」的 WARN，所以只在调色管线里做。 */
+        if (overlaySamplers)
         {
-            AbstractTexture overlay = client.getTextureManager().getTexture(FormOverlay.SWATCH);
-
-            if (overlay != null)
+            /* 先用 hasPalette() 挡一道：没claim 过调色板时 swatch 还没 register，直接
+             * getTexture 会让原版 TextureManager 每次绘制都打一条
+             * 「Missing resource bbs:overlay_swatch」的 WARN（日志噪声，不影响画面），
+             * catch 兜住的本来就是这条路径。 */
+            if (FormOverlay.hasPalette())
             {
-                overlayView = overlay.getGlTextureView();
+                try
+                {
+                    AbstractTexture overlay = client.getTextureManager().getTexture(FormOverlay.SWATCH);
+
+                    if (overlay != null)
+                    {
+                        overlayView = overlay.getGlTextureView();
+                    }
+                }
+                catch (Throwable ignored)
+                {
+                    /* 注册与 claim 之间有极短窗口，仍走下面的 fallback。 */
+                }
             }
-        }
-        catch (Throwable ignored)
-        {
-            /* 没注册过 swatch，走下面的 fallback。 */
-        }
 
-        if (overlayView == null)
-        {
-            overlayView = client.gameRenderer.getOverlayTexture().getTextureView();
-        }
+            if (overlayView == null)
+            {
+                overlayView = client.gameRenderer.getOverlayTexture().getTextureView();
+            }
 
-        GpuTextureView lightmapView = client.gameRenderer.getLightmapTextureManager().getGlTextureView();
+            lightmapView = client.gameRenderer.getLightmapTextureManager().getGlTextureView();
+        }
 
         try (RenderPass pass = encoder.createRenderPass(() -> "bbsplusplus:grade", color, OptionalInt.empty(), depth, OptionalDouble.empty()))
         {
@@ -265,8 +272,13 @@ public final class GradePass
             pass.setUniform(UBO_NAME, ubo);
             pass.setVertexBuffer(0, vertexBuffer);
             pass.bindTexture("Sampler0", texture.getGlTextureView(), texture.getSampler());
-            pass.bindTexture("Sampler1", overlayView, ScreenQuadPass.nearest());
-            pass.bindTexture("Sampler2", lightmapView, ScreenQuadPass.linear());
+
+            if (overlaySamplers)
+            {
+                pass.bindTexture("Sampler1", overlayView, ScreenQuadPass.nearest());
+                pass.bindTexture("Sampler2", lightmapView, ScreenQuadPass.linear());
+            }
+
             pass.setIndexBuffer(indexBuffer, indexType);
             pass.drawIndexed(0, 0, indexCount, 1);
         }
@@ -421,8 +433,6 @@ public final class GradePass
             .withUniform("Lighting", UniformType.UNIFORM_BUFFER)
             .withUniform(UBO_NAME, UniformType.UNIFORM_BUFFER)
             .withSampler("Sampler0")
-            .withSampler("Sampler1")
-            .withSampler("Sampler2")
             .build(), world);
     }
 
@@ -438,15 +448,13 @@ public final class GradePass
                 BBSRendering.mirrorIrisPipeline(registered, RenderPipelines.ENTITY_TRANSLUCENT);
             }
 
-            gbeic.bbsplusplus.BBSPlusPlusMod.LOGGER.info("[BBS++] 纹理分级管线已注册：{}（world={}）", location, world);
-
             return registered;
         }
         catch (Throwable t)
         {
             broken = true;
 
-            gbeic.bbsplusplus.BBSPlusPlusMod.LOGGER.error("[BBS++] 纹理分级管线创建失败（本会话不再尝试）：" + location, t);
+            BBSPlusPlusMod.LOGGER.error("[BBS++] 纹理分级管线创建失败（本会话不再尝试）：" + location, t);
 
             return null;
         }

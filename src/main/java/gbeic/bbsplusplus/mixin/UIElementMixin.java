@@ -81,9 +81,45 @@ public class UIElementMixin
     }
 
     /**
+     * 新版伪装面板是否真的可用（类存在且能加载）。
+     * <p>
+     * 只按设置开关判断是不够的：如果某次构建没有打进 {@code UIBBSPPFormList}（例如版本分叉时被排除），
+     * 开关打开的情况下原版三个分类菜单项会被删掉，而新面板的替代入口又不存在，用户就没有任何入口了。
+     * 这里用类加载结果做一次惰性缓存，缺失时保留原版菜单。
+     * </p>
+     */
+    @Unique
+    private static Boolean bbspp$newMorphingPanelAvailable;
+
+    @Unique
+    private static boolean bbspp$isNewMorphingPanelAvailable()
+    {
+        if (bbspp$newMorphingPanelAvailable == null)
+        {
+            boolean available;
+
+            try
+            {
+                Class.forName("gbeic.bbsplusplus.ui.morphing.UIBBSPPFormList", false,
+                    UIElementMixin.class.getClassLoader());
+                available = true;
+            }
+            catch (Throwable t)
+            {
+                available = false;
+            }
+
+            bbspp$newMorphingPanelAvailable = available;
+        }
+
+        return bbspp$newMorphingPanelAvailable;
+    }
+
+    /**
      * 注入目标：{@link UIElement#createContextMenu(UIContext)} 返回后。
      * 注入原因：新版伪装界面使用自己的分类管理入口，原版分类右键菜单中的管理项会造成重复。
-     * 修改后的行为：仅当全新伪装界面开启时，移除表单分类的新增、重命名和删除分类菜单项。
+     * 修改后的行为：仅当全新伪装界面开启、且新面板类确实可用时，移除表单分类的新增、重命名和删除分类菜单项；
+     * 开关关闭或面板缺失时原版菜单保持完整。
      */
     @Inject(method = "createContextMenu", at = @At("RETURN"), cancellable = true, remap = true)
     private void onContextMenu(UIContext context, CallbackInfoReturnable<UIContextMenu> cir)
@@ -93,7 +129,7 @@ public class UIElementMixin
         // 拦截 UIFormCategory（包括 UIUserFormCategory）的右键菜单
         if (menu instanceof UISimpleContextMenu simpleMenu && (Object) this instanceof UIFormCategory)
         {
-            if (!gbeic.bbsplusplus.settings.ModSettings.newMorphingPanel.get())
+            if (!gbeic.bbsplusplus.settings.ModSettings.newMorphingPanel.get() || !bbspp$isNewMorphingPanelAvailable())
             {
                 return;
             }

@@ -8,6 +8,15 @@
     "block.bbs.emissive_chroma_black": "黑色发光色度方块",
     "block.bbs.emissive_chroma_white": "白色发光色度方块",
 
+    "item.bbs.emissive_chroma_red": "红色发光色度方块",
+    "item.bbs.emissive_chroma_green": "绿色发光色度方块",
+    "item.bbs.emissive_chroma_blue": "蓝色发光色度方块",
+    "item.bbs.emissive_chroma_cyan": "青色发光色度方块",
+    "item.bbs.emissive_chroma_magenta": "品红色发光色度方块",
+    "item.bbs.emissive_chroma_yellow": "黄色发光色度方块",
+    "item.bbs.emissive_chroma_black": "黑色发光色度方块",
+    "item.bbs.emissive_chroma_white": "白色发光色度方块",
+
     "bbsplusplus.vfx_wand.selected": "破坏魔杖：已选择区域",
     "bbsplusplus.vfx_wand.cleared": "破坏魔杖：已清除区域",
     "bbsplusplus.vfx_wand.start_moved": "破坏魔杖：已移动起点",

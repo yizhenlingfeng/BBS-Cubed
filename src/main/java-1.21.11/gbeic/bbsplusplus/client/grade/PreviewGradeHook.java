@@ -42,8 +42,6 @@ import org.joml.Matrix4f;
 public final class PreviewGradeHook
 {
     private static boolean failed;
-    private static boolean logged;
-    private static boolean loggedGlint;
 
     /** 仅光效通道时，HEAD 暂存、{@code RenderLayer.draw} RETURN 时消费的快照。 */
     private static final ThreadLocal<PendingGlint> PENDING = new ThreadLocal<>();
@@ -55,29 +53,6 @@ public final class PreviewGradeHook
 
     private PreviewGradeHook()
     {
-    }
-
-    /** 首次接管预览时打一条，实机确认预览钩子命中（mixin `require = 0`，静默失败看不出来）。 */
-    private static void logOnce()
-    {
-        if (logged)
-        {
-            return;
-        }
-
-        logged = true;
-        gbeic.bbsplusplus.BBSPlusPlusMod.LOGGER.info("[BBS++] 纹理分级已接管面板预览绘制");
-    }
-
-    private static void logGlintOnce()
-    {
-        if (loggedGlint)
-        {
-            return;
-        }
-
-        loggedGlint = true;
-        gbeic.bbsplusplus.BBSPlusPlusMod.LOGGER.info("[BBS++] 附魔光效已在面板预览叠加");
     }
 
     /** @return true 表示已经自己画完，调用方应 cancel 原来的 {@code RenderLayer.draw}。 */
@@ -175,7 +150,6 @@ public final class PreviewGradeHook
                     try
                     {
                         GradePass.drawGlint(captured, modelView, textureId, params);
-                        logGlintOnce();
                     }
                     catch (Throwable t)
                     {
@@ -183,7 +157,6 @@ public final class PreviewGradeHook
                     }
                 }
 
-                logOnce();
                 built.close();
                 GradeDecisions.put(built, true);
 
@@ -222,10 +195,7 @@ public final class PreviewGradeHook
 
         try
         {
-            if (GradePass.drawGlint(pending.captured(), pending.modelView(), pending.textureId(), pending.params()))
-            {
-                logGlintOnce();
-            }
+            GradePass.drawGlint(pending.captured(), pending.modelView(), pending.textureId(), pending.params());
         }
         catch (Throwable t)
         {

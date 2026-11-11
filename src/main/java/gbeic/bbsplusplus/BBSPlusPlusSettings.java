@@ -89,6 +89,7 @@ public class BBSPlusPlusSettings
         ModSettings.privateBbsClipboard = builder.getBoolean("private_bbs_clipboard", false);
 
         /* 隐藏设置项（不显示在界面中，仅持久化） */
+        /* 旧配置键：texture_manager_layout 已无消费方，保留读写以兼容旧配置文件 */
         ModSettings.textureManagerLayout = (ValueInt) builder.getInt("texture_manager_layout", 0).invisible();
         ModSettings.aaaEffectPickerWidth = (ValueInt) builder.getInt("aaa_effect_picker_width", 0, 0, 16384).invisible();
         ModSettings.aaaEffectPickerHeight = (ValueInt) builder.getInt("aaa_effect_picker_height", 0, 0, 16384).invisible();
@@ -108,6 +109,7 @@ public class BBSPlusPlusSettings
         ModSettings.itemSprayMaxRenderDistance = builder.getInt("item_spray_max_render_distance", 0, 0, 512);
         ModSettings.itemSprayMaxRenderedItems = builder.getInt("item_spray_max_rendered_items", 1024, 0, 8192);
         ModSettings.itemSprayIRLiteShadowMaxItems = builder.getInt("item_spray_irlite_shadow_max_items", 1024, 0, 4096);
+        /* 旧配置键：replay_sprint_particles 已无消费方，保留以免旧配置报未知键 */
         ModSettings.replaySprintParticles = builder.getBoolean("replay_sprint_particles", false);
         ModSettings.fluidRealisticModelInteraction = builder.getBoolean("fluid_realistic_model_interaction", false);
 

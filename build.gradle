@@ -178,8 +178,9 @@ processResources {
                     if (excl.contains("/mixin/") && excl.endsWith(".java")) {
                         def simpleName = excl.substring(excl.lastIndexOf('/') + 1).replace(".java", "")
                         def before = text.length()
-                        // 匹配 "Name", 或 "Name"（最后一个元素）
-                        text = text.replaceAll("\"${simpleName}\",?\\s*", "")
+                        // 匹配 "Name" / "client.Name" 等带包前缀的条目，以及最后一个元素
+                        // （Mixin 配置允许包前缀；只匹配简单名会漏删 1.21.11 的 client.ModelFormRendererLimbPickMixin）
+                        text = text.replaceAll('"(?:[\\w$]+\\.)*' + java.util.regex.Pattern.quote(simpleName) + '",?\\s*', '')
                         if (text.length() < before) totalRemoved++
                     }
                 }
@@ -336,34 +337,23 @@ tasks.withType(JavaCompile).configureEach {
 if (targetMc == "1.21.11") {
     sourceSets.main.java.excludes += [
         // 渲染大修文件本体
-        "gbeic/bbsplusplus/client/compat/iris/ShaderCurveState.java",
         "gbeic/bbsplusplus/client/renderer/AAAParticleFormRenderer.java",
         "gbeic/bbsplusplus/client/screen/ModelTextureGradeShader.java",
-        "gbeic/bbsplusplus/client/screen/ColorGradeRenderer.java",
         "gbeic/bbsplusplus/client/screen/VanillaParticleGradeContext.java",
-        "gbeic/bbsplusplus/client/structure/VFXDestructionWandSelection.java",
         "gbeic/bbsplusplus/compat/vfx/VfxCoreShaderRegistrationGuard.java",
         // 引用被排除类的下游文件（BBSEffectLoader 依赖尚未移植的 AAAParticleFormRenderer）
         "gbeic/bbsplusplus/client/renderer/BBSEffectLoader.java",
-        "gbeic/bbsplusplus/client/ui/curves/UIShaderCurvePickerOverlayPanel.java",
-        "gbeic/bbsplusplus/forms/renderers/GradedVanillaParticleFormRenderer.java",
-        "gbeic/bbsplusplus/client/screen/ScreenEffectRenderer.java",
         "gbeic/bbsplusplus/client/screen/TextureGradeRenderContext.java",
-        "gbeic/bbsplusplus/client/structure/VFXDestructionWandTooltip.java",
-        "gbeic/bbsplusplus/client/ui/animations/UIAnimationPreview.java",
-        "gbeic/bbsplusplus/client/ui/keyframes/UITextureTweenOrigin3DPicker.java",
-        "gbeic/bbsplusplus/client/ui/pose/PoseBoneMarkerRenderer.java",
         // Mixin 引用被排除类或使用旧渲染 API
-        "gbeic/bbsplusplus/mixin/BaseFilmControllerMixin.java",
         "gbeic/bbsplusplus/mixin/BillboardFormRendererMixin.java",
         "gbeic/bbsplusplus/mixin/client/CubicVAORendererMixin.java",
         "gbeic/bbsplusplus/mixin/client/ParticleComponentAppearanceBillboardMixin.java",
         "gbeic/bbsplusplus/mixin/client/ParticleEmitterMixin.java",
-        "gbeic/bbsplusplus/mixin/client/WorldFilmControllerReplayTimeMixin.java",
         "gbeic/bbsplusplus/mixin/CubicVAORendererLimbCullingMixin.java",
         "gbeic/bbsplusplus/mixin/ExtrudedFormRendererMixin.java",
         "gbeic/bbsplusplus/mixin/ModelFormRendererEquipmentMixin.java",
         "gbeic/bbsplusplus/mixin/ModelInstanceMixin.java",
+        "gbeic/bbsplusplus/mixin/client/ModelFormRendererLimbPickMixin.java",
         "gbeic/bbsplusplus/mixin/ModelInstanceOutlineMixin.java",
         "gbeic/bbsplusplus/mixin/ModelVAORendererMixin.java",
         "gbeic/bbsplusplus/mixin/MotionPathMixin.java",
@@ -375,11 +365,9 @@ if (targetMc == "1.21.11") {
         "gbeic/bbsplusplus/mixin/GameRendererMixin.java",
         "gbeic/bbsplusplus/mixin/irlite/IRLiteBbsCasterSourceMixin.java",
         "gbeic/bbsplusplus/mixin/irlite/LegacyIRLiteBbsCasterSourceMixin.java",
-        "gbeic/bbsplusplus/mixin/MinecraftClientMixin.java",
         "gbeic/bbsplusplus/mixin/shadercurves/CenterDepthSamplerMixin.java",
         "gbeic/bbsplusplus/mixin/shadercurves/IrisRenderingPipelineMixin.java",
         "gbeic/bbsplusplus/mixin/shadercurves/ShadowRendererMixin.java",
-        "gbeic/bbsplusplus/mixin/UICurveClipMixin.java",
         "gbeic/bbsplusplus/mixin/client/BBSShadersTextureGradeMixin.java",
         "gbeic/bbsplusplus/mixin/client/ModelInstanceTextureGradeMixin.java",
         "gbeic/bbsplusplus/mixin/client/ParticleManagerVanillaFormMixin.java",
@@ -397,37 +385,18 @@ if (targetMc == "1.21.11") {
         "gbeic/bbsplusplus/ui/particles/UIParticleSchemeCollisionTintingSection.java",
         "gbeic/bbsplusplus/ui/particles/UIParticleSchemeMorphSection.java",
         // 第二批连锁引用
-        "gbeic/bbsplusplus/client/ui/animations/UIAnimationPreviewTooltip.java",
         "gbeic/bbsplusplus/client/ui/forms/editors/panels/UIAAAParticleFormPanel.java",
         "gbeic/bbsplusplus/client/ui/utils/UIEffectPicker.java",
         "gbeic/bbsplusplus/mixin/client/FormRendererTextureGradeContextMixin.java",
         "gbeic/bbsplusplus/mixin/client/UIParticleSchemeGeneralSectionMixin.java",
         "gbeic/bbsplusplus/mixin/client/UIParticleSchemePanelMixin.java",
         "gbeic/bbsplusplus/mixin/EffekAssetLoaderMixin.java",
-        "gbeic/bbsplusplus/mixin/UILinkKeyframeFactoryMixin.java",
-        "gbeic/bbsplusplus/mixin/UIListPoseParameterBrushMixin.java",
         "gbeic/bbsplusplus/mixin/EffectDefinitionMixin.java",
-        "gbeic/bbsplusplus/mixin/UIFilmKeyframesMixin.java",
-        "gbeic/bbsplusplus/ui/morphing/UIBBSPPCategoryHome.java",
-        "gbeic/bbsplusplus/ui/film/UIHotbarRenderer.java",
-        // sendCommand renamed in 1.21.11
-        "gbeic/bbsplusplus/mixin/UIFilmControllerGameModeMixin.java",
-        "gbeic/bbsplusplus/mixin/UIFilmPanelGameModeMixin.java",
         // 第三批连锁
         "gbeic/bbsplusplus/client/ui/forms/editors/forms/UIAAAParticleForm.java",
-        "gbeic/bbsplusplus/mixin/client/UIActionsConfigEditorMixin.java",
-        "gbeic/bbsplusplus/mixin/client/UIListAnimationPreviewAnchorMixin.java",
-        "gbeic/bbsplusplus/ui/morphing/UIBBSPPFormList.java",
         // 第四批：morphing UI 系统连锁
-        "gbeic/bbsplusplus/ui/morphing/UIBBSPPFormEditorList.java",
-        "gbeic/bbsplusplus/ui/morphing/UIBBSPPCategorySidebar.java",
-        "gbeic/bbsplusplus/mixin/UIFormListMixin.java",
-        "gbeic/bbsplusplus/mixin/UIFormPaletteMixin.java",
-        "gbeic/bbsplusplus/mixin/UIFormEditorMixin.java",
         // FabricBlockSettings 包在 1.21.11 Fabric API 中移除
-        "gbeic/bbsplusplus/BBSPlusPlusBlocks.java",
         // GameMode API changed in 1.21.11
-        "gbeic/bbsplusplus/util/FilmAutoGameModeRestoreState.java",
     ]
 }
 

@@ -31,9 +31,6 @@ import mchorse.bbs_mod.utils.colors.Color;
  */
 public final class ModelGradeResolver
 {
-    /** 首帧解析到光效时打一条，实机可据此区分「数据链没读到」与「绘制没执行」。 */
-    private static boolean loggedGlint;
-
     private ModelGradeResolver()
     {
     }
@@ -68,14 +65,61 @@ public final class ModelGradeResolver
 
         GlintView glint = resolveGlint(instance.model);
 
-        if (glint.active && !loggedGlint)
+        if (!tinted && !glint.active)
         {
-            loggedGlint = true;
-
-            gbeic.bbsplusplus.BBSPlusPlusMod.LOGGER.info(
-                "[BBS++] 附魔光效参数已解析：color=({}, {}, {}, {}), phase={}, brightness={}",
-                glint.r, glint.g, glint.b, glint.a, glint.phase, glint.brightness);
+            return GradeParams.NONE;
         }
+
+        return new GradeParams(
+            true,
+            tint == null ? 1F : tint.r,
+            tint == null ? 1F : tint.g,
+            tint == null ? 1F : tint.b,
+            tintA,
+            whiten,
+            glint.active,
+            glint.r, glint.g, glint.b, glint.a,
+            glint.phase,
+            glint.brightness
+        );
+    }
+
+    /**
+     * 逐骨骼（逐组）版本：调色/白化仍是整表单级，光效只取<b>这一组</b>自己的。
+     *
+     * <p>{@link #resolve(ModelInstance)} 为了「一次 draw 里只有一个分级参数」只能取第一个
+     * 开启光效的组，于是整模型都跟着发光。1.21.11 走到逐组提交（B2-01 骨架）之后，
+     * 每个顶层组各自调用本方法，光效就真的落在开启它的那根骨骼上。</p>
+     */
+    public static GradeParams resolveForGroup(ModelInstance instance, ModelGroup group)
+    {
+        Form form = instance == null ? null : instance.form;
+
+        if (!(form instanceof ModelForm))
+        {
+            return GradeParams.NONE;
+        }
+
+        Color tint = null;
+        float whiten = 0F;
+
+        ValueColor tintProperty = BBSPPFormValues.getTextureTint(form);
+        ValueFloat whitenProperty = BBSPPFormValues.getTextureWhiten(form);
+
+        if (tintProperty != null)
+        {
+            tint = tintProperty.get();
+        }
+
+        if (whitenProperty != null)
+        {
+            whiten = whitenProperty.get();
+        }
+
+        float tintA = tint == null ? 0F : tint.a;
+        boolean tinted = tintA > 0.0001F || whiten > 0.0001F;
+
+        GlintView glint = resolveGlintGroup(group);
 
         if (!tinted && !glint.active)
         {
@@ -94,6 +138,61 @@ public final class ModelGradeResolver
             glint.phase,
             glint.brightness
         );
+    }
+
+    /**
+     * 只算调色/白化、不碰光效：给不走 {@link ModelInstance} 的表单（目前是流体）用。
+     *
+     * <p>光效是逐骨骼的（{@code GroupGlintHolder}），流体没有骨骼，所以这里恒定
+     * {@code glint = false}，{@link GradeParams#needGlint()} 也恒为 false。</p>
+     */
+    public static GradeParams resolveTint(Form form)
+    {
+        if (form == null)
+        {
+            return GradeParams.NONE;
+        }
+
+        Color tint = null;
+        float whiten = 0F;
+
+        ValueColor tintProperty = BBSPPFormValues.getTextureTint(form);
+        ValueFloat whitenProperty = BBSPPFormValues.getTextureWhiten(form);
+
+        if (tintProperty != null)
+        {
+            tint = tintProperty.get();
+        }
+
+        if (whitenProperty != null)
+        {
+            whiten = whitenProperty.get();
+        }
+
+        float tintA = tint == null ? 0F : tint.a;
+
+        if (tintA <= 0.0001F && whiten <= 0.0001F)
+        {
+            return GradeParams.NONE;
+        }
+
+        return new GradeParams(
+            true,
+            tint == null ? 1F : tint.r,
+            tint == null ? 1F : tint.g,
+            tint == null ? 1F : tint.b,
+            tintA,
+            whiten,
+            false,
+            0F, 0F, 0F, 0F,
+            0F,
+            1F
+        );
+    }
+
+    private static GlintView resolveGlintGroup(ModelGroup group)
+    {
+        return resolveGroup(group);
     }
 
     private static GlintView resolveGlint(Object modelObject)

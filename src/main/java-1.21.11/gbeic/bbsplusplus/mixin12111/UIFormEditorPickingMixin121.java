@@ -1,6 +1,5 @@
 package gbeic.bbsplusplus.mixin12111;
 
-import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -40,8 +39,6 @@ import java.util.List;
 @Mixin(value = UIFormEditor.class, remap = false)
 public abstract class UIFormEditorPickingMixin121
 {
-    private static boolean logged;
-
     @Shadow
     protected abstract void pickFormBone(Form form, String bone);
 
@@ -80,12 +77,6 @@ public abstract class UIFormEditorPickingMixin121
             {
                 this.pickFormBone(pair.a, parentBone);
                 ci.cancel();
-
-                if (!logged)
-                {
-                    logged = true;
-                    BBSPlusPlusMod.LOGGER.info("[BBS++] 1.21.11：Shift 直接选择父级已生效（{} → {}）", pair.b, parentBone);
-                }
 
                 return;
             }
