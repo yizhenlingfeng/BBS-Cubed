@@ -249,6 +249,11 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 
 ### Mod Changelog
 
+#### 3.6.9 (Fix the injection conflict with BBS-POV)
+* **Resampled-action guard works again**: BBS-POV 1.0.1's `ReplayPovMixin` redirects the `ActionClip.applyClient` call inside `Replay#applyClientActions`, and Mixin allows only one `@Redirect` per call instruction, so the injection this mod used to place at the same point was skipped silently and the suppression of irreversible actions during resampled replay time stopped working — no error, no crash, it simply no longer applied. The guard now injects into `ActionClip#applyClient` itself instead of the call site, so both mods take effect together
+* **Injection validation**: `require` is raised from `0` to `1`, so a future change to the `applyClient` signature fails at startup instead of quietly degrading to an unguarded state
+* **Multi-version regression**: the 1.20.1 and 1.21.11 builds pass, and a 1.20.1 test launch reports no Mixin conflict warning
+
 #### 3.6.8 (Remove vanilla glow, outline performance cleanup)
 * **Vanilla Glow removed**: the toggle, its additive layer and the related API are gone. Outlines now consist only of the solid / gradient shell and LabPBR emission. Legacy `outline_vanilla_glow` / `overlay_vanilla_glow` keys are ignored and do not affect the outline itself
 * **No more per-frame rebuilds on static models**: pose values are quantised to 1/4096 in the shell cache key, so sub-pixel jitter from IK, physics or constraint settling no longer invalidates the whole shell
