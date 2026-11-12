@@ -43,6 +43,11 @@
 | IRL shadow max item count    | 1024    | Maximum item spray particles participating in IRLights light shadows; 0 disables item spray shadow                                                                                                                              |
 | **Performance Optimization** |         |                                                                                                                                                                                                                                |
 | Model block render distance  | 0       | Vanilla defaults to 512 blocks. Lowering this reduces rendering and picking overhead for distant model blocks; 0 uses the vanilla default                                                                                     |
+| **Pose & Animation**         |         |                                                                                                                                                                                                                                |
+| Transform translate step     | 0.062   | How much the translate row in the transform UI changes per arrow click or Ctrl+drag; the vanilla default is roughly 1/16 of a block                                                                                          |
+| Transform scale step         | 0.25    | How much the scale row changes per arrow click or Ctrl+drag (same as vanilla)                                                                                                                                                  |
+| Transform rotate step        | 15      | How much the euler rotation row changes, in degrees; the quaternion rotation row is unaffected                                                                                                                                |
+| Transform pivot step         | 0.062   | How much the pivot row added by BBS Cubed changes per arrow click or Ctrl+drag; the vanilla default is roughly 1/16 of a block                                                                                                  |
 | **Gizmo Modifications**      |         |                                                                                                                                                                                                                                |
 | T-key Cycle                  | Off     | When enabled, Gizmo defaults to translate mode. Press G/S/R to switch to that mode, press again to restore the previous mode. Press T to cycle translate → scale → rotate                                                  |
 | Keep Original G/S/R          | Off     | When enabled, pressing G/S/R a second time does not restore the previous mode, keeping vanilla BBS direct-switch behavior                                                                                                    |
@@ -219,6 +224,7 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 | Configurable custom hotkeys        | Custom hotkeys such as Shift+W (select all keyframes at the current time) are integrated into BBS UI keybindings under the "Keyframe Editor" category and can be remapped |
 | Limb selection                     | Hold E (remappable under the "Transformations" keybind category) to enter limb selection: left click picks the actual limb, right click picks through the bone overrides, and both buttons insert keyframes while a keyframe editor is open; the gizmo and debug overlays are hidden while held — see "Limb Selection" above |
 | Actions page list height           | The Actions and Animations lists in the model editor's actions page can be resized by dragging their bottom edge; double-click to reset and the height is stored in the layout config |
+| Right-click reset on every setting | Every setting in this mod's settings screen offers the vanilla right-click "Reset value", including settings that still hold their default value and therefore get no menu entry from vanilla; custom rows such as the four transform steps and the Blockbench path are covered too, and the screen refreshes right after a reset |
 
 ### Vanilla Fixes
 
@@ -249,10 +255,12 @@ When "New movie library interface" is enabled, the movie panel home is replaced 
 
 ### Mod Changelog
 
-#### 3.6.9 (Fix the injection conflict with BBS-POV)
+#### 3.6.9 (Fix the injection conflict with BBS-POV + configurable transform steps)
 * **Resampled-action guard works again**: BBS-POV 1.0.1's `ReplayPovMixin` redirects the `ActionClip.applyClient` call inside `Replay#applyClientActions`, and Mixin allows only one `@Redirect` per call instruction, so the injection this mod used to place at the same point was skipped silently and the suppression of irreversible actions during resampled replay time stopped working — no error, no crash, it simply no longer applied. The guard now injects into `ActionClip#applyClient` itself instead of the call site, so both mods take effect together
 * **Injection validation**: `require` is raised from `0` to `1`, so a future change to the `applyClient` signature fails at startup instead of quietly degrading to an unguarded state
 * **Multi-version regression**: the 1.20.1 and 1.21.11 builds pass, and a 1.20.1 test launch reports no Mixin conflict warning
+* **Configurable transform steps**: the "Pose & Animation" category gains translate, scale, euler rotation and pivot step options (defaults 0.062 / 0.25 / 15 / 0.062), matching the amount vanilla changes per arrow click or Ctrl+drag. Edits apply immediately to the pose, pivot, camera and other transform screens without reopening the panel. Only the step is changed — the quaternion rotation row and the sensitivity of plain dragging stay vanilla
+* **Right-click reset on every setting**: every setting in this mod's settings screen offers the vanilla right-click "Reset value", including settings that still hold their default value and therefore get no menu entry from vanilla. Custom rows such as the four transform steps and the Blockbench path are covered too, and the screen refreshes right after a reset
 
 #### 3.6.8 (Remove vanilla glow, outline performance cleanup)
 * **Vanilla Glow removed**: the toggle, its additive layer and the related API are gone. Outlines now consist only of the solid / gradient shell and LabPBR emission. Legacy `outline_vanilla_glow` / `overlay_vanilla_glow` keys are ignored and do not affect the outline itself

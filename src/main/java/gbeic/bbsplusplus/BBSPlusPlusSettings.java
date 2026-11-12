@@ -57,6 +57,10 @@ public class BBSPlusPlusSettings
         ModSettings.directParentPicking = builder.getBoolean("direct_parent_picking", false);
         ModSettings.ikTargetCycleConstraint = builder.getBoolean("ik_target_cycle_constraint", true);
         ModSettings.pivotTransform = builder.getBoolean("pivot_transform", true);
+        ModSettings.transformTranslateStep = builder.getFloat("transform_translate_step", ModSettings.DEFAULT_TRANSFORM_TRANSLATE_STEP, 0.001F, 1F);
+        ModSettings.transformScaleStep = builder.getFloat("transform_scale_step", ModSettings.DEFAULT_TRANSFORM_SCALE_STEP, 0.001F, 4F);
+        ModSettings.transformRotateStep = builder.getFloat("transform_rotate_step", ModSettings.DEFAULT_TRANSFORM_ROTATE_STEP, 0.01F, 180F);
+        ModSettings.transformPivotStep = builder.getFloat("transform_pivot_step", ModSettings.DEFAULT_TRANSFORM_PIVOT_STEP, 0.001F, 1F);
         ModSettings.pickLimbTexture = builder.getBoolean("pick_limb_texture", true);
         ModSettings.autoLoadAnimationFile = builder.getBoolean("auto_load_animation_file", true);
 

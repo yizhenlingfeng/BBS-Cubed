@@ -38,17 +38,33 @@ public abstract class UITransformMixin extends UIElement implements TransformPiv
     @Unique
     private UITrackpad bbspp_cml$pz;
 
+    @Unique
+    private double bbspp_cml$stepT = Double.NaN;
+
+    @Unique
+    private double bbspp_cml$stepS = Double.NaN;
+
+    @Unique
+    private double bbspp_cml$stepR = Double.NaN;
+
+    @Unique
+    private double bbspp_cml$stepP = Double.NaN;
+
     @Inject(method = "<init>", at = @At("TAIL"), remap = false)
     private void bbspp_cml$createPivotRow(CallbackInfo ci)
     {
+        this.bbspp_cml$refreshTransformSteps();
+
         if (ModSettings.pivotTransform != null && !ModSettings.pivotTransform.get())
         {
             return;
         }
 
-        this.bbspp_cml$px = new UITrackpad((value) -> this.bbspp_cml$internalSetP()).block().onlyNumbers();
-        this.bbspp_cml$py = new UITrackpad((value) -> this.bbspp_cml$internalSetP()).block().onlyNumbers();
-        this.bbspp_cml$pz = new UITrackpad((value) -> this.bbspp_cml$internalSetP()).block().onlyNumbers();
+        double pivotStep = ModSettings.getTransformPivotStep();
+
+        this.bbspp_cml$px = new UITrackpad((value) -> this.bbspp_cml$internalSetP()).block().increment(pivotStep).onlyNumbers();
+        this.bbspp_cml$py = new UITrackpad((value) -> this.bbspp_cml$internalSetP()).block().increment(pivotStep).onlyNumbers();
+        this.bbspp_cml$pz = new UITrackpad((value) -> this.bbspp_cml$internalSetP()).block().increment(pivotStep).onlyNumbers();
 
         UIIcon iconP = new UIIcon(Icons.SPHERE, null);
 
@@ -58,6 +74,88 @@ public abstract class UITransformMixin extends UIElement implements TransformPiv
         iconP.setEnabled(false);
 
         this.add(UI.row(2, 0, UIConstants.CONTROL_HEIGHT, iconP, this.bbspp_cml$px, this.bbspp_cml$py, this.bbspp_cml$pz));
+    }
+
+    /**
+     * 把 BBS Cubed 设置里的四个步长写进 T/S/R 三行与追加的 P 行的轨道板。
+     *
+     * <p>只改 {@code increment}——即点按字段两侧箭头、或按住 Ctrl 拖动时
+     * 每次改变的数值，正好是 BBS 用 {@code block()}/{@code factor()}/{@code degrees()}
+     * 预设出来的那一个（1/16、0.25、15）。普通拖动（{@code normal}/{@code weak}/{@code strong}）
+     * 保持原版手感不变。四元数旋转行在 {@code UIPropTransform} 的构造里晚于本注入创建，
+     * 因此不会被波及。</p>
+     *
+     * <p>只在设置值真正变化时写入，因此可以每次同步数值时无脑调用。</p>
+     */
+    @Unique
+    private void bbspp_cml$refreshTransformSteps()
+    {
+        UITransform self = (UITransform) (Object) this;
+        double translate = ModSettings.getTransformTranslateStep();
+        double scale = ModSettings.getTransformScaleStep();
+        double rotate = ModSettings.getTransformRotateStep();
+
+        if (translate != this.bbspp_cml$stepT)
+        {
+            this.bbspp_cml$stepT = translate;
+
+            self.tx.increment(translate);
+            self.ty.increment(translate);
+            self.tz.increment(translate);
+        }
+
+        if (scale != this.bbspp_cml$stepS)
+        {
+            this.bbspp_cml$stepS = scale;
+
+            self.sx.increment(scale);
+            self.sy.increment(scale);
+            self.sz.increment(scale);
+        }
+
+        if (rotate != this.bbspp_cml$stepR)
+        {
+            this.bbspp_cml$stepR = rotate;
+
+            self.rx.increment(rotate);
+            self.ry.increment(rotate);
+            self.rz.increment(rotate);
+        }
+
+        double pivot = ModSettings.getTransformPivotStep();
+
+        if (pivot != this.bbspp_cml$stepP)
+        {
+            this.bbspp_cml$stepP = pivot;
+
+            if (this.bbspp_cml$px != null)
+            {
+                this.bbspp_cml$px.increment(pivot);
+                this.bbspp_cml$py.increment(pivot);
+                this.bbspp_cml$pz.increment(pivot);
+            }
+        }
+    }
+
+    /*
+     * 三个 fill 方法每次从模型同步数值时都会经过，借它们让设置改动无需重开面板就能生效。
+     */
+    @Inject(method = "fillT", at = @At("HEAD"), remap = false)
+    private void bbspp_cml$onFillT(double x, double y, double z, CallbackInfo ci)
+    {
+        this.bbspp_cml$refreshTransformSteps();
+    }
+
+    @Inject(method = "fillS", at = @At("HEAD"), remap = false)
+    private void bbspp_cml$onFillS(double x, double y, double z, CallbackInfo ci)
+    {
+        this.bbspp_cml$refreshTransformSteps();
+    }
+
+    @Inject(method = "fillR", at = @At("HEAD"), remap = false)
+    private void bbspp_cml$onFillR(double x, double y, double z, CallbackInfo ci)
+    {
+        this.bbspp_cml$refreshTransformSteps();
     }
 
     @Unique

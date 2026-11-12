@@ -103,6 +103,18 @@ public final class ModSettings
     /** XYZ 变换锚点（pivot）功能 */
     public static ValueBoolean pivotTransform;
 
+    /** XYZ 变换位移（T）行的单次点按/拖动步长 */
+    public static ValueFloat transformTranslateStep;
+
+    /** XYZ 变换缩放（S）行的单次点按/拖动步长 */
+    public static ValueFloat transformScaleStep;
+
+    /** XYZ 变换欧拉旋转（R）行的单次点按/拖动步长 */
+    public static ValueFloat transformRotateStep;
+
+    /** XYZ 变换锚点（P）行的单次点按/拖动步长 */
+    public static ValueFloat transformPivotStep;
+
     /** 骨骼优先性：优先选择已展开 pose 的肢体轨道 */
     public static ValueBoolean bonePriorityExpandedLimb;
 
@@ -180,6 +192,46 @@ public final class ModSettings
 
     /** 预览工具栏收纳的工具 ID（逗号分隔） */
     public static ValueString filmToolbarOverflow;
+
+    /*
+     * 这四个默认值就是 BBS 三个轨道板预设给出的步长，默认下不改变原版手感：
+     * 位移 block() = 1/16（面板按三位小数显示为 "0.062"）、
+     * 缩放 factor() = 0.25、欧拉旋转 degrees() = 15。
+     *
+     * 位移这里刻意写 1F/16F 而不是 0.062：原版就是 0.0625，写成 0.062 的话
+     * 每点一次箭头都会比原版少 0.0005，点满 16 次也凑不满一格。
+     */
+    public static final float DEFAULT_TRANSFORM_TRANSLATE_STEP = 1F / 16F;
+    public static final float DEFAULT_TRANSFORM_SCALE_STEP = 0.25F;
+    public static final float DEFAULT_TRANSFORM_ROTATE_STEP = 15F;
+    public static final float DEFAULT_TRANSFORM_PIVOT_STEP = 1F / 16F;
+
+    /**
+     * XYZ 变换位移（T）行的步长，以 {@link #transformTranslateStep} 为准。
+     * 设置模块尚未注册时回落到 BBS 原版的 1/16。
+     */
+    public static double getTransformTranslateStep()
+    {
+        return transformTranslateStep == null ? DEFAULT_TRANSFORM_TRANSLATE_STEP : transformTranslateStep.get();
+    }
+
+    /** XYZ 变换缩放（S）行的步长，设置未注册时回落到 BBS 原版的 0.25。 */
+    public static double getTransformScaleStep()
+    {
+        return transformScaleStep == null ? DEFAULT_TRANSFORM_SCALE_STEP : transformScaleStep.get();
+    }
+
+    /** XYZ 变换欧拉旋转（R）行的步长（度），设置未注册时回落到 BBS 原版的 15。 */
+    public static double getTransformRotateStep()
+    {
+        return transformRotateStep == null ? DEFAULT_TRANSFORM_ROTATE_STEP : transformRotateStep.get();
+    }
+
+    /** XYZ 变换锚点（P）行的步长，设置未注册时回落到 1/16（显示为 0.062）。 */
+    public static double getTransformPivotStep()
+    {
+        return transformPivotStep == null ? DEFAULT_TRANSFORM_PIVOT_STEP : transformPivotStep.get();
+    }
 
     public static AltWheelTimelineMode getFilmAltWheelTimelineMode()
     {
