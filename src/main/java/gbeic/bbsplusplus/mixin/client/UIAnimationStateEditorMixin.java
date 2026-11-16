@@ -61,7 +61,6 @@ public abstract class UIAnimationStateEditorMixin
         if (this.bbspp_cml$autoSync == null)
         {
             this.bbspp_cml$autoSync = new AnimationFileAutoSyncSupport(
-                (UIAnimationStateEditor) (Object) this,
                 this.editor,
                 () -> this.state
             );
