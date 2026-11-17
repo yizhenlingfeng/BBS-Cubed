@@ -129,10 +129,6 @@ public final class MorphScreenPicks
     private static final Map<Object, Map<String, Map<String, Box>>> BY_VIEW = new WeakHashMap<>();
     private static final Object LEGACY_VIEW = new Object();
 
-    /** 诊断计数：renderCube 实际被调用的次数，以及 key 生成失败次数。 */
-    private static int captureCalls;
-    private static int keyFailures;
-
     /**
      * 当前正在采集的模型 id（线程内）。
      *
@@ -332,9 +328,6 @@ public final class MorphScreenPicks
 
         boxesForWrite(viewId, modelId).clear();
 
-        captureCalls = 0;
-        keyFailures = 0;
-
         CAPTURING.set(modelId);
         CAPTURING_VIEW.set(viewId);
         CAPTURE_MATRIX.set(new org.joml.Matrix4f(viewProjection));
@@ -528,54 +521,6 @@ public final class MorphScreenPicks
         }
 
         return keys;
-    }
-
-    /**
-     * 诊断用：列出某模型所有盒子的归一化范围。
-     */
-    public static String describe(String modelId)
-    {
-        return describe(LEGACY_VIEW, modelId);
-    }
-
-    public static String describe(Object viewId, String modelId)
-    {
-        StringBuilder builder = new StringBuilder();
-
-        for (Map.Entry<String, Box> entry : boxes(viewId, modelId).entrySet())
-        {
-            Box box = entry.getValue();
-
-            builder.append(entry.getKey())
-                .append("[x ").append(String.format("%.2f", box.minX()))
-                .append("..").append(String.format("%.2f", box.maxX()))
-                .append(", y ").append(String.format("%.2f", box.minY()))
-                .append("..").append(String.format("%.2f", box.maxY()))
-                .append("] ");
-        }
-
-        return builder.length() == 0 ? "(empty)" : builder.toString();
-    }
-
-    public static int captureCalls()
-    {
-        return captureCalls;
-    }
-
-    public static int keyFailures()
-    {
-        return keyFailures;
-    }
-
-    /** 由渲染器在每次采集尝试时调用，用于区分「没调用」与「key 生成失败」。 */
-    public static void countCaptureCall(boolean keyOk)
-    {
-        captureCalls++;
-
-        if (!keyOk)
-        {
-            keyFailures++;
-        }
     }
 
     public static void clear()

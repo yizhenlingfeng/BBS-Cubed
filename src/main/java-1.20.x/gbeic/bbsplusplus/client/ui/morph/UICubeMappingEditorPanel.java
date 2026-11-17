@@ -2096,9 +2096,6 @@ public final class UICubeMappingEditorPanel extends UIDashboardPanel
         private int lastViewportH;
         private boolean hasViewProjection;
 
-        /** 诊断日志限流。 */
-        private long lastDiagnostic;
-
         private MorphPreview()
         {
             this.grid = true;
@@ -2182,14 +2179,6 @@ public final class UICubeMappingEditorPanel extends UIDashboardPanel
             }
 
             String picked = this.pickAt(x, y);
-
-            float ndcX = (x - this.lastViewportX) / (float) Math.max(1, this.lastViewportW);
-            float ndcY = (y - this.lastViewportY) / (float) Math.max(1, this.lastViewportH);
-
-            gbeic.bbsplusplus.BBSPlusPlusMod.LOGGER.info(
-                "[Model Morph] pick at ({}, {}) ndc=({}, {}) boxes={} -> {}",
-                x, y, String.format("%.3f", ndcX), String.format("%.3f", ndcY),
-                MorphScreenPicks.describe(this, this.modelId), picked == null ? "miss" : picked);
 
             if (this.onPick != null)
             {
@@ -2580,21 +2569,6 @@ public final class UICubeMappingEditorPanel extends UIDashboardPanel
             /* 高亮框必须画在 super.render() <b>之后</b>：那时 UIModelRenderer 已经
                restoreMatrices() 恢复成 2D 坐标系，屏幕坐标才有效。 */
             this.renderHighlights(context);
-
-            /* 诊断：采集是否真的产生了数据。限流到约每秒一条。 */
-            long now = System.currentTimeMillis();
-
-            if (now - this.lastDiagnostic > 1000L)
-            {
-                this.lastDiagnostic = now;
-
-                gbeic.bbsplusplus.BBSPlusPlusMod.LOGGER.info(
-                    "[Model Morph] capture model={} boxes={} renderCubeCalls={} keyFailures={} matrix={} viewport=({},{},{},{})",
-                    this.modelId, MorphScreenPicks.boxes(this, this.modelId).size(),
-                    MorphScreenPicks.captureCalls(), MorphScreenPicks.keyFailures(),
-                    this.hasViewProjection,
-                    this.lastViewportX, this.lastViewportY, this.lastViewportW, this.lastViewportH);
-            }
 
             /* 绘制结束后刷新矩阵，供下一帧采集与拾取使用。 */
             if (this.camera != null)

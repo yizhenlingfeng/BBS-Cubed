@@ -139,8 +139,6 @@ public abstract class CubicCubeRendererMorphMixin
         String groupPath = MorphScreenPicks.groupPath(group);
         String cubeKey = MorphScreenPicks.keyFor(group, cube);
 
-        MorphScreenPicks.countCaptureCall(cubeKey != null && groupPath != null);
-
         if (cubeKey == null || groupPath == null)
         {
             return;
