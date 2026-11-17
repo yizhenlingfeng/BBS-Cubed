@@ -301,6 +301,21 @@ dependencies {
     // 对应 Mixin 由 VfxMixinPlugin 在运行期守卫；编译期若类签名漂移再按需摘除。
     modCompileOnly files("libs/BBS-VFX-build-1.3-1.20.1-zh_cn-hardcoded.jar")
     modCompileOnly files("libs/VFX-LIGHTS-1.0-1.20.1-zh_cn-hardcoded.jar")
+
+    // Model Morph 的数学 / 映射校验单元测试：纯 JVM 运行，不启动客户端。
+    // 映射数据类引用 BBS 的 MapType/BaseType，因此测试运行时需要 BBS jar 与 JOML 在类路径上。
+    testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.4"
+    testImplementation files(mcVer.bbs_jar)
+    testImplementation "org.joml:joml:1.10.5"
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    testLogging {
+        events "failed", "skipped"
+        exceptionFormat "full"
+    }
 }
 
 // 1.21.11 目标显式固定 JDK 21 工具链：编译用的 javac 与 Gradle 守护进程的 JVM 解耦，
@@ -363,6 +378,19 @@ if (targetMc == "1.21.11") {
         "gbeic/bbsplusplus/mixin/ModelVAOMixin.java",
         "gbeic/bbsplusplus/mixin/CubicCubeRendererUvEmitMixin.java",
         "gbeic/bbsplusplus/mixin/GameRendererMixin.java",
+        // Model Morph 只在 1.20.x 源码集里实现（1.21.11 不在本次范围内），
+        // 这里登记后 processResources 会把这些条目从所有 mixins.json 中移除，
+        // 避免 1.21.11 启动时出现找不到 mixin 类的悬空配置。
+        "gbeic/bbsplusplus/mixin/morph/ModelMorphKeyframeMixin.java",
+        "gbeic/bbsplusplus/mixin/morph/ModelFormMorphMixin.java",
+        "gbeic/bbsplusplus/mixin/morph/ModelFormRendererMorphMixin.java",
+        "gbeic/bbsplusplus/mixin/morph/PropertyTrackMorphMixin.java",
+        "gbeic/bbsplusplus/mixin/morph/FormPropertiesMorphMixin.java",
+        "gbeic/bbsplusplus/mixin/morph/ModelInstanceMorphMixin.java",
+        "gbeic/bbsplusplus/mixin/morph/CubicCubeRendererMorphMixin.java",
+        "gbeic/bbsplusplus/mixin/morph/ModelMorphReloadMixin.java",
+        "gbeic/bbsplusplus/mixin/morph/UIModelKeyframeFactoryMorphMixin.java",
+        "gbeic/bbsplusplus/mixin/morph/TextureTranslucentAccessor.java",
         "gbeic/bbsplusplus/mixin/irlite/IRLiteBbsCasterSourceMixin.java",
         "gbeic/bbsplusplus/mixin/irlite/LegacyIRLiteBbsCasterSourceMixin.java",
         "gbeic/bbsplusplus/mixin/shadercurves/CenterDepthSamplerMixin.java",

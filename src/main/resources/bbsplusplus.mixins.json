@@ -115,6 +115,15 @@
         "UIChalkboardMixin",
         "DataManagerAccessor",
         "UIPoseEditorAutoSaveMixin",
+        "morph.ModelMorphKeyframeMixin",
+        "morph.ModelFormMorphMixin",
+        "morph.ModelFormRendererMorphMixin",
+        "morph.PropertyTrackMorphMixin",
+        "morph.FormPropertiesMorphMixin",
+        "morph.ModelInstanceMorphMixin",
+        "morph.CubicCubeRendererMorphMixin",
+        "morph.ModelMorphReloadMixin",
+        "morph.UIModelKeyframeFactoryMorphMixin",
         "FormPropertiesTextureTweenMixin",
         "KeyframeChannelTextureTweenMixin",
         "KeyframeSegmentMixin",
@@ -145,7 +154,8 @@
         "client.ModelIKDebugLimbPickMixin",
         "client.UIValueMapLimbPickMixin",
         "client.UIValueMapResetMixin",
-        "client.UIReplaysEditorUtilsLimbPickMixin"
+        "client.UIReplaysEditorUtilsLimbPickMixin",
+        "morph.TextureTranslucentAccessor"
     ],
     "injectors": {
         "defaultRequire": 0
