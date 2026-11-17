@@ -1218,7 +1218,6 @@ Model Morph 的 22 个 `@Inject` 全部显式写了 `require = 1`：一旦 BBS �
 | 形变方案在真实影片中编译 | ✅ 已通过（游戏内） | 播放 `model_morph_test/bed → model_morph_test/boat` 时输出 `ready: 6 mapped source cube(s), 9 transition(s)`：映射解析、跨骨骼反求与过渡几何构建全部成功 |
 | 贴图混合在游戏内运行 | ✅ 已通过（游戏内） | 同一场景 `texture blend failed` 计数为 0，`NullPointerException` 计数为 0 |
 | 形变几何的视觉质量 | ⬜ 未测试 | 方案已编译、贴图已混合、无异常；但「形变是否好看、端点是否跳变、克隆分化与汇聚的重叠表现」需要人眼判断，见 13.3 的 20 项 |
-| 历史构建产物不代表当前源码 | ⚠️ 已处理 | 旧原型产物（含已删除的 `MorphRig`/`MorphMapper`）与旧 `MorphMapperTest` 报告已在本地清出 `build/` 输出目录，重新构建后不再出现；仓库源码树里本来就没有这些文件 |
 
 ---
 
@@ -1279,7 +1278,7 @@ bash gradlew runClient1204     # 1.20.4，运行目录 run/1.20.4（编译回归
 | `gradlew compileJava`（1.20.1 / 1.20.4） | ✅ 已通过 | 两个目标全部 BUILD SUCCESSFUL |
 | `gradlew build1201` | ✅ 已通过 | 单 jar 产物含 Morph 类与 10 条 mixin 登记 |
 | `gradlew test` | ✅ 已通过 | 16 类 128 例全绿 |
-| 新增 Renderer Mixin 的 `runClient1201` 启动 | 🟡 待验证 | 当前客户端进程已打开；需关闭后再做一次启动冒烟 |
+| 新增 Renderer Mixin 的 `runClient1201` 启动 | 🟡 待验证 | 需关闭已有客户端后单独执行一次启动冒烟 |
 | 游戏内人工场景（13.3，20 项） | ⬜ 未测试 | **合并前必须由人工完成**，尤其是 Bed→Boat、Player→Block、时间轴 scrub/倒放/循环、保存重载、双实例隔离与 Morph 关闭回归 |
 
 ---

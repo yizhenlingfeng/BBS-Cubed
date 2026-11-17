@@ -135,6 +135,7 @@ public final class ClientFeatures {
 
             UIClip.register(ReplayClip.class, UIReplayClip::new);
             LOGGER.info("[FSloveCML] UIReplayClip 注册成功!");
+
             /* 流体伪装：编辑器面板 + 渲染器 */
             UIFormEditor.register(FluidForm.class, UIFluidForm::new);
             // FluidFormRenderer: 1.21.11 上被 excludes，运行时检测

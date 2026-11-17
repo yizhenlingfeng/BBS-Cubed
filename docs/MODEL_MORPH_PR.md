@@ -169,7 +169,6 @@ Fourteenth round refines that: picking moved out of the morph preview (which exi
 - Mapping warning/error detail text uses the selected locale and derives unmapped counts from the validation result rather than parsing English strings.
 - The full-screen Dashboard page uses BBS's native slider for preview progress and preserves the orbit camera across the target endpoint switch. Offline tests/builds pass; manual in-game slider, endpoint-view, incomplete-mapping, splitter, locale, and source-pick behavior still need confirmation.
 - **Not verified:** the *visual quality* of every in-game scenario (Bed→Boat appearance, Player→Block convergence, clone stamping, scrub/reverse/loop, save-reload, undo, two-instance isolation, morph-off regression, video export parity). The pipeline runs and produces geometry, but whether it looks right needs human eyes. See the test matrix in `docs/MODEL_MORPH_1.20.x.md` §13.3.
-- Note for reviewers: the audit rebuilt `build/1.20.1/libs/BBS-Cubed-3.6.9+1.20.1-1.20.4.jar`; it contains no `MorphRig` or `MorphMapper` prototype classes.
 
 ### In-game manual verification
 
