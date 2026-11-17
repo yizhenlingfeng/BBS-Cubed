@@ -299,7 +299,7 @@ public class BBSPlusPlusModClient implements ClientModInitializer
     }
 
     /**
-     * 1.21.11 专属 mixin 自检：确认 12111 配置仍被打包，且 18 个 mixin 类都在类路径上。
+     * 1.21.11 专属 mixin 自检：确认 12111 配置仍被打包，且 21 个 mixin 类都在类路径上。
      * <p>
      * {@code defaultRequire: 0} 会让单个注入点失败静默跳过；这里至少把“配置丢失 /
      * 类没编译进来”这类整批失效暴露在启动日志里。目标方法级别的失配由各功能冒烟覆盖。
@@ -332,6 +332,9 @@ public class BBSPlusPlusModClient implements ClientModInitializer
                 "PickerDrawFixMixin121",
                 "ParticleManagerGradeMixin121",
                 "BillboardParticleGradeMixin121",
+                "ParticleEmitterMixin121",
+                "ParticleComponentAppearanceBillboardMixin121",
+                "UIParticleSchemeRendererMixin121",
                 "ModelFormRendererEquipmentMixin121",
                 "ModelGroupSubmitMixin121",
                 "ModelFormRendererAlbedoMixin121",

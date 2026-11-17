@@ -404,20 +404,10 @@ if (targetMc == "1.21.11") {
         "gbeic/bbsplusplus/mixin/client/BBSRenderingMixin.java",
         // Particle 字段在 1.21.11 重命名
         "gbeic/bbsplusplus/mixin/client/ParticleColorAccessor.java",
-        // 粒子组件
-        "gbeic/bbsplusplus/particles/components/ParticleComponentCollisionAppearance.java",
-        "gbeic/bbsplusplus/particles/components/ParticleComponentCollisionTinting.java",
-        "gbeic/bbsplusplus/particles/components/ParticleComponentParticleMorph.java",
-        "gbeic/bbsplusplus/particles/ParticlePlusClient.java",
-        "gbeic/bbsplusplus/ui/particles/UIParticleSchemeCollisionAppearanceSection.java",
-        "gbeic/bbsplusplus/ui/particles/UIParticleSchemeCollisionTintingSection.java",
-        "gbeic/bbsplusplus/ui/particles/UIParticleSchemeMorphSection.java",
         // 第二批连锁引用
         "gbeic/bbsplusplus/client/ui/forms/editors/panels/UIAAAParticleFormPanel.java",
         "gbeic/bbsplusplus/client/ui/utils/UIEffectPicker.java",
         "gbeic/bbsplusplus/mixin/client/FormRendererTextureGradeContextMixin.java",
-        "gbeic/bbsplusplus/mixin/client/UIParticleSchemeGeneralSectionMixin.java",
-        "gbeic/bbsplusplus/mixin/client/UIParticleSchemePanelMixin.java",
         "gbeic/bbsplusplus/mixin/EffekAssetLoaderMixin.java",
         "gbeic/bbsplusplus/mixin/EffectDefinitionMixin.java",
         // 第三批连锁
@@ -428,9 +418,11 @@ if (targetMc == "1.21.11") {
     ]
 }
 
-// FluidFormRenderer 按版本分离（同一 FQN，靠 source dir 互斥）：
+// 按版本分离的同名源码（同一 FQN，靠 source dir 互斥）：
 // - src/main/java-1.20.x  下是 1.20.1 / 1.20.4 版本（旧立即模式 API）
 // - src/main/java-1.21.11 下是 1.21 RenderPipeline API 移植版
+// 现有：FluidFormRenderer、OutlineRenderer、ItemSpray、ParticlePlus 的粒子组件与 Additive 层、
+// ParticleEditorFileControls（1.20.x 自建快照历史；1.21.11 上游面板已内建 undo，只保留另存为）。
 // 注意：不能用 sourceSets.excludes 来排除，因为 excludes 是按“相对 srcDir 的路径模式”匹配的，
 // 会把 java-1.21.11 下的同名移植版一起排掉（曾经导致移植版从未被编译、运行期只剩图标占位）。
 if (targetMc == "1.21.11") {
