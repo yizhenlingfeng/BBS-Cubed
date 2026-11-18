@@ -9,6 +9,7 @@ import mchorse.bbs_mod.ui.framework.elements.utils.UITimelineCanvas;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Clips;
 import gbeic.bbsplusplus.util.DoubleClickHelper;
+import gbeic.bbsplusplus.compat.TogetherClipLockCompat;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -85,6 +86,9 @@ public abstract class UIClipsDoubleClickMixin
         Clip clip = this.clips.getClipAt(tick, layerIndex);
 
         if (clip == null) return;
+
+        /* 被锁定的剪辑：没有编辑权限的玩家双击也不该打开编辑器 */
+        if (!TogetherClipLockCompat.canEdit(clip)) return;
 
         /* 选中剪辑 */
         this.delegate.pickClip(clip);
