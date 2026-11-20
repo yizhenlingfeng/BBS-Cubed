@@ -39,6 +39,7 @@
         "UIActionsFormPanelMixin",
         "UIActionsConfigKeyframeFactoryMixin",
         "UIAnimationStateEditorMixin",
+        "UIAnimationStateListMixin",
         "UIAnimationStatePoseInsertMixin",
         "UIBaseMenuFloatLayerMixin",
         "UIClipInspectorEmbedMixin",
