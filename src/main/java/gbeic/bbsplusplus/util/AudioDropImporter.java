@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.util;
 
-import gbeic.bbsplusplus.api.UIClipsAccessor;
+import gbeic.bbsplusplus.mixin.client.accessor.UIClipsInvoker;
 import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
@@ -154,7 +154,7 @@ public class AudioDropImporter
             {
                 /* 必须经该时间线的工厂创建:客户端注册的实际是 AudioClientClip
                  * 子类,UIClip.FACTORIES 的编辑面板映射也只认它 */
-                Clip created = ((UIClipsAccessor) timeline).bbspp_cml$getFactory().create(Link.bbs("audio"));
+                Clip created = ((UIClipsInvoker) timeline).bbspp_cml$getFactory().create(Link.bbs("audio"));
 
                 if (!(created instanceof AudioClip clip))
                 {
@@ -166,7 +166,7 @@ public class AudioDropImporter
                 int duration = buffer != null ? Math.max(1, (int) (buffer.getDuration() * 20F)) : 100;
 
                 clip.audio.set(link);
-                ((UIClipsAccessor) timeline).bbspp_cml$invokeAddClip(clip, tick, layer, duration);
+                ((UIClipsInvoker) timeline).bbspp_cml$invokeAddClip(clip, tick, layer, duration);
 
                 tick += duration;
             }

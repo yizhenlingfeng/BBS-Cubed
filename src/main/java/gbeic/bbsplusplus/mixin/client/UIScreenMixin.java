@@ -1,6 +1,6 @@
 package gbeic.bbsplusplus.mixin.client;
 
-import gbeic.bbsplusplus.api.UIClipsAccessor;
+import gbeic.bbsplusplus.mixin.client.accessor.UIClipsInvoker;
 import gbeic.bbsplusplus.util.AudioDropImporter;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.ui.film.UIClips;
@@ -85,7 +85,7 @@ public abstract class UIScreenMixin
         for (UIClips clips : this.menu.getRoot().getChildren(UIClips.class))
         {
             if (clips.area.isInside(mouseX, mouseY)
-                && ((UIClipsAccessor) clips).bbspp_cml$getFactory().create(mchorse.bbs_mod.resources.Link.bbs("audio")) != null)
+                && ((UIClipsInvoker) clips).bbspp_cml$getFactory().create(mchorse.bbs_mod.resources.Link.bbs("audio")) != null)
             {
                 timeline = clips;
 

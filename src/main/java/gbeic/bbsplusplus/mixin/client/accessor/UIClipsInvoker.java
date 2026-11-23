@@ -1,6 +1,5 @@
 package gbeic.bbsplusplus.mixin.client.accessor;
 
-import gbeic.bbsplusplus.api.UIClipsAccessor;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
 import mchorse.bbs_mod.ui.film.UIClips;
 import mchorse.bbs_mod.utils.clips.Clip;
@@ -16,7 +15,7 @@ import org.spongepowered.asm.mixin.gen.Invoker;
  * 选中与数据链路。
  */
 @Mixin(value = UIClips.class, remap = false)
-public interface UIClipsInvoker extends UIClipsAccessor
+public interface UIClipsInvoker
 {
     @Accessor(value = "factory", remap = false)
     public IFactory<Clip, ClipFactoryData> bbspp_cml$getFactory();
