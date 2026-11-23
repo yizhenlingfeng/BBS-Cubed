@@ -1,12 +1,17 @@
-# 对比 1.20.1 与 1.21.11 产物中的类，输出缺失/多出的类清单。
+﻿# 对比 1.20.1 与目标版本（默认 1.21.11）产物中的类，输出缺失/多出的类清单。
 # 用法：
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-class-diff.ps1
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-class-diff.ps1 -UpdateBaseline
-# 基线只记录“1.21.11 相对 1.20.1 的缺失类数量”；后续缺失数不得高于基线。
+#
+# 判定依据是“白名单精确匹配”，不是“缺失数量不超过基线”：
+#   - scripts/class-diff-allowlist.txt 逐条列出允许缺失的类，并写明归因分组；
+#   - 任一缺失类不在白名单里 => 失败（真回归）；
+#   - 白名单里已不再缺失的条目只警告，提示可以裁剪，不阻塞构建。
+# 这样既不会因现有 1.20.x 专属代码告警，也不会把新回归掩盖在宽松的计数基线里。
 
 param(
     [string]$Target = "1.21.11",
-    [string]$Baseline = (Join-Path $PSScriptRoot "class-diff-baseline.txt"),
+    [string]$Allowlist = (Join-Path $PSScriptRoot "class-diff-allowlist.txt"),
     [switch]$UpdateBaseline
 )
 
@@ -40,6 +45,55 @@ function Get-JarClasses([string]$JarPath) {
     }
 }
 
+function Read-Allowlist([string]$Path) {
+    $set = [System.Collections.Generic.HashSet[string]]::new()
+    if (!(Test-Path -LiteralPath $Path)) { return $set }
+
+    foreach ($line in [System.IO.File]::ReadAllLines($Path, [System.Text.Encoding]::UTF8)) {
+        $t = $line.Trim()
+        if ($t.Length -eq 0) { continue }
+        if ($t.StartsWith("#")) { continue }
+        $null = $set.Add($t)
+    }
+    return $set
+}
+
+function Write-Allowlist([string]$Path, [string[]]$Missing, [string]$TargetVersion) {
+    $oneTwenty = New-Object System.Collections.Generic.List[string]
+    $shared = New-Object System.Collections.Generic.List[string]
+
+    foreach ($cls in ($Missing | Sort-Object)) {
+        $outer = $cls
+        $i = $outer.IndexOf([char]36)
+        if ($i -gt 0) { $outer = $outer.Substring(0, $i) }
+        $rel = ($outer -replace '\.', '\') + ".java"
+
+        if (Test-Path -LiteralPath (Join-Path $repo "src/main/java-1.20.x" $rel)) { $oneTwenty.Add($cls) }
+        else { $shared.Add($cls) }
+    }
+
+    $out = New-Object System.Collections.Generic.List[string]
+    $out.Add("# $TargetVersion 相对 1.20.1 允许缺失的类白名单（精确匹配）。")
+    $out.Add("# 任一未列出的缺失类，或白名单外的类缺失，都会让 scripts/check-class-diff.ps1 失败。")
+    $out.Add("# 增加条目前必须能说明归因；不要为了通过构建而追加。")
+    $out.Add("# 与 build/reports/class-diff-$TargetVersion.csv 对照复核。")
+    $out.Add("#")
+    $out.Add("# 总计 $($Missing.Count) 条：组 A（1.20.x 专属源码）$($oneTwenty.Count) 条，组 B（共享源码按版本排除）$($shared.Count) 条。")
+    $out.Add("")
+    $out.Add("# --- 组 A：源码仅存在于 src/main/java-1.20.x ---")
+    $out.Add("# 1.21.11 侧没有对应实现。其中 morph 相关（client/morph、client/ui/morph、mixin/morph、")
+    $out.Add("# keyframes/IModelMorphKeyframe）属于 Model Morph 尚未移植到 1.21.11；其余为 1.20.x 专属适配层。")
+    foreach ($c in $oneTwenty) { $out.Add($c) }
+    $out.Add("")
+    $out.Add("# --- 组 B：源码在共享 src/main/java，但 1.21.11 构建按 build.gradle 的 sourceSets 排除 ---")
+    $out.Add("# 排除项覆盖 outline / texture-grade / particle-plus / irlite / shadercurves / vfx 等上游 API 差异较大的子系统。")
+    foreach ($c in $shared) { $out.Add($c) }
+    $out.Add("")
+
+    [System.IO.File]::WriteAllText($Path, ($out -join "`r`n"), (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host "allowlist updated: $Path = $($Missing.Count) entries (groupA $($oneTwenty.Count), groupB $($shared.Count))"
+}
+
 $baseJar = Find-MainJar "1.20.1"
 $targetJar = Find-MainJar $Target
 $baseClasses = Get-JarClasses $baseJar
@@ -64,16 +118,27 @@ Write-Host "$Target : $($targetClasses.Count) classes"
 Write-Host "missing: $($missing.Count)  extra: $($extra.Count)  report: $report"
 
 if ($UpdateBaseline) {
-    Set-Content -LiteralPath $Baseline -Value $missing.Count -Encoding ascii
-    Write-Host "baseline updated: $Baseline = $($missing.Count)"
+    Write-Allowlist $Allowlist $missing $Target
+    return
 }
-elseif (Test-Path -LiteralPath $Baseline) {
-    $allowed = [int](Get-Content -LiteralPath $Baseline -Raw).Trim()
-    if ($missing.Count -gt $allowed) {
-        throw "1.21.11 缺失类数量回退：当前 $($missing.Count)，基线 $allowed。查看 $report"
-    }
-    Write-Host "baseline ok: missing $($missing.Count) <= $allowed"
+
+if (!(Test-Path -LiteralPath $Allowlist)) {
+    Write-Warning "白名单不存在：$Allowlist；先运行 -UpdateBaseline 生成"
+    return
 }
-else {
-    Write-Warning "基线文件不存在：$Baseline；先运行 -UpdateBaseline 建立基线"
+
+$allowed = Read-Allowlist $Allowlist
+$unexpected = @($missing | Where-Object { !$allowed.Contains($_) })
+$missingSet = [System.Collections.Generic.HashSet[string]]::new([string[]]$missing)
+$stale = @($allowed | Where-Object { !$missingSet.Contains($_) })
+
+if ($stale.Count -gt 0) {
+    Write-Warning "白名单有 $($stale.Count) 条已不再缺失，可以裁剪（不阻塞构建）"
 }
+
+if ($unexpected.Count -gt 0) {
+    $unexpected | ForEach-Object { Write-Host "  UNEXPECTED MISSING: $_" }
+    throw "出现 $($unexpected.Count) 个未列入白名单的缺失类（疑似回归）。查看 $report"
+}
+
+Write-Host "allowlist ok: missing $($missing.Count) 条全部已归因"
