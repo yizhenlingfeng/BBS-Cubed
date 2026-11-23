@@ -1,6 +1,5 @@
 package gbeic.bbsplusplus.mixin.client.accessor;
 
-import gbeic.bbsplusplus.api.FilmsControllerAccessor;
 import mchorse.bbs_mod.film.BaseFilmController;
 import mchorse.bbs_mod.film.Films;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,7 +13,7 @@ import java.util.List;
  * （CML 的 Films 有 getControllers()，bbs-fs 没有）。
  */
 @Mixin(value = Films.class, remap = false)
-public interface FilmsAccessor extends FilmsControllerAccessor
+public interface FilmsAccessor
 {
     @Accessor(value = "controllers", remap = false)
     List<BaseFilmController> bbspp_cml$getControllers();

@@ -779,7 +779,7 @@ public class FluidFormRenderer extends FormRenderer<FluidForm> implements ITicka
         float scaleX = Math.max(this.form.sizeX.get(), 0.001f);
         float scaleZ = Math.max(this.form.sizeZ.get(), 0.001f);
 
-        List<BaseFilmController> controllers = new ArrayList<>(((gbeic.bbsplusplus.api.FilmsControllerAccessor) BBSModClient.getFilms()).bbspp_cml$getControllers());
+        List<BaseFilmController> controllers = new ArrayList<>(((gbeic.bbsplusplus.mixin.client.accessor.FilmsAccessor) BBSModClient.getFilms()).bbspp_cml$getControllers());
 
         if (BBSModClient.getDashboard().getPanels() != null && BBSModClient.getDashboard().getPanels().panel instanceof UIFilmPanel panel)
         {
