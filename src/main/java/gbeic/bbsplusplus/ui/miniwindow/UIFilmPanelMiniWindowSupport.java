@@ -2,7 +2,7 @@ package gbeic.bbsplusplus.ui.miniwindow;
 
 import gbeic.bbsplusplus.client.ClientFeatures;
 import gbeic.bbsplusplus.mixin.client.accessor.UIClipsPanelAccess;
-import gbeic.bbsplusplus.api.UIFilmPanelLayoutAccessor;
+import gbeic.bbsplusplus.mixin.client.accessor.UIFilmPanelLayoutAccess;
 import gbeic.bbsplusplus.mixin.client.accessor.UIDockLayoutAccess;
 import gbeic.bbsplusplus.ui.film.PovEditorAccess;
 import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
@@ -1241,8 +1241,8 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         }
     }
 
-    private UIFilmPanelLayoutAccessor access()
+    private UIFilmPanelLayoutAccess access()
     {
-        return (UIFilmPanelLayoutAccessor) (Object) this.panel;
+        return (UIFilmPanelLayoutAccess) (Object) this.panel;
     }
 }

@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.ui.film.lock;
 
 import gbeic.bbsplusplus.BBSPlusPlusMod;
-import gbeic.bbsplusplus.api.UIFilmPanelLayoutAccessor;
+import gbeic.bbsplusplus.mixin.client.accessor.UIFilmPanelLayoutAccess;
 import gbeic.bbsplusplus.mixin.client.accessor.ValueGroupForeignAccess;
 import gbeic.bbsplusplus.ui.film.PovEditorAccess;
 import mchorse.bbs_mod.data.types.BaseType;
@@ -439,9 +439,9 @@ public class FilmEditorLockManager
         foreign.put(FOREIGN_KEY, data);
     }
 
-    private UIFilmPanelLayoutAccessor access()
+    private UIFilmPanelLayoutAccess access()
     {
-        return (UIFilmPanelLayoutAccessor) (Object) this.panel;
+        return (UIFilmPanelLayoutAccess) (Object) this.panel;
     }
 
     /* --------------------------------------------------------------------- */
