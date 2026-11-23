@@ -3,6 +3,7 @@ package gbeic.bbsplusplus.forms.renderers;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSShaders;
+import gbeic.bbsplusplus.mixin.client.accessor.FilmsAccessor;
 import mchorse.bbs_mod.film.BaseFilmController;
 import mchorse.bbs_mod.film.FilmMatrices;
 import mchorse.bbs_mod.forms.FormUtilsClient;
@@ -779,7 +780,7 @@ public class FluidFormRenderer extends FormRenderer<FluidForm> implements ITicka
         float scaleX = Math.max(this.form.sizeX.get(), 0.001f);
         float scaleZ = Math.max(this.form.sizeZ.get(), 0.001f);
 
-        List<BaseFilmController> controllers = new ArrayList<>(((gbeic.bbsplusplus.mixin.client.accessor.FilmsAccessor) BBSModClient.getFilms()).bbspp_cml$getControllers());
+        List<BaseFilmController> controllers = new ArrayList<>(((FilmsAccessor) BBSModClient.getFilms()).bbspp_cml$getControllers());
 
         if (BBSModClient.getDashboard().getPanels() != null && BBSModClient.getDashboard().getPanels().panel instanceof UIFilmPanel panel)
         {
