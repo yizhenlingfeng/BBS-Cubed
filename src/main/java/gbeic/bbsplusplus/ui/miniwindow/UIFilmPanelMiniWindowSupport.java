@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.ui.miniwindow;
 
 import gbeic.bbsplusplus.client.ClientFeatures;
-import gbeic.bbsplusplus.api.UIClipsPanelAccessor;
+import gbeic.bbsplusplus.mixin.client.accessor.UIClipsPanelAccess;
 import gbeic.bbsplusplus.api.UIFilmPanelLayoutAccessor;
 import gbeic.bbsplusplus.api.UIDockLayoutAccessor;
 import gbeic.bbsplusplus.ui.film.PovEditorAccess;
@@ -998,7 +998,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
 
     private void reassertClipInspector(Object clipsPanel, UIElement editArea)
     {
-        if (!(clipsPanel instanceof UIClipsPanelAccessor clips))
+        if (!(clipsPanel instanceof UIClipsPanelAccess clips))
         {
             return;
         }
@@ -1060,7 +1060,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
 
     private void moveClipInspector(Object clipsPanel, UIElement editArea)
     {
-        if (!(clipsPanel instanceof UIClipsPanelAccessor clips))
+        if (!(clipsPanel instanceof UIClipsPanelAccess clips))
         {
             return;
         }
@@ -1128,7 +1128,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
 
     private void restoreClipInspector(Object clipsPanel)
     {
-        if (!(clipsPanel instanceof UIClipsPanelAccessor clips) || !(clipsPanel instanceof UIElement host))
+        if (!(clipsPanel instanceof UIClipsPanelAccess clips) || !(clipsPanel instanceof UIElement host))
         {
             return;
         }
