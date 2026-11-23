@@ -1,7 +1,7 @@
 package gbeic.bbsplusplus.ui.miniwindow;
 
 import gbeic.bbsplusplus.client.ClientFeatures;
-import gbeic.bbsplusplus.api.UIDockLayoutAccessor;
+import gbeic.bbsplusplus.mixin.client.accessor.UIDockLayoutAccess;
 import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import mchorse.bbs_mod.settings.values.ui.EditorLayoutNode;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -437,8 +437,8 @@ public class UIDockLayoutMiniWindowSupport implements MiniWindowDockHostSupport.
         return this.access().bbspp_cml$getSlotById();
     }
 
-    private UIDockLayoutAccessor access()
+    private UIDockLayoutAccess access()
     {
-        return (UIDockLayoutAccessor) (Object) this.dock;
+        return (UIDockLayoutAccess) (Object) this.dock;
     }
 }

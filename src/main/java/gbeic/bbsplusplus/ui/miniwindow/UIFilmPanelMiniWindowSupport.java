@@ -3,7 +3,7 @@ package gbeic.bbsplusplus.ui.miniwindow;
 import gbeic.bbsplusplus.client.ClientFeatures;
 import gbeic.bbsplusplus.mixin.client.accessor.UIClipsPanelAccess;
 import gbeic.bbsplusplus.api.UIFilmPanelLayoutAccessor;
-import gbeic.bbsplusplus.api.UIDockLayoutAccessor;
+import gbeic.bbsplusplus.mixin.client.accessor.UIDockLayoutAccess;
 import gbeic.bbsplusplus.ui.film.PovEditorAccess;
 import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import mchorse.bbs_mod.settings.values.ui.EditorLayoutNode;
@@ -108,7 +108,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
 
         if (this.panel.dock != null)
         {
-            for (String id : ((UIDockLayoutAccessor) (Object) this.panel.dock).bbspp_cml$getSlotById().keySet())
+            for (String id : ((UIDockLayoutAccess) (Object) this.panel.dock).bbspp_cml$getSlotById().keySet())
             {
                 UIElement dockPanel = this.panel.dock.getPanel(id);
 
@@ -361,7 +361,7 @@ public class UIFilmPanelMiniWindowSupport implements MiniWindowDockHostSupport.D
         }
 
         Icon dockIcon = this.panel.dock != null
-            ? ((UIDockLayoutAccessor) (Object) this.panel.dock).bbspp_cml$getIconById().get(panelId)
+            ? ((UIDockLayoutAccess) (Object) this.panel.dock).bbspp_cml$getIconById().get(panelId)
             : null;
 
         if (dockIcon != null)
