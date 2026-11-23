@@ -9,8 +9,11 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 import java.util.Map;
 
 /**
- * 注意:不要 @Invoker("getDockPanelIcon")——会与宿主接口同名方法形成递归。
- * 图标直接读 iconById;布局根走 2.5 公有 getLayoutRoot()/applyLayoutRoot()。
+ * 暴露 {@link UIDockLayout} 的私有映射表，供小窗布局、面板槽与图标访问使用。
+ *
+ * <p>图标只能通过 {@code iconById} 读取，不能用 {@code @Invoker("getDockPanelIcon")}：
+ * 宿主接口已有同名方法，注入后会形成无限递归。布局根走公有的
+ * {@code getLayoutRoot()} 与 {@code applyLayoutRoot()}。</p>
  */
 @Mixin(value = UIDockLayout.class, remap = false)
 public interface UIDockLayoutAccess

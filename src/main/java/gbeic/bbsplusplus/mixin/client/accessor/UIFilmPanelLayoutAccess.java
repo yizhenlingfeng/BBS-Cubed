@@ -8,8 +8,11 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
 /**
- * 注意:不要 @Invoker("getDockPanelIcon")——接口实现会注入同名 public 方法,与 private 方法冲突导致无限递归。
- * 面板注册表在 2.5 迁移到 panel.dock(UIDockLayout 公有字段)。
+ * 暴露 {@link UIFilmPanel} 的当前布局根与当前主编辑器面板，供编辑器锁定与小窗支持使用。
+ *
+ * <p>不能用 {@code @Invoker("getDockPanelIcon")}：接口会注入同名的 public 方法，
+ * 与 private 方法冲突导致无限递归。面板注册表由 {@code panel.dock} 持有，
+ * 即 {@code UIDockLayout} 的公有字段。</p>
  */
 @Mixin(value = UIFilmPanel.class, remap = false)
 public interface UIFilmPanelLayoutAccess
