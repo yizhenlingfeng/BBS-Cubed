@@ -71,7 +71,7 @@ public class DebugCommandModule implements BBSPlusPlusCommandModule
 
     private static int showModuleStatus(CommandContext<ServerCommandSource> context, DebugModule module)
     {
-        context.getSource().sendFeedback(() -> Text.literal("[BBS++] " + module.label() + "：" + formatStatus(module.enabled())), false);
+        context.getSource().sendFeedback(() -> Text.literal("[BBS++] " + module.label() + "：" + formatEnabled(module.enabled())), false);
 
         return module.enabled() ? 1 : 0;
     }
@@ -85,7 +85,7 @@ public class DebugCommandModule implements BBSPlusPlusCommandModule
             builder.append("\n- ")
                 .append(module.label())
                 .append("：")
-                .append(formatStatus(module.enabled()));
+                .append(formatEnabled(module.enabled()));
         }
 
         context.getSource().sendFeedback(() -> Text.literal(builder.toString()), false);
@@ -94,11 +94,6 @@ public class DebugCommandModule implements BBSPlusPlusCommandModule
     }
 
     private static String formatEnabled(boolean enabled)
-    {
-        return enabled ? "开启" : "关闭";
-    }
-
-    private static String formatStatus(boolean enabled)
     {
         return enabled ? "开启" : "关闭";
     }
