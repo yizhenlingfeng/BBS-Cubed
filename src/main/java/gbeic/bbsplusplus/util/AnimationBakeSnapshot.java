@@ -14,6 +14,7 @@ import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.pose.Pose;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
@@ -81,6 +82,15 @@ public final class AnimationBakeSnapshot
         armature.initArmature();
 
         return new BOBJModel(armature, Collections.emptyList(), true);
+    }
+
+    public static Pose createAnimatedPose(IModel model, Animation animation)
+    {
+        Pose pose = model.createPose();
+
+        pose.transforms.keySet().retainAll(animation.parts.keySet());
+
+        return pose;
     }
 
     public static Animation copyAnimation(Animation source, MolangParser parser) throws Exception

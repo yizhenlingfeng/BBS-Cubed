@@ -8,6 +8,7 @@ import gbeic.bbsplusplus.cubic.animation.AdditiveAnimator;
 import gbeic.bbsplusplus.cubic.animation.AdditiveLayerContext;
 import gbeic.bbsplusplus.cubic.animation.AdditiveProceduralAnimator;
 import gbeic.bbsplusplus.settings.ModSettings;
+import gbeic.bbsplusplus.timeline.ActionTimelineEvaluator;
 import gbeic.bbsplusplus.util.MolangVariableScopes;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
@@ -200,6 +201,8 @@ public class ModelFormRendererMixin
         {
             values.add(0, mainOverlay);
         }
+
+        values.removeIf(value -> !ActionTimelineEvaluator.hasConfiguredActions(value.get()));
 
         if (model == null)
         {

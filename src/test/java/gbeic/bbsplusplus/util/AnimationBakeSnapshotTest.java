@@ -47,6 +47,7 @@ class AnimationBakeSnapshotTest
         BOBJArmature armature = new BOBJArmature("test");
 
         armature.addBone(new BOBJBone(0, "body", "", new Matrix4f()));
+        armature.addBone(new BOBJBone(1, "unused", "", new Matrix4f()));
         armature.initArmature();
 
         BOBJModel sourceModel = new BOBJModel(armature, Collections.emptyList(), true);
@@ -56,9 +57,10 @@ class AnimationBakeSnapshotTest
         Animation copy = AnimationBakeSnapshot.copyAnimation(source, parser);
 
         copyModel.apply(null, copy, 0F, 1F, 0F, false);
-        Pose pose = copyModel.createPose();
+        Pose pose = AnimationBakeSnapshot.createAnimatedPose(copyModel, copy);
 
         assertEquals(90F, pose.get("body").rotate.x, 0.0001);
+        assertEquals(1, pose.transforms.size());
         assertEquals(0F, sourceModel.createPose().get("body").rotate.x);
     }
 

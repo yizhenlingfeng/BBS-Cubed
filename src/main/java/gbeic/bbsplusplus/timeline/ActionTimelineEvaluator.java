@@ -23,6 +23,24 @@ public final class ActionTimelineEvaluator
 {
     private static final float EPSILON = 0.0001F;
 
+    public static boolean hasConfiguredActions(ActionsConfig config)
+    {
+        if (config == null)
+        {
+            return false;
+        }
+
+        for (ActionConfig action : config.actions.values())
+        {
+            if (action != null && action.name != null && !action.name.isEmpty())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private ActionTimelineEvaluator()
     {}
 

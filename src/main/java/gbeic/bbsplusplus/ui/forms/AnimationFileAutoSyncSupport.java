@@ -39,8 +39,8 @@ import java.util.function.Supplier;
 /**
  * 「动画状态自动读取动画文件」：把模型里的 Bedrock 动画同步成动画状态，并烘焙成姿势关键帧。
  *
- * <p>所有状态都在独立后台线程中采样，渲染线程只负责创建任务和提交完成的关键帧。
- * 选中的状态优先排队，完成后刷新当前时间线；进度由 {@link AnimationBakeProgress} 提供给状态列表。</p>
+ * <p>仅选中的状态在独立后台线程中采样，渲染线程只负责创建任务和提交完成的关键帧。
+ * 切换状态时取消其他未完成任务，完成后刷新当前时间线；进度由 {@link AnimationBakeProgress} 提供给状态列表。</p>
  */
 public class AnimationFileAutoSyncSupport
 {
@@ -127,11 +127,9 @@ public class AnimationFileAutoSyncSupport
             this.modelSnapshot = AnimationBakeSnapshot.capture(model.model);
         }
 
-        this.collectJobs(modelForm, model, selected);
-    }
+        this.cancelOtherJobs(selected);
+        this.createMissingStates(modelForm, model);
 
-    private void collectJobs(ModelForm modelForm, ModelInstance model, AnimationState selected)
-    {
         if (selected != null)
         {
             Animation animation = animationOf(model, selected);
@@ -141,21 +139,47 @@ public class AnimationFileAutoSyncSupport
                 this.enqueue(modelForm, selected, animation);
             }
         }
+    }
 
+    private void createMissingStates(ModelForm modelForm, ModelInstance model)
+    {
         AnimationStates states = modelForm.states;
 
-        for (Map.Entry<String, Animation> entry : new TreeMap<>(model.animations.animations).entrySet())
+        for (String name : new TreeMap<>(model.animations.animations).keySet())
         {
-            AnimationState state = states.getById(entry.getKey());
-
-            if (state == null)
+            if (states.getById(name) == null)
             {
-                state = states.addState();
-                state.customId.set(entry.getKey());
+                AnimationState state = states.addState();
+                state.customId.set(name);
+            }
+        }
+    }
+
+    private void cancelOtherJobs(AnimationState selected)
+    {
+        this.jobs.values().removeIf(job ->
+        {
+            if (job.state == selected)
+            {
+                return false;
             }
 
-            this.enqueue(modelForm, state, entry.getValue());
-        }
+            job.cancelled = true;
+            AnimationBakeProgress.clear(job.state);
+
+            return true;
+        });
+        this.finishedJobs.removeIf(job ->
+        {
+            if (job.state == selected)
+            {
+                return false;
+            }
+
+            AnimationBakeProgress.clear(job.state);
+
+            return true;
+        });
     }
 
     private void enqueue(ModelForm modelForm, AnimationState state, Animation animation)
@@ -354,7 +378,8 @@ public class AnimationFileAutoSyncSupport
                     model.resetPose();
                     model.apply(this.entity, animation, this.ticks[i], 1F, 0F, false);
 
-                    Keyframe<Pose> keyframe = new Keyframe<>("", KeyframeFactories.POSE, this.ticks[i], model.createPose());
+                    Pose pose = AnimationBakeSnapshot.createAnimatedPose(model, animation);
+                    Keyframe<Pose> keyframe = new Keyframe<>("", KeyframeFactories.POSE, this.ticks[i], pose);
 
                     keyframe.getInterpolation().setInterp(this.interps[i]);
                     frames.add(keyframe);

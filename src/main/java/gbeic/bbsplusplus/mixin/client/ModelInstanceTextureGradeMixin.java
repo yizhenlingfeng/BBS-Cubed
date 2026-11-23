@@ -10,27 +10,40 @@ import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.renderers.utils.RenderFrame;
 import mchorse.bbs_mod.settings.values.core.ValueColor;
 import mchorse.bbs_mod.settings.values.numeric.ValueFloat;
 import mchorse.bbs_mod.utils.colors.Color;
 import net.minecraft.client.gl.ShaderProgram;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 import java.util.function.Supplier;
 
-/**
- * 包住 {@code ModelInstance.render} 的 shader 供给器，决定这一次模型渲染用不用自定义变体
- * （避开 ModelFormRenderer 的版本相关签名）。
- *
- * <p>触发条件有两类：form 级调色/白化、pose 级附魔光效。
- * 附魔光效必须并进同一个判断 —— 否则"只开光效"时不会换 shader，
- * 表现为点了按钮完全没反应。</p>
- */
+/** Selects the texture-grade shader for form tinting, whitening and bone glint. */
 @Mixin(value = ModelInstance.class, remap = false)
 public abstract class ModelInstanceTextureGradeMixin
 {
+    @Unique
+    private long bbspp$glintEpoch = Long.MIN_VALUE;
+
+    @Unique
+    private int bbspp$glintPoseVersion = -1;
+
+    @Unique
+    private boolean bbspp$hasGlint;
+
+    @Unique
+    private Color bbspp$glintColor;
+
+    @Unique
+    private float bbspp$glintSpeed = 1F;
+
+    @Unique
+    private float bbspp$glintBrightness = 1F;
+
     @ModifyVariable(
         method = "render",
         at = @At("HEAD"),
@@ -54,96 +67,92 @@ public abstract class ModelInstanceTextureGradeMixin
         ModelInstance model = (ModelInstance) (Object) this;
         Form form = model.form;
 
-        /* 纹理调色/白化必须在世界渲染（影片播放/世界中放置的模型方块）下同样生效：
-         * 编辑页面是 UI 渲染（renderingWorld=false），原先只在 Iris 光影下跳过世界渲染，
-         * 导致"退出编辑后修改仅编辑页面可见"。picker 仍是需排除的（拾取模式要原样输出）。 */
-        if (original == BBSShaders.getPickerModelsProgram())
+        if (original == BBSShaders.getPickerModelsProgram() || BBSRendering.isIrisWorldShadersEnabled())
         {
             return original;
         }
 
-        /* Iris 光影真正接管本次世界绘制时，自建核心 shader 不在它的 program 管线内：
-         * 继续替换只会让光效（以及 tint/whiten）整个消失。这里保留原 shader，
-         * 光效改由 CubicVAORendererMixin 的 RETURN 注入走原版 glint 第二遍。 */
-        if (BBSRendering.isIrisWorldShadersEnabled())
+        ValueColor tint = gbeic.bbsplusplus.api.BBSPPFormValues.getTextureTint(form);
+        ValueFloat whiten = gbeic.bbsplusplus.api.BBSPPFormValues.getTextureWhiten(form);
+        Color tintValue = tint == null || tint.get() == null ? null : tint.get().copy();
+        float whitenValue = whiten == null ? 0F : whiten.get();
+        boolean poseGlint = this.bbspp$hasGlint(model);
+
+        if (!poseGlint && (tintValue == null || tintValue.a <= 0.0001F) && whitenValue <= 0.0001F)
         {
             return original;
         }
 
-        Color tintValue = new Color(1F, 1F, 1F, 0F);
-        float whitenValue = 0F;
-
+        if (tintValue == null)
         {
-            ValueColor tint = gbeic.bbsplusplus.api.BBSPPFormValues.getTextureTint(form);
-            ValueFloat whiten = gbeic.bbsplusplus.api.BBSPPFormValues.getTextureWhiten(form);
-
-            if (tint != null && tint.get() != null)
-            {
-                tintValue.copy(tint.get());
-            }
-            if (whiten != null)
-            {
-                whitenValue = whiten.get();
-            }
+            tintValue = new Color(1F, 1F, 1F, 0F);
         }
 
-        boolean poseGlint = false;
-        Color fallbackPoseGlintColor = null;
-        float fallbackGlintSpeed = 1F;
-        float fallbackGlintBrightness = 1F;
-
-        for (ModelGroup group : model.model.getAllGroups())
-        {
-            /* 附魔光效：只要有<b>任意</b>骨骼开了光效，整个模型就必须换到自定义 shader
-             * —— 否则"只开光效"时压根不会切换，表现为点了按钮没反应。
-             * 顺带记下第一个开光效组的颜色，供 CPU 路径的整模型 fallback 使用。 */
-            if (!poseGlint && ((GroupGlintHolder) group).bbspp_cml$getGlint())
-            {
-                poseGlint = true;
-                fallbackPoseGlintColor = ((GroupGlintHolder) group).bbspp_cml$getGlintColor().copy();
-                GlintSettingsHolder tuning = (GlintSettingsHolder) group;
-
-                fallbackGlintSpeed = tuning.bbspp_cml$getGlintSpeed();
-                fallbackGlintBrightness = tuning.bbspp_cml$getGlintBrightness();
-            }
-            else if (!poseGlint && group.current instanceof GlintHolder renderGlint
-                && renderGlint.bbspp_cml$getGlint())
-            {
-                poseGlint = true;
-                fallbackPoseGlintColor = renderGlint.bbspp_cml$getGlintColor().copy();
-
-                if (group.current instanceof GlintSettingsHolder renderTuning)
-                {
-                    fallbackGlintSpeed = renderTuning.bbspp_cml$getGlintSpeed();
-                    fallbackGlintBrightness = renderTuning.bbspp_cml$getGlintBrightness();
-                }
-            }
-        }
-
-        if (!poseGlint && tintValue.a <= 0.0001F && whitenValue <= 0.0001F)
-        {
-            return original;
-        }
-
-        /* Dynamic Geo models (shape keys/CPU mode) are rendered as one combined buffer,
-         * so they cannot switch uniforms per group. */
         boolean supportsPerGroupGrade = model.model instanceof Model && model.isVAORendered();
-
         ShaderProgram selected = ModelTextureGradeShader.select(original, tintValue, whitenValue);
 
-        /* 告诉渲染层这个模型走哪条路：VAO 才能逐组写 uniform；
-         * CPU 路径必须跳过逐组写入，否则会把上面的整模型 fallback 覆盖成 0。 */
         ModelTextureGradeShader.setGlintPerGroup(supportsPerGroupGrade);
 
         if (selected != original)
         {
-            /* 基准强度与颜色：VAO 模型下每组的 CubicVAORendererMixin 会立即覆盖它们；
-             * 动态 Geo 模型整块绘制、无法逐组改 uniform，这里用"整模型 fallback"
-             * （与上方 tint/whiten 的策略一致），否则开了光效会什么都不发生。 */
             ModelTextureGradeShader.applyGlint(selected, !supportsPerGroupGrade && poseGlint,
-                fallbackPoseGlintColor, fallbackGlintSpeed, fallbackGlintBrightness);
+                this.bbspp$glintColor, this.bbspp$glintSpeed, this.bbspp$glintBrightness);
         }
 
         return selected;
+    }
+
+    @Unique
+    private boolean bbspp$hasGlint(ModelInstance model)
+    {
+        long epoch = RenderFrame.getEpoch();
+        int poseVersion = model.form == null ? 0 : model.form.getPoseVersion();
+
+        if (RenderFrame.isEnabled() && epoch == this.bbspp$glintEpoch && poseVersion == this.bbspp$glintPoseVersion)
+        {
+            return this.bbspp$hasGlint;
+        }
+
+        this.bbspp$glintEpoch = epoch;
+        this.bbspp$glintPoseVersion = poseVersion;
+        this.bbspp$hasGlint = false;
+        this.bbspp$glintColor = null;
+        this.bbspp$glintSpeed = 1F;
+        this.bbspp$glintBrightness = 1F;
+
+        for (ModelGroup group : model.model.getAllGroups())
+        {
+            if (((GroupGlintHolder) group).bbspp_cml$getGlint())
+            {
+                this.bbspp$saveGlint(
+                    ((GroupGlintHolder) group).bbspp_cml$getGlintColor(),
+                    (GlintSettingsHolder) group
+                );
+                break;
+            }
+
+            if (group.current instanceof GlintHolder glint && glint.bbspp_cml$getGlint())
+            {
+                GlintSettingsHolder tuning = group.current instanceof GlintSettingsHolder settings ? settings : null;
+
+                this.bbspp$saveGlint(glint.bbspp_cml$getGlintColor(), tuning);
+                break;
+            }
+        }
+
+        return this.bbspp$hasGlint;
+    }
+
+    @Unique
+    private void bbspp$saveGlint(Color color, GlintSettingsHolder tuning)
+    {
+        this.bbspp$hasGlint = true;
+        this.bbspp$glintColor = color.copy();
+
+        if (tuning != null)
+        {
+            this.bbspp$glintSpeed = tuning.bbspp_cml$getGlintSpeed();
+            this.bbspp$glintBrightness = tuning.bbspp_cml$getGlintBrightness();
+        }
     }
 }
