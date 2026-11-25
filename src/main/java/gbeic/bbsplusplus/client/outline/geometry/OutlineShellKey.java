@@ -97,7 +97,7 @@ public final class OutlineShellKey
             }
         }
 
-        long weld = config == null ? 0 : OutlineGeometry.weldTable(config).hashCode();
+        long weld = config == null ? 0 : OutlineWeldTable.weldTable(config).hashCode();
         long hash = pose;
         hash = hash * 31 + geometry;
         hash = hash * 31 + outline;
@@ -230,7 +230,7 @@ public final class OutlineShellKey
             && holder.bbspp_cml$getOutlineShellWidth(layer) > 0F
             && holder.bbspp_cml$hasOutlineGradients(layer))
         {
-            hash = hash * 31 + OutlineGeometry.screenFrameHash();
+            hash = hash * 31 + OutlineScreenFrame.screenFrameHash();
         }
 
         return hash;

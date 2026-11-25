@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import gbeic.bbsplusplus.client.outline.geometry.OutlineAlphaMask;
 import gbeic.bbsplusplus.client.outline.geometry.OutlineDecalFilter;
 import gbeic.bbsplusplus.client.outline.geometry.OutlineGeometry;
+import gbeic.bbsplusplus.client.outline.geometry.OutlineScreenFrame;
 import gbeic.bbsplusplus.client.outline.geometry.OutlineShellKey;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
@@ -111,7 +112,7 @@ public final class OutlineRenderer120
          * the common case. */
         if (OutlineGeometry.hasAnyOutlineGradient(model))
         {
-            OutlineGeometry.updateScreenFrame(RenderSystem.getModelViewMatrix(), new Matrix4f(stack.peek().getPositionMatrix()));
+            OutlineScreenFrame.updateScreenFrame(RenderSystem.getModelViewMatrix(), new Matrix4f(stack.peek().getPositionMatrix()));
         }
 
         OutlineShellKey.Key key = OutlineShellKey.of(model, config, textureLink, materialVisible);
