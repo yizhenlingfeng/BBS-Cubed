@@ -11,6 +11,8 @@ import gbeic.bbsplusplus.api.PickTextureButtonHolder;
 import gbeic.bbsplusplus.client.outline.OutlineEmissiveTexture;
 import gbeic.bbsplusplus.client.ui.outline.UIOutlineColorControl;
 import gbeic.bbsplusplus.client.ui.outline.UIOutlineGradientEditor;
+import gbeic.bbsplusplus.client.ui.pose.PoseBoneHierarchyWriter;
+import gbeic.bbsplusplus.client.ui.pose.PoseEditorSelectionSupport;
 import gbeic.bbsplusplus.settings.ModSettings;
 import mchorse.bbs_mod.cubic.IBoneHierarchy;
 import mchorse.bbs_mod.l10n.L10n;
@@ -571,16 +573,40 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
      * 每次 fill 都会用 {@code shownPose().get()} 重新 setPose，若我们只写编辑器那份，
      * 退出/重开时会被权威值覆盖。
      */
+    /** 取伪装编辑器的 valuePose；宿主不是伪装编辑器时返回 null。Accessor 强转留在 Mixin 内。 */
+    @Unique
+    private ValuePose bbspp_cml$valuePoseOf(UIPoseEditor self)
+    {
+        return self instanceof UIModelPoseEditor
+            ? ((UIModelPoseEditorAccessor) self).bbspp_cml$getValuePose()
+            : null;
+    }
+
+    /** 取 Pose 关键帧属性面板的 editor/keyframe；宿主不是该面板时返回 null。Accessor 强转留在 Mixin 内。 */
+    @Unique
+    private PoseEditorSelectionSupport.PoseKeyframeEditor bbspp_cml$factoryEditorOf(UIPoseEditor self)
+    {
+        if (self instanceof UIPoseKeyframeFactory.UIPoseFactoryEditor)
+        {
+            UIPoseFactoryEditorAccessor accessor = (UIPoseFactoryEditorAccessor) self;
+
+            return new PoseEditorSelectionSupport.PoseKeyframeEditor(
+                accessor.bbspp_cml$getEditor(), accessor.bbspp_cml$getKeyframe());
+        }
+
+        return null;
+    }
+
     @Unique
     private Pose bbspp_cml$getAuthoritativePose(UIPoseEditor self)
     {
-        return PoseEditorSelectionSupport.getAuthoritativePose(self);
+        return PoseEditorSelectionSupport.getAuthoritativePose(self, this::bbspp_cml$valuePoseOf);
     }
 
     @Unique
     private PoseTransform bbspp_cml$getCurrentPoseTransform(UIPoseEditor self)
     {
-        return PoseEditorSelectionSupport.getCurrentPoseTransform(self);
+        return PoseEditorSelectionSupport.getCurrentPoseTransform(self, this::bbspp_cml$valuePoseOf);
     }
 
     /**
@@ -597,7 +623,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     @Unique
     private void bbspp_cml$writeToSelection(UIPoseEditor self, Consumer<PoseTransform> writer)
     {
-        PoseEditorSelectionSupport.writeToSelection(self, writer);
+        PoseEditorSelectionSupport.writeToSelection(self, writer, this::bbspp_cml$factoryEditorOf, this::bbspp_cml$valuePoseOf);
     }
 
     @Unique
@@ -680,7 +706,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
             () -> {
                 this.bbspp_cml$syncGlintToggle();
                 this.bbspp_cml$syncOutlineControls();
-            });
+            }, this::bbspp_cml$valuePoseOf);
     }
 
     /**

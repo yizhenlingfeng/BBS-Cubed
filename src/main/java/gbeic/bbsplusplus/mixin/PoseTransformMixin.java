@@ -6,6 +6,7 @@ import gbeic.bbsplusplus.api.BoneTextureHolder;
 import gbeic.bbsplusplus.api.GlintHolder;
 import gbeic.bbsplusplus.api.GlintSettingsHolder;
 import gbeic.bbsplusplus.api.OutlineGradient;
+import gbeic.bbsplusplus.client.ui.pose.PoseExtraClosest;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;

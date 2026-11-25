@@ -1,4 +1,4 @@
-package gbeic.bbsplusplus.mixin;
+package gbeic.bbsplusplus.client.ui.pose;
 
 import gbeic.bbsplusplus.api.BoneOutlineHolder;
 import gbeic.bbsplusplus.api.BoneTextureHolder;

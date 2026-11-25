@@ -3,7 +3,7 @@
 # 增加条目前必须能说明归因；不要为了通过构建而追加。
 # 与 build/reports/class-diff-1.21.11.csv 对照复核。
 #
-# 总计 134 条：组 A（1.20.x 专属源码）82 条，组 B（共享源码按版本排除）52 条。
+# 总计 132 条：组 A（1.20.x 专属源码）82 条，组 B（共享源码按版本排除）50 条。
 
 # --- 组 A：源码仅存在于 src/main/java-1.20.x ---
 # 1.21.11 侧没有对应实现。其中 morph 相关（client/morph、client/ui/morph、mixin/morph、
@@ -95,8 +95,6 @@ gbeic.bbsplusplus.ui.particles.ParticleEditorFileControls$ParticleSnapshotUndo
 # 排除项覆盖 outline / texture-grade / particle-plus / irlite / shadercurves / vfx 等上游 API 差异较大的子系统。
 gbeic.bbsplusplus.client.renderer.AAAParticleFormRenderer
 gbeic.bbsplusplus.client.renderer.AAAParticleFormRenderer$1
-gbeic.bbsplusplus.client.renderer.AAAParticleFormRenderer$ParticleState
-gbeic.bbsplusplus.client.renderer.AAAParticleFormRenderer$Source
 gbeic.bbsplusplus.client.renderer.BBSEffectLoader
 gbeic.bbsplusplus.client.renderer.BBSEffectLoader$AssetLoader
 gbeic.bbsplusplus.client.screen.ModelTextureGradeShader
