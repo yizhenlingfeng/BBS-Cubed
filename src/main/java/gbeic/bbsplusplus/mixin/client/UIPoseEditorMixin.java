@@ -574,39 +574,13 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     @Unique
     private Pose bbspp_cml$getAuthoritativePose(UIPoseEditor self)
     {
-        if (self instanceof UIModelPoseEditor)
-        {
-            ValuePose valuePose = ((UIModelPoseEditorAccessor) self).bbspp_cml$getValuePose();
-
-            if (valuePose != null && valuePose.get() != null)
-            {
-                return valuePose.get();
-            }
-        }
-
-        return self.getPose();
+        return PoseEditorSelectionSupport.getAuthoritativePose(self);
     }
 
     @Unique
     private PoseTransform bbspp_cml$getCurrentPoseTransform(UIPoseEditor self)
     {
-        String bone = self.getGroup();
-
-        if (bone == null || bone.isEmpty())
-        {
-            return null;
-        }
-
-        try
-        {
-            Pose pose = this.bbspp_cml$getAuthoritativePose(self);
-
-            return pose == null ? null : pose.get(bone);
-        }
-        catch (Exception e)
-        {
-            return null;
-        }
+        return PoseEditorSelectionSupport.getCurrentPoseTransform(self);
     }
 
     /**
@@ -623,75 +597,7 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     @Unique
     private void bbspp_cml$writeToSelection(UIPoseEditor self, Consumer<PoseTransform> writer)
     {
-        String bone = self.getGroup();
-
-        if (bone == null || bone.isEmpty())
-        {
-            return;
-        }
-
-        if (self instanceof UIPoseKeyframeFactory.UIPoseFactoryEditor)
-        {
-            UIPoseFactoryEditorAccessor accessor = (UIPoseFactoryEditorAccessor) self;
-
-            UIPoseKeyframeFactory.UIPoseFactoryEditor.apply(accessor.bbspp_cml$getEditor(), accessor.bbspp_cml$getKeyframe(), bone, writer);
-
-            return;
-        }
-
-        /* 骨骼在 Pose 里可能<b>还没有条目</b>：`Pose` 只有 `get(String)` 一个取值方法，
-         * 没有自动创建的重载，从未被改动过的骨骼会返回 null。
-         * 若此时直接 return，写入会被整个跳过 —— 表现为"开关只在界面里翻转，
-         * 退出页面就变回默认关，渲染端永远拿不到值"。
-         * 这里补建一个空的 PoseTransform（即恒等变换，与手动拖动骨骼时 BBS 的行为一致），
-         * 让值真正落进数据链。骨骼纹理按钮此前也有同样的问题。 */
-        Pose editorPose = self.getPose();
-        ValuePose valuePose = self instanceof UIModelPoseEditor
-            ? ((UIModelPoseEditorAccessor) self).bbspp_cml$getValuePose()
-            : null;
-        Pose livePose = valuePose == null ? null : valuePose.get();
-        Pose targetPose = livePose != null ? livePose : editorPose;
-
-        if (targetPose == null)
-        {
-            return;
-        }
-
-        /* 通知窗口必须包住全部写入：ValuePose 的监听器/撤销/保存都在 preNotify/postNotify
-         * 之间收集变化，postNotify 之后再补写不会被看到。 */
-        if (valuePose != null)
-        {
-            valuePose.preNotify(IValueListener.FLAG_UNMERGEABLE);
-        }
-
-        PoseTransform target = targetPose.get(bone);
-
-        if (target == null)
-        {
-            target = new PoseTransform();
-            targetPose.transforms.put(bone, target);
-        }
-
-        writer.accept(target);
-
-        /* 编辑器缓存与权威数据不是同一个对象时，镜像写一份；正常同对象时不会重复。 */
-        if (editorPose != null && editorPose != targetPose)
-        {
-            PoseTransform editorTransform = editorPose.get(bone);
-
-            if (editorTransform == null)
-            {
-                editorTransform = new PoseTransform();
-                editorPose.transforms.put(bone, editorTransform);
-            }
-
-            writer.accept(editorTransform);
-        }
-
-        if (valuePose != null)
-        {
-            valuePose.postNotify(IValueListener.FLAG_UNMERGEABLE);
-        }
+        PoseEditorSelectionSupport.writeToSelection(self, writer);
     }
 
     @Unique
@@ -770,71 +676,11 @@ public abstract class UIPoseEditorMixin extends UIElement implements PickTexture
     @Unique
     private void bbspp_cml$forEachSelectedChildren(UIPoseEditor self, Consumer<PoseTransform> writer)
     {
-        Pose editorPose = self.getPose();
-        ValuePose valuePose = self instanceof UIModelPoseEditor
-            ? ((UIModelPoseEditorAccessor) self).bbspp_cml$getValuePose()
-            : null;
-        Pose livePose = valuePose == null ? null : valuePose.get();
-
-        if ((editorPose == null && livePose == null) || this.model == null)
-        {
-            return;
-        }
-
-        String bone = self.getGroup();
-
-        if (bone == null || bone.isEmpty())
-        {
-            return;
-        }
-
-        if (valuePose != null)
-        {
-            valuePose.preNotify(IValueListener.FLAG_UNMERGEABLE);
-        }
-
-        Collection<String> children = this.model.getAllChildrenKeys(bone);
-
-        if (children != null)
-        {
-            for (String child : children)
-            {
-                /* 先写权威数据（真正被保存的那一份），再镜像到编辑器缓存。 */
-                if (livePose != null)
-                {
-                    PoseTransform transform = livePose.get(child);
-
-                    if (transform == null)
-                    {
-                        transform = new PoseTransform();
-                        livePose.transforms.put(child, transform);
-                    }
-
-                    writer.accept(transform);
-                }
-
-                if (editorPose != null && editorPose != livePose)
-                {
-                    PoseTransform transform = editorPose.get(child);
-
-                    if (transform == null)
-                    {
-                        transform = new PoseTransform();
-                        editorPose.transforms.put(child, transform);
-                    }
-
-                    writer.accept(transform);
-                }
-            }
-        }
-
-        if (valuePose != null)
-        {
-            valuePose.postNotify(IValueListener.FLAG_UNMERGEABLE);
-        }
-
-        this.bbspp_cml$syncGlintToggle();
-        this.bbspp_cml$syncOutlineControls();
+        PoseBoneHierarchyWriter.forEachSelectedChildren(self, this.model, writer,
+            () -> {
+                this.bbspp_cml$syncGlintToggle();
+                this.bbspp_cml$syncOutlineControls();
+            });
     }
 
     /**
