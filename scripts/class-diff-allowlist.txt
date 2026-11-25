@@ -1,13 +1,13 @@
 # 1.21.11 相对 1.20.1 允许缺失的类白名单（精确匹配）。
-# 任一未列出的缺失类，或 extra 中出现未列出的类，都会让 scripts/check-class-diff.ps1 失败。
+# 任一未列出的缺失类，或白名单外的类缺失，都会让 scripts/check-class-diff.ps1 失败。
 # 增加条目前必须能说明归因；不要为了通过构建而追加。
 # 与 build/reports/class-diff-1.21.11.csv 对照复核。
 #
-# 总计 126 条：组 A（1.20.x 专属源码）74 条，组 B（共享源码按版本排除）52 条。
+# 总计 134 条：组 A（1.20.x 专属源码）82 条，组 B（共享源码按版本排除）52 条。
 
 # --- 组 A：源码仅存在于 src/main/java-1.20.x ---
-# 1.21.11 侧没有对应实现。其中 morph 相关（client/morph、client/ui/morph、mixin/morph、keyframes/IModelMorphKeyframe）
-# 属于 Model Morph 尚未移植到 1.21.11；其余为 1.20.x 专属适配层。
+# 1.21.11 侧没有对应实现。其中 morph 相关（client/morph、client/ui/morph、mixin/morph、
+# keyframes/IModelMorphKeyframe）属于 Model Morph 尚未移植到 1.21.11；其余为 1.20.x 专属适配层。
 gbeic.bbsplusplus.client.glint.GlintRenderer
 gbeic.bbsplusplus.client.morph.LegacyMorphMapping
 gbeic.bbsplusplus.client.morph.MappingGroup
@@ -63,13 +63,21 @@ gbeic.bbsplusplus.client.outline.OutlineShellCache
 gbeic.bbsplusplus.client.outline.OutlineShellCache$Entry
 gbeic.bbsplusplus.client.outline.OutlineShellCache$ModelEntries
 gbeic.bbsplusplus.client.screen.ColorGradeRenderer
+gbeic.bbsplusplus.client.ui.morph.CubeList
+gbeic.bbsplusplus.client.ui.morph.CubeList$Host
+gbeic.bbsplusplus.client.ui.morph.CubeRow
+gbeic.bbsplusplus.client.ui.morph.MappingDashboard
+gbeic.bbsplusplus.client.ui.morph.MappingList
+gbeic.bbsplusplus.client.ui.morph.MappingList$Host
+gbeic.bbsplusplus.client.ui.morph.MorphMappingHistory
+gbeic.bbsplusplus.client.ui.morph.MorphMappingHistory$Host
+gbeic.bbsplusplus.client.ui.morph.MorphMappingSelection
+gbeic.bbsplusplus.client.ui.morph.MorphPreview
 gbeic.bbsplusplus.client.ui.morph.UICubeMappingEditorPanel
 gbeic.bbsplusplus.client.ui.morph.UICubeMappingEditorPanel$1
-gbeic.bbsplusplus.client.ui.morph.UICubeMappingEditorPanel$CubeList
-gbeic.bbsplusplus.client.ui.morph.UICubeMappingEditorPanel$CubeRow
-gbeic.bbsplusplus.client.ui.morph.UICubeMappingEditorPanel$MappingDashboard
-gbeic.bbsplusplus.client.ui.morph.UICubeMappingEditorPanel$MappingList
-gbeic.bbsplusplus.client.ui.morph.UICubeMappingEditorPanel$MorphPreview
+gbeic.bbsplusplus.client.ui.morph.UICubeMappingEditorPanel$2
+gbeic.bbsplusplus.client.ui.morph.UICubeMappingEditorPanel$3
+gbeic.bbsplusplus.client.ui.morph.UICubeMappingEditorPanel$4
 gbeic.bbsplusplus.keyframes.IModelMorphKeyframe
 gbeic.bbsplusplus.mixin.morph.CubicCubeRendererMorphMixin
 gbeic.bbsplusplus.mixin.morph.FormPropertiesMorphMixin
