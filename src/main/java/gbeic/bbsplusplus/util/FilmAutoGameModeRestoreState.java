@@ -24,10 +24,6 @@ import java.util.UUID;
  * 游戏目录配置文件，并在下次进入同一世界或服务器时补发恢复命令，避免玩家被永久
  * 留在旁观者模式。
  * </p>
- *
- * <p>1.21.11 适配（B6-05）：{@code GameMode#getName()} 改名 {@code getId()}、
- * {@code GameMode.byName(...)} 改名 {@code byId(...)}、{@code ClientPlayNetworkHandler#sendCommand}
- * 改名 {@code sendChatCommand}。存档名入口仍是 {@code client.getServer().getSaveProperties().getLevelName()}。</p>
  */
 public class FilmAutoGameModeRestoreState
 {
@@ -62,7 +58,7 @@ public class FilmAutoGameModeRestoreState
         pending = new PendingState(
             client.player.getUuid(),
             worldKey,
-            originalGameMode.getId(),
+            GameModeAdapter.idOf(originalGameMode),
             System.currentTimeMillis()
         );
 
@@ -74,7 +70,7 @@ public class FilmAutoGameModeRestoreState
      */
     public static void restoreFromFilmPanel(MinecraftClient client, GameMode savedGameMode)
     {
-        if (savedGameMode != null && sendGameModeCommand(client, savedGameMode.getId()))
+        if (savedGameMode != null && sendGameModeCommand(client, GameModeAdapter.idOf(savedGameMode)))
         {
             clearPending();
         }
@@ -96,13 +92,13 @@ public class FilmAutoGameModeRestoreState
 
             if (state != null && state.matches(client))
             {
-                gameMode = GameMode.byId(state.originalGameMode, null);
+                gameMode = GameModeAdapter.byId(state.originalGameMode, null);
             }
         }
 
         if (gameMode != null && gameMode != GameMode.SPECTATOR)
         {
-            sendGameModeCommand(client, gameMode.getId());
+            sendGameModeCommand(client, GameModeAdapter.idOf(gameMode));
         }
 
         activeAutoMode = false;
@@ -126,13 +122,12 @@ public class FilmAutoGameModeRestoreState
             return;
         }
 
-        GameMode original = GameMode.byId(state.originalGameMode, null);
+        GameMode original = GameModeAdapter.byId(state.originalGameMode, null);
         GameMode current = getCurrentGameMode(client);
 
         if (original == null || original == GameMode.SPECTATOR)
         {
             clearPending();
-
             return;
         }
 
@@ -143,7 +138,7 @@ public class FilmAutoGameModeRestoreState
 
         if (current == GameMode.SPECTATOR)
         {
-            if (sendGameModeCommand(client, original.getId()))
+            if (sendGameModeCommand(client, GameModeAdapter.idOf(original)))
             {
                 clearPending();
             }
@@ -162,7 +157,7 @@ public class FilmAutoGameModeRestoreState
         }
 
         GameModeMessageSuppressor.suppressNext();
-        client.player.networkHandler.sendChatCommand("gamemode " + gameMode);
+        GameModeAdapter.sendCommand(client.player.networkHandler, "gamemode " + gameMode);
 
         return true;
     }
@@ -205,7 +200,6 @@ public class FilmAutoGameModeRestoreState
         if (!Files.isRegularFile(file))
         {
             pending = null;
-
             return;
         }
 
