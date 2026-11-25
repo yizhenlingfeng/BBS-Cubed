@@ -1042,8 +1042,8 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
     )
     private void bbspp_cml$lerpTexture(mchorse.bbs_mod.utils.pose.Transform preA, mchorse.bbs_mod.utils.pose.Transform a, mchorse.bbs_mod.utils.pose.Transform b, mchorse.bbs_mod.utils.pose.Transform postB, mchorse.bbs_mod.utils.interps.IInterp interp, float x, CallbackInfo ci)
     {
-        this.bbspp_cml$texture = LinkUtils.copy(bbspp_cml$closestTexture(a, b, x));
-        this.bbspp_cml$glint = bbspp_cml$closestGlint(a, b, x);
+        this.bbspp_cml$texture = LinkUtils.copy(PoseExtraClosest.closestTexture(a, b, x));
+        this.bbspp_cml$glint = PoseExtraClosest.closestGlint(a, b, x);
 
         /* 光效颜色与调色一样可插值（照抄 textureTint 的实现）。 */
         if (preA instanceof GlintHolder preG && a instanceof GlintHolder curG
@@ -1086,9 +1086,9 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         }
 
         /* 描边开关按最近关键帧，颜色/宽度/辉光/细化可插值。 */
-        this.bbspp_cml$outline = bbspp_cml$closestOutline(a, b, x);
+        this.bbspp_cml$outline = PoseExtraClosest.closestOutline(a, b, x);
         this.bbspp_cml$applyClosestGradients(a, b, x);
-        this.bbspp_cml$outlineFaceCull = bbspp_cml$closestOutlineFaceCull(a, b, x);
+        this.bbspp_cml$outlineFaceCull = PoseExtraClosest.closestOutlineFaceCull(a, b, x);
 
         if (preA instanceof BoneOutlineHolder preO && a instanceof BoneOutlineHolder curO
             && b instanceof BoneOutlineHolder nextO && postB instanceof BoneOutlineHolder postO)
@@ -1116,7 +1116,7 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
                 nextO.bbspp_cml$getOutlineDecalSize(), postO.bbspp_cml$getOutlineDecalSize(), x)), 0F, 16F);
 
             bbspp_cml$lerpOverlay(interp, x, preO, curO, nextO, postO);
-            bbspp_cml$closestFaces(a, b, x, this.bbspp_cml$outlineFaces, this.bbspp_cml$overlayFaces);
+            PoseExtraClosest.closestFaces(a, b, x, this.bbspp_cml$outlineFaces, this.bbspp_cml$overlayFaces);
         }
     }
 
@@ -1127,7 +1127,7 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
     {
         OutlineGradient[] mains = new OutlineGradient[2];
 
-        bbspp_cml$closestGradients(a, b, x,
+        PoseExtraClosest.closestGradients(a, b, x,
             this.bbspp_cml$outlineFaceGradients, this.bbspp_cml$overlayFaceGradients, mains);
 
         this.bbspp_cml$outlineGradient = mains[0];
@@ -1142,7 +1142,7 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
     private void bbspp_cml$lerpOverlay(IInterp interp, float x,
         BoneOutlineHolder preO, BoneOutlineHolder curO, BoneOutlineHolder nextO, BoneOutlineHolder postO)
     {
-        this.bbspp_cml$outlineOverlay = bbspp_cml$closestOverlay(curO, nextO, x);
+        this.bbspp_cml$outlineOverlay = PoseExtraClosest.closestOverlay(curO, nextO, x);
 
         Color preC = preO.bbspp_cml$getOverlayColor();
         Color curC = curO.bbspp_cml$getOverlayColor();
@@ -1169,7 +1169,7 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
     private void bbspp_cml$autoLerpOverlay(float pt, float at, float bt, float qt, boolean clamped, float x,
         BoneOutlineHolder preO, BoneOutlineHolder curO, BoneOutlineHolder nextO, BoneOutlineHolder postO)
     {
-        this.bbspp_cml$outlineOverlay = bbspp_cml$closestOverlay(curO, nextO, x);
+        this.bbspp_cml$outlineOverlay = PoseExtraClosest.closestOverlay(curO, nextO, x);
 
         Color preC = preO.bbspp_cml$getOverlayColor();
         Color curC = curO.bbspp_cml$getOverlayColor();
@@ -1200,8 +1200,8 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
     )
     private void bbspp_cml$autoLerpTexture(mchorse.bbs_mod.utils.pose.Transform preA, mchorse.bbs_mod.utils.pose.Transform a, mchorse.bbs_mod.utils.pose.Transform b, mchorse.bbs_mod.utils.pose.Transform postB, float pt, float at, float bt, float qt, boolean clamped, float x, CallbackInfo ci)
     {
-        this.bbspp_cml$texture = LinkUtils.copy(bbspp_cml$closestTexture(a, b, x));
-        this.bbspp_cml$glint = bbspp_cml$closestGlint(a, b, x);
+        this.bbspp_cml$texture = LinkUtils.copy(PoseExtraClosest.closestTexture(a, b, x));
+        this.bbspp_cml$glint = PoseExtraClosest.closestGlint(a, b, x);
 
         /* 光效颜色与调色一样可插值（照抄 textureTint 的 AutoBezier 实现）。 */
         if (preA instanceof GlintHolder preG && a instanceof GlintHolder curG
@@ -1246,9 +1246,9 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         }
 
         /* 描边开关按最近关键帧，颜色/宽度/辉光/细化可插值。 */
-        this.bbspp_cml$outline = bbspp_cml$closestOutline(a, b, x);
+        this.bbspp_cml$outline = PoseExtraClosest.closestOutline(a, b, x);
         this.bbspp_cml$applyClosestGradients(a, b, x);
-        this.bbspp_cml$outlineFaceCull = bbspp_cml$closestOutlineFaceCull(a, b, x);
+        this.bbspp_cml$outlineFaceCull = PoseExtraClosest.closestOutlineFaceCull(a, b, x);
 
         if (preA instanceof BoneOutlineHolder preO && a instanceof BoneOutlineHolder curO
             && b instanceof BoneOutlineHolder nextO && postB instanceof BoneOutlineHolder postO)
@@ -1279,7 +1279,7 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
                 pt, at, bt, qt, clamped, x), 0F, 16F);
 
             bbspp_cml$autoLerpOverlay(pt, at, bt, qt, clamped, x, preO, curO, nextO, postO);
-            bbspp_cml$closestFaces(a, b, x, this.bbspp_cml$outlineFaces, this.bbspp_cml$overlayFaces);
+            PoseExtraClosest.closestFaces(a, b, x, this.bbspp_cml$outlineFaces, this.bbspp_cml$overlayFaces);
         }
     }
 
@@ -1373,100 +1373,4 @@ public class PoseTransformMixin implements BoneTextureHolder, GlintHolder, Glint
         }
     }
 
-    @Unique
-    private static Link bbspp_cml$closestTexture(mchorse.bbs_mod.utils.pose.Transform a, mchorse.bbs_mod.utils.pose.Transform b, float x)
-    {
-        mchorse.bbs_mod.utils.pose.Transform closest = x < 0.5F ? a : b;
-
-        return closest instanceof BoneTextureHolder holder ? holder.bbspp_cml$getTexture() : null;
-    }
-
-    /** 布尔量不可插值，与纹理同样取"最近关键帧"的值。 */
-    @Unique
-    private static boolean bbspp_cml$closestGlint(mchorse.bbs_mod.utils.pose.Transform a, mchorse.bbs_mod.utils.pose.Transform b, float x)
-    {
-        mchorse.bbs_mod.utils.pose.Transform closest = x < 0.5F ? a : b;
-
-        return closest instanceof GlintHolder holder && holder.bbspp_cml$getGlint();
-    }
-
-    /** 描边开关同样取"最近关键帧"的值。 */
-    @Unique
-    private static boolean bbspp_cml$closestOutline(mchorse.bbs_mod.utils.pose.Transform a, mchorse.bbs_mod.utils.pose.Transform b, float x)
-    {
-        mchorse.bbs_mod.utils.pose.Transform closest = x < 0.5F ? a : b;
-
-        return closest instanceof BoneOutlineHolder holder && holder.bbspp_cml$getOutline();
-    }
-
-    /** 面剔除开关也是布尔量，与描边开关一同取"最近关键帧"的值。 */
-    @Unique
-    private static boolean bbspp_cml$closestOutlineFaceCull(mchorse.bbs_mod.utils.pose.Transform a, mchorse.bbs_mod.utils.pose.Transform b, float x)
-    {
-        mchorse.bbs_mod.utils.pose.Transform closest = x < 0.5F ? a : b;
-
-        return !(closest instanceof BoneOutlineHolder holder) || holder.bbspp_cml$getOutlineFaceCull();
-    }
-
-    /** 叠加描边开关同样是布尔量，取"最近关键帧"的值。 */
-    @Unique
-    private static boolean bbspp_cml$closestOverlay(BoneOutlineHolder a, BoneOutlineHolder b, float x)
-    {
-        return x < 0.5F ? a.bbspp_cml$getOutlineOverlay() : b.bbspp_cml$getOutlineOverlay();
-    }
-
-    /**
-     * 逐面颜色是离散的调色板索引，插值只会插出一堆"两色之间没人选过的颜色"，所以两张面表都
-     * 按"最近关键帧"整表取过来，与 {@link #bbspp_cml$closestOutline} 的规则一致。
-     */
-    @Unique
-    private static void bbspp_cml$closestFaces(mchorse.bbs_mod.utils.pose.Transform a, mchorse.bbs_mod.utils.pose.Transform b,
-        float x, int[] outlineFaces, int[] overlayFaces)
-    {
-        mchorse.bbs_mod.utils.pose.Transform closest = x < 0.5F ? a : b;
-
-        if (!(closest instanceof BoneOutlineHolder holder))
-        {
-            Arrays.fill(outlineFaces, BoneOutlineHolder.DEFAULT_FACE_COLOR);
-            Arrays.fill(overlayFaces, BoneOutlineHolder.DEFAULT_FACE_COLOR);
-
-            return;
-        }
-
-        for (int i = 0; i < BoneOutlineHolder.FACE_COUNT; i++)
-        {
-            outlineFaces[i] = holder.bbspp_cml$getOutlineFaceColor(i);
-            overlayFaces[i] = holder.bbspp_cml$getOverlayFaceColor(i);
-        }
-    }
-
-    /**
-     * Gradients are taken from the closest keyframe as a whole, for the same reason the face table
-     * is: two ramps with different stop layouts cannot be mixed into anything meaningful. Blending a
-     * two-stop ramp with a five-stop one would invent colours neither keyframe was authored with.
-     */
-    @Unique
-    private static void bbspp_cml$closestGradients(mchorse.bbs_mod.utils.pose.Transform a, mchorse.bbs_mod.utils.pose.Transform b,
-        float x, OutlineGradient[] outlineFaces, OutlineGradient[] overlayFaces, OutlineGradient[] mains)
-    {
-        mchorse.bbs_mod.utils.pose.Transform closest = x < 0.5F ? a : b;
-
-        if (!(closest instanceof BoneOutlineHolder holder))
-        {
-            Arrays.fill(outlineFaces, null);
-            Arrays.fill(overlayFaces, null);
-            Arrays.fill(mains, null);
-
-            return;
-        }
-
-        mains[0] = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineGradient(0));
-        mains[1] = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineGradient(1));
-
-        for (int i = 0; i < BoneOutlineHolder.FACE_COUNT; i++)
-        {
-            outlineFaces[i] = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineFaceGradient(0, i));
-            overlayFaces[i] = bbspp_cml$copyGradient(holder.bbspp_cml$getOutlineFaceGradient(1, i));
-        }
-    }
 }
