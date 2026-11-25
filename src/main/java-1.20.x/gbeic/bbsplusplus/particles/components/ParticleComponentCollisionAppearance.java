@@ -1,8 +1,6 @@
 package gbeic.bbsplusplus.particles.components;
 
-import gbeic.bbsplusplus.api.ParticlePlusParticle;
 import mchorse.bbs_mod.data.types.BaseType;
-import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.math.molang.MolangException;
 import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
@@ -16,6 +14,15 @@ import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.VertexFormat;
 import org.joml.Matrix4f;
 
+/**
+ * Collision appearance component for 1.20.x.
+ *
+ * <p>
+ * Serialization and the collision test are shared through {@link ParticleCollisionSupport};
+ * only the render method is version specific because its signature depends on the
+ * {@code VertexFormat} package of this Minecraft version.
+ * </p>
+ */
 @Environment(EnvType.CLIENT)
 public class ParticleComponentCollisionAppearance extends ParticleComponentAppearanceBillboard
 {
@@ -24,14 +31,7 @@ public class ParticleComponentCollisionAppearance extends ParticleComponentAppea
     @Override
     public BaseType toData()
     {
-        MapType data = (MapType) super.toData();
-
-        if (!MolangExpression.isZero(this.enabled))
-        {
-            data.put("enabled", this.enabled.toData());
-        }
-
-        return data;
+        return ParticleCollisionSupport.decorate(super.toData(), this.enabled);
     }
 
     @Override
@@ -39,10 +39,7 @@ public class ParticleComponentCollisionAppearance extends ParticleComponentAppea
     {
         super.fromData(data, parser);
 
-        if (data.isMap() && data.asMap().has("enabled"))
-        {
-            this.enabled = parser.parseDataSilently(data.asMap().get("enabled"));
-        }
+        this.enabled = ParticleCollisionSupport.parseEnabled(data, parser, this.enabled);
 
         return this;
     }
@@ -50,10 +47,7 @@ public class ParticleComponentCollisionAppearance extends ParticleComponentAppea
     @Override
     public void render(ParticleEmitter emitter, VertexFormat format, Particle particle, BufferBuilder builder, Matrix4f matrix, int overlay, float transition)
     {
-        boolean intersected = ((ParticlePlusParticle) particle).bbspp_cml$isIntersected();
-        boolean condition = MolangExpression.isZero(this.enabled) || this.enabled.get() > 0D;
-
-        if (intersected && condition)
+        if (ParticleCollisionSupport.shouldRender(particle, this.enabled))
         {
             super.render(emitter, format, particle, builder, matrix, overlay, transition);
         }
