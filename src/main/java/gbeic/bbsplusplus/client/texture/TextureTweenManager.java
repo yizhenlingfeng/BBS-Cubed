@@ -34,10 +34,8 @@ public class TextureTweenManager
     private static final String PATH_PREFIX = "texture_tween/runtime/";
     private static final int STEPS = 256;
     private static final int FLASH_STEPS = Math.round(STEPS * 0.08F);
-    private static final int TEXTURE_TWEEN_DISSIPATE_REVERSE = 4;
     private static final int DEFAULT_FLASH_COLOR = 0xffffffff;
-    private static final int DEFAULT_NORMAL = 0xff7f7fff;
-    private static final int DEFAULT_SPECULAR = 0x00000000;
+    private static final int TEXTURE_TWEEN_DISSIPATE_REVERSE = 4;
     private static final long MAX_RUNTIME_BYTES = 256L * 1024L * 1024L;
 
     private static final Map<RuntimeKey, RuntimeEntry> CACHE = new LinkedHashMap<>(16, 0.75F, true);
@@ -88,12 +86,12 @@ public class TextureTweenManager
         int originStepX = Math.round(originX * 100F);
         int originStepY = Math.round(originY * 100F);
         int originStepZ = Math.round(originZ * 100F);
-        int normalizedBlockSize = normalizeBlockSize(blockSize);
+        int normalizedBlockSize = TextureTweenBlend.normalizeBlockSize(blockSize);
         int normalizedFlashColor = flash ? flashColor : DEFAULT_FLASH_COLOR;
-        int normalizedDissipateIntensity = normalizeDissipateIntensity(dissipateIntensity);
+        int normalizedDissipateIntensity = TextureTweenBlend.normalizeDissipateIntensity(dissipateIntensity);
         String modelId = form == null ? "" : form.model.get();
         RuntimeKey key = new RuntimeKey(form, a, b, mode, flash, normalizedBlockSize,
-            pbrGlow, normalizePbrGlowStrength(pbrGlowStrength), normalizedDissipateIntensity, modelId);
+            pbrGlow, TextureTweenBlend.normalizePbrGlowStrength(pbrGlowStrength), normalizedDissipateIntensity, modelId);
         TextureManager manager = BBSModClient.getTextures();
         RuntimeEntry entry;
 
@@ -368,9 +366,9 @@ public class TextureTweenManager
         if (flashing || reverseFlashing)
         {
             int baseColor = entry.key.mode == TEXTURE_TWEEN_DISSIPATE_REVERSE ? argbB : argbA;
-            float flashOpacity = channel(entry.flashColor, 24) / 255F;
+            float flashOpacity = TextureTweenBlend.channel(entry.flashColor, 24) / 255F;
 
-            diffuseColor = blendRgb(baseColor, entry.flashColor, flashOpacity);
+            diffuseColor = TextureTweenBlend.blendRgb(baseColor, entry.flashColor, flashOpacity);
         }
         else if (entry.key.mode == TEXTURE_TWEEN_PIXEL_DISSOLVE || entry.key.mode == TEXTURE_TWEEN_DISSIPATE_REVERSE)
         {
@@ -383,189 +381,29 @@ public class TextureTweenManager
         }
         else
         {
-            diffuseColor = blendRgb(argbA, argbB, progress);
+            diffuseColor = TextureTweenBlend.blendRgb(argbA, argbB, progress);
         }
 
-        putRgba(diffuseBuffer, diffuseColor, getDiffuseAlpha(entry.key.mode, visibleA, visibleB, useB));
+        TextureTweenBlend.putRgba(diffuseBuffer, diffuseColor, TextureTweenBlend.getDiffuseAlpha(entry.key.mode, visibleA, visibleB, useB));
 
         if (normalBuffer != null)
         {
-            putArgb(normalBuffer, blendPbr(entry.key.mode, sourceA.normal(index), sourceB.normal(index), progress, useB, true));
+            TextureTweenBlend.putArgb(normalBuffer, TextureTweenBlend.blendPbr(entry.key.mode, sourceA.normal(index), sourceB.normal(index), progress, useB, true));
         }
 
         if (specularBuffer != null)
         {
-            int specular = blendPbr(entry.key.mode, sourceA.specular(index), sourceB.specular(index), progress, useB, false);
+            int specular = TextureTweenBlend.blendPbr(entry.key.mode, sourceA.specular(index), sourceB.specular(index), progress, useB, false);
 
             if (entry.key.pbrGlow && (flashing || reverseFlashing))
             {
-                specular = specular & 0x00ffffff | getPbrEmissionAlpha(entry.key.pbrGlowStrength) << 24;
+                specular = specular & 0x00ffffff | TextureTweenBlend.getPbrEmissionAlpha(entry.key.pbrGlowStrength) << 24;
             }
 
-            putArgb(specularBuffer, specular);
+            TextureTweenBlend.putArgb(specularBuffer, specular);
         }
     }
 
-    private static int getDiffuseAlpha(int mode, boolean visibleA, boolean visibleB, boolean useB)
-    {
-        boolean visible = mode == TEXTURE_TWEEN_DISSIPATE ? !useB && visibleA
-            : mode == TEXTURE_TWEEN_DISSIPATE_REVERSE ? useB && visibleB
-            : visibleA == visibleB ? visibleA : useB ? visibleB : visibleA;
-
-        return visible ? 255 : 0;
-    }
-
-    private static int blendPbr(int mode, int a, int b, float progress, boolean useB, boolean normal)
-    {
-        if (mode == TEXTURE_TWEEN_DISSIPATE)
-        {
-            /* Diffuse 消失后，必须同步清空原始 PBR 发光数据，避免已消散像素继续发光。 */
-            return useB ? normal ? DEFAULT_NORMAL : DEFAULT_SPECULAR : a;
-        }
-
-        if (mode == TEXTURE_TWEEN_DISSIPATE_REVERSE)
-        {
-            return useB ? b : normal ? DEFAULT_NORMAL : DEFAULT_SPECULAR;
-        }
-
-        if (mode == TEXTURE_TWEEN_PIXEL_DISSOLVE)
-        {
-            return useB ? b : a;
-        }
-
-        return normal ? blendNormal(a, b, progress) : blendSpecular(a, b, progress, useB);
-    }
-
-    private static int blendNormal(int a, int b, float progress)
-    {
-        float ax = channel(a, 16) / 127.5F - 1F;
-        float ay = channel(a, 8) / 127.5F - 1F;
-        float az = (float) Math.sqrt(Math.max(0F, 1F - ax * ax - ay * ay));
-        float bx = channel(b, 16) / 127.5F - 1F;
-        float by = channel(b, 8) / 127.5F - 1F;
-        float bz = (float) Math.sqrt(Math.max(0F, 1F - bx * bx - by * by));
-        float nx = lerp(ax, bx, progress);
-        float ny = lerp(ay, by, progress);
-        float nz = lerp(az, bz, progress);
-        float length = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
-
-        if (length > 0F)
-        {
-            nx /= length;
-            ny /= length;
-        }
-
-        int r = clampByte(Math.round((nx * 0.5F + 0.5F) * 255F));
-        int g = clampByte(Math.round((ny * 0.5F + 0.5F) * 255F));
-        int ao = lerpByte(channel(a, 0), channel(b, 0), progress);
-        int height = lerpByte(channel(a, 24), channel(b, 24), progress);
-
-        return height << 24 | r << 16 | g << 8 | ao;
-    }
-
-    private static int blendSpecular(int a, int b, float progress, boolean useB)
-    {
-        float roughnessA = square(1F - channel(a, 16) / 255F);
-        float roughnessB = square(1F - channel(b, 16) / 255F);
-        int smoothness = clampByte(Math.round((1F - (float) Math.sqrt(lerp(roughnessA, roughnessB, progress))) * 255F));
-        int f0A = channel(a, 8);
-        int f0B = channel(b, 8);
-        int material = f0A <= 229 && f0B <= 229 ? lerpByte(f0A, f0B, progress) : useB ? f0B : f0A;
-        int blueA = channel(a, 0);
-        int blueB = channel(b, 0);
-        boolean sameBlueDomain = blueA <= 64 && blueB <= 64 || blueA >= 65 && blueB >= 65;
-        int porosityOrSss = sameBlueDomain ? lerpByte(blueA, blueB, progress) : useB ? blueB : blueA;
-        int emissionA = channel(a, 24);
-        int emissionB = channel(b, 24);
-        int emission = emissionA < 255 && emissionB < 255 ? lerpByte(emissionA, emissionB, progress) : useB ? emissionB : emissionA;
-
-        return emission << 24 | smoothness << 16 | material << 8 | porosityOrSss;
-    }
-
-    private static int blendRgb(int a, int b, float progress)
-    {
-        int r = lerpByte(channel(a, 16), channel(b, 16), progress);
-        int g = lerpByte(channel(a, 8), channel(b, 8), progress);
-        int blue = lerpByte(channel(a, 0), channel(b, 0), progress);
-
-        return r << 16 | g << 8 | blue;
-    }
-
-    private static void putRgba(ByteBuffer buffer, int rgb, int alpha)
-    {
-        buffer.put((byte) channel(rgb, 16));
-        buffer.put((byte) channel(rgb, 8));
-        buffer.put((byte) channel(rgb, 0));
-        buffer.put((byte) alpha);
-    }
-
-    private static void putArgb(ByteBuffer buffer, int argb)
-    {
-        putRgba(buffer, argb, channel(argb, 24));
-    }
-
-    private static int channel(int color, int shift)
-    {
-        return color >> shift & 0xff;
-    }
-
-    private static int lerpByte(int a, int b, float progress)
-    {
-        return clampByte(Math.round(lerp(a, b, progress)));
-    }
-
-    private static int clampByte(int value)
-    {
-        return Math.max(0, Math.min(255, value));
-    }
-
-    private static float lerp(float a, float b, float progress)
-    {
-        return a + (b - a) * progress;
-    }
-
-    private static float square(float value)
-    {
-        return value * value;
-    }
-
-    private static float hash01(int index, int seed)
-    {
-        int hash = index ^ seed;
-
-        hash ^= hash >>> 16;
-        hash *= 0x7feb352d;
-        hash ^= hash >>> 15;
-        hash *= 0x846ca68b;
-        hash ^= hash >>> 16;
-
-        return (hash & 0x7fffffff) / (float) Integer.MAX_VALUE;
-    }
-
-    private static int normalizeBlockSize(int size)
-    {
-        return switch (size)
-        {
-            case 3, 5, 7, 9 -> size;
-            default -> 1;
-        };
-    }
-
-    private static int normalizePbrGlowStrength(int strength)
-    {
-        return Math.max(0, Math.min(100, strength));
-    }
-
-    private static int normalizeDissipateIntensity(int intensity)
-    {
-        return Math.max(0, Math.min(100, intensity));
-    }
-
-    private static int getPbrEmissionAlpha(int strength)
-    {
-        /* LabPBR 保留 255 表示忽略发光，因此玩家看到的 100% 必须映射到 254。 */
-        return Math.max(0, Math.min(254, Math.round(normalizePbrGlowStrength(strength) / 100F * 254F)));
-    }
 
     private static float getBlockThreshold(int blockX, int blockY, int blockSize, int width, int height,
                                             float originX, float originY, float originZ, int blockIndex, int seed,
@@ -617,7 +455,7 @@ public class TextureTweenManager
         float baseWeight = mappedCount > 0 ? 0.72F : 0.28F;
         float spatialWeight = baseWeight + (1F - baseWeight) * intensity;
 
-        return hash01(blockIndex, seed) * (1F - spatialWeight) + distance * spatialWeight;
+        return TextureTweenBlend.hash01(blockIndex, seed) * (1F - spatialWeight) + distance * spatialWeight;
     }
 
     private static final class RuntimeEntry
