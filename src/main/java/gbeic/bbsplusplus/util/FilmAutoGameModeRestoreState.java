@@ -7,6 +7,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.client.network.ServerInfo;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.WorldSavePath;
 import net.minecraft.world.GameMode;
 
 import java.io.Reader;
@@ -29,6 +31,8 @@ public class FilmAutoGameModeRestoreState
 {
     private static final String FILE_NAME = "film_auto_game_mode.json";
     private static final int VERSION = 1;
+    private static final String SINGLEPLAYER_FOLDER_PREFIX = "singleplayer-folder:";
+    private static final String LEGACY_SINGLEPLAYER_PREFIX = "singleplayer:";
 
     private static PendingState pending;
     private static boolean loaded;
@@ -284,9 +288,11 @@ public class FilmAutoGameModeRestoreState
             return "server:" + serverInfo.address.toLowerCase(Locale.ROOT);
         }
 
-        if (client.isInSingleplayer() && client.getServer() != null)
+        MinecraftServer server = client.getServer();
+
+        if (client.isInSingleplayer() && server != null)
         {
-            return "singleplayer:" + client.getServer().getSaveProperties().getLevelName();
+            return SINGLEPLAYER_FOLDER_PREFIX + server.getSavePath(WorldSavePath.ROOT).normalize().getFileName();
         }
 
         return null;
@@ -303,9 +309,24 @@ public class FilmAutoGameModeRestoreState
     {
         private boolean matches(MinecraftClient client)
         {
-            return client.player != null
-                && this.playerUuid.equals(client.player.getUuid())
-                && this.worldKey.equals(getWorldKey(client));
+            if (client.player == null || !this.playerUuid.equals(client.player.getUuid()))
+            {
+                return false;
+            }
+
+            String currentWorld = getWorldKey(client);
+
+            if (this.worldKey.equals(currentWorld))
+            {
+                return true;
+            }
+
+            // Legacy markers stored only the display name.
+            MinecraftServer server = client.getServer();
+
+            return this.worldKey.startsWith(LEGACY_SINGLEPLAYER_PREFIX)
+                && client.isInSingleplayer() && server != null
+                && this.worldKey.equals(LEGACY_SINGLEPLAYER_PREFIX + server.getSaveProperties().getLevelName());
         }
     }
 }

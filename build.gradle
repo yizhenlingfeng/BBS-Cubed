@@ -346,6 +346,8 @@ processResources {
         inputs.files(shaderOverrides).withPathSensitivity(PathSensitivity.RELATIVE)
         // 旧版 shader JSON 会重复声明 1.21.11 管线已经提供的 uniform。
         exclude "assets/bbs/shaders/core/model.json"
+        // 1.21.11 使用 BBSFS 的拾取 shader 和矩阵 UBO，Cubed 的 UV 变换在 CPU 顶点路径完成。
+        exclude "assets/bbs/shaders/core/picker_models.json", "assets/bbs/shaders/core/picker_models.vsh"
     } else {
         exclude mixin12111Config
         exclude modelGradients.collect { "assets/bbsplusplus/shaders/core/${it}".toString() }

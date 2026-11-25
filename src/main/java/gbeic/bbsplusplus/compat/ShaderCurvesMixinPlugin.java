@@ -7,21 +7,15 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 import java.util.List;
 import java.util.Set;
 
-/**
- * {@code bbsplusplus-shadercurves.mixins.json} 的 Mixin 配置插件。
- * <p>
- * 这一组注入里有几个直接以 Iris 自身的类为目标，没装 Iris 时必须在类加载前跳过，
- * 否则 Mixin 会因为找不到目标类而报错。
- * </p>
- */
+/** 仅在安装 Iris 时加载以其内部类为目标的注入。 */
 public class ShaderCurvesMixinPlugin implements IMixinConfigPlugin
 {
-    /** 以 Iris 自身的类为注入目标的 Mixin，没装 Iris 时不能应用 */
     private static final Set<String> IRIS_ONLY_MIXINS = Set.of(
         "CustomUniformsSetupAccessor",
         "IrisRenderingPipelineMixin",
         "ShadowRendererMixin",
-        "CenterDepthSamplerMixin"
+        "CenterDepthSamplerMixin",
+        "IrisPbrTextureCleanupMixin121"
     );
 
     @Override
@@ -39,12 +33,7 @@ public class ShaderCurvesMixinPlugin implements IMixinConfigPlugin
     {
         String simpleName = mixinClassName.substring(mixinClassName.lastIndexOf('.') + 1);
 
-        if (IRIS_ONLY_MIXINS.contains(simpleName))
-        {
-            return IrisCompat.isLoaded();
-        }
-
-        return true;
+        return !IRIS_ONLY_MIXINS.contains(simpleName) || IrisCompat.isLoaded();
     }
 
     @Override
