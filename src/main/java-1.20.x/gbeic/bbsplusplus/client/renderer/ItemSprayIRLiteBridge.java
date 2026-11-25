@@ -550,21 +550,26 @@ final class ItemSprayIRLiteBridge
 
     private static Class<?> findIRLiteShadowRenderer()
     {
-        try
+        for (String name : new String[]{
+            "org.qualet.irl.light.shadow.ShadowRenderer",
+            "qualet.irlite.client.light.shadow.ShadowRenderer"
+        })
         {
-            return Class.forName("org.qualet.irl.light.shadow.ShadowRenderer");
+            try
+            {
+                return Class.forName(name);
+            }
+            catch (ClassNotFoundException ignored)
+            {
+                // IRLights 与旧 IRLite 使用不同的包名。
+            }
+            catch (RuntimeException | LinkageError e)
+            {
+                BBSPlusPlusMod.LOGGER.debug("物品喷射：无法加载阴影渲染器 {}", name, e);
+            }
         }
-        catch (Throwable ignored)
-        {}
 
-        try
-        {
-            return Class.forName("qualet.irlite.client.light.shadow.ShadowRenderer");
-        }
-        catch (Throwable ignored)
-        {
-            return null;
-        }
+        return null;
     }
 
     private static void applyShadowBillboard(net.minecraft.client.util.math.MatrixStack matrices)

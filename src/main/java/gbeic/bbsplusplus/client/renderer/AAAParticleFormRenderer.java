@@ -41,6 +41,8 @@ import gbeic.bbsplusplus.BBSPlusPlusMod;
 public class AAAParticleFormRenderer extends FormRenderer<AAAParticleForm> implements ITickable
 {
     /* 全局活跃渲染器注册表，用于确保资源清理 */
+    private static boolean entityCleanupErrorLogged;
+    private static boolean entityLookupErrorLogged;
     public static final List<AAAParticleFormRenderer> activeRenderers = new CopyOnWriteArrayList<>();
     /** 最近一次 AAA 表单预览绘制时间；编辑器会复制表单，因此必须按渲染域而非对象身份互斥。 */
     private static long lastGlobalPreviewRenderTime;
@@ -284,7 +286,19 @@ public class AAAParticleFormRenderer extends FormRenderer<AAAParticleForm> imple
                         this.stopEmitter();
                         return true;
                     }
-                } catch (Exception e) {}
+                }
+                catch (NoSuchMethodException ignored)
+                {
+                    // 预览和回放的部分实体包装没有 isRemoved。
+                }
+                catch (ReflectiveOperationException | RuntimeException e)
+                {
+                    if (!entityCleanupErrorLogged)
+                    {
+                        entityCleanupErrorLogged = true;
+                        BBSPlusPlusMod.LOGGER.debug("AAA 粒子：读取底层实体移除状态失败", e);
+                    }
+                }
             }
         }
 
@@ -711,7 +725,15 @@ public class AAAParticleFormRenderer extends FormRenderer<AAAParticleForm> imple
                     java.lang.reflect.Method m = context.entity.getClass().getMethod("getMcEntity");
                     mcObj = m.invoke(context.entity);
                 }
-            } catch (Exception e) {}
+            }
+            catch (ReflectiveOperationException | RuntimeException e)
+            {
+                if (!entityLookupErrorLogged)
+                {
+                    entityLookupErrorLogged = true;
+                    BBSPlusPlusMod.LOGGER.debug("AAA 粒子：获取底层 Minecraft 实体失败", e);
+                }
+            }
             this.lastMcEntityRef = new WeakReference<>(mcObj);
         }
 

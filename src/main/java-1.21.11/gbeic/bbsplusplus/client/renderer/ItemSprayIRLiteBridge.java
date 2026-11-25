@@ -1,8 +1,9 @@
 package gbeic.bbsplusplus.client.renderer;
 
 
-import gbeic.bbsplusplus.settings.ModSettings;
+import gbeic.bbsplusplus.BBSPlusPlusMod;
 import gbeic.bbsplusplus.client.debug.ItemSprayDebug;
+import gbeic.bbsplusplus.settings.ModSettings;
 import net.minecraft.client.render.VertexConsumerProvider;
 
 import net.minecraft.item.ItemStack;
@@ -16,7 +17,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import gbeic.bbsplusplus.BBSPlusPlusMod;
 
 /**
  * 物品喷射和 IR Lights 的兼容桥接层。
@@ -419,26 +419,7 @@ final class ItemSprayIRLiteBridge
         {
             irlShadowRasterizationWarned = true;
 
-            BBSPlusPlusMod.LOGGER.warn("[BBS++] 1.21.11：IR Lights 阴影中的物品喷射投影暂不支持（provider 类型不兼容）。");
-        }
-    }
-
-    private static Class<?> findIRLiteShadowRenderer()
-    {
-        try
-        {
-            return Class.forName("org.qualet.irl.light.shadow.ShadowRenderer");
-        }
-        catch (Throwable ignored)
-        {}
-
-        try
-        {
-            return Class.forName("qualet.irlite.client.light.shadow.ShadowRenderer");
-        }
-        catch (Throwable ignored)
-        {
-            return null;
+            BBSPlusPlusMod.LOGGER.warn("[BBS Cubed] 1.21.11：IR Lights 阴影中的物品喷射投影暂不支持（provider 类型不兼容）。");
         }
     }
 

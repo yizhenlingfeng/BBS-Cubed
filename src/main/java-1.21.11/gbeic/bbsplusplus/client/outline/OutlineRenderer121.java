@@ -33,41 +33,24 @@ import net.minecraft.util.Identifier;
 import org.joml.Matrix4f;
 
 import java.util.ArrayDeque;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 /**
- * 1.21.11 RenderPipeline backend for the outline shell.
- *
- * <p>1.21.5 removed the immediate {@code RenderSystem.setShader} / {@code BufferRenderer} path.
- * The same position-colour geometry is now built into a BufferBuilder and submitted through two
- * immutable render layers: colour (depth-tested, no depth write) and depth-only. LabPBR emission
- * still falls back to the solid colour path until the 1.21.11 LabPBR entity layer is ported.</p>
- *
- * <p>This backend has no reusable vertex buffer, so it caches the baked {@code x,y,z,r,g,b,a}
- * floats instead. Replaying a hit walks the array once and skips the matrix tree, weld sets,
- * alpha-mask lookups and bilinear sub-quads; the caller's stack is part of the cache key, so a
- * static model reuses its bake across frames and a moving one still builds only once per frame.</p>
- *
- * <p>The position-colour snippet is private in this mapping, so the project access widener
- * exposes it as a compile-time constant. This is production-safe: the field name is remapped
- * with the rest of the class instead of being looked up by a literal name at runtime.</p>
+ * Caches baked outline vertices and submits separate colour and depth passes.
+ * Wider shells draw first because the colour pass leaves depth untouched.
  */
 public final class OutlineRenderer121
 {
-    private static final RenderPipeline.Snippet POSITION_COLOR_SNIPPET = RenderPipelines.POSITION_COLOR_SNIPPET;
-
-    /**
-     * Widest shell first: the shell writes no depth, so a narrow shell drawn after a wide one
-     * would be hidden wherever both cover the same pixel.
-     */
-    private static final java.util.Comparator<OutlineGeometry.Spec> WIDE_FIRST =
-        java.util.Comparator.comparingDouble(OutlineGeometry.Spec::width).reversed();
+    private static final Comparator<OutlineGeometry.Spec> WIDE_FIRST =
+        Comparator.comparingDouble(OutlineGeometry.Spec::width).reversed();
 
     private static final RenderPipeline COLOR_PIPELINE = RenderPipelines.register(
-        RenderPipeline.builder(POSITION_COLOR_SNIPPET)
+        RenderPipeline.builder(RenderPipelines.POSITION_COLOR_SNIPPET)
             .withLocation(Identifier.of("bbsplusplus", "pipeline/outline_color"))
             .withVertexFormat(VertexFormats.POSITION_COLOR, VertexFormat.DrawMode.TRIANGLES)
             .withBlend(BlendFunction.TRANSLUCENT)
@@ -78,7 +61,7 @@ public final class OutlineRenderer121
     );
 
     private static final RenderPipeline DEPTH_PIPELINE = RenderPipelines.register(
-        RenderPipeline.builder(POSITION_COLOR_SNIPPET)
+        RenderPipeline.builder(RenderPipelines.POSITION_COLOR_SNIPPET)
             .withLocation(Identifier.of("bbsplusplus", "pipeline/outline_depth"))
             .withVertexFormat(VertexFormats.POSITION_COLOR, VertexFormat.DrawMode.TRIANGLES)
             .withoutBlend()
@@ -94,22 +77,8 @@ public final class OutlineRenderer121
     private static final RenderLayer DEPTH_LAYER = RenderLayer.of("bbsplusplus_outline_depth",
         RenderSetup.builder(DEPTH_PIPELINE).build());
 
-    /**
-     * 自发光批次（施工表 B2-07）：每张生成的 LabPBR 伴生贴图一个 render layer。
-     *
-     * <p>1.20.x 用 {@code RenderSystem.setShader(entityTranslucent) + setShaderTexture} 逐批换贴图；
-     * 1.21.11 没有这些调用，只能换成「每张贴图一个不可变 layer」。Iris 只认它自己资源管理器里
-     * 的贴图，而这里的 identifier 正是 {@link OutlineEmissiveTexture} 注册时用的那个，
-     * 所以 {@code _s} 伴生纹理由 Iris 自己解析，emission 才会真的亮起来。</p>
-     *
-     * <p><b>这条管线的两个开关是实机回归换来的</b>（2026-11-12「开启描边自发光后整根骨骼发白」）：
-     * 原先直接复用 {@code RenderPipelines.ENTITY_TRANSLUCENT}，而它是「写深度 + 不剔除」。
-     * 自发光壳在模型本体<b>之前</b>绘制，写深度就把本体挡在 LEQUAL 后面 —— 整根骨骼只剩壳的
-     * 轮廓色（默认白），看上去就是发白；不剔除又让内外两面各画一遍，叠成接近不透明。
-     * 现按 1.20 的 {@code depthMask(false) + enableCull()} 语义自建：{@code depthWrite=false}、
-     * {@code cull=true}，并换用 Entity Emissive 片段（1.20 用的 entity translucent 在自发光
-     * 上并不自带 emission 语义）。</p>
-     */
+    /* The emissive shell draws before the model. Culling and disabled depth writes
+     * keep the inner faces and shell depth from obscuring the model. */
     private static final RenderPipeline GLOW_PIPELINE = createGlowPipeline();
 
     private static RenderPipeline createGlowPipeline()
@@ -124,14 +93,13 @@ public final class OutlineRenderer121
                 .withSampler("Sampler1")
                 .build());
 
-        /* 让 Iris 把这条管线当成它的 entity translucent emissive 程序：光影包里 emission 只在
-         * entity 程序里生效，而且这样不会再刷 "Missing program ... in override list"。 */
+        // Iris reads the LabPBR emission texture through its emissive entity program.
         BBSRendering.mirrorIrisPipeline(pipeline, RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE);
 
         return pipeline;
     }
 
-    private static final Map<Identifier, RenderLayer> GLOW_LAYERS = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final Map<Identifier, RenderLayer> GLOW_LAYERS = new ConcurrentHashMap<>();
 
     /** HEAD/RETURN pairing for the cached path. Nested renders pair like a stack. */
     private record Prepared(Model model, ModelConfig config, OutlineShellCache121.Entry entry, int generation, boolean skipDepth)

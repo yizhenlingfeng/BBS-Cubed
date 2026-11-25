@@ -24,24 +24,22 @@ public class BBSPlusPlusMod implements ModInitializer, BBSAddonMod
     @Override
     public void onInitialize()
     {
-        LOGGER.info("BBS++ initialized!");
-
-        /* BBS 2.7 的 addon API 版本为 2；版本不符时给出明确错误，而不是运行期随机崩溃。 */
+        /* BBS 2.7 的 addon API 版本为 2。 */
         BBSApi.requireVersion(MOD_ID, 2);
 
-        // BBSPlusPlusBlocks 依赖 FabricBlockSettings（1.21.11 Fabric API 已移除该包），
-        // 在 1.21.11 构建时被 source-set excludes 排除，此处用反射调用避免编译期依赖。
-        try {
-            Class.forName("gbeic.bbsplusplus.BBSPlusPlusBlocks")
-                 .getMethod("register").invoke(null);
-        } catch (ClassNotFoundException e) {
-            LOGGER.info("BBSPlusPlusBlocks 不可用（当前 MC 版本），跳过发光方块注册。");
-        } catch (Exception e) {
+        // 发光方块由各 Minecraft 版本源码集提供同名实现。
+        try
+        {
+            BBSPlusPlusBlocks.register();
+        }
+        catch (RuntimeException | LinkageError e)
+        {
             LOGGER.warn("BBSPlusPlusBlocks.register() 调用失败", e);
         }
 
         this.registerKeyframeTrackExtensions();
         CommandRegistrationCallback.EVENT.register(BBSPlusPlusCommand::register);
+        LOGGER.info("[BBS Cubed] 主入口初始化完成");
 
         // aaa_effect 关键帧工厂改由 BBSPlusPlusAddon 订阅 RegisterKeyframeFactoriesEvent 注册
         // （原直接 KeyframeFactories.FACTORIES.put 存在"未注册就被读取"的时序隐患）。

@@ -37,6 +37,7 @@ tools/
 .mimocode/
 
 # Local crash reports / run logs (debug artifacts)
+.crashreport-*/
 crash-report*/
 crash_report/
 run*.log

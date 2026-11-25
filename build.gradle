@@ -8,17 +8,6 @@ plugins {
 // （runClient1204），不再单独发布 1.20.4 jar。
 def targetMc = providers.gradleProperty("mc_version").orElse("1.20.1").get()
 
-// 1.21.11 的描边后端需要访问私有 POSITION_COLOR_SNIPPET。1.20.x 没有 RenderPipelines
-// 类，若把同一条目写进共享 AW，Loom 的 validateAccessWidener 会在 1.20.x 构建时失败。
-// 因此按目标版本生成 build 目录里的 AW，再作为资源打进 jar。
-def outlineAwSource = file(targetMc == "1.21.11"
-        ? "gradle/outline-1.21.11.accesswidener"
-        : "gradle/outline-empty.accesswidener")
-def outlineAwFile = file("$buildDir/generated/outline/bbsplusplus.accesswidener")
-outlineAwFile.parentFile.mkdirs()
-outlineAwFile.text = outlineAwSource.text
-
-
 // gradle.properties 中的属性名含小数点，必须用 providers.gradleProperty 读取
 def gprop = { name -> providers.gradleProperty(name).get() }
 
@@ -109,126 +98,6 @@ base {
 version = "${mod_version}+${mcVer.release_suffix ?: minecraftVersion}"
 group = mod_group_id
 
-processResources {
-    // version 用项目版本（含发布后缀），保证 jar 内元数据与文件名一致
-    inputs.properties(
-        version: version,
-        mod_id: mod_id,
-        mod_name: mod_name,
-        mod_license: mod_license,
-        minecraft_version_range: minecraftVersionRange,
-        loader_version_range: loaderVersionRange,
-        java_version_range: javaVersionRange
-    )
-
-    filesMatching("fabric.mod.json") {
-        expand(
-            version: version,
-            mod_id: mod_id,
-            mod_name: mod_name,
-            mod_license: mod_license,
-            minecraft_version_range: minecraftVersionRange,
-            loader_version_range: loaderVersionRange,
-            java_version_range: javaVersionRange
-        )
-    }
-
-    from(outlineAwFile)
-
-    // 1.21.11 需要 Mixin Java 21 字节码，主线保持 JAVA_17
-    if (targetMc == "1.21.11") {
-        filesMatching("*.mixins.json") {
-            filter { line -> line.replace('"JAVA_17"', '"JAVA_21"') }
-        }
-
-        // 1.21.11 shader 管线已迁移到 RenderPipeline API（#version 330 + moj_import），
-        // 用 resources-shared 下的新版覆盖默认的 1.20.1 版 model.vsh
-        doLast {
-            copy {
-                from "src/main/resources-shared/shaders-1.21.11"
-                into "$buildDir/resources/main"
-            }
-            // 反向保险：非 1.21.11 构建会从这个共享输出目录里删掉 1.21.11 专属着色器
-            // （见下面的 else 分支）。两个目标共用 build/resources/main，如果 Gradle 把本次
-            // processResources 判成 UP-TO-DATE，那些文件就补不回来、jar 里会缺 shader。
-            // 这里无条件再拷一遍，让「先 build1201 再 build12111」的顺序不影响产物。
-            copy {
-                from "src/main/resources/assets/bbsplusplus/shaders/core"
-                include "model_grade.vsh", "model_grade.fsh", "model_glint.vsh", "model_glint.fsh"
-                into "$buildDir/resources/main/assets/bbsplusplus/shaders/core"
-            }
-            // 1.21.5+ 新 RenderPipeline 不再通过 assets/<ns>/shaders/core/*.json 注册管线，
-            // 旧版 model.json 会让 shader 加载器自动声明 Light0_Direction/Light1_Direction/
-            // FogStart/FogEnd/FogShape 等已废弃 uniform，与 light.glsl/fog.glsl 中的声明冲突
-            // （C1038 重复声明 + C1503 undefined fog_distance），必须从产物中剔除。
-            delete file("$buildDir/resources/main/assets/bbs/shaders/core/model.json")
-        }
-
-        // 1.21.11 的 client 入口与 1.20.x 共用 BBSPlusPlusModClient；
-        // 版本差异（FilmAutoGameModeRestoreState 等）由运行时类检测收敛。
-
-        // 从所有 mixins.json 里移除被 excludes 的 Mixin（目标类已变更/不存在）
-        doLast {
-            int totalRemoved = 0
-            def resourcesDir = layout.buildDirectory.dir("resources/main").get().asFile
-
-            fileTree(resourcesDir).matching { include "*.mixins.json" }.each { f ->
-                def text = f.text
-                sourceSets.main.java.excludes.each { excl ->
-                    if (excl.contains("/mixin/") && excl.endsWith(".java")) {
-                        def simpleName = excl.substring(excl.lastIndexOf('/') + 1).replace(".java", "")
-                        def before = text.length()
-                        // 匹配 "Name" / "client.Name" 等带包前缀的条目，以及最后一个元素
-                        // （Mixin 配置允许包前缀；只匹配简单名会漏删 1.21.11 的 client.ModelFormRendererLimbPickMixin）
-                        text = text.replaceAll('"(?:[\\w$]+\\.)*' + java.util.regex.Pattern.quote(simpleName) + '",?\\s*', '')
-                        if (text.length() < before) totalRemoved++
-                    }
-                }
-                // 删除末项后会留下前一项的逗号，先收尾再校验，避免生成非法 JSON
-                text = text.replaceAll(",\\s*\\]", "]")
-                try {
-                    new groovy.json.JsonSlurper().parseText(text)
-                } catch (Exception e) {
-                    throw new GradleException("Mixin config 清洗后不是合法 JSON: ${f} - ${e.message}", e)
-                }
-                f.text = text
-            }
-            println "Removed ${totalRemoved} excluded mixins from all mixins.json files"
-        }
-    } else {
-        // 1.21.11 专属 mixin 配置只在 1.21.11 构建里有效：其他版本没有 java-1.21.11 源码目录，
-        // 类不存在，Loader 会在启动阶段直接崩。这里删掉配置文件与 fabric.mod.json 里的引用。
-        doLast {
-            def configFile = file("$buildDir/resources/main/bbsplusplus-12111.mixins.json")
-            def modJson = file("$buildDir/resources/main/fabric.mod.json")
-
-            if (configFile.exists()) {
-                configFile.delete()
-            }
-
-            // 同理：1.21.11 的 RenderPipeline 版着色器在 1.20.x 没有任何引用（那边用的是
-            // assets/bbspp/shaders/core/*_texture_grade.*），留在产物里只是 9 KB 死重量，
-            // 还会让「1.20.1 产物里不该出现 model_grade/model_glint」这条核验误报。
-            ["model_grade.vsh", "model_grade.fsh", "model_glint.vsh", "model_glint.fsh"].each { name ->
-                def shader = file("$buildDir/resources/main/assets/bbsplusplus/shaders/core/${name}")
-                if (shader.exists()) {
-                    shader.delete()
-                    println "Removed 1.21.11-only shader for non 1.21.11 target: ${name}"
-                }
-            }
-
-            if (modJson.exists()) {
-                def text = modJson.getText("UTF-8")
-                def cleaned = text.replaceAll("\\s*\"bbsplusplus-12111\\.mixins\\.json\",?", "")
-
-                if (cleaned != text) {
-                    modJson.setText(cleaned, "UTF-8")
-                    println "Removed bbsplusplus-12111.mixins.json reference for non 1.21.11 target"
-                }
-            }
-        }
-    }
-}
 
 repositories {
     // 国内镜像优先（加速 mavenCentral 等国外仓库）
@@ -412,9 +281,6 @@ if (targetMc == "1.21.11") {
         "gbeic/bbsplusplus/mixin/EffectDefinitionMixin.java",
         // 第三批连锁
         "gbeic/bbsplusplus/client/ui/forms/editors/forms/UIAAAParticleForm.java",
-        // 第四批：morphing UI 系统连锁
-        // FabricBlockSettings 包在 1.21.11 Fabric API 中移除
-        // GameMode API changed in 1.21.11
     ]
 }
 
@@ -427,12 +293,101 @@ if (targetMc == "1.21.11") {
 // 会把 java-1.21.11 下的同名移植版一起排掉（曾经导致移植版从未被编译、运行期只剩图标占位）。
 if (targetMc == "1.21.11") {
     sourceSets.main.java.srcDir "src/main/java-1.21.11"
+    // Model Morph 的实现和测试仅适用于 1.20.x，其余测试继续通过 check 运行。
+    sourceSets.test.java.exclude(
+            "gbeic/bbsplusplus/client/morph/**",
+            "gbeic/bbsplusplus/client/ui/morph/**",
+            "gbeic/bbsplusplus/mixin/morph/**"
+    )
 } else {
     sourceSets.main.java.srcDir "src/main/java-1.20.x"
 }
 
+// Loom 直接读取所选版本的源 AW，资源任务按模组元数据要求重命名。
+def outlineAwSource = layout.projectDirectory.file(targetMc == "1.21.11"
+        ? "gradle/outline-1.21.11.accesswidener"
+        : "gradle/outline-empty.accesswidener")
+
+// ---- 模组元数据与版本专属资源 ----
+def mixin12111Config = "bbsplusplus-12111.mixins.json"
+def modelGradients = ["model_grade.vsh", "model_grade.fsh", "model_glint.vsh", "model_glint.fsh"]
+def shaderOverrides = fileTree("src/main/resources-shared/shaders-1.21.11")
+def modMetadata = [
+        version: version,
+        mod_id: mod_id,
+        mod_name: mod_name,
+        mod_license: mod_license,
+        minecraft_version_range: minecraftVersionRange,
+        loader_version_range: loaderVersionRange,
+        java_version_range: javaVersionRange
+]
+def excludedMixinClasses = sourceSets.main.java.excludes
+        .findAll { it.contains("/mixin/") && it.endsWith(".java") }
+        .collect { it.substring(0, it.length() - ".java".length()).replace('/', '.') }
+        .sort()
+
+def writeJson = { File output, Object value ->
+    output.setText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(value)) + "\n", "UTF-8")
+}
+
+processResources {
+    inputs.properties(modMetadata)
+    inputs.property("targetMc", targetMc)
+    inputs.property("excludedMixinClasses", excludedMixinClasses)
+    filesMatching("fabric.mod.json") {
+        expand(modMetadata)
+    }
+
+    from(outlineAwSource) {
+        rename { "bbsplusplus.accesswidener" }
+    }
+
+    if (targetMc == "1.21.11") {
+        inputs.files(shaderOverrides).withPathSensitivity(PathSensitivity.RELATIVE)
+        // 旧版 shader JSON 会重复声明 1.21.11 管线已经提供的 uniform。
+        exclude "assets/bbs/shaders/core/model.json"
+    } else {
+        exclude mixin12111Config
+        exclude modelGradients.collect { "assets/bbsplusplus/shaders/core/${it}".toString() }
+    }
+
+    doLast {
+        File output = destinationDir
+        def parser = new groovy.json.JsonSlurper()
+
+        if (targetMc == "1.21.11") {
+            copy {
+                from shaderOverrides
+                into output
+            }
+
+            fileTree(output).matching { include "*.mixins.json" }.each { configFile ->
+                def config = parser.parse(configFile, "UTF-8")
+                if (config.compatibilityLevel == "JAVA_17") {
+                    config.compatibilityLevel = "JAVA_21"
+                }
+
+                ["mixins", "client", "server"].each { section ->
+                    if (config.containsKey(section)) {
+                        config[section] = config[section].findAll { name ->
+                            !excludedMixinClasses.contains("${config['package']}.${name}".toString())
+                        }
+                    }
+                }
+
+                writeJson(configFile, config)
+            }
+        } else {
+            File metadataFile = new File(output, "fabric.mod.json")
+            def metadata = parser.parse(metadataFile, "UTF-8")
+            metadata.mixins.remove(mixin12111Config)
+            writeJson(metadataFile, metadata)
+        }
+    }
+}
+
 loom {
-    accessWidenerPath = outlineAwFile
+    accessWidenerPath = outlineAwSource.asFile
 
     runs {
         client {
@@ -443,65 +398,7 @@ loom {
     }
 }
 
-// 私有扩展存在时加载本地开发联动；公开环境没有该目录，不会产生任何依赖。
-def bbspppDevScript = file("private/BBSPPP/bbsplusplus-dev.gradle")
-def mediaPlayerDevScript = file("private/MediaPlayer-BBS/bbsplusplus-dev.gradle")
-
-if (bbspppDevScript.exists()) {
-    apply from: bbspppDevScript
-}
-
-if (mediaPlayerDevScript.exists()) {
-    apply from: mediaPlayerDevScript
-}
-
-def privateDevRuntimeMods = [
-        [
-                buildTask: "buildBbspppDevRuntime",
-                runTask: "runClientWithbbspppBuild",
-                displayName: "BBSPPP"
-        ],
-        [
-                buildTask: "buildMediaPlayerDevRuntime",
-                runTask: "runClientWithMediaPlayerBuild",
-                displayName: "MediaPlayer-BBS"
-        ]
-].findAll { tasks.findByName(it.buildTask) != null }
-
-def privateDevRuntimeBuildTasks = privateDevRuntimeMods.collect { it.buildTask }
-
-if (!privateDevRuntimeBuildTasks.isEmpty()) {
-    tasks.register("buildPrivateDevRuntime") {
-        group = "bbsplusplus"
-        description = "强制重建所有可用的 private mod 开发运行包。"
-        dependsOn privateDevRuntimeBuildTasks.collect { tasks.named(it) }
-    }
-
-    tasks.named("runClient") {
-        mustRunAfter tasks.named("buildPrivateDevRuntime")
-        privateDevRuntimeBuildTasks.each { buildTask ->
-            mustRunAfter tasks.named(buildTask)
-        }
-    }
-
-    privateDevRuntimeMods.each { mod ->
-        tasks.register(mod.runTask, GradleBuild) {
-            group = "fabric"
-            description = "强制重建 ${mod.displayName} 开发运行包，并在新的 Gradle 构建中启动客户端。"
-            dependsOn project.tasks.named(mod.buildTask)
-            dir = rootDir
-            tasks = ["runClient"]
-        }
-    }
-
-    tasks.register("runClientWithPrivateBuild", GradleBuild) {
-        group = "fabric"
-        description = "强制重建 private mod 开发运行包，并在新的 Gradle 构建中启动客户端。"
-        dependsOn tasks.named("buildPrivateDevRuntime")
-        dir = rootDir
-        tasks = ["runClient"]
-    }
-}
+apply from: "gradle/private-dev-runtime.gradle"
 
 // ---- 多版本构建 / 运行客户端便捷任务 ----
 // 通过 GradleBuild 嵌套构建传 mc_version，避免 PowerShell 下 -P 参数被截断，

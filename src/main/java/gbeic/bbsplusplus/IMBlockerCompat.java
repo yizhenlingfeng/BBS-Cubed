@@ -14,6 +14,7 @@ import java.lang.reflect.Method;
 public final class IMBlockerCompat
 {
     private static final Method SET_STATE;
+    private static boolean stateErrorLogged;
     private static boolean textInputFocused;
     private static int pendingRestoreTicks;
 
@@ -26,9 +27,13 @@ public final class IMBlockerCompat
             Class<?> clazz = Class.forName("io.github.reserveword.imblocker.common.IMManager");
             m = clazz.getMethod("setState", boolean.class);
         }
-        catch (Throwable ignored)
+        catch (ClassNotFoundException ignored)
         {
-            // IMBlocker 未安装，忽略
+            // IMBlocker 为可选依赖。
+        }
+        catch (ReflectiveOperationException | RuntimeException | LinkageError e)
+        {
+            BBSPlusPlusMod.LOGGER.warn("IMBlocker 输入法兼容初始化失败", e);
         }
 
         SET_STATE = m;
@@ -105,28 +110,33 @@ public final class IMBlockerCompat
      */
     public static void enableIM()
     {
-        if (SET_STATE != null)
-        {
-            try
-            {
-                SET_STATE.invoke(null, true);
-            }
-            catch (Throwable ignored) {}
-        }
+        setState(true);
     }
 
-    /**
-     * 通知 IMBlocker 禁用输入法（文本框失去焦点时调用）
-     */
+    /** 通知 IMBlocker 在文本框失焦时禁用输入法。 */
     public static void disableIM()
     {
-        if (SET_STATE != null)
+        setState(false);
+    }
+
+    private static void setState(boolean enabled)
+    {
+        if (SET_STATE == null)
         {
-            try
+            return;
+        }
+
+        try
+        {
+            SET_STATE.invoke(null, enabled);
+        }
+        catch (ReflectiveOperationException | RuntimeException | LinkageError e)
+        {
+            if (!stateErrorLogged)
             {
-                SET_STATE.invoke(null, false);
+                stateErrorLogged = true;
+                BBSPlusPlusMod.LOGGER.warn("IMBlocker 输入法状态同步失败，后续同类错误不再重复输出", e);
             }
-            catch (Throwable ignored) {}
         }
     }
 }

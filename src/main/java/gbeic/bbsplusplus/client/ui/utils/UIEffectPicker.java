@@ -22,6 +22,7 @@ import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -130,7 +131,10 @@ public class UIEffectPicker
                     {
                         while (is.read() != -1 || es.read() != -1) {}
                     }
-                    catch (Exception ignored) {}
+                    catch (IOException e)
+                    {
+                        BBSPlusPlusMod.LOGGER.debug("读取 Effekseer 文件夹进程输出失败", e);
+                    }
                 }).start();
 
                 int exitCode = process.waitFor();

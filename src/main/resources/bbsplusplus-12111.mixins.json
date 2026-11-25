@@ -13,6 +13,7 @@
     "ModelVAOMixin121",
     "FormTranslucentQueueGradeMixin121",
     "RenderLayerPreviewGradeMixin121",
+    "RenderLayerIrisPositionColorMixin121",
     "UIFormEditorPickingMixin121",
     "StencilPickFixMixin121",
     "PickerDrawFixMixin121",

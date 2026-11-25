@@ -8,6 +8,7 @@ import gbeic.bbsplusplus.BBSPlusPlusMod;
 
 public class IrisHelper {
     private static boolean initialized = false;
+    private static boolean shaderStateErrorLogged;
     private static Method toggleShadersMethod;
     private static Method getIrisConfigMethod;
     private static Method areShadersEnabledMethod;
@@ -25,8 +26,12 @@ public class IrisHelper {
 
             Class<?> screenClass = Class.forName("net.irisshaders.iris.gui.screen.ShaderPackScreen");
             shaderScreenConstructor = screenClass.getConstructor(Screen.class);
-        } catch (Exception e) {
-            BBSPlusPlusMod.LOGGER.warn("Iris 兼容：解析 ShaderPackScreen 失败", e);
+        } catch (ClassNotFoundException e) {
+            if (getIrisConfigMethod != null) {
+                BBSPlusPlusMod.LOGGER.warn("Iris 兼容：找不到光影选择界面", e);
+            }
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+            BBSPlusPlusMod.LOGGER.warn("Iris 兼容初始化失败", e);
         }
     }
 
@@ -56,7 +61,11 @@ public class IrisHelper {
                 Object irisConfig = getIrisConfigMethod.invoke(null);
                 return (boolean) areShadersEnabledMethod.invoke(irisConfig);
             }
-        } catch (Exception e) {
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+            if (!shaderStateErrorLogged) {
+                shaderStateErrorLogged = true;
+                BBSPlusPlusMod.LOGGER.warn("Iris 兼容：读取光影状态失败，后续同类错误不再重复输出", e);
+            }
         }
         return false;
     }

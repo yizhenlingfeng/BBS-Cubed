@@ -1,38 +1,38 @@
 package gbeic.bbsplusplus;
 
-
 import gbeic.bbsplusplus.client.ClientFeatures;
+import gbeic.bbsplusplus.forms.renderers.GradedVanillaParticleFormRenderer;
+import gbeic.bbsplusplus.forms.sections.BBSPPFormSection;
+import gbeic.bbsplusplus.ui.film.FilmVisibilityController;
+import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 import mchorse.bbs_mod.api.BBSAddonMod;
 import mchorse.bbs_mod.api.Subscribe;
 import mchorse.bbs_mod.api.client.events.RegisterClientSettingsEvent;
 import mchorse.bbs_mod.api.client.events.RegisterDashboardPanelsEvent;
+import mchorse.bbs_mod.api.client.events.RegisterFormRenderersEvent;
+import mchorse.bbs_mod.api.client.events.RegisterFormSectionsEvent;
+import mchorse.bbs_mod.api.client.events.RegisterKeybindsEvent;
 import mchorse.bbs_mod.api.client.events.RegisterL10nEvent;
+import mchorse.bbs_mod.forms.forms.VanillaParticleForm;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.utils.keys.Keybind;
 import mchorse.bbs_mod.ui.utils.keys.KeybindManager;
-import gbeic.bbsplusplus.forms.sections.BBSPPFormSection;
-import gbeic.bbsplusplus.ui.film.FilmVisibilityController;
-import gbeic.bbsplusplus.ui.forms.SnowUIKeys;
 
-/**
- * BBS FSloveCML Client Addon - 客户端事件订阅占位。
- *
- * <p>BBS(2.5) 经 Fabric "bbs-client-addon" 入口加载本类（见 fabric.mod.json）。
- * 翻译/源包在 {@link ClientFeatures#initialize()} 另有双保险注册，
- * 与这里的 RegisterL10nEvent 订阅互不冲突。</p>
- */
-public class BBSPlusPlusClientAddon implements BBSAddonMod {
-
+/** 由 BBS 2.7 的 bbs-client-addon 入口加载，订阅客户端注册事件。 */
+public class BBSPlusPlusClientAddon implements BBSAddonMod
+{
     @Subscribe
-    public void onRegisterClientSettings(RegisterClientSettingsEvent event) {
-        BBSPlusPlusMod.LOGGER.info("[FSloveCML] 客户端 addon 正在注册客户端设置...");
+    public void onRegisterClientSettings(RegisterClientSettingsEvent event)
+    {
+        BBSPlusPlusMod.LOGGER.info("[BBS Cubed] 客户端 addon 正在注册客户端设置...");
     }
 
     @Subscribe
-    public void onRegisterL10n(RegisterL10nEvent event) {
-        BBSPlusPlusMod.LOGGER.info("[FSloveCML] 收到 RegisterL10nEvent");
+    public void onRegisterL10n(RegisterL10nEvent event)
+    {
+        BBSPlusPlusMod.LOGGER.info("[BBS Cubed] 收到 RegisterL10nEvent");
         ClientFeatures.registerTranslations(event.l10n);
     }
 
@@ -44,7 +44,8 @@ public class BBSPlusPlusClientAddon implements BBSAddonMod {
      * 往同一个扫描列表追加类，行为 1:1 等价。</p>
      */
     @Subscribe
-    public void onRegisterKeybinds(mchorse.bbs_mod.api.client.events.RegisterKeybindsEvent event) {
+    public void onRegisterKeybinds(RegisterKeybindsEvent event)
+    {
         event.register(SnowUIKeys.class);
     }
 
@@ -58,12 +59,21 @@ public class BBSPlusPlusClientAddon implements BBSAddonMod {
      * 官方事件无法往已有分区里追加。</p>
      */
     @Subscribe
-    public void onRegisterFormSections(mchorse.bbs_mod.api.client.events.RegisterFormSectionsEvent event) {
+    public void onRegisterFormSections(RegisterFormSectionsEvent event)
+    {
         event.register(BBSPPFormSection::new);
     }
 
     @Subscribe
-    public void onRegisterDashboardPanels(RegisterDashboardPanelsEvent event) {
+    public void onRegisterFormRenderers(RegisterFormRenderersEvent event)
+    {
+        // BBS registers its default particle renderer before publishing this event.
+        event.register(VanillaParticleForm.class, GradedVanillaParticleFormRenderer::new);
+    }
+
+    @Subscribe
+    public void onRegisterDashboardPanels(RegisterDashboardPanelsEvent event)
+    {
         UIDashboard dashboard = event.dashboard;
         KeybindManager keys = dashboard.overlay.keys();
 
