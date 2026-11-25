@@ -6,7 +6,6 @@ import gbeic.bbsplusplus.client.debug.ItemSprayDebug;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.api.events.ModelBlockEntityUpdateCallback;
 import mchorse.bbs_mod.forms.entities.IEntity;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.OverlayTexture;
@@ -94,41 +93,35 @@ final class ItemSprayGlobalSystem
             }
         });
 
-        /* 1.21.11: WorldRenderEvents 迁到 ...rendering.v1.world 包，且 WorldRenderContext 不再
-         * 直接暴露 camera/frustum/tickDelta/world，统一改为从 MinecraftClient 侧取（同一个渲染
-         * 线程、同一帧状态，语义等价）；矩阵栈仍由 ctx.matrices() 提供。 */
-        WorldRenderEvents.START_MAIN.register(ctx -> currentWorldRenderFrame++);
+        // 世界渲染钩子由版本侧注册：事件名与上下文取值由对应版本的钩子负责。
+        ItemSprayWorldRenderHook.registerStart(() -> currentWorldRenderFrame++);
+        ItemSprayWorldRenderHook.registerAfterEntities();
+    }
 
-        // 全局渲染钩子 (负责把所有飞行的粒子独立画出来)
-        WorldRenderEvents.AFTER_ENTITIES.register(ctx ->
+    /**
+     * 绘制本帧所有飞行中的喷射粒子。
+     *
+     * <p>由版本侧的渲染钩子在实体阶段之后调用，入参是该版本从渲染上下文里取出的
+     * 矩阵栈、相机位置与视锥，版本之间的差异只留在取值方式上。</p>
+     */
+    static void renderGlobalItems(MatrixStack stack, Vec3d camPos, Frustum rawFrustum, float tickDelta, World world)
+    {
+        // 每帧开始时清零剔除计数，HUD 只显示本帧数据
+        ItemSprayDebug.resetFrameCounters();
+
+        Frustum frustum = isFrustumCullingEnabled() ? rawFrustum : null;
+        double maxDistanceSq = getMaxRenderDistanceSquared();
+        int maxRendered = getMaxRenderedItems();
+
+        // 调试开启时记录世界渲染耗时，未开启时只有一次布尔判断的开销
+        long renderStartNanos = ItemSprayDebug.isEnabled() ? System.nanoTime() : 0L;
+        ItemSprayWorldItemRenderer.renderWorldItems(stack, tickDelta, world, 0, OverlayTexture.DEFAULT_UV, camPos, frustum, maxRendered, maxDistanceSq, GLOBAL_ITEMS, DETERMINISTIC_WORLD_ITEMS);
+        ItemSprayDebug.recordRenderBudget(maxRendered, maxDistanceSq);
+
+        if (ItemSprayDebug.isEnabled())
         {
-            if (isShadowLikePass()) return;
-            if (GLOBAL_ITEMS.isEmpty() && DETERMINISTIC_WORLD_ITEMS.isEmpty()) return;
-
-            MinecraftClient client = MinecraftClient.getInstance();
-
-            if (client.world == null || client.gameRenderer == null || client.gameRenderer.getCamera() == null) return;
-
-            // 每帧开始时清零剔除计数，HUD 只显示本帧数据
-            ItemSprayDebug.resetFrameCounters();
-
-            MatrixStack stack = ctx.matrices();
-            Vec3d camPos = client.gameRenderer.getCamera().getCameraPos();
-            Frustum frustum = isFrustumCullingEnabled() ? client.worldRenderer.getCapturedFrustum() : null;
-            double maxDistanceSq = getMaxRenderDistanceSquared();
-            int maxRendered = getMaxRenderedItems();
-            float tickDelta = client.getRenderTickCounter().getTickProgress(true);
-
-            // 调试开启时记录世界渲染耗时，未开启时只有一次布尔判断的开销
-            long renderStartNanos = ItemSprayDebug.isEnabled() ? System.nanoTime() : 0L;
-            ItemSprayWorldItemRenderer.renderWorldItems(stack, tickDelta, client.world, 0, OverlayTexture.DEFAULT_UV, camPos, frustum, maxRendered, maxDistanceSq, GLOBAL_ITEMS, DETERMINISTIC_WORLD_ITEMS);
-            ItemSprayDebug.recordRenderBudget(maxRendered, maxDistanceSq);
-
-            if (ItemSprayDebug.isEnabled())
-            {
-                ItemSprayDebug.recordRenderNanos(System.nanoTime() - renderStartNanos);
-            }
-        });
+            ItemSprayDebug.recordRenderNanos(System.nanoTime() - renderStartNanos);
+        }
     }
 
     private ItemSprayGlobalSystem()
