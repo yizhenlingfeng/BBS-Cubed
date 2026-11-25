@@ -341,7 +341,7 @@ class ItemSpraySimulator
 
         if (camera == null)
         {
-            return new Matrix4f(com.mojang.blaze3d.systems.RenderSystem.getInverseViewRotationMatrix());
+            return ItemSprayCameraAdapter.fallbackInverseViewRotation();
         }
 
         Matrix4f matrix = createCleanWorldViewMatrix(camera);

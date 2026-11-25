@@ -141,12 +141,9 @@ public class UIBBSPPCategoryHome extends UIScrollView
             int iconX = this.area.x + this.area.w / 2;
             int iconY = this.area.y + 36; // 垂直居中于文本上方的区域
             
-            var matrices = context.batcher.getContext().getMatrices();
-            matrices.pushMatrix();
-            matrices.translate(iconX, iconY);
-            matrices.scale(2F, 2F);
+            CategoryIconMatrix.push(context, iconX, iconY, 2F);
             context.batcher.icon(this.icon, 0, 0, 0.5f, 0.5f);
-            matrices.popMatrix();
+            CategoryIconMatrix.pop(context);
             
             // 在底部绘制标题文本
             String text = this.category.getProcessedTitle();
