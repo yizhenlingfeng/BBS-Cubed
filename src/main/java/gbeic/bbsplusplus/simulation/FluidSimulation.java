@@ -37,16 +37,6 @@ public class FluidSimulation
     }
 
     /**
-     * 清空整场（尺寸变更重建后调用），避免残留能量导致画面突跳。
-     */
-    public void clear()
-    {
-        java.util.Arrays.fill(this.buffer1, 0F);
-        java.util.Arrays.fill(this.buffer2, 0F);
-        this.stepAccumulator = 0F;
-    }
-
-    /**
      * 按固定步长推进物理。dtSeconds 为自上次调用以来经过的秒数（真实时间），
      * 每积满 1/STEPS_PER_SECOND 秒执行一步 update()，单次最多追赶 MAX_STEP_CATCHUP 步，
      * 防止长时间未渲染后一次性追太多步而爆掉。
