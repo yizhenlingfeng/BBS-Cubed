@@ -46,7 +46,7 @@ public class FluidFormRenderer extends FormRenderer<FluidForm> implements ITicka
 
     private FluidSimulation simulation;
     private FluidController controller = new FluidController();
-    private long lastUpdate;
+    private long lastTick = System.currentTimeMillis();
 
     public FluidFormRenderer(FluidForm form)
     {
@@ -249,14 +249,7 @@ public class FluidFormRenderer extends FormRenderer<FluidForm> implements ITicka
             time = (System.currentTimeMillis() % 100000) / 1000f * 20f * speed * 0.1f;
         }
 
-        long now = System.currentTimeMillis();
-        long delay = (long) (30 / (speed <= 0.1 ? 0.1 : speed));
-
-        if (now - this.lastUpdate > delay)
-        {
-            this.simulation.update();
-            this.lastUpdate = now;
-        }
+        /* 物理推进已统一到 tick() 固定步长，渲染只读取高度，避免加力/耗散频率失配 */
         
         Matrix4f matrix = matrices.peek().getPositionMatrix();
         Matrix3f normalMatrix = matrices.peek().getNormalMatrix();
@@ -390,21 +383,12 @@ public class FluidFormRenderer extends FormRenderer<FluidForm> implements ITicka
         float speed = this.form.flowSpeed.get();
         float turbulence = this.form.turbulence.get();
         
-        long now = System.currentTimeMillis();
-        long delay = (long) (30 / (speed <= 0.1 ? 0.1 : speed));
-        
-        if (now - this.lastUpdate > delay)
+        /* 物理推进已统一到 tick() 固定步长；湍流作为随机扰动注入（addForce 已夹紧幅度） */
+        if (turbulence > 0 && Math.random() < turbulence * 0.1) 
         {
-            this.simulation.update();
-            
-            if (turbulence > 0 && Math.random() < turbulence * 0.1) 
-            {
-                int rx = (int) (Math.random() * (this.simulation.getWidth() - 2)) + 1;
-                int ry = (int) (Math.random() * (this.simulation.getHeight() - 2)) + 1;
-                this.simulation.addForce(rx, ry, 5.0F * amp);
-            }
-            
-            this.lastUpdate = now;
+            int rx = (int) (Math.random() * (this.simulation.getWidth() - 2)) + 1;
+            int ry = (int) (Math.random() * (this.simulation.getHeight() - 2)) + 1;
+            this.simulation.addForce(rx, ry, 5.0F * amp);
         }
         
         Matrix4f matrix = matrices.peek().getPositionMatrix();
@@ -587,16 +571,8 @@ public class FluidFormRenderer extends FormRenderer<FluidForm> implements ITicka
         float baseSize = this.form.dropSize.get() * 0.5f;
         float tension = this.form.surfaceTension.get();
         float viscosity = this.form.viscosity.get();
-        float speedParam = this.form.flowSpeed.get();
 
-        long now = System.currentTimeMillis();
-        long delay = (long) (30 / (speedParam <= 0.1 ? 0.1 : speedParam));
-
-        if (now - this.lastUpdate > delay)
-        {
-            this.simulation.update();
-            this.lastUpdate = now;
-        }
+        /* 物理推进已统一到 tick() 固定步长，渲染只读取高度 */
 
         /* Wobble parameters */
         float amp = (1.0f - tension) * 0.2f;
@@ -778,6 +754,13 @@ public class FluidFormRenderer extends FormRenderer<FluidForm> implements ITicka
         {
             surfaceMatrixWorld.mul(formMatrix);
         }
+
+        /* 按真实经过时间以固定步长推进流体物理，与渲染帧率解耦，杜绝加力/耗散频率失配导致的抖动 */
+        long tickNow = System.currentTimeMillis();
+        float dt = (tickNow - this.lastTick) / 1000F;
+        this.lastTick = tickNow;
+        if (dt > 0.25F) dt = 0.25F; /* 卡顿/切后台后不一次性追太多步 */
+        this.simulation.advance(dt);
 
         this.controller.update(entity, this.simulation, scaleX, scaleZ, this.form.physicsSensitivity.get(), surfaceMatrixWorld, controllers);
     }
