@@ -2,7 +2,6 @@ package gbeic.bbsplusplus.client.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSMod;
-import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.api.events.ModelBlockEntityUpdateCallback;
 import gbeic.bbsplusplus.forms.AAAParticleForm;
@@ -17,10 +16,8 @@ import mchorse.bbs_mod.utils.pose.Transform;
 import mod.chloeprime.aaaparticles.api.client.effekseer.ParticleEmitter;
 import mod.chloeprime.aaaparticles.api.client.EffectDefinition;
 import mod.chloeprime.aaaparticles.client.render.EffekRenderer;
-import net.minecraft.registry.RegistryKey;
 import net.minecraft.util.Identifier;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -48,7 +45,7 @@ public class AAAParticleFormRenderer extends FormRenderer<AAAParticleForm> imple
     /** 最近一次 AAA 表单预览绘制时间；编辑器会复制表单，因此必须按渲染域而非对象身份互斥。 */
     private static long lastGlobalPreviewRenderTime;
     /** 记录模型方块实体和真实方块位置的对应关系，用来精确判断发射源是否还存在 */
-    private static final Map<IEntity, Source> MODEL_BLOCK_SOURCES = new WeakHashMap<>();
+    private static final Map<IEntity, AAAParticleSource> MODEL_BLOCK_SOURCES = new WeakHashMap<>();
     /** 每个 BBS 实体当前唯一有效的世界渲染器；编辑保存产生新实例时永久淘汰旧实例。 */
     private static final Map<IEntity, AAAParticleFormRenderer> ENTITY_RENDERERS = new WeakHashMap<>();
 
@@ -61,54 +58,17 @@ public class AAAParticleFormRenderer extends FormRenderer<AAAParticleForm> imple
 
             if (world != null && entity != null)
             {
-                MODEL_BLOCK_SOURCES.put(entity, new Source(world, modelBlock.getPos(), modelBlock));
+                MODEL_BLOCK_SOURCES.put(entity, new AAAParticleSource(world, modelBlock.getPos(), modelBlock));
             }
         });
     }
 
-    /**
-     * @param blockEntityIdentity 只保存模型方块实例身份码，避免 Source 反向强引用实体导致 WeakHashMap 无法释放旧条目
-     */
-    private record Source(RegistryKey<World> worldKey, BlockPos pos, int blockEntityIdentity)
-    {
-        public Source(World world, BlockPos pos, ModelBlockEntity modelBlock)
-        {
-            this(world.getRegistryKey(), pos.toImmutable(), System.identityHashCode(modelBlock));
-        }
-
-        public boolean isAlive(World world)
-        {
-            if (world == null || !world.getRegistryKey().equals(this.worldKey))
-            {
-                return false;
-            }
-
-            if (world.getBlockEntity(this.pos) instanceof ModelBlockEntity modelBlock)
-            {
-                return System.identityHashCode(modelBlock) == this.blockEntityIdentity;
-            }
-
-            return false;
-        }
-    }
 
     public int smartFreezeLoops = 0;
 
     /* 固定预览图路径 */
     public static final Link ICON = Link.assets("textures/AAA.png");
 
-    /* 寻帧记忆系统 —— 存储每帧的粒子状态，用于时间线拖拽恢复 */
-    private static class ParticleState
-    {
-        boolean wasPlaying;
-        Identifier effectId;
-
-        ParticleState(boolean wasPlaying, Identifier effectId)
-        {
-            this.wasPlaying = wasPlaying;
-            this.effectId = effectId;
-        }
-    }
 
     private static java.lang.reflect.Method effekRenderHandMethod = null;
     private static Object effekMainHandEnum = null;
@@ -149,9 +109,9 @@ public class AAAParticleFormRenderer extends FormRenderer<AAAParticleForm> imple
     private int lastRenderTick = -1;
     private boolean filmWasPlaying = false;
     private boolean hadForm = false;
-    private final Map<Integer, ParticleState> tickMemory = new LinkedHashMap<Integer, ParticleState>() {
+    private final Map<Integer, AAAParticleState> tickMemory = new LinkedHashMap<Integer, AAAParticleState>() {
         @Override
-        protected boolean removeEldestEntry(Map.Entry<Integer, ParticleState> eldest) {
+        protected boolean removeEldestEntry(Map.Entry<Integer, AAAParticleState> eldest) {
             return size() > 1000;
         }
     };
@@ -180,7 +140,7 @@ public class AAAParticleFormRenderer extends FormRenderer<AAAParticleForm> imple
     private boolean wasStubEntity = false;
 
     /* 模型方块渲染源，用于判断对应方块是否被破坏 */
-    private Source modelBlockSource = null;
+    private AAAParticleSource modelBlockSource = null;
 
     public AAAParticleFormRenderer(AAAParticleForm form)
     {
@@ -1155,7 +1115,7 @@ public class AAAParticleFormRenderer extends FormRenderer<AAAParticleForm> imple
         if (seeked)
         {
             boolean seekedBackward = targetTick < this.lastTick;
-            ParticleState state = this.tickMemory.get(this.currentTick);
+            AAAParticleState state = this.tickMemory.get(this.currentTick);
 
             if (!seekedBackward)
             {
@@ -1204,7 +1164,7 @@ public class AAAParticleFormRenderer extends FormRenderer<AAAParticleForm> imple
 
             if (effectId != null)
             {
-                this.tickMemory.put(this.currentTick, new ParticleState(true, effectId));
+                this.tickMemory.put(this.currentTick, new AAAParticleState(true, effectId));
             }
         }
 
